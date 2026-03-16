@@ -51,11 +51,29 @@ open VoiceRelay.xcworkspace
 3. General → Frameworks, Libraries, and Embedded Content
 4. 点击 + → 选择 SharedCore → Add
 
+### macOS 网络层 - WebSocket 和 Bonjour
+
+✅ **WebSocket 服务器**
+- `WebSocketServer` - 使用 Network.framework 的 TCP 服务器
+- 单客户端连接管理
+- 消息长度前缀协议（4字节长度 + JSON数据）
+
+✅ **Bonjour 发布**
+- `BonjourPublisher` - mDNS 服务广播
+- 服务类型：`_voicerelay._tcp`
+- 自动发布 Mac 名称和端口
+
+✅ **连接管理**
+- `ConnectionManager` - 协调 WebSocket 和 Bonjour
+- 配对流程：6位数字码，2分钟超时
+- HMAC 验证（配对后所有消息）
+- Keychain 持久化配对数据
+
 ## 下一步
 
-SharedCore 基础模块已完成。接下来可以实施：
+接下来可以实施：
 
-1. **macOS 网络层** - WebSocket 服务器和 Bonjour 发布
+1. ✅ ~~macOS 网络层~~ - 已完成
 2. **macOS 热键监听** - CGEventTap 全局热键
 3. **macOS 文本注入** - CGEvent 文本输入
 4. **iOS 网络层** - WebSocket 客户端和 Bonjour 发现
@@ -82,6 +100,14 @@ SharedCore/
     ├── MessagePayloadsTests.swift
     ├── HMACValidatorTests.swift
     └── KeychainManagerTests.swift
+
+VoiceRelayMac/VoiceRelayMac/
+└── Network/
+    ├── ConnectionState.swift
+    ├── PairingState.swift
+    ├── WebSocketServer.swift
+    ├── BonjourPublisher.swift
+    └── ConnectionManager.swift
 ```
 
 ## 技术细节
