@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
+    @State private var showManualConnection = false
 
     var body: some View {
         NavigationView {
@@ -19,11 +20,19 @@ struct ContentView: View {
 
                 // Actions
                 if case .unpaired = viewModel.pairingState {
-                    Button("与 Mac 配对") {
-                        viewModel.showPairingView = true
+                    VStack(spacing: 15) {
+                        Button("扫码连接 Mac") {
+                            viewModel.showPairingView = true
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+
+                        Button("手动输入连接") {
+                            showManualConnection = true
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
                 }
 
                 // Settings
@@ -34,7 +43,10 @@ struct ContentView: View {
             .padding()
             .navigationTitle("VoiceMind")
             .sheet(isPresented: $viewModel.showPairingView) {
-                PairingView(viewModel: viewModel)
+                QRCodeScannerView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showManualConnection) {
+                ManualConnectionView(viewModel: viewModel)
             }
         }
     }

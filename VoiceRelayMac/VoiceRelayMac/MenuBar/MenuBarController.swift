@@ -286,8 +286,23 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func showPairingWindow(code: String) {
-        let contentView = PairingWindow(
-            code: code,
+        // Get local IP address
+        guard let ipAddress = getLocalIPAddress() else {
+            showError("无法获取本地 IP 地址")
+            return
+        }
+
+        // Create connection info
+        let connectionInfo = ConnectionInfo(
+            ip: ipAddress,
+            port: connectionManager.server.port,
+            deviceId: connectionManager.deviceId,
+            deviceName: Host.current().localizedName ?? "Mac"
+        )
+
+        let contentView = QRCodePairingView(
+            connectionInfo: connectionInfo,
+            pairingCode: code,
             onCancel: { [weak self] in
                 self?.connectionManager.cancelPairing()
                 self?.pairingWindow?.close()
@@ -295,18 +310,47 @@ class MenuBarController: NSObject, ObservableObject {
         )
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
+            contentRect: NSRect(x: 0, y: 0, width: 450, height: 550),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
-        window.title = "与 iPhone 配对"
+        window.title = "扫码配对"
         window.contentView = NSHostingView(rootView: contentView)
         window.center()
 
         pairingWindow = window
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func getLocalIPAddress() -> String? {
+        var address: String?
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+
+        if getifaddrs(&ifaddr) == 0 {
+            var ptr = ifaddr
+            while ptr != nil {
+                defer { ptr = ptr?.pointee.ifa_next }
+
+                guard let interface = ptr?.pointee else { continue }
+                let addrFamily = interface.ifa_addr.pointee.sa_family
+
+                if addrFamily == UInt8(AF_INET) {
+                    let name = String(cString: interface.ifa_name)
+                    if name == "en0" {
+                        var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                        getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
+                                    &hostname, socklen_t(hostname.count),
+                                    nil, socklen_t(0), NI_NUMERICHOST)
+                        address = String(cString: hostname)
+                    }
+                }
+            }
+            freeifaddrs(ifaddr)
+        }
+
+        return address
     }
 
     func updateStatusIcon() {

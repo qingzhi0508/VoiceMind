@@ -6,6 +6,7 @@ struct PairingView: View {
 
     @State private var pairingCode = ""
     @State private var selectedService: DiscoveredService?
+    @State private var showQRCodeScanner = false
     @State private var showError = false
     @State private var errorMessage = ""
 
@@ -22,16 +23,38 @@ struct PairingView: View {
                         .font(.title)
                         .fontWeight(.bold)
 
-                    Text("在 Mac 上打开 VoiceMind 并点击\"配对新设备\"")
+                    Text("优先使用扫码配对，也可以继续使用局域网自动发现。")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top, 40)
 
+                VStack(spacing: 12) {
+                    Button {
+                        showQRCodeScanner = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "qrcode.viewfinder")
+                            Text("扫描二维码配对")
+                        }
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                    }
+
+                    Text("在 Mac 上点击“配对新设备”，然后扫描弹出的二维码。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
                 // Discovered Macs
                 VStack(alignment: .leading, spacing: 15) {
-                    Text("发现的 Mac")
+                    Text("或手动选择局域网中的 Mac")
                         .font(.headline)
 
                     if viewModel.discoveredServices.isEmpty {
@@ -104,6 +127,9 @@ struct PairingView: View {
                 Button("确定", role: .cancel) { }
             } message: {
                 Text(errorMessage)
+            }
+            .sheet(isPresented: $showQRCodeScanner) {
+                QRCodeScannerView(viewModel: viewModel)
             }
         }
     }

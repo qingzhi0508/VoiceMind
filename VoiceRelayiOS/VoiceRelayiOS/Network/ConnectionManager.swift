@@ -74,6 +74,34 @@ class ConnectionManager: NSObject {
         disconnect()
     }
 
+    func connectDirectly(ip: String, port: UInt16) {
+        print("📡 直接连接到: \(ip):\(port)")
+        client.connect(to: ip, port: port)
+    }
+
+    func pairWithCode(_ code: String) {
+        print("🔐 使用配对码配对: \(code)")
+
+        // Send pair confirm
+        let payload = PairConfirmPayload(
+            shortCode: code,
+            iosName: UIDevice.current.name,
+            iosId: deviceId
+        )
+
+        guard let payloadData = try? JSONEncoder().encode(payload) else { return }
+
+        let envelope = MessageEnvelope(
+            type: .pairConfirm,
+            payload: payloadData,
+            timestamp: Date(),
+            deviceId: deviceId,
+            hmac: nil
+        )
+
+        client.send(envelope)
+    }
+
     func send(_ envelope: MessageEnvelope) {
         client.send(envelope)
     }

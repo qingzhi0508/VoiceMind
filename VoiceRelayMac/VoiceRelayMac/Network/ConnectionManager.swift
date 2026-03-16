@@ -11,7 +11,7 @@ protocol ConnectionManagerDelegate: AnyObject {
 class ConnectionManager: NSObject {
     weak var delegate: ConnectionManagerDelegate?
 
-    private let server = WebSocketServer()
+    let server = WebSocketServer()
     var hmacValidator: HMACValidator?
 
     private let keychainService = "com.voicerelay.mac"
@@ -59,6 +59,11 @@ class ConnectionManager: NSObject {
             self?.cancelPairing()
         }
 
+        print("🔐 开始配对")
+        print("   配对码: \(code)")
+        print("   有效期: 2分钟")
+        print("   过期时间: \(expiresAt)")
+
         return code
     }
 
@@ -92,20 +97,33 @@ class ConnectionManager: NSObject {
     }
 
     private func handlePairConfirm(_ payload: PairConfirmPayload) {
+        print("📱 收到配对确认")
+        print("   iOS 设备: \(payload.iosName)")
+        print("   iOS ID: \(payload.iosId)")
+        print("   配对码: \(payload.shortCode)")
+
         guard case .pairing(let code, _) = pairingState else {
+            print("❌ 配对失败: 不在配对模式")
             sendError(code: "not_pairing", message: "Not in pairing mode")
             return
         }
 
         guard payload.shortCode == code else {
+            print("❌ 配对失败: 配对码不匹配")
+            print("   期望: \(code)")
+            print("   收到: \(payload.shortCode)")
             sendError(code: "invalid_code", message: "Invalid pairing code")
             return
         }
+
+        print("✅ 配对码验证通过")
 
         // Generate shared secret
         var bytes = [UInt8](repeating: 0, count: 32)
         _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
         let sharedSecret = Data(bytes).base64EncodedString()
+
+        print("🔑 生成共享密钥")
 
         // Save pairing
         let pairing = PairingData(
@@ -119,6 +137,8 @@ class ConnectionManager: NSObject {
             hmacValidator = HMACValidator(sharedSecret: sharedSecret)
             pairingState = .paired(deviceId: payload.iosId, deviceName: payload.iosName)
 
+            print("💾 配对信息已保存到 Keychain")
+
             // Send success
             let successPayload = PairSuccessPayload(sharedSecret: sharedSecret)
             let payloadData = try JSONEncoder().encode(successPayload)
@@ -131,9 +151,13 @@ class ConnectionManager: NSObject {
             )
             server.send(envelope)
 
+            print("📤 发送配对成功消息")
+            print("✅ 配对完成: \(payload.iosName)")
+
             pairingTimer?.invalidate()
             pairingTimer = nil
         } catch {
+            print("❌ 保存配对信息失败: \(error)")
             sendError(code: "pairing_failed", message: "Failed to save pairing: \(error)")
         }
     }

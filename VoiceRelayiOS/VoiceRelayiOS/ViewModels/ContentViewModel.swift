@@ -44,6 +44,14 @@ class ContentViewModel: ObservableObject {
         connectionState = .disconnected
     }
 
+    func connectToMac(ip: String, port: UInt16) {
+        connectionManager.connectDirectly(ip: ip, port: port)
+    }
+
+    func pairWithCode(_ code: String) {
+        connectionManager.pairWithCode(code)
+    }
+
     func updateLanguage(_ language: String) {
         selectedLanguage = language
         speechController.selectedLanguage = language

@@ -126,6 +126,31 @@ struct StatusTab: View {
                 }
             }
             .padding(.horizontal)
+
+            // Pairing Button
+            if controller.isServiceRunning {
+                if case .unpaired = controller.pairingState {
+                    Button(action: {
+                        controller.showPairingWindowFromUI()
+                    }) {
+                        Label("开始配对", systemImage: "iphone.and.arrow.forward")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding(.horizontal)
+                } else if case .paired(_, let deviceName) = controller.pairingState {
+                    HStack {
+                        Text("已配对设备: \(deviceName)")
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Button("解除配对") {
+                            controller.unpairDeviceFromUI()
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .padding(.horizontal)
+                }
+            }
         }
         .padding()
     }
