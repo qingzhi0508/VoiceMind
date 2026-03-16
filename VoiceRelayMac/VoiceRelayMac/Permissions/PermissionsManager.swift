@@ -1,5 +1,6 @@
 import Foundation
 import Cocoa
+import IOKit.hidsystem
 
 enum PermissionType {
     case accessibility
@@ -20,23 +21,16 @@ class PermissionsManager {
     }
 
     static func checkInputMonitoring() -> PermissionStatus {
-        let eventMask = CGEventMask(1 << CGEventType.keyDown.rawValue)
-
-        guard let eventTap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .listenOnly,
-            eventsOfInterest: eventMask,
-            callback: { _, _, event, _ in
-                Unmanaged.passUnretained(event)
-            },
-            userInfo: nil
-        ) else {
+        switch IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) {
+        case kIOHIDAccessTypeGranted:
+            return .granted
+        case kIOHIDAccessTypeDenied:
             return .denied
+        case kIOHIDAccessTypeUnknown:
+            return .notDetermined
+        default:
+            return .notDetermined
         }
-
-        CFMachPortInvalidate(eventTap)
-        return .granted
     }
 
     static func requestAccessibility() {
@@ -45,7 +39,10 @@ class PermissionsManager {
     }
 
     static func requestInputMonitoring() {
-        openSystemPreferences(for: .inputMonitoring)
+        let granted = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
+        if granted == false {
+            openSystemPreferences(for: .inputMonitoring)
+        }
     }
 
     static func openSystemPreferences(for permission: PermissionType) {

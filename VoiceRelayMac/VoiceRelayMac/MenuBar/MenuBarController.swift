@@ -1,12 +1,18 @@
 import Cocoa
+import Combine
 import SwiftUI
 import SharedCore
 
-class MenuBarController: NSObject {
+class MenuBarController: NSObject, ObservableObject {
     var statusItem: NSStatusItem!
     let connectionManager = ConnectionManager()
     let hotkeyMonitor: HotkeyMonitor
     let textInjector = TextInjector()
+
+    @Published var pairingState: PairingState
+    @Published var connectionState: ConnectionState
+    @Published var accessibilityStatus: PermissionStatus
+    @Published var inputMonitoringStatus: PermissionStatus
 
     var currentSessionId: String?
     var sessionTimer: Timer?
@@ -14,9 +20,14 @@ class MenuBarController: NSObject {
     var pairingWindow: NSWindow?
     var permissionsWindow: NSWindow?
     var hotkeySettingsWindow: NSWindow?
+    var statusWindow: NSWindow?
 
     override init() {
         self.hotkeyMonitor = HotkeyMonitor()
+        self.pairingState = connectionManager.pairingState
+        self.connectionState = connectionManager.connectionState
+        self.accessibilityStatus = PermissionsManager.checkAccessibility()
+        self.inputMonitoringStatus = PermissionsManager.checkInputMonitoring()
         super.init()
 
         setupStatusItem()
@@ -45,6 +56,7 @@ class MenuBarController: NSObject {
 
         menu.addItem(NSMenuItem.separator())
 
+        menu.addItem(NSMenuItem(title: "显示状态...", action: #selector(showStatus), keyEquivalent: "s"))
         menu.addItem(NSMenuItem(title: "开始配对...", action: #selector(startPairing), keyEquivalent: "p"))
         menu.addItem(NSMenuItem(title: "热键设置...", action: #selector(openHotkeySettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem(title: "权限设置...", action: #selector(openPermissions), keyEquivalent: ""))
@@ -84,6 +96,65 @@ class MenuBarController: NSObject {
     @objc private func startPairing() {
         let code = connectionManager.startPairing()
         showPairingWindow(code: code)
+    }
+
+    @objc private func showStatus() {
+        if statusWindow == nil {
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 450, height: 500),
+                styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                backing: .buffered,
+                defer: false
+            )
+            window.title = "VoiceMind"
+            window.setContentSize(NSSize(width: 480, height: 560))
+            window.contentView = NSHostingView(rootView: StatusWindow(controller: self))
+            window.center()
+            window.isReleasedWhenClosed = false
+            statusWindow = window
+        }
+
+        statusWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func showMainWindow() {
+        showStatus()
+    }
+
+    func requestAccessibilityPermissionFromUI() {
+        PermissionsManager.requestAccessibility()
+        refreshPermissionState()
+    }
+
+    func requestInputMonitoringPermissionFromUI() {
+        PermissionsManager.requestInputMonitoring()
+        refreshPermissionState()
+    }
+
+    func refreshPermissionState() {
+        accessibilityStatus = PermissionsManager.checkAccessibility()
+        inputMonitoringStatus = PermissionsManager.checkInputMonitoring()
+
+        if accessibilityStatus == .granted, inputMonitoringStatus == .granted {
+            _ = hotkeyMonitor.start()
+        }
+    }
+
+    func showPairingWindowFromUI() {
+        startPairing()
+    }
+
+    func openHotkeySettingsFromUI() {
+        openHotkeySettings()
+    }
+
+    func openPermissionsFromUI() {
+        openPermissions()
+    }
+
+    func unpairDeviceFromUI() {
+        unpairDevice()
     }
 
     @objc private func openHotkeySettings() {
@@ -265,5 +336,11 @@ class MenuBarController: NSObject {
         default:
             break
         }
+    }
+
+    func refreshPublishedState() {
+        pairingState = connectionManager.pairingState
+        connectionState = connectionManager.connectionState
+        refreshPermissionState()
     }
 }

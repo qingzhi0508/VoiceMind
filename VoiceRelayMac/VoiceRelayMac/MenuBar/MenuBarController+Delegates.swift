@@ -5,17 +5,23 @@ import SharedCore
 // MARK: - ConnectionManagerDelegate
 extension MenuBarController: ConnectionManagerDelegate {
     func connectionManager(_ manager: ConnectionManager, didChangePairingState state: PairingState) {
-        updateStatusIcon()
-        updateMenu()
+        DispatchQueue.main.async {
+            self.refreshPublishedState()
+            self.updateStatusIcon()
+            self.updateMenu()
 
-        if case .paired = state {
-            pairingWindow?.close()
+            if case .paired = state {
+                self.pairingWindow?.close()
+            }
         }
     }
 
     func connectionManager(_ manager: ConnectionManager, didChangeConnectionState state: ConnectionState) {
-        updateStatusIcon()
-        updateMenu()
+        DispatchQueue.main.async {
+            self.refreshPublishedState()
+            self.updateStatusIcon()
+            self.updateMenu()
+        }
     }
 
     func connectionManager(_ manager: ConnectionManager, didReceiveMessage envelope: MessageEnvelope) {

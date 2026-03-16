@@ -25,6 +25,8 @@ class ConnectionManager: NSObject {
         }
     }
 
+    private(set) var connectionState: ConnectionState = .disconnected
+
     private var pairingTimer: Timer?
 
     override init() {
@@ -181,6 +183,7 @@ extension ConnectionManager: WebSocketServerDelegate {
     }
 
     func server(_ server: WebSocketServer, didChangeState state: ConnectionState) {
+        connectionState = state
         delegate?.connectionManager(self, didChangeConnectionState: state)
     }
 }
