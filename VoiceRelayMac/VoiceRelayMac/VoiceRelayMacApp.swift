@@ -1,21 +1,23 @@
-//
-//  VoiceRelayMacApp.swift
-//  VoiceRelayMac
-//
-//  Created by 谢庆智 on 2026/3/16.
-//
-
-import SwiftUI
-import CoreData
+import Cocoa
 
 @main
-struct VoiceRelayMacApp: App {
-    let persistenceController = PersistenceController.shared
+class AppDelegate: NSObject, NSApplicationDelegate {
+    private var menuBarController: MenuBarController!
 
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+    func applicationDidFinishLaunching(_ aNotification: Notification) {
+        menuBarController = MenuBarController()
+
+        // Check permissions on launch
+        if PermissionsManager.checkAccessibility() != .granted {
+            PermissionsManager.showPermissionAlert(for: .accessibility)
         }
+    }
+
+    func applicationWillTerminate(_ aNotification: Notification) {
+        // Cleanup
+    }
+
+    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
+        return true
     }
 }
