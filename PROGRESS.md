@@ -51,6 +51,24 @@ open VoiceRelay.xcworkspace
 3. General → Frameworks, Libraries, and Embedded Content
 4. 点击 + → 选择 SharedCore → Add
 
+### macOS 热键和文本注入
+
+✅ **热键监听**
+- `HotkeyMonitor` - CGEventTap 全局热键检测
+- `HotkeyConfiguration` - 可配置热键（默认：Option+Space）
+- 按下/释放检测，带防抖（100ms）
+- Session ID 生成和追踪
+
+✅ **文本注入**
+- `TextInjector` - CGEvent Unicode 字符输入
+- 长文本分块（500字符/块，10ms延迟）
+- 支持所有 Unicode 字符（中文、emoji等）
+
+✅ **权限管理**
+- `PermissionsManager` - Accessibility 权限检查
+- 系统设置深链接
+- 权限提示对话框
+
 ### macOS 网络层 - WebSocket 和 Bonjour
 
 ✅ **WebSocket 服务器**
@@ -74,11 +92,12 @@ open VoiceRelay.xcworkspace
 接下来可以实施：
 
 1. ✅ ~~macOS 网络层~~ - 已完成
-2. **macOS 热键监听** - CGEventTap 全局热键
-3. **macOS 文本注入** - CGEvent 文本输入
-4. **iOS 网络层** - WebSocket 客户端和 Bonjour 发现
-5. **iOS 语音识别** - SFSpeechRecognizer 集成
-6. **UI 实现** - macOS 菜单栏和 iOS SwiftUI 界面
+2. ✅ ~~macOS 热键监听~~ - 已完成
+3. ✅ ~~macOS 文本注入~~ - 已完成
+4. **macOS UI** - 菜单栏、配对窗口、设置界面
+5. **iOS 网络层** - WebSocket 客户端和 Bonjour 发现
+6. **iOS 语音识别** - SFSpeechRecognizer 集成
+7. **iOS UI** - SwiftUI 界面
 
 ## 文件结构
 
@@ -102,12 +121,19 @@ SharedCore/
     └── KeychainManagerTests.swift
 
 VoiceRelayMac/VoiceRelayMac/
-└── Network/
-    ├── ConnectionState.swift
-    ├── PairingState.swift
-    ├── WebSocketServer.swift
-    ├── BonjourPublisher.swift
-    └── ConnectionManager.swift
+├── Network/
+│   ├── ConnectionState.swift
+│   ├── PairingState.swift
+│   ├── WebSocketServer.swift
+│   ├── BonjourPublisher.swift
+│   └── ConnectionManager.swift
+├── Hotkey/
+│   ├── HotkeyConfiguration.swift
+│   └── HotkeyMonitor.swift
+├── TextInjection/
+│   └── TextInjector.swift
+└── Permissions/
+    └── PermissionsManager.swift
 ```
 
 ## 技术细节
