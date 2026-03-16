@@ -11,6 +11,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if PermissionsManager.checkAccessibility() != .granted {
             PermissionsManager.showPermissionAlert(for: .accessibility)
         }
+
+        if PermissionsManager.checkInputMonitoring() != .granted {
+            PermissionsManager.showPermissionAlert(for: .inputMonitoring)
+        }
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {

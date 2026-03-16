@@ -11,7 +11,7 @@ class BonjourBrowser {
 
     private var browser: NWBrowser?
     private let serviceType = "_voicerelay._tcp"
-    private var discoveredServices: [NWBrowser.Result.Endpoint: DiscoveredService] = [:]
+    private var discoveredServices: [NWEndpoint: DiscoveredService] = [:]
 
     func start() {
         let parameters = NWParameters()

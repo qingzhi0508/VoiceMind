@@ -18,6 +18,7 @@ class SpeechController: NSObject {
 
     private var currentSessionId: String?
     private var finalResultTimer: Timer?
+    private var lastRecognizedText: String = ""
 
     private(set) var state: RecognitionState = .idle {
         didSet {
@@ -113,6 +114,7 @@ class SpeechController: NSObject {
 
             if let result = result {
                 // Store latest result
+                self.lastRecognizedText = result.bestTranscription.formattedString
                 if result.isFinal {
                     self.handleFinalResult(result.bestTranscription.formattedString)
                 }
@@ -146,12 +148,13 @@ class SpeechController: NSObject {
 
         state = .sending
 
-        let finalText = text ?? recognitionTask?.result?.bestTranscription.formattedString ?? ""
+        let finalText = text ?? lastRecognizedText
 
         delegate?.speechController(self, didRecognizeText: finalText, language: selectedLanguage)
 
         cleanup()
         currentSessionId = nil
+        lastRecognizedText = ""
         state = .idle
     }
 

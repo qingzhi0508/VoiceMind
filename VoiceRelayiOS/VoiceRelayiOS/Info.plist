@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_voicerelay._tcp</string>
+	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>VoiceMind 需要使用麦克风进行语音识别</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>VoiceMind 需要使用语音识别功能将您的语音转换为文字</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>VoiceMind 需要访问本地网络以连接到您的 Mac</string>
+</dict>
+</plist>

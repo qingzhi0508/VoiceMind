@@ -1,3 +1,4 @@
+import Cocoa
 import Foundation
 import SharedCore
 
@@ -48,7 +49,7 @@ extension MenuBarController: ConnectionManagerDelegate {
         do {
             try textInjector.inject(payload.text)
         } catch TextInjectionError.accessibilityPermissionDenied {
-            showTextCopyAlert(payload.text, error: "辅助功能权限被拒绝")
+            showTextInjectionPermissionError(with: payload.text)
         } catch {
             showTextCopyAlert(payload.text, error: error.localizedDescription)
         }

@@ -4,10 +4,10 @@ import SharedCore
 
 protocol WebSocketClientDelegate: AnyObject {
     func client(_ client: WebSocketClient, didReceiveMessage message: MessageEnvelope)
-    func client(_ client: WebSocketClient, didChangeState state: ConnectionState)
+    func client(_ client: WebSocketClient, didChangeState state: WebSocketConnectionState)
 }
 
-enum ConnectionState {
+enum WebSocketConnectionState {
     case disconnected
     case connecting
     case connected
@@ -20,7 +20,7 @@ class WebSocketClient {
     private var connection: NWConnection?
     private let reconnectionManager = ReconnectionManager()
 
-    private(set) var state: ConnectionState = .disconnected {
+    private(set) var state: WebSocketConnectionState = .disconnected {
         didSet {
             delegate?.client(self, didChangeState: state)
         }

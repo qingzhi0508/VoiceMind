@@ -19,9 +19,33 @@ class PermissionsManager {
         return trusted ? .granted : .denied
     }
 
+    static func checkInputMonitoring() -> PermissionStatus {
+        let eventMask = CGEventMask(1 << CGEventType.keyDown.rawValue)
+
+        guard let eventTap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .listenOnly,
+            eventsOfInterest: eventMask,
+            callback: { _, _, event, _ in
+                Unmanaged.passUnretained(event)
+            },
+            userInfo: nil
+        ) else {
+            return .denied
+        }
+
+        CFMachPortInvalidate(eventTap)
+        return .granted
+    }
+
     static func requestAccessibility() {
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         _ = AXIsProcessTrustedWithOptions(options)
+    }
+
+    static func requestInputMonitoring() {
+        openSystemPreferences(for: .inputMonitoring)
     }
 
     static func openSystemPreferences(for permission: PermissionType) {
@@ -43,7 +67,7 @@ class PermissionsManager {
         case .accessibility:
             alert.informativeText = "VoiceRelay needs Accessibility permission to monitor hotkeys and inject text. Please grant permission in System Settings."
         case .inputMonitoring:
-            alert.informativeText = "VoiceRelay needs Input Monitoring permission to detect keyboard events. Please grant permission in System Settings."
+            alert.informativeText = "VoiceRelay needs Input Monitoring permission to detect global keyboard events. macOS requires enabling this manually in System Settings."
         }
 
         alert.addButton(withTitle: "Open System Settings")

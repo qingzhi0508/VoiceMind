@@ -3,17 +3,17 @@ import SwiftUI
 import SharedCore
 
 class MenuBarController: NSObject {
-    private var statusItem: NSStatusItem!
-    private let connectionManager = ConnectionManager()
-    private let hotkeyMonitor: HotkeyMonitor
-    private let textInjector = TextInjector()
+    var statusItem: NSStatusItem!
+    let connectionManager = ConnectionManager()
+    let hotkeyMonitor: HotkeyMonitor
+    let textInjector = TextInjector()
 
-    private var currentSessionId: String?
-    private var sessionTimer: Timer?
+    var currentSessionId: String?
+    var sessionTimer: Timer?
 
-    private var pairingWindow: NSWindow?
-    private var permissionsWindow: NSWindow?
-    private var hotkeySettingsWindow: NSWindow?
+    var pairingWindow: NSWindow?
+    var permissionsWindow: NSWindow?
+    var hotkeySettingsWindow: NSWindow?
 
     override init() {
         self.hotkeyMonitor = HotkeyMonitor()
@@ -60,19 +60,19 @@ class MenuBarController: NSObject {
         updateMenu()
     }
 
-    private func setupConnectionManager() {
+    func setupConnectionManager() {
         connectionManager.delegate = self
     }
 
-    private func setupHotkeyMonitor() {
+    func setupHotkeyMonitor() {
         hotkeyMonitor.delegate = self
 
-        if PermissionsManager.checkAccessibility() == .granted {
-            _ = hotkeyMonitor.start()
+        if hotkeyMonitor.start() == false {
+            showHotkeyPermissionError()
         }
     }
 
-    private func startServices() {
+    func startServices() {
         do {
             try connectionManager.start()
         } catch {
@@ -148,7 +148,7 @@ class MenuBarController: NSObject {
         NSApplication.shared.terminate(nil)
     }
 
-    private func showPairingWindow(code: String) {
+    func showPairingWindow(code: String) {
         let contentView = PairingWindow(
             code: code,
             onCancel: { [weak self] in
@@ -172,7 +172,7 @@ class MenuBarController: NSObject {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    private func updateStatusIcon() {
+    func updateStatusIcon() {
         guard let button = statusItem.button else { return }
 
         switch connectionManager.pairingState {
@@ -185,7 +185,7 @@ class MenuBarController: NSObject {
         }
     }
 
-    private func updateMenu() {
+    func updateMenu() {
         guard let menu = statusItem.menu else { return }
 
         // Update status text
@@ -211,7 +211,7 @@ class MenuBarController: NSObject {
         }
     }
 
-    private func showError(_ message: String) {
+    func showError(_ message: String) {
         let alert = NSAlert()
         alert.messageText = "错误"
         alert.informativeText = message
@@ -219,7 +219,7 @@ class MenuBarController: NSObject {
         alert.runModal()
     }
 
-    private func showTextCopyAlert(_ text: String, error: String) {
+    func showTextCopyAlert(_ text: String, error: String) {
         let alert = NSAlert()
         alert.messageText = "文本注入失败"
         alert.informativeText = "无法注入文本: \(error)\n\n你可以手动复制文本。"
@@ -230,6 +230,40 @@ class MenuBarController: NSObject {
         if alert.runModal() == .alertFirstButtonReturn {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(text, forType: .string)
+        }
+    }
+
+    func showHotkeyPermissionError() {
+        if PermissionsManager.checkAccessibility() != .granted {
+            PermissionsManager.showPermissionAlert(for: .accessibility)
+            return
+        }
+
+        if PermissionsManager.checkInputMonitoring() != .granted {
+            PermissionsManager.showPermissionAlert(for: .inputMonitoring)
+            return
+        }
+
+        showError("无法启动热键监听。请检查系统权限设置后重试。")
+    }
+
+    func showTextInjectionPermissionError(with text: String) {
+        let alert = NSAlert()
+        alert.messageText = "缺少辅助功能权限"
+        alert.informativeText = "VoiceRelay 需要“辅助功能”权限才能把识别结果输入到当前应用。\n\n你也可以先复制文本再手动粘贴。"
+        alert.addButton(withTitle: "打开系统设置")
+        alert.addButton(withTitle: "复制文本")
+        alert.addButton(withTitle: "取消")
+        alert.alertStyle = .warning
+
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            PermissionsManager.openSystemPreferences(for: .accessibility)
+        case .alertSecondButtonReturn:
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
+        default:
+            break
         }
     }
 }

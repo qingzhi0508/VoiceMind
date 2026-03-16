@@ -29,6 +29,11 @@ class HotkeyMonitor {
             return false
         }
 
+        guard PermissionsManager.checkInputMonitoring() == .granted else {
+            print("Input Monitoring permission not granted")
+            return false
+        }
+
         let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue) | (1 << CGEventType.flagsChanged.rawValue)
 
         guard let eventTap = CGEvent.tapCreate(

@@ -221,10 +221,23 @@ extension ConnectionManager: WebSocketClientDelegate {
         delegate?.connectionManager(self, didReceiveMessage: message)
     }
 
-    func client(_ client: WebSocketClient, didChangeState state: ConnectionState) {
-        delegate?.connectionManager(self, didChangeConnectionState: state)
+    func client(_ client: WebSocketClient, didChangeState state: WebSocketConnectionState) {
+        let connectionState: ConnectionState
 
-        if case .connected = state, case .paired = pairingState {
+        switch state {
+        case .disconnected:
+            connectionState = .disconnected
+        case .connecting:
+            connectionState = .connecting
+        case .connected:
+            connectionState = .connected
+        case .error(let error):
+            connectionState = .error(error.localizedDescription)
+        }
+
+        delegate?.connectionManager(self, didChangeConnectionState: connectionState)
+
+        if case .connected = connectionState, case .paired = pairingState {
             startHeartbeat()
         } else {
             stopHeartbeat()

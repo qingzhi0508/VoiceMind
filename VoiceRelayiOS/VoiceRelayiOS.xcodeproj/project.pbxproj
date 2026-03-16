@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B919E34F2F6861CF002A347A /* SharedCore in Frameworks */ = {isa = PBXBuildFile; productRef = B919E34E2F6861CF002A347A /* SharedCore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		B919E2A62F685991002A347A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -29,9 +33,22 @@
 		B919E2AF2F685991002A347A /* VoiceRelayiOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoiceRelayiOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B977435C2F687F840076F7A4 /* Exceptions for "VoiceRelayiOS" folder in "VoiceRelayiOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = B919E2922F68598F002A347A /* VoiceRelayiOS */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B919E2952F68598F002A347A /* VoiceRelayiOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B977435C2F687F840076F7A4 /* Exceptions for "VoiceRelayiOS" folder in "VoiceRelayiOS" target */,
+			);
 			path = VoiceRelayiOS;
 			sourceTree = "<group>";
 		};
@@ -52,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B919E34F2F6861CF002A347A /* SharedCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +96,7 @@
 				B919E2952F68598F002A347A /* VoiceRelayiOS */,
 				B919E2A82F685991002A347A /* VoiceRelayiOSTests */,
 				B919E2B22F685991002A347A /* VoiceRelayiOSUITests */,
+				B919E34D2F6861CF002A347A /* Frameworks */,
 				B919E2942F68598F002A347A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +109,13 @@
 				B919E2AF2F685991002A347A /* VoiceRelayiOSUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B919E34D2F6861CF002A347A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -112,6 +138,7 @@
 			);
 			name = VoiceRelayiOS;
 			packageProductDependencies = (
+				B919E34E2F6861CF002A347A /* SharedCore */,
 			);
 			productName = VoiceRelayiOS;
 			productReference = B919E2932F68598F002A347A /* VoiceRelayiOS.app */;
@@ -400,11 +427,16 @@
 				DEVELOPMENT_TEAM = 7C7627YUTV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VoiceRelayiOS/Info.plist;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "需要访问本地网络以连接到您的服务";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要使用麦克风进行语音识别";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "要使用语音识别功能将您的语音转换为文字";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -432,11 +464,16 @@
 				DEVELOPMENT_TEAM = 7C7627YUTV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VoiceRelayiOS/Info.plist;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "需要访问本地网络以连接到您的服务";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要使用麦克风进行语音识别";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "要使用语音识别功能将您的语音转换为文字";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -578,6 +615,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B919E34E2F6861CF002A347A /* SharedCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SharedCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = B919E28B2F68598F002A347A /* Project object */;
 }

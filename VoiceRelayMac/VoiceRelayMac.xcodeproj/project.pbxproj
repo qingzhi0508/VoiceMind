@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B919E34C2F6861B7002A347A /* SharedCore in Frameworks */ = {isa = PBXBuildFile; productRef = B919E34B2F6861B7002A347A /* SharedCore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		B919E26E2F685939002A347A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B919E34C2F6861B7002A347A /* SharedCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 				B919E25D2F685937002A347A /* VoiceRelayMac */,
 				B919E2702F685939002A347A /* VoiceRelayMacTests */,
 				B919E27A2F685939002A347A /* VoiceRelayMacUITests */,
+				B919E34A2F6861B7002A347A /* Frameworks */,
 				B919E25C2F685937002A347A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +96,13 @@
 				B919E2772F685939002A347A /* VoiceRelayMacUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B919E34A2F6861B7002A347A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -112,6 +125,7 @@
 			);
 			name = VoiceRelayMac;
 			packageProductDependencies = (
+				B919E34B2F6861B7002A347A /* SharedCore */,
 			);
 			productName = VoiceRelayMac;
 			productReference = B919E25B2F685937002A347A /* VoiceRelayMac.app */;
@@ -573,6 +587,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B919E34B2F6861B7002A347A /* SharedCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SharedCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = B919E2532F685937002A347A /* Project object */;
 }
