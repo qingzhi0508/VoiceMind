@@ -1,8 +1,10 @@
-# VoiceMind (语灵) - SharedCore 模块完成
+# VoiceMind (语灵) - macOS 端完成！
 
 ## 已完成的模块
 
-### SharedCore - 核心协议和安全模块
+### ✅ macOS 应用 - 完整实现
+
+**SharedCore - 核心协议和安全模块**
 
 ✅ **消息协议类型**
 - `MessageType` - 9 种消息类型枚举
@@ -51,6 +53,24 @@ open VoiceRelay.xcworkspace
 3. General → Frameworks, Libraries, and Embedded Content
 4. 点击 + → 选择 SharedCore → Add
 
+### macOS UI - 菜单栏和窗口
+
+✅ **菜单栏控制器**
+- `MenuBarController` - 协调所有 macOS 组件
+- NSStatusItem 菜单栏图标（灰色/黄色/绿色状态）
+- 动态菜单（配对状态、热键设置、权限、解除配对）
+
+✅ **SwiftUI 窗口**
+- `PairingWindow` - 显示 6 位数字配对码，2 分钟倒计时
+- `HotkeySettingsWindow` - 热键配置界面
+- `PermissionsWindow` - 权限状态和授予界面
+
+✅ **完整流程**
+- 热键按下 → 发送 startListen → iPhone 开始识别
+- 热键释放 → 发送 stopListen → 接收 result → 注入文本
+- Session ID 验证防止旧结果注入
+- 30 秒超时保护
+
 ### macOS 热键和文本注入
 
 ✅ **热键监听**
@@ -86,6 +106,24 @@ open VoiceRelay.xcworkspace
 - 配对流程：6位数字码，2分钟超时
 - HMAC 验证（配对后所有消息）
 - Keychain 持久化配对数据
+
+## macOS 端状态：✅ 完成
+
+macOS 应用已完全实现，包括：
+- ✅ 核心协议和安全（SharedCore）
+- ✅ 网络层（WebSocket + Bonjour）
+- ✅ 热键监听（CGEventTap）
+- ✅ 文本注入（CGEvent）
+- ✅ 权限管理
+- ✅ 完整 UI（菜单栏 + 窗口）
+
+## 下一步：iOS 端实现
+
+接下来需要实施：
+
+1. **iOS 网络层** - WebSocket 客户端和 Bonjour 发现
+2. **iOS 语音识别** - SFSpeechRecognizer 集成
+3. **iOS UI** - SwiftUI 界面（连接状态、配对、设置）
 
 ## 下一步
 
@@ -132,8 +170,15 @@ VoiceRelayMac/VoiceRelayMac/
 │   └── HotkeyMonitor.swift
 ├── TextInjection/
 │   └── TextInjector.swift
-└── Permissions/
-    └── PermissionsManager.swift
+├── Permissions/
+│   └── PermissionsManager.swift
+├── MenuBar/
+│   ├── MenuBarController.swift
+│   ├── MenuBarController+Delegates.swift
+│   ├── PairingWindow.swift
+│   ├── HotkeySettingsWindow.swift
+│   └── PermissionsWindow.swift
+└── VoiceRelayMacApp.swift (AppDelegate)
 ```
 
 ## 技术细节
