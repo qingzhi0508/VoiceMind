@@ -2,12 +2,9 @@ import Foundation
 import Carbon
 import Cocoa
 
-enum TextInjectionError: Error {
-    case accessibilityPermissionDenied
-    case injectionFailed(String)
-}
+class CGEventTextInjector: TextInjectionProtocol {
+    var requiresAccessibilityPermission: Bool { true }
 
-class TextInjector {
     private let chunkSize = 500
     private let chunkDelay: TimeInterval = 0.01 // 10ms
 

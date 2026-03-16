@@ -1,47 +1,133 @@
 import SwiftUI
+import SharedCore
+import Network
 
 struct StatusWindow: View {
     @ObservedObject var controller: MenuBarController
+    @State private var localIPAddress: String = "获取中..."
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            headerCard
-            statusSection
-            permissionSection
-            if case .pairing(let code, let expiresAt) = controller.pairingState {
-                pairingCodeCard(code: code, expiresAt: expiresAt)
-            } else if case .unpaired = controller.pairingState {
-                quickStartCard
+        ScrollView {
+            VStack(spacing: 20) {
+                // Header with App Status
+                HeaderSection(
+                    pairingState: controller.pairingState,
+                    connectionState: controller.connectionState
+                )
+
+                // System Information
+                SystemInfoSection(
+                    localIP: localIPAddress,
+                    accessibilityStatus: controller.accessibilityStatus,
+                    inputMonitoringStatus: controller.inputMonitoringStatus
+                )
+
+                // Device Connection Status
+                DeviceConnectionSection(
+                    pairingState: controller.pairingState,
+                    connectionState: controller.connectionState
+                )
+
+                // Permissions Section
+                PermissionsSection(
+                    accessibilityStatus: controller.accessibilityStatus,
+                    inputMonitoringStatus: controller.inputMonitoringStatus,
+                    onRequestAccessibility: {
+                        controller.requestAccessibilityPermissionFromUI()
+                    },
+                    onRequestInputMonitoring: {
+                        controller.requestInputMonitoringPermissionFromUI()
+                    }
+                )
+
+                // Quick Start Guide (only show when unpaired)
+                if case .unpaired = controller.pairingState {
+                    QuickStartSection(
+                        onStartPairing: {
+                            controller.showPairingWindowFromUI()
+                        }
+                    )
+                }
+
+                // Action Buttons
+                ActionButtonsSection(
+                    pairingState: controller.pairingState,
+                    onStartPairing: {
+                        controller.showPairingWindowFromUI()
+                    },
+                    onOpenSettings: {
+                        controller.openHotkeySettingsFromUI()
+                    },
+                    onOpenPermissions: {
+                        controller.openPermissionsFromUI()
+                    },
+                    onUnpair: {
+                        controller.unpairDeviceFromUI()
+                    }
+                )
             }
-            actionSection
-            Spacer()
+            .padding()
         }
-        .padding(24)
-        .frame(minWidth: 460, minHeight: 540)
-        .background(
-            LinearGradient(
-                colors: [Color(nsColor: .windowBackgroundColor), Color.blue.opacity(0.06)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
+        .frame(width: 480, height: 560)
+        .onAppear {
+            fetchLocalIPAddress()
+            // Refresh every 5 seconds
+            Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+                fetchLocalIPAddress()
+                controller.refreshPublishedState()
+            }
+        }
     }
 
-    private var headerCard: some View {
-        HStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(statusColor.opacity(0.16))
-                    .frame(width: 64, height: 64)
+    private func fetchLocalIPAddress() {
+        localIPAddress = getLocalIPAddress() ?? "未获取到"
+    }
 
-                Image(systemName: statusIcon)
-                    .font(.system(size: 30, weight: .semibold))
-                    .foregroundColor(statusColor)
+    private func getLocalIPAddress() -> String? {
+        var address: String?
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+
+        guard getifaddrs(&ifaddr) == 0 else { return nil }
+        defer { freeifaddrs(ifaddr) }
+
+        var ptr = ifaddr
+        while ptr != nil {
+            defer { ptr = ptr?.pointee.ifa_next }
+
+            guard let interface = ptr?.pointee else { continue }
+            let addrFamily = interface.ifa_addr.pointee.sa_family
+
+            if addrFamily == UInt8(AF_INET) {
+                let name = String(cString: interface.ifa_name)
+                if name == "en0" || name == "en1" { // WiFi or Ethernet
+                    var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                    getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
+                               &hostname, socklen_t(hostname.count),
+                               nil, socklen_t(0), NI_NUMERICHOST)
+                    address = String(cString: hostname)
+                }
             }
+        }
+        return address
+    }
+}
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("VoiceMind 控制台")
-                    .font(.system(size: 26, weight: .bold))
+// MARK: - Header Section
+
+struct HeaderSection: View {
+    let pairingState: PairingState
+    let connectionState: ConnectionState
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: statusIcon)
+                .font(.system(size: 48))
+                .foregroundColor(statusColor)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("VoiceMind")
+                    .font(.title)
+                    .fontWeight(.bold)
 
                 Text(statusText)
                     .font(.subheadline)
@@ -50,240 +136,189 @@ struct StatusWindow: View {
 
             Spacer()
         }
-        .padding(20)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-    }
-
-    private var statusSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("当前状态")
-                .font(.headline)
-
-            StatusRow(
-                icon: "iphone.gen3",
-                title: "配对状态",
-                value: pairingStatusText,
-                color: pairingStatusColor
-            )
-
-            StatusRow(
-                icon: "wifi",
-                title: "连接状态",
-                value: connectionStatusText,
-                color: connectionStatusColor
-            )
-
-            StatusRow(
-                icon: "keyboard",
-                title: "快捷键",
-                value: "Option + Space",
-                color: .blue
-            )
-        }
-        .padding(20)
-        .background(Color.gray.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-
-    private var quickStartCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("快速开始")
-                .font(.headline)
-
-            GuideStep(number: 1, text: "打开 iPhone 端 VoiceMind。")
-            GuideStep(number: 2, text: "点击下方“开始配对”获取配对码。")
-            GuideStep(number: 3, text: "在 iPhone 上输入配对码完成连接。")
-            GuideStep(number: 4, text: "配对完成后按住 Option + Space 开始语音输入。")
-        }
-        .padding(20)
-        .background(Color.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-
-    private var permissionSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("系统权限")
-                .font(.headline)
-
-            PermissionStatusRow(
-                title: "辅助功能",
-                description: "负责文本注入和部分系统交互。",
-                status: controller.accessibilityStatus,
-                onRequest: controller.requestAccessibilityPermissionFromUI
-            )
-
-            PermissionStatusRow(
-                title: "输入监控",
-                description: "负责全局监听快捷键。",
-                status: controller.inputMonitoringStatus,
-                onRequest: controller.requestInputMonitoringPermissionFromUI
-            )
-        }
-        .padding(20)
-        .background(Color.gray.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-
-    private func pairingCodeCard(code: String, expiresAt: Date) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("正在配对")
-                .font(.headline)
-
-            Text(code)
-                .font(.system(size: 34, weight: .bold, design: .rounded))
-                .tracking(4)
-
-            Text("请在 iPhone 上输入该配对码，\(expiresText(for: expiresAt))")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-        }
-        .padding(20)
-        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-
-    private var actionSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("操作")
-                .font(.headline)
-
-            HStack(spacing: 12) {
-                if case .unpaired = controller.pairingState {
-                    actionButton(
-                        title: "开始配对",
-                        icon: "link.badge.plus",
-                        prominence: true,
-                        action: controller.showPairingWindowFromUI
-                    )
-                }
-
-                actionButton(
-                    title: "权限设置",
-                    icon: "lock.shield",
-                    prominence: false,
-                    action: controller.openPermissionsFromUI
-                )
-
-                actionButton(
-                    title: "快捷键设置",
-                    icon: "keyboard",
-                    prominence: false,
-                    action: controller.openHotkeySettingsFromUI
-                )
-            }
-
-            if case .paired = controller.pairingState {
-                Button("解除配对", action: controller.unpairDeviceFromUI)
-                    .buttonStyle(.link)
-                    .foregroundColor(.red)
-            }
-        }
-    }
-
-    private func actionButton(title: String, icon: String, prominence: Bool, action: @escaping () -> Void) -> some View {
-        Group {
-            if prominence {
-                Button(action: action) {
-                    Label(title, systemImage: icon)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                }
-                .buttonStyle(.borderedProminent)
-            } else {
-                Button(action: action) {
-                    Label(title, systemImage: icon)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                }
-                .buttonStyle(.bordered)
-            }
-        }
-        .controlSize(.large)
-    }
-
-    private func expiresText(for date: Date) -> String {
-        let remaining = max(Int(date.timeIntervalSinceNow), 0)
-        return remaining > 0 ? "约 \(remaining) 秒后失效" : "已失效"
+        .padding()
+        .background(statusColor.opacity(0.1))
+        .cornerRadius(12)
     }
 
     private var statusIcon: String {
-        switch (controller.pairingState, controller.connectionState) {
+        switch (pairingState, connectionState) {
         case (.paired, .connected):
             return "checkmark.circle.fill"
-        case (.paired, .connecting), (.pairing, _):
-            return "arrow.triangle.2.circlepath.circle.fill"
+        case (.paired, .connecting):
+            return "arrow.triangle.2.circlepath"
         case (.paired, .disconnected):
-            return "wifi.exclamationmark"
-        case (.paired, .error):
-            return "xmark.octagon.fill"
+            return "exclamationmark.triangle.fill"
+        case (.pairing, _):
+            return "arrow.triangle.2.circlepath"
         case (.unpaired, _):
             return "link.circle"
+        default:
+            return "questionmark.circle"
         }
     }
 
     private var statusColor: Color {
-        switch (controller.pairingState, controller.connectionState) {
+        switch (pairingState, connectionState) {
         case (.paired, .connected):
             return .green
-        case (.paired, .connecting), (.pairing, _):
+        case (.paired, .connecting):
             return .orange
-        case (.paired, .disconnected), (.paired, .error):
+        case (.paired, .disconnected):
             return .red
+        case (.pairing, _):
+            return .blue
         case (.unpaired, _):
+            return .gray
+        default:
             return .gray
         }
     }
 
     private var statusText: String {
-        switch (controller.pairingState, controller.connectionState) {
+        switch (pairingState, connectionState) {
         case (.paired, .connected):
-            return "Mac 与 iPhone 已连接，可以开始语音输入。"
+            return "已连接 - 可以使用语音输入"
         case (.paired, .connecting):
-            return "已完成配对，正在尝试建立连接。"
+            return "正在连接到 iPhone..."
         case (.paired, .disconnected):
-            return "已配对，但当前没有可用连接。"
-        case (.paired, .error(let error)):
-            return "连接异常：\(error.localizedDescription)"
+            return "已配对但未连接"
         case (.pairing, _):
-            return "等待 iPhone 输入配对码。"
+            return "正在配对..."
         case (.unpaired, _):
-            return "还没有配对，请先连接你的 iPhone。"
+            return "未配对 - 请先与 iPhone 配对"
+        default:
+            return "未知状态"
         }
+    }
+}
+
+// MARK: - System Info Section
+
+struct SystemInfoSection: View {
+    let localIP: String
+    let accessibilityStatus: PermissionStatus
+    let inputMonitoringStatus: PermissionStatus
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("系统信息")
+                .font(.headline)
+
+            VStack(spacing: 8) {
+                InfoRow(
+                    icon: "network",
+                    title: "本机 IP 地址",
+                    value: localIP,
+                    color: .blue
+                )
+
+                InfoRow(
+                    icon: "keyboard",
+                    title: "默认快捷键",
+                    value: "Option + Space",
+                    color: .purple
+                )
+
+                InfoRow(
+                    icon: "lock.shield",
+                    title: "辅助功能权限",
+                    value: accessibilityStatus.displayText,
+                    color: accessibilityStatus.color
+                )
+
+                InfoRow(
+                    icon: "eye",
+                    title: "输入监控权限",
+                    value: inputMonitoringStatus.displayText,
+                    color: inputMonitoringStatus.color
+                )
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.05))
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Device Connection Section
+
+struct DeviceConnectionSection: View {
+    let pairingState: PairingState
+    let connectionState: ConnectionState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("设备连接")
+                .font(.headline)
+
+            VStack(spacing: 8) {
+                InfoRow(
+                    icon: "iphone",
+                    title: "配对状态",
+                    value: pairingStatusText,
+                    color: pairingStatusColor
+                )
+
+                if case .paired(_, let deviceName) = pairingState {
+                    InfoRow(
+                        icon: "person.circle",
+                        title: "设备名称",
+                        value: deviceName,
+                        color: .blue
+                    )
+                }
+
+                InfoRow(
+                    icon: "wifi",
+                    title: "连接状态",
+                    value: connectionStatusText,
+                    color: connectionStatusColor
+                )
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.05))
+        .cornerRadius(12)
     }
 
     private var pairingStatusText: String {
-        switch controller.pairingState {
+        switch pairingState {
         case .unpaired:
             return "未配对"
         case .pairing:
-            return "等待输入配对码"
-        case .paired(_, let deviceName):
-            return "已配对：\(deviceName)"
+            return "配对中..."
+        case .paired:
+            return "已配对"
         }
     }
 
     private var pairingStatusColor: Color {
-        switch controller.pairingState {
+        switch pairingState {
         case .unpaired:
             return .gray
         case .pairing:
-            return .orange
+            return .blue
         case .paired:
             return .green
         }
     }
 
     private var connectionStatusText: String {
-        switch controller.connectionState {
+        switch connectionState {
         case .disconnected:
             return "未连接"
         case .connecting:
-            return "连接中"
+            return "连接中..."
         case .connected:
             return "已连接"
         case .error(let error):
-            return "错误：\(error.localizedDescription)"
+            return "错误: \(error.localizedDescription)"
         }
     }
 
     private var connectionStatusColor: Color {
-        switch controller.connectionState {
+        switch connectionState {
         case .disconnected:
             return .gray
         case .connecting:
@@ -296,7 +331,197 @@ struct StatusWindow: View {
     }
 }
 
-struct StatusRow: View {
+// MARK: - Permissions Section
+
+struct PermissionsSection: View {
+    let accessibilityStatus: PermissionStatus
+    let inputMonitoringStatus: PermissionStatus
+    let onRequestAccessibility: () -> Void
+    let onRequestInputMonitoring: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("权限管理")
+                .font(.headline)
+
+            if accessibilityStatus != .granted || inputMonitoringStatus != .granted {
+                VStack(spacing: 8) {
+                    if accessibilityStatus != .granted {
+                        PermissionRequestRow(
+                            icon: "lock.shield",
+                            title: "辅助功能权限",
+                            description: "用于全局快捷键和文本注入",
+                            status: accessibilityStatus,
+                            onRequest: onRequestAccessibility
+                        )
+                    }
+
+                    if inputMonitoringStatus != .granted {
+                        PermissionRequestRow(
+                            icon: "eye",
+                            title: "输入监控权限",
+                            description: "用于监听快捷键",
+                            status: inputMonitoringStatus,
+                            onRequest: onRequestInputMonitoring
+                        )
+                    }
+                }
+            } else {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                    Text("所有权限已授予")
+                        .foregroundColor(.secondary)
+                }
+                .padding(.vertical, 4)
+            }
+        }
+        .padding()
+        .background(Color.orange.opacity(accessibilityStatus != .granted || inputMonitoringStatus != .granted ? 0.1 : 0.05))
+        .cornerRadius(12)
+    }
+}
+
+struct PermissionRequestRow: View {
+    let icon: String
+    let title: String
+    let description: String
+    let status: PermissionStatus
+    let onRequest: () -> Void
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Image(systemName: icon)
+                        .foregroundColor(.orange)
+                    Text(title)
+                        .fontWeight(.medium)
+                }
+                Text(description)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            Button("授权") {
+                onRequest()
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Quick Start Section
+
+struct QuickStartSection: View {
+    let onStartPairing: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("快速开始")
+                .font(.headline)
+
+            VStack(alignment: .leading, spacing: 8) {
+                GuideStep(number: 1, text: "在 iPhone 上打开 VoiceMind 应用")
+                GuideStep(number: 2, text: "点击下方\"开始配对\"按钮")
+                GuideStep(number: 3, text: "在 iPhone 上输入配对码")
+                GuideStep(number: 4, text: "配对成功后，按住 Option+Space 开始语音输入")
+            }
+        }
+        .padding()
+        .background(Color.blue.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+struct GuideStep: View {
+    let number: Int
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(number)")
+                .font(.caption)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+                .frame(width: 24, height: 24)
+                .background(Color.blue)
+                .clipShape(Circle())
+
+            Text(text)
+                .font(.subheadline)
+
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Action Buttons Section
+
+struct ActionButtonsSection: View {
+    let pairingState: PairingState
+    let onStartPairing: () -> Void
+    let onOpenSettings: () -> Void
+    let onOpenPermissions: () -> Void
+    let onUnpair: () -> Void
+
+    var body: some View {
+        VStack(spacing: 12) {
+            if case .unpaired = pairingState {
+                Button(action: onStartPairing) {
+                    HStack {
+                        Image(systemName: "link")
+                        Text("开始配对")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+            }
+
+            HStack(spacing: 12) {
+                Button(action: onOpenSettings) {
+                    HStack {
+                        Image(systemName: "keyboard")
+                        Text("快捷键")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                Button(action: onOpenPermissions) {
+                    HStack {
+                        Image(systemName: "lock.shield")
+                        Text("权限")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                if case .paired = pairingState {
+                    Button(action: onUnpair) {
+                        HStack {
+                            Image(systemName: "link.badge.minus")
+                            Text("解除配对")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .foregroundColor(.red)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Supporting Views
+
+struct InfoRow: View {
     let icon: String
     let title: String
     let value: String
@@ -317,82 +542,10 @@ struct StatusRow: View {
                 .fontWeight(.medium)
                 .foregroundColor(color)
         }
+        .padding(.vertical, 2)
     }
 }
 
-struct GuideStep: View {
-    let number: Int
-    let text: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text("\(number)")
-                .font(.caption)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-                .frame(width: 22, height: 22)
-                .background(Color.blue, in: Circle())
-
-            Text(text)
-                .font(.subheadline)
-
-            Spacer()
-        }
-    }
-}
-
-struct PermissionStatusRow: View {
-    let title: String
-    let description: String
-    let status: PermissionStatus
-    let onRequest: () -> Void
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-
-                Text(description)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-
-            Spacer()
-
-            Text(statusText)
-                .font(.caption.weight(.medium))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(statusColor.opacity(0.14), in: Capsule())
-                .foregroundColor(statusColor)
-
-            if status != .granted {
-                Button("去授权", action: onRequest)
-                    .buttonStyle(.bordered)
-            }
-        }
-    }
-
-    private var statusText: String {
-        switch status {
-        case .granted:
-            return "已授权"
-        case .denied:
-            return "已拒绝"
-        case .notDetermined:
-            return "未决定"
-        }
-    }
-
-    private var statusColor: Color {
-        switch status {
-        case .granted:
-            return .green
-        case .denied:
-            return .red
-        case .notDetermined:
-            return .orange
-        }
-    }
+#Preview {
+    StatusWindow(controller: MenuBarController())
 }

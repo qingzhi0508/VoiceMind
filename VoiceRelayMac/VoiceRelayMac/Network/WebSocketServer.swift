@@ -24,8 +24,15 @@ class WebSocketServer {
             do {
                 let parameters = NWParameters.tcp
                 parameters.allowLocalEndpointReuse = true
+                parameters.includePeerToPeer = true // Enable Bonjour
 
                 let listener = try NWListener(using: parameters, on: NWEndpoint.Port(integerLiteral: port))
+
+                // Configure Bonjour service
+                listener.service = NWListener.Service(
+                    name: Host.current().localizedName ?? "VoiceRelay Mac",
+                    type: "_voicerelay._tcp"
+                )
 
                 listener.stateUpdateHandler = { [weak self] newState in
                     self?.handleListenerState(newState)
@@ -39,7 +46,8 @@ class WebSocketServer {
                 self.listener = listener
                 self.port = port
                 self.state = .connecting
-                print("WebSocket server started on port \(port)")
+                print("✅ WebSocket server started on port \(port)")
+                print("✅ Bonjour service: _voicerelay._tcp")
                 return
             } catch {
                 continue

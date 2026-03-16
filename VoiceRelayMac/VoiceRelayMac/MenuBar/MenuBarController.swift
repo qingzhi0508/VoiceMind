@@ -7,12 +7,14 @@ class MenuBarController: NSObject, ObservableObject {
     var statusItem: NSStatusItem!
     let connectionManager = ConnectionManager()
     let hotkeyMonitor: HotkeyMonitor
-    let textInjector = TextInjector()
+    var textInjector: TextInjectionProtocol!
+    let settings = AppSettings.shared
 
     @Published var pairingState: PairingState
     @Published var connectionState: ConnectionState
     @Published var accessibilityStatus: PermissionStatus
     @Published var inputMonitoringStatus: PermissionStatus
+    @Published var isServiceRunning = false
 
     var currentSessionId: String?
     var sessionTimer: Timer?
@@ -21,6 +23,9 @@ class MenuBarController: NSObject, ObservableObject {
     var permissionsWindow: NSWindow?
     var hotkeySettingsWindow: NSWindow?
     var statusWindow: NSWindow?
+    var onboardingWindow: NSWindow?
+
+    private var cancellables = Set<AnyCancellable>()
 
     override init() {
         self.hotkeyMonitor = HotkeyMonitor()
@@ -30,10 +35,28 @@ class MenuBarController: NSObject, ObservableObject {
         self.inputMonitoringStatus = PermissionsManager.checkInputMonitoring()
         super.init()
 
+        // Initialize text injector based on settings
+        updateTextInjector()
+
+        // Observe settings changes
+        settings.$textInjectionMethod.sink { [weak self] _ in
+            self?.updateTextInjector()
+        }.store(in: &cancellables)
+
         setupStatusItem()
         setupConnectionManager()
-        setupHotkeyMonitor()
-        startServices()
+        // Don't start services automatically
+        // User will start them manually from the UI
+    }
+
+    private func updateTextInjector() {
+        switch settings.textInjectionMethod {
+        case .clipboard:
+            textInjector = ClipboardTextInjector()
+        case .cgEvent:
+            textInjector = CGEventTextInjector()
+        }
+        print("📝 文本注入方式已切换到: \(settings.textInjectionMethod.displayName)")
     }
 
     private func setupStatusItem() {
@@ -85,12 +108,30 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func startServices() {
+        guard !isServiceRunning else { return }
+
         do {
             try connectionManager.start()
+            isServiceRunning = true
+            print("✅ 服务已启动")
         } catch {
-            print("Failed to start connection manager: \(error)")
+            print("❌ 启动服务失败: \(error)")
             showError("启动服务失败: \(error.localizedDescription)")
         }
+    }
+
+    func startNetworkServices() {
+        setupHotkeyMonitor()
+        startServices()
+    }
+
+    func stopNetworkServices() {
+        guard isServiceRunning else { return }
+
+        connectionManager.stop()
+        hotkeyMonitor.stop()
+        isServiceRunning = false
+        print("🛑 服务已停止")
     }
 
     @objc private func startPairing() {
@@ -101,14 +142,14 @@ class MenuBarController: NSObject, ObservableObject {
     @objc private func showStatus() {
         if statusWindow == nil {
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 450, height: 500),
+                contentRect: NSRect(x: 0, y: 0, width: 500, height: 600),
                 styleMask: [.titled, .closable, .miniaturizable, .resizable],
                 backing: .buffered,
                 defer: false
             )
             window.title = "VoiceMind"
-            window.setContentSize(NSSize(width: 480, height: 560))
-            window.contentView = NSHostingView(rootView: StatusWindow(controller: self))
+            window.setContentSize(NSSize(width: 500, height: 600))
+            window.contentView = NSHostingView(rootView: MainWindow(controller: self))
             window.center()
             window.isReleasedWhenClosed = false
             statusWindow = window
@@ -120,6 +161,31 @@ class MenuBarController: NSObject, ObservableObject {
 
     func showMainWindow() {
         showStatus()
+    }
+
+    func showOnboarding() {
+        if onboardingWindow == nil {
+            let contentView = OnboardingFlowView(controller: self)
+
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 600, height: 500),
+                styleMask: [.titled, .closable],
+                backing: .buffered,
+                defer: false
+            )
+            window.title = "欢迎使用 VoiceMind"
+            window.contentView = NSHostingView(rootView: contentView)
+            window.center()
+            window.isReleasedWhenClosed = false
+            onboardingWindow = window
+        }
+
+        onboardingWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func showHotkeySettings() {
+        openHotkeySettings()
     }
 
     func requestAccessibilityPermissionFromUI() {

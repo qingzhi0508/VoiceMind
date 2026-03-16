@@ -34,14 +34,83 @@ class PermissionsManager {
     }
 
     static func requestAccessibility() {
+        // First check current status
+        let currentStatus = checkAccessibility()
+
+        if currentStatus == .granted {
+            print("✅ 辅助功能权限已授予")
+            return
+        }
+
+        print("🔐 请求辅助功能权限...")
+
+        // Request with prompt
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-        _ = AXIsProcessTrustedWithOptions(options)
+        let trusted = AXIsProcessTrustedWithOptions(options)
+
+        if !trusted {
+            // Show alert to guide user
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                let alert = NSAlert()
+                alert.messageText = "需要辅助功能权限"
+                alert.informativeText = """
+                VoiceMind 需要辅助功能权限来：
+                • 监听全局快捷键（Option+Space）
+                • 将语音识别结果注入到当前应用
+
+                请在打开的系统设置中：
+                1. 找到"辅助功能"
+                2. 找到并勾选"VoiceRelayMac"
+                3. 如果看不到应用，请点击"+"手动添加
+                """
+                alert.addButton(withTitle: "打开系统设置")
+                alert.addButton(withTitle: "稍后设置")
+                alert.alertStyle = .informational
+
+                if alert.runModal() == .alertFirstButtonReturn {
+                    openSystemPreferences(for: .accessibility)
+                }
+            }
+        }
     }
 
     static func requestInputMonitoring() {
+        // First check current status
+        let currentStatus = checkInputMonitoring()
+
+        if currentStatus == .granted {
+            print("✅ 输入监控权限已授予")
+            return
+        }
+
+        print("🔐 请求输入监控权限...")
+
+        // Request access
         let granted = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
-        if granted == false {
-            openSystemPreferences(for: .inputMonitoring)
+
+        if !granted {
+            // Show alert to guide user
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                let alert = NSAlert()
+                alert.messageText = "需要输入监控权限"
+                alert.informativeText = """
+                VoiceMind 需要输入监控权限来检测快捷键按下事件。
+
+                请在打开的系统设置中：
+                1. 找到"输入监控"
+                2. 找到并勾选"VoiceRelayMac"
+                3. 如果看不到应用，请点击"+"手动添加
+
+                注意：授予权限后需要重启应用才能生效。
+                """
+                alert.addButton(withTitle: "打开系统设置")
+                alert.addButton(withTitle: "稍后设置")
+                alert.alertStyle = .informational
+
+                if alert.runModal() == .alertFirstButtonReturn {
+                    openSystemPreferences(for: .inputMonitoring)
+                }
+            }
         }
     }
 

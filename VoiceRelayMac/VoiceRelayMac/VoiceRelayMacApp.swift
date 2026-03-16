@@ -1,32 +1,39 @@
-import Cocoa
+import SwiftUI
 
 @main
+struct VoiceRelayMacApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
+    var body: some Scene {
+        WindowGroup {
+            MainWindow(controller: appDelegate.controller)
+        }
+        .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("关于 VoiceMind") {
+                    // Show about window
+                }
+            }
+        }
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
-    private var menuBarController: MenuBarController!
+    let controller = MenuBarController()
 
-    func applicationDidFinishLaunching(_ aNotification: Notification) {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // Set activation policy to show in Dock
         NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
 
-        menuBarController = MenuBarController()
-        menuBarController.showMainWindow()
-
-        let accessibilityStatus = PermissionsManager.checkAccessibility()
-        if accessibilityStatus != .granted {
-            PermissionsManager.requestAccessibility()
+        // Show onboarding on first launch
+        if !AppSettings.shared.hasLaunchedBefore {
+            AppSettings.shared.hasLaunchedBefore = true
+            controller.showOnboarding()
         }
-
-        let inputMonitoringStatus = PermissionsManager.checkInputMonitoring()
-        if inputMonitoringStatus != .granted {
-            PermissionsManager.requestInputMonitoring()
-        }
-
-        menuBarController.refreshPermissionState()
     }
 
-    func applicationWillTerminate(_ aNotification: Notification) {}
-
-    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
-        return true
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        // Don't quit when main window closes - keep running in menu bar
+        return false
     }
 }

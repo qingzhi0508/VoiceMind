@@ -12,7 +12,6 @@ class ConnectionManager: NSObject {
     weak var delegate: ConnectionManagerDelegate?
 
     private let server = WebSocketServer()
-    private var bonjourPublisher: BonjourPublisher?
     var hmacValidator: HMACValidator?
 
     private let keychainService = "com.voicerelay.mac"
@@ -36,15 +35,14 @@ class ConnectionManager: NSObject {
     }
 
     func start() throws {
+        // WebSocketServer now handles both TCP server and Bonjour advertising
         try server.start()
-        let publisher = BonjourPublisher(port: server.port)
-        try publisher.start()
-        bonjourPublisher = publisher
+        print("✅ Connection manager started on port \(server.port)")
     }
 
     func stop() {
         server.stop()
-        bonjourPublisher?.stop()
+        print("🛑 Connection manager stopped")
     }
 
     func startPairing() -> String {
