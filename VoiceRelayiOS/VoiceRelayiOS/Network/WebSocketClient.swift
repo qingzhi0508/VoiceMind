@@ -30,6 +30,7 @@ class WebSocketClient {
     private var port: UInt16?
 
     func connect(to host: String, port: UInt16) {
+        print("🔗 开始连接到 \(host):\(port)")
         self.host = host
         self.port = port
 
@@ -43,6 +44,7 @@ class WebSocketClient {
         connection.start(queue: .main)
         self.connection = connection
         state = .connecting
+        print("🔄 连接状态: connecting")
     }
 
     func disconnect() {
@@ -54,7 +56,7 @@ class WebSocketClient {
 
     func send(_ envelope: MessageEnvelope) {
         guard let connection = connection, connection.state == .ready else {
-            print("Cannot send message: not connected")
+            print("❌ 无法发送消息: 未连接")
             return
         }
 
@@ -62,37 +64,46 @@ class WebSocketClient {
             let data = try JSONEncoder().encode(envelope)
             let lengthData = withUnsafeBytes(of: UInt32(data.count).bigEndian) { Data($0) }
 
+            print("📤 发送消息: type=\(envelope.type), size=\(data.count) 字节")
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("   内容: \(jsonString)")
+            }
+
             connection.send(content: lengthData + data, completion: .contentProcessed { error in
                 if let error = error {
-                    print("Failed to send message: \(error)")
+                    print("❌ 发送消息失败: \(error)")
+                } else {
+                    print("✅ 消息发送成功")
                 }
             })
         } catch {
-            print("Failed to encode message: \(error)")
+            print("❌ 消息编码失败: \(error)")
         }
     }
 
     private func handleConnectionState(_ newState: NWConnection.State) {
+        print("📡 连接状态变化: \(newState)")
+
         switch newState {
         case .ready:
             state = .connected
             reconnectionManager.reset()
-            print("WebSocket connected")
+            print("✅ WebSocket 已连接")
             receiveMessage()
 
         case .waiting(let error):
-            print("WebSocket waiting: \(error)")
+            print("⏳ WebSocket 等待中: \(error)")
             state = .connecting
 
         case .failed(let error):
             state = .error(error)
-            print("WebSocket failed: \(error)")
+            print("❌ WebSocket 连接失败: \(error)")
             connection = nil
             attemptReconnect()
 
         case .cancelled:
             state = .disconnected
-            print("WebSocket cancelled")
+            print("🔌 WebSocket 已取消")
 
         default:
             break
@@ -104,30 +115,47 @@ class WebSocketClient {
 
         // First receive 4 bytes for length
         connection.receive(minimumIncompleteLength: 4, maximumLength: 4) { [weak self] data, _, isComplete, error in
-            guard let self = self, let data = data, data.count == 4 else {
-                if let error = error {
-                    print("Failed to receive length: \(error)")
+            guard let self = self else { return }
+
+            if let error = error {
+                print("❌ 接收长度失败: \(error)")
+                // 连接出错，停止接收
+                return
+            }
+
+            guard let data = data, data.count == 4 else {
+                if let data = data {
+                    print("⚠️ 接收到的长度数据不完整: \(data.count) 字节")
+                } else {
+                    print("⚠️ 接收到空数据，连接可能已关闭")
                 }
+                // 数据不完整，停止接收
                 return
             }
 
             let length = data.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
+            print("📦 收到消息长度: \(length) 字节")
+
+            // 验证长度是否合理（防止异常数据）
+            guard length > 0 && length < 10_000_000 else {
+                print("❌ 消息长度异常: \(length) 字节，停止接收")
+                return
+            }
 
             // Then receive the actual message
             connection.receive(minimumIncompleteLength: Int(length), maximumLength: Int(length)) { data, _, isComplete, error in
-                guard let data = data else {
-                    if let error = error {
-                        print("Failed to receive message: \(error)")
-                    }
+                if let error = error {
+                    print("❌ 接收消息失败: \(error)")
                     return
                 }
 
-                self.handleReceivedData(data)
-
-                // Continue receiving
-                if !isComplete {
-                    self.receiveMessage()
+                guard let data = data else {
+                    print("⚠️ 接收到的消息数据为空")
+                    return
                 }
+
+                print("📥 收到消息数据: \(data.count) 字节")
+                self.handleReceivedData(data)
             }
         }
     }
@@ -135,9 +163,13 @@ class WebSocketClient {
     private func handleReceivedData(_ data: Data) {
         do {
             let envelope = try JSONDecoder().decode(MessageEnvelope.self, from: data)
+            print("✅ 消息解码成功: type=\(envelope.type)")
             delegate?.client(self, didReceiveMessage: envelope)
         } catch {
-            print("Failed to decode message: \(error)")
+            print("❌ 消息解码失败: \(error)")
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("   原始数据: \(jsonString)")
+            }
         }
 
         // Continue receiving next message
@@ -145,8 +177,12 @@ class WebSocketClient {
     }
 
     private func attemptReconnect() {
-        guard let host = host, let port = port else { return }
+        guard let host = host, let port = port else {
+            print("⚠️ 无法重连: 缺少主机或端口信息")
+            return
+        }
 
+        print("🔄 计划重连到 \(host):\(port)")
         reconnectionManager.scheduleReconnect { [weak self] in
             self?.connect(to: host, port: port)
         }

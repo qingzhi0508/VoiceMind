@@ -9,7 +9,10 @@ struct ContentView: View {
                 // Connection Status Card
                 ConnectionStatusCard(
                     pairingState: viewModel.pairingState,
-                    connectionState: viewModel.connectionState
+                    connectionState: viewModel.connectionState,
+                    onReconnect: {
+                        viewModel.reconnect()
+                    }
                 )
 
                 // Recognition Status
@@ -43,6 +46,7 @@ struct ContentView: View {
 struct ConnectionStatusCard: View {
     let pairingState: PairingState
     let connectionState: ConnectionState
+    let onReconnect: () -> Void
 
     var body: some View {
         VStack(spacing: 10) {
@@ -55,11 +59,45 @@ struct ConnectionStatusCard: View {
                     .font(.headline)
 
                 Spacer()
+
+                // 显示重连按钮（仅在已配对但断开连接时）
+                if case .paired = pairingState,
+                   case .disconnected = connectionState {
+                    Button(action: onReconnect) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("重连")
+                        }
+                        .font(.caption)
+                        .fontWeight(.medium)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+
+                // 显示加载指示器（连接中）
+                if case .connecting = connectionState {
+                    ProgressView()
+                        .controlSize(.small)
+                }
             }
 
             if case .paired(_, let deviceName) = pairingState {
                 HStack {
                     Text("已配对: \(deviceName)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
+            }
+
+            // 显示错误信息
+            if case .error(let message) = connectionState {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                        .font(.caption)
+                    Text(message)
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Spacer()
@@ -77,8 +115,12 @@ struct ConnectionStatusCard: View {
             return .gray
         case (.paired, .connected):
             return .green
-        case (.paired, _):
-            return .yellow
+        case (.paired, .connecting):
+            return .orange
+        case (.paired, .disconnected):
+            return .red
+        case (.paired, .error):
+            return .red
         default:
             return .gray
         }
@@ -94,6 +136,8 @@ struct ConnectionStatusCard: View {
             return "连接中..."
         case (.paired, .disconnected):
             return "已断开"
+        case (.paired, .error):
+            return "连接错误"
         default:
             return "未知"
         }

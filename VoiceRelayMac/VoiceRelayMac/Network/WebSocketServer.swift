@@ -98,24 +98,32 @@ class WebSocketServer {
     }
 
     private func handleNewConnection(_ newConnection: NWConnection) {
-        // Reject if already connected
-        if connection != nil {
-            newConnection.cancel()
-            return
+        print("🔗 收到新连接请求")
+
+        // If already connected, close old connection and accept new one
+        if let oldConnection = connection {
+            print("⚠️ 已有活动连接，关闭旧连接并接受新连接")
+            oldConnection.cancel()
+            connection = nil
         }
 
         connection = newConnection
         state = .connected
+        print("✅ 接受新连接")
 
         newConnection.stateUpdateHandler = { [weak self] newState in
+            print("🔄 连接状态变化: \(newState)")
             switch newState {
             case .ready:
+                print("✅ 连接就绪，开始接收消息")
                 self?.state = .connected
                 self?.receiveMessage()
             case .failed(let error):
+                print("❌ 连接失败: \(error)")
                 self?.state = .error(error)
                 self?.connection = nil
             case .cancelled:
+                print("🔌 连接已取消")
                 self?.state = .disconnected
                 self?.connection = nil
             default:
@@ -124,37 +132,62 @@ class WebSocketServer {
         }
 
         newConnection.start(queue: .main)
+        print("🚀 启动连接")
     }
 
     private func receiveMessage() {
-        guard let connection = connection else { return }
+        guard let connection = connection else {
+            print("⚠️ 无法接收消息: 连接不存在")
+            return
+        }
 
         // First receive 4 bytes for length
         connection.receive(minimumIncompleteLength: 4, maximumLength: 4) { [weak self] data, _, isComplete, error in
-            guard let self = self, let data = data, data.count == 4 else {
-                if let error = error {
-                    print("Failed to receive length: \(error)")
+            guard let self = self else { return }
+
+            if let error = error {
+                print("❌ 接收长度失败: \(error)")
+                // 连接出错，停止接收
+                return
+            }
+
+            guard let data = data, data.count == 4 else {
+                if let data = data {
+                    print("⚠️ 接收到的长度数据不完整: \(data.count) 字节")
+                } else {
+                    print("⚠️ 接收到空数据，连接可能已关闭")
                 }
+                // 数据不完整，停止接收
                 return
             }
 
             let length = data.withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
+            print("📦 收到消息长度: \(length) 字节")
+
+            // 验证长度是否合理（防止异常数据）
+            guard length > 0 && length < 10_000_000 else {
+                print("❌ 消息长度异常: \(length) 字节，停止接收")
+                return
+            }
 
             // Then receive the actual message
             connection.receive(minimumIncompleteLength: Int(length), maximumLength: Int(length)) { data, _, isComplete, error in
-                guard let data = data else {
-                    if let error = error {
-                        print("Failed to receive message: \(error)")
-                    }
+                if let error = error {
+                    print("❌ 接收消息失败: \(error)")
                     return
                 }
 
-                self.handleReceivedData(data)
-
-                // Continue receiving
-                if !isComplete {
-                    self.receiveMessage()
+                guard let data = data else {
+                    print("⚠️ 接收到的消息数据为空")
+                    return
                 }
+
+                print("📥 收到消息数据: \(data.count) 字节")
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("📄 消息内容: \(jsonString)")
+                }
+
+                self.handleReceivedData(data)
             }
         }
     }
@@ -162,9 +195,15 @@ class WebSocketServer {
     private func handleReceivedData(_ data: Data) {
         do {
             let envelope = try JSONDecoder().decode(MessageEnvelope.self, from: data)
+            print("✅ 消息解码成功: type=\(envelope.type)")
             delegate?.server(self, didReceiveMessage: envelope)
         } catch {
-            print("Failed to decode message: \(error)")
+            print("❌ 消息解码失败: \(error)")
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("   原始数据: \(jsonString)")
+            } else {
+                print("   原始数据 (hex): \(data.map { String(format: "%02x", $0) }.joined())")
+            }
         }
 
         // Continue receiving next message

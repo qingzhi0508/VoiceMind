@@ -63,13 +63,18 @@ class BonjourBrowser {
 
     private func resolveService(_ result: NWBrowser.Result) {
         guard case .service(let name, _, _, _) = result.endpoint else {
+            print("⚠️ 无法解析服务端点")
             return
         }
+
+        print("🔍 开始解析服务: \(name)")
 
         // Create connection to resolve endpoint
         let connection = NWConnection(to: result.endpoint, using: .tcp)
 
         connection.stateUpdateHandler = { [weak self] state in
+            print("🔗 解析连接状态: \(state)")
+
             if case .ready = state {
                 if let endpoint = connection.currentPath?.remoteEndpoint,
                    case .hostPort(let host, let port) = endpoint {
@@ -78,9 +83,15 @@ class BonjourBrowser {
                         host: "\(host)",
                         port: port.rawValue
                     )
+                    print("✅ 服务解析成功: \(name) at \(host):\(port.rawValue)")
                     self?.discoveredServices[result.endpoint] = service
                     self?.delegate?.browser(self!, didFindService: service)
+                } else {
+                    print("❌ 无法获取服务端点信息")
                 }
+                connection.cancel()
+            } else if case .failed(let error) = state {
+                print("❌ 服务解析失败: \(error)")
                 connection.cancel()
             }
         }

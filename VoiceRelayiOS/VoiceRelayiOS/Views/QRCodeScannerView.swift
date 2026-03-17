@@ -12,7 +12,11 @@ struct QRCodeScannerView: View {
     @State private var pairingCode = ""
     @State private var connectionInfo: ConnectionInfo?
     @State private var isConnecting = false
+    @State private var isPairing = false
     @State private var errorMessage: String?
+    @State private var progressMessages: [String] = []
+    @State private var connectionTimeoutTask: DispatchWorkItem?
+    @State private var pairingTimeoutTask: DispatchWorkItem?
 
     var body: some View {
         NavigationView {
@@ -66,6 +70,10 @@ struct QRCodeScannerView: View {
                     }
                 }
 
+                if !progressMessages.isEmpty {
+                    PairingProgressView(title: "当前进度", steps: progressSteps)
+                }
+
                 Button("手动输入连接信息") {
                     showManualInput = true
                 }
@@ -89,9 +97,24 @@ struct QRCodeScannerView: View {
             .onDisappear {
                 scanner.stopScanning()
             }
-            .onChange(of: scanner.scannedCode) { newValue in
+            .onChange(of: scanner.scannedCode) { _, newValue in
                 if let code = newValue {
                     handleScannedCode(code)
+                }
+            }
+            .onChange(of: viewModel.connectionState) { _, newValue in
+                handleConnectionStateChange(newValue)
+            }
+            .onChange(of: viewModel.pairingState) { _, newValue in
+                handlePairingStateChange(newValue)
+            }
+            .onChange(of: viewModel.latestPairingFeedback) { _, newValue in
+                guard let newValue else { return }
+                appendProgress(newValue)
+                if newValue.contains("不正确") || newValue.contains("不在配对模式") || newValue.contains("失败") {
+                    isPairing = false
+                    pairingTimeoutTask?.cancel()
+                    errorMessage = newValue
                 }
             }
             .sheet(isPresented: $showManualInput) {
@@ -113,7 +136,86 @@ struct QRCodeScannerView: View {
         }
     }
 
+    private var progressSteps: [PairingStepItem] {
+        [
+            PairingStepItem(
+                id: "scan",
+                title: "扫描二维码",
+                detail: scanStepDetail,
+                state: scanStepState
+            ),
+            PairingStepItem(
+                id: "connect",
+                title: "建立连接",
+                detail: connectionStepDetail,
+                state: connectionStepState
+            ),
+            PairingStepItem(
+                id: "finish",
+                title: "完成绑定",
+                detail: finishStepDetail,
+                state: finishStepState
+            )
+        ]
+    }
+
+    private var scanStepState: PairingStepState {
+        if let errorMessage, errorMessage.contains("二维码") {
+            return .failed
+        }
+        return connectionInfo == nil ? .active : .completed
+    }
+
+    private var connectionStepState: PairingStepState {
+        if let errorMessage, errorMessage.contains("连接") {
+            return .failed
+        }
+        switch viewModel.connectionState {
+        case .connected:
+            return .completed
+        case .connecting:
+            return .active
+        case .error:
+            return .failed
+        case .disconnected:
+            return isConnecting ? .active : .pending
+        }
+    }
+
+    private var finishStepState: PairingStepState {
+        if let feedback = viewModel.latestPairingFeedback,
+           (feedback.contains("不正确") || feedback.contains("不在配对模式") || feedback.contains("失败")) {
+            return .failed
+        }
+        if case .paired = viewModel.pairingState {
+            return .completed
+        }
+        return isPairing ? .active : .pending
+    }
+
+    private var scanStepDetail: String {
+        if let message = progressMessages.first(where: { $0.contains("二维码") || $0.contains("扫码") || $0.contains("连接信息") }) {
+            return message
+        }
+        return "扫描 Mac 上展示的二维码，读取连接信息。"
+    }
+
+    private var connectionStepDetail: String {
+        if let message = progressMessages.last(where: { $0.contains("连接") }) {
+            return message
+        }
+        return "扫码成功后会自动连接到 Mac。"
+    }
+
+    private var finishStepDetail: String {
+        if let message = progressMessages.last(where: { $0.contains("配对") || $0.contains("绑定") || $0.contains("返回") || $0.contains("成功") }) {
+            return message
+        }
+        return "连接成功后输入配对码，等待 Mac 完成绑定。"
+    }
+
     private func startScanning() {
+        appendProgress("正在等待扫码，读取 Mac 的连接信息。")
         scanner.requestCameraPermission { granted in
             if granted {
                 _ = scanner.startScanning()
@@ -128,6 +230,7 @@ struct QRCodeScannerView: View {
 
         guard let info = ConnectionInfo.fromQRCodeString(code) else {
             errorMessage = "无效的二维码格式"
+            appendProgress("二维码解析失败，请重新扫描。")
             scanner.scannedCode = nil
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 errorMessage = nil
@@ -139,43 +242,96 @@ struct QRCodeScannerView: View {
         connectionInfo = info
         isConnecting = true
         errorMessage = nil
+        connectionTimeoutTask?.cancel()
+        viewModel.clearPairingFeedback()
+        progressMessages.removeAll()
+        appendProgress("二维码解析成功，已识别设备：\(info.deviceName)")
+        appendProgress("正在连接 \(info.ip):\(info.port)...")
 
         print("📡 连接到: \(info.ip):\(info.port)")
 
         // Connect to Mac
         viewModel.connectToMac(ip: info.ip, port: info.port)
 
-        // Wait for connection
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        let timeoutTask = DispatchWorkItem {
+            guard isConnecting else { return }
             isConnecting = false
-            if viewModel.connectionState == .connected {
-                print("✅ 连接成功，显示配对码输入")
-                showPairingCodeInput = true
-            } else {
-                print("❌ 连接失败")
-                errorMessage = "连接失败，请重试"
-                scanner.scannedCode = nil
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    errorMessage = nil
-                    startScanning()
-                }
+            errorMessage = "连接超时，请重新扫描二维码或稍后重试"
+            appendProgress("连接超时，请重新扫描二维码。")
+            scanner.scannedCode = nil
+            connectionInfo = nil
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                errorMessage = nil
+                startScanning()
             }
         }
+        connectionTimeoutTask = timeoutTask
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8, execute: timeoutTask)
     }
 
     private func pairWithCode(_ code: String) {
         print("🔐 使用配对码: \(code)")
+        isPairing = true
+        errorMessage = nil
+        pairingTimeoutTask?.cancel()
+        viewModel.clearPairingFeedback()
+        appendProgress("已提交 6 位配对码。")
+        appendProgress("正在等待 Mac 校验配对码并返回结果...")
         viewModel.pairWithCode(code)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            if case .paired = viewModel.pairingState {
-                print("✅ 配对成功")
-                dismiss()
-            } else {
-                print("❌ 配对失败")
-                errorMessage = "配对失败，请检查配对码"
-            }
+        let timeoutTask = DispatchWorkItem {
+            guard isPairing else { return }
+            isPairing = false
+            errorMessage = "配对超时，请确认 Mac 仍处于配对状态"
+            appendProgress("配对超时，请重新输入配对码。")
         }
+        pairingTimeoutTask = timeoutTask
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: timeoutTask)
+    }
+
+    private func handleConnectionStateChange(_ state: ConnectionState) {
+        switch state {
+        case .connecting:
+            appendProgress("正在建立连接...")
+        case .connected:
+            connectionTimeoutTask?.cancel()
+            isConnecting = false
+            appendProgress("连接已建立，请输入 Mac 上显示的 6 位配对码。")
+            if connectionInfo != nil, !showPairingCodeInput, !isPairing {
+                print("✅ 连接成功，显示配对码输入")
+                showPairingCodeInput = true
+            }
+        case .error(let message):
+            connectionTimeoutTask?.cancel()
+            isConnecting = false
+            appendProgress("连接失败：\(message)")
+            errorMessage = "连接失败：\(message)"
+            scanner.scannedCode = nil
+            connectionInfo = nil
+        case .disconnected:
+            if isConnecting || isPairing {
+                appendProgress("连接已断开。")
+            }
+            isConnecting = false
+        }
+    }
+
+    private func handlePairingStateChange(_ state: PairingState) {
+        switch state {
+        case .paired:
+            pairingTimeoutTask?.cancel()
+            isPairing = false
+            appendProgress("收到 Mac 的配对成功返回，设备已绑定。")
+            print("✅ 配对成功")
+            dismiss()
+        case .unpaired, .pairing:
+            break
+        }
+    }
+
+    private func appendProgress(_ message: String) {
+        guard progressMessages.last != message else { return }
+        progressMessages.append(message)
     }
 }
 
@@ -242,25 +398,11 @@ struct PairingCodeInputView: View {
                 }
                 .padding()
 
-                Button(action: {
-                    onPair(pairingCode)
-                    dismiss()
-                }) {
-                    Text("配对")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(pairingCode.count == 6 ? Color.blue : Color.gray)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-                .disabled(pairingCode.count != 6)
-                .padding(.horizontal)
-
                 Spacer()
             }
             .padding()
             .navigationBarTitleDisplayMode(.inline)
+            .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") {
@@ -269,9 +411,33 @@ struct PairingCodeInputView: View {
                     }
                 }
             }
+            .safeAreaInset(edge: .bottom) {
+                pairButtonBar
+            }
             .onAppear {
                 isPairingCodeFocused = true
             }
+        }
+    }
+
+    private var pairButtonBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            Button(action: {
+                onPair(pairingCode)
+                dismiss()
+            }) {
+                Text("配对")
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(pairingCode.count != 6)
+            .padding(.horizontal)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            .background(.regularMaterial)
         }
     }
 }

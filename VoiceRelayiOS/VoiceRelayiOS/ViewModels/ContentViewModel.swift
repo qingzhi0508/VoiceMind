@@ -10,6 +10,7 @@ class ContentViewModel: ObservableObject {
     @Published var discoveredServices: [DiscoveredService] = []
     @Published var selectedLanguage: String = "zh-CN"
     @Published var showPairingView = false
+    @Published var latestPairingFeedback: String?
 
     private let connectionManager = ConnectionManager()
     private let speechController = SpeechController()
@@ -35,6 +36,10 @@ class ContentViewModel: ObservableObject {
     }
 
     func pair(with service: DiscoveredService, code: String) {
+        print("📱 ContentViewModel.pair 被调用")
+        print("   服务: \(service.name) (\(service.host):\(service.port))")
+        print("   配对码: \(code)")
+        latestPairingFeedback = nil
         connectionManager.pair(with: service, code: code)
     }
 
@@ -44,12 +49,23 @@ class ContentViewModel: ObservableObject {
         connectionState = .disconnected
     }
 
+    func reconnect() {
+        print("🔄 手动重连")
+        reconnectToPairedDevice()
+    }
+
     func connectToMac(ip: String, port: UInt16) {
+        latestPairingFeedback = nil
         connectionManager.connectDirectly(ip: ip, port: port)
     }
 
     func pairWithCode(_ code: String) {
+        latestPairingFeedback = nil
         connectionManager.pairWithCode(code)
+    }
+
+    func clearPairingFeedback() {
+        latestPairingFeedback = nil
     }
 
     func updateLanguage(_ language: String) {
@@ -67,10 +83,19 @@ class ContentViewModel: ObservableObject {
 
     private func reconnectToPairedDevice() {
         // Find the paired device in discovered services
-        guard case .paired(let deviceId, _) = pairingState else { return }
+        guard case .paired(let deviceId, let deviceName) = pairingState else {
+            print("⚠️ 无法重连: 未配对")
+            return
+        }
+
+        print("🔍 查找已配对的设备: \(deviceName) (ID: \(deviceId))")
 
         if let service = discoveredServices.first(where: { $0.id.uuidString == deviceId }) {
+            print("✅ 找到设备，开始连接: \(service.host):\(service.port)")
             connectionManager.connect(to: service)
+        } else {
+            print("⚠️ 未找到已配对的设备，等待 Bonjour 发现...")
+            // 设备可能还没被发现，等待 Bonjour 发现后会自动连接
         }
     }
 }
@@ -81,6 +106,7 @@ extension ContentViewModel: ConnectionManagerDelegate {
             self.pairingState = state
 
             if case .paired = state {
+                self.latestPairingFeedback = "Mac 已确认配对，正在完成绑定。"
                 self.showPairingView = false
                 self.reconnectToPairedDevice()
             }
@@ -99,6 +125,8 @@ extension ContentViewModel: ConnectionManagerDelegate {
             handleStartListen(envelope)
         case .stopListen:
             handleStopListen(envelope)
+        case .error:
+            handlePairingError(envelope)
         default:
             break
         }
@@ -124,6 +152,28 @@ extension ContentViewModel: ConnectionManagerDelegate {
         }
 
         speechController.stopListening()
+    }
+
+    private func handlePairingError(_ envelope: MessageEnvelope) {
+        guard let payload = try? JSONDecoder().decode(ErrorPayload.self, from: envelope.payload) else {
+            return
+        }
+
+        let message: String
+        switch payload.code {
+        case "invalid_code":
+            message = "Mac 返回：配对码不正确。"
+        case "not_pairing":
+            message = "Mac 返回：当前不在配对模式。"
+        case "pairing_failed":
+            message = "Mac 返回：保存配对信息失败。"
+        default:
+            message = "Mac 返回：\(payload.message)"
+        }
+
+        DispatchQueue.main.async {
+            self.latestPairingFeedback = message
+        }
     }
 }
 

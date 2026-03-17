@@ -152,6 +152,7 @@ class MenuBarController: NSObject, ObservableObject {
             window.contentView = NSHostingView(rootView: MainWindow(controller: self))
             window.center()
             window.isReleasedWhenClosed = false
+            window.delegate = self
             statusWindow = window
         }
 
@@ -177,6 +178,7 @@ class MenuBarController: NSObject, ObservableObject {
             window.contentView = NSHostingView(rootView: contentView)
             window.center()
             window.isReleasedWhenClosed = false
+            window.delegate = self
             onboardingWindow = window
         }
 
@@ -241,6 +243,7 @@ class MenuBarController: NSObject, ObservableObject {
             window.title = "热键设置"
             window.contentView = NSHostingView(rootView: contentView)
             window.center()
+            window.delegate = self
             hotkeySettingsWindow = window
         }
 
@@ -261,6 +264,7 @@ class MenuBarController: NSObject, ObservableObject {
             window.title = "权限设置"
             window.contentView = NSHostingView(rootView: contentView)
             window.center()
+            window.delegate = self
             permissionsWindow = window
         }
 
@@ -286,6 +290,12 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func showPairingWindow(code: String) {
+        // Close existing pairing window if any
+        if let existingWindow = pairingWindow {
+            existingWindow.close()
+            pairingWindow = nil
+        }
+
         // Get local IP address
         guard let ipAddress = getLocalIPAddress() else {
             showError("无法获取本地 IP 地址")
@@ -318,6 +328,8 @@ class MenuBarController: NSObject, ObservableObject {
         window.title = "扫码配对"
         window.contentView = NSHostingView(rootView: contentView)
         window.center()
+        window.isReleasedWhenClosed = false
+        window.delegate = self
 
         pairingWindow = window
         window.makeKeyAndOrderFront(nil)
@@ -452,5 +464,24 @@ class MenuBarController: NSObject, ObservableObject {
         pairingState = connectionManager.pairingState
         connectionState = connectionManager.connectionState
         refreshPermissionState()
+    }
+}
+
+// MARK: - NSWindowDelegate
+extension MenuBarController: NSWindowDelegate {
+    func windowWillClose(_ notification: Notification) {
+        if let window = notification.object as? NSWindow {
+            if window === pairingWindow {
+                pairingWindow = nil
+            } else if window === permissionsWindow {
+                permissionsWindow = nil
+            } else if window === hotkeySettingsWindow {
+                hotkeySettingsWindow = nil
+            } else if window === statusWindow {
+                statusWindow = nil
+            } else if window === onboardingWindow {
+                onboardingWindow = nil
+            }
+        }
     }
 }

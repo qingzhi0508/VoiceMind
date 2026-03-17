@@ -9,8 +9,12 @@ struct ManualConnectionView: View {
     @State private var port = ""
     @State private var pairingCode = ""
     @State private var isConnecting = false
+    @State private var isPairing = false
     @State private var isConnected = false
     @State private var errorMessage: String?
+    @State private var connectionTimeoutTask: DispatchWorkItem?
+    @State private var pairingTimeoutTask: DispatchWorkItem?
+    @State private var progressMessages: [String] = []
     @FocusState private var focusedField: Field?
 
     private enum Field {
@@ -64,19 +68,10 @@ struct ManualConnectionView: View {
                         }
                     }
 
-                    Section {
-                        Button(action: connect) {
-                            if isConnecting {
-                                HStack {
-                                    ProgressView()
-                                    Text("连接中...")
-                                }
-                            } else {
-                                Text("连接")
-                            }
-                        }
-                        .disabled(ipAddress.isEmpty || port.isEmpty || isConnecting)
+                    if !progressMessages.isEmpty {
+                        PairingProgressView(title: "当前进度", steps: progressSteps)
                     }
+
                 } else {
                     // Step 2: Pairing Code
                     Section(header: Text("第二步：输入配对码")) {
@@ -116,16 +111,15 @@ struct ManualConnectionView: View {
                         }
                     }
 
-                    Section {
-                        Button(action: pair) {
-                            Text("配对")
-                        }
-                        .disabled(pairingCode.count != 6)
+                    if !progressMessages.isEmpty {
+                        PairingProgressView(title: "当前进度", steps: progressSteps)
                     }
+
                 }
             }
             .navigationTitle(isConnected ? "输入配对码" : "手动连接")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") {
@@ -133,13 +127,151 @@ struct ManualConnectionView: View {
                     }
                 }
             }
+            .safeAreaInset(edge: .bottom) {
+                bottomActionBar
+            }
             .onAppear {
                 focusedField = isConnected ? .pairingCode : .ipAddress
+                appendProgress("等待输入 Mac 的地址和端口。")
             }
             .onChange(of: isConnected) { _, newValue in
                 focusedField = newValue ? .pairingCode : .ipAddress
             }
+            .onChange(of: viewModel.connectionState) { _, newValue in
+                handleConnectionStateChange(newValue)
+            }
+            .onChange(of: viewModel.pairingState) { _, newValue in
+                handlePairingStateChange(newValue)
+            }
+            .onChange(of: viewModel.latestPairingFeedback) { _, newValue in
+                guard let newValue else { return }
+                appendProgress(newValue)
+                if newValue.contains("不正确") || newValue.contains("不在配对模式") || newValue.contains("失败") {
+                    isPairing = false
+                    pairingTimeoutTask?.cancel()
+                    errorMessage = newValue
+                }
+            }
         }
+    }
+
+    private var progressSteps: [PairingStepItem] {
+        [
+            PairingStepItem(
+                id: "connect",
+                title: "建立连接",
+                detail: progressMessages.first ?? "输入 Mac 的地址和端口后开始连接。",
+                state: connectStepState
+            ),
+            PairingStepItem(
+                id: "code",
+                title: "提交配对码",
+                detail: pairingCodeStepDetail,
+                state: codeStepState
+            ),
+            PairingStepItem(
+                id: "finish",
+                title: "完成绑定",
+                detail: finishStepDetail,
+                state: finishStepState
+            )
+        ]
+    }
+
+    @ViewBuilder
+    private var bottomActionBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            Button(action: isConnected ? pair : connect) {
+                HStack {
+                    if isConnecting {
+                        ProgressView()
+                    } else if isPairing {
+                        ProgressView()
+                    }
+                    Text(actionButtonTitle)
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(actionButtonDisabled)
+            .padding(.horizontal)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            .background(.regularMaterial)
+        }
+    }
+
+    private var actionButtonTitle: String {
+        if isConnecting {
+            return "连接中..."
+        }
+        if isPairing {
+            return "配对中..."
+        }
+        return isConnected ? "配对" : "连接"
+    }
+
+    private var actionButtonDisabled: Bool {
+        if isConnected {
+            return pairingCode.count != 6 || isPairing
+        }
+        return ipAddress.isEmpty || port.isEmpty || isConnecting || isPairing
+    }
+
+    private var connectStepState: PairingStepState {
+        if let errorMessage, errorMessage.contains("连接") {
+            return .failed
+        }
+        if isConnected || viewModel.connectionState == .connected {
+            return .completed
+        }
+        if isConnecting || viewModel.connectionState == .connecting {
+            return .active
+        }
+        return .pending
+    }
+
+    private var codeStepState: PairingStepState {
+        if let errorMessage, !errorMessage.contains("连接") {
+            return .failed
+        }
+        if case .paired = viewModel.pairingState {
+            return .completed
+        }
+        if isPairing {
+            return .active
+        }
+        return isConnected ? .pending : .pending
+    }
+
+    private var finishStepState: PairingStepState {
+        if let errorMessage, !errorMessage.contains("连接") {
+            return .failed
+        }
+        if case .paired = viewModel.pairingState {
+            return .completed
+        }
+        if isPairing {
+            return .active
+        }
+        return .pending
+    }
+
+    private var pairingCodeStepDetail: String {
+        if let message = progressMessages.last(where: { $0.contains("配对码") || $0.contains("校验") || $0.contains("配对模式") }) {
+            return message
+        }
+        return isConnected ? "连接完成后，输入 6 位配对码并发送给 Mac。" : "等待连接完成后再输入配对码。"
+    }
+
+    private var finishStepDetail: String {
+        if let message = progressMessages.last(where: { $0.contains("成功") || $0.contains("绑定") || $0.contains("返回") }) {
+            return message
+        }
+        return "等待 Mac 返回配对结果并保存绑定关系。"
     }
 
     private func connect() {
@@ -149,25 +281,27 @@ struct ManualConnectionView: View {
         }
 
         isConnecting = true
+        isPairing = false
+        isConnected = false
         errorMessage = nil
+        connectionTimeoutTask?.cancel()
+        viewModel.clearPairingFeedback()
+        progressMessages.removeAll()
+        appendProgress("已提交连接请求：\(ipAddress):\(portNumber)")
+        appendProgress("正在等待 Mac 接受连接...")
 
         print("📡 尝试连接到: \(ipAddress):\(portNumber)")
 
         // Connect to Mac
         viewModel.connectToMac(ip: ipAddress, port: portNumber)
 
-        // Wait for connection
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        let timeoutTask = DispatchWorkItem {
+            guard isConnecting else { return }
             isConnecting = false
-            if viewModel.connectionState == .connected {
-                print("✅ 连接成功")
-                isConnected = true
-                errorMessage = nil
-            } else {
-                print("❌ 连接失败")
-                errorMessage = "连接失败，请检查 IP 和端口是否正确，并确保 Mac 已启动服务"
-            }
+            errorMessage = "连接超时，请检查 IP 和端口是否正确，并确保 Mac 已启动服务"
         }
+        connectionTimeoutTask = timeoutTask
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8, execute: timeoutTask)
     }
 
     private func pair() {
@@ -178,21 +312,75 @@ struct ManualConnectionView: View {
 
         errorMessage = nil
         focusedField = nil
+        isPairing = true
+        pairingTimeoutTask?.cancel()
+        viewModel.clearPairingFeedback()
+        appendProgress("已发送 6 位配对码。")
+        appendProgress("正在等待 Mac 校验配对码并返回结果...")
         print("🔐 发送配对码: \(pairingCode)")
 
         // Send pairing code
         viewModel.pairWithCode(pairingCode)
 
-        // Wait for pairing result
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            if case .paired = viewModel.pairingState {
-                print("✅ 配对成功")
-                dismiss()
-            } else {
-                print("❌ 配对失败")
-                errorMessage = "配对失败，请检查配对码是否正确"
+        let timeoutTask = DispatchWorkItem {
+            guard isPairing else { return }
+            isPairing = false
+            errorMessage = "配对超时，请检查配对码是否正确，或确认 Mac 仍处于配对状态"
+        }
+        pairingTimeoutTask = timeoutTask
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: timeoutTask)
+    }
+
+    private func handleConnectionStateChange(_ state: ConnectionState) {
+        switch state {
+        case .connecting:
+            appendProgress("连接建立中...")
+        case .connected:
+            appendProgress("连接已建立，可以输入配对码。")
+            connectionTimeoutTask?.cancel()
+            isConnecting = false
+            isConnected = true
+            errorMessage = nil
+            print("✅ 连接成功")
+        case .error(let message):
+            appendProgress("Mac 返回连接失败：\(message)")
+            connectionTimeoutTask?.cancel()
+            isConnecting = false
+            isConnected = false
+            if isPairing {
+                pairingTimeoutTask?.cancel()
+                isPairing = false
+            }
+            errorMessage = "连接失败：\(message)"
+            print("❌ 连接失败: \(message)")
+        case .disconnected:
+            appendProgress("连接已断开。")
+            if isConnecting {
+                connectionTimeoutTask?.cancel()
+                isConnecting = false
+                errorMessage = "连接已断开，请重试"
+                print("❌ 连接已断开")
             }
         }
+    }
+
+    private func handlePairingStateChange(_ state: PairingState) {
+        switch state {
+        case .paired:
+            appendProgress("收到 Mac 的配对成功返回，设备已绑定。")
+            pairingTimeoutTask?.cancel()
+            isPairing = false
+            errorMessage = nil
+            print("✅ 配对成功")
+            dismiss()
+        case .unpaired, .pairing:
+            break
+        }
+    }
+
+    private func appendProgress(_ message: String) {
+        guard progressMessages.last != message else { return }
+        progressMessages.append(message)
     }
 }
 

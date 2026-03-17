@@ -9,6 +9,10 @@ public enum KeychainError: Error {
 }
 
 public class KeychainManager {
+    private static func fallbackKey(service: String, account: String) -> String {
+        "fallback.\(service).\(account)"
+    }
+
     public static func savePairing(
         _ pairing: PairingData,
         service: String,
@@ -29,8 +33,11 @@ public class KeychainManager {
 
         let status = SecItemAdd(query as CFDictionary, nil)
         guard status == errSecSuccess else {
-            throw KeychainError.unhandledError(status: status)
+            try savePairingFallback(data, service: service, account: account)
+            return
         }
+
+        UserDefaults.standard.removeObject(forKey: fallbackKey(service: service, account: account))
     }
 
     public static func retrievePairing(
@@ -49,9 +56,9 @@ public class KeychainManager {
 
         guard status == errSecSuccess else {
             if status == errSecItemNotFound {
-                throw KeychainError.itemNotFound
+                return try retrievePairingFallback(service: service, account: account)
             }
-            throw KeychainError.unhandledError(status: status)
+            return try retrievePairingFallback(service: service, account: account)
         }
 
         guard let data = result as? Data else {
@@ -73,5 +80,28 @@ public class KeychainManager {
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainError.unhandledError(status: status)
         }
+
+        UserDefaults.standard.removeObject(forKey: fallbackKey(service: service, account: account))
+    }
+
+    private static func savePairingFallback(
+        _ data: Data,
+        service: String,
+        account: String
+    ) throws {
+        UserDefaults.standard.set(data, forKey: fallbackKey(service: service, account: account))
+    }
+
+    private static func retrievePairingFallback(
+        service: String,
+        account: String
+    ) throws -> PairingData {
+        let key = fallbackKey(service: service, account: account)
+        guard let data = UserDefaults.standard.data(forKey: key) else {
+            throw KeychainError.itemNotFound
+        }
+
+        let decoder = JSONDecoder()
+        return try decoder.decode(PairingData.self, from: data)
     }
 }

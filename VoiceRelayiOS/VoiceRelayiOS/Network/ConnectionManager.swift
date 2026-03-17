@@ -37,6 +37,7 @@ class ConnectionManager: NSObject {
     }
 
     func connect(to service: DiscoveredService) {
+        print("🔗 连接到服务: \(service.name) (\(service.host):\(service.port))")
         client.connect(to: service.host, port: service.port)
     }
 
@@ -46,6 +47,8 @@ class ConnectionManager: NSObject {
     }
 
     func pair(with service: DiscoveredService, code: String) {
+        print("🔗 开始配对流程: \(service.name) (\(service.host):\(service.port))")
+        print("🔐 配对码: \(code)")
         connect(to: service)
         queueOrSendPairConfirm(code: code)
     }
@@ -82,12 +85,17 @@ class ConnectionManager: NSObject {
     }
 
     private func queueOrSendPairConfirm(code: String) {
-        guard let envelope = makePairConfirmEnvelope(code: code) else { return }
+        guard let envelope = makePairConfirmEnvelope(code: code) else {
+            print("❌ 无法创建配对确认消息")
+            return
+        }
 
         if case .connected = client.state {
+            print("✅ 连接已建立，立即发送配对确认")
             pendingPairConfirmEnvelope = nil
             client.send(envelope)
         } else {
+            print("⏳ 连接未建立，将配对确认消息加入队列")
             pendingPairConfirmEnvelope = envelope
         }
     }
@@ -111,6 +119,11 @@ class ConnectionManager: NSObject {
     }
 
     private func handlePairSuccess(_ payload: PairSuccessPayload, macId: String, macName: String) {
+        print("🎉 收到配对成功消息")
+        print("   Mac ID: \(macId)")
+        print("   Mac Name: \(macName)")
+        print("   共享密钥长度: \(payload.sharedSecret.count)")
+
         // Save pairing
         let pairing = PairingData(
             deviceId: macId,
@@ -123,9 +136,11 @@ class ConnectionManager: NSObject {
             hmacValidator = HMACValidator(sharedSecret: payload.sharedSecret)
             pairingState = .paired(deviceId: macId, deviceName: macName)
 
+            print("💾 配对信息已保存到 Keychain")
+            print("❤️ 启动心跳")
             startHeartbeat()
         } catch {
-            print("Failed to save pairing: \(error)")
+            print("❌ 保存配对信息失败: \(error)")
         }
     }
 
@@ -215,6 +230,11 @@ extension ConnectionManager: WebSocketClientDelegate {
             return
         }
 
+        if message.type == .error {
+            delegate?.connectionManager(self, didReceiveMessage: message)
+            return
+        }
+
         // Validate HMAC for all other messages
         guard let validator = hmacValidator else {
             print("Received message but not paired")
@@ -248,17 +268,22 @@ extension ConnectionManager: WebSocketClientDelegate {
 
         switch state {
         case .disconnected:
+            print("🔌 连接已断开")
             pendingPairConfirmEnvelope = nil
             connectionState = .disconnected
         case .connecting:
+            print("🔄 正在连接...")
             connectionState = .connecting
         case .connected:
+            print("✅ 连接已建立")
             connectionState = .connected
             if let pendingPairConfirmEnvelope {
+                print("📤 发送待发送的配对确认消息")
                 client.send(pendingPairConfirmEnvelope)
                 self.pendingPairConfirmEnvelope = nil
             }
         case .error(let error):
+            print("❌ 连接错误: \(error.localizedDescription)")
             pendingPairConfirmEnvelope = nil
             connectionState = .error(error.localizedDescription)
         }

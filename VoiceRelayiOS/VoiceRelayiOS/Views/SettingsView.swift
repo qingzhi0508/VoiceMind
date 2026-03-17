@@ -76,6 +76,26 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
 
+                    // 显示连接状态和重连按钮
+                    HStack {
+                        Text("连接状态")
+                        Spacer()
+                        connectionStatusBadge
+                    }
+
+                    if case .disconnected = viewModel.connectionState {
+                        Button(action: {
+                            viewModel.reconnect()
+                        }) {
+                            HStack {
+                                Spacer()
+                                Image(systemName: "arrow.clockwise")
+                                Text("重新连接")
+                                Spacer()
+                            }
+                        }
+                    }
+
                     Button(role: .destructive, action: {
                         viewModel.unpair()
                         dismiss()
@@ -116,6 +136,44 @@ struct SettingsView: View {
         viewModel.requestPermissions { granted in
             if !granted {
                 showPermissionAlert = true
+            }
+        }
+    }
+
+    private var connectionStatusBadge: some View {
+        Group {
+            switch viewModel.connectionState {
+            case .connected:
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 8, height: 8)
+                    Text("已连接")
+                        .foregroundColor(.secondary)
+                }
+            case .connecting:
+                HStack(spacing: 4) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("连接中...")
+                        .foregroundColor(.secondary)
+                }
+            case .disconnected:
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 8, height: 8)
+                    Text("已断开")
+                        .foregroundColor(.secondary)
+                }
+            case .error:
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(Color.orange)
+                        .frame(width: 8, height: 8)
+                    Text("错误")
+                        .foregroundColor(.secondary)
+                }
             }
         }
     }

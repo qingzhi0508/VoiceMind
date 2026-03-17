@@ -1,13 +1,43 @@
 import SwiftUI
 import CoreImage.CIFilterBuiltins
+import Combine
 import SharedCore
+
+
+
+class PairingTimer: ObservableObject {
+    @Published var timeRemaining = 120
+    private var timer: Timer?
+    var onTimeout: (() -> Void)?
+
+    func start() {
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if self.timeRemaining > 0 {
+                self.timeRemaining -= 1
+            } else {
+                self.stop()
+                self.onTimeout?()
+            }
+        }
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    deinit {
+        stop()
+    }
+}
 
 struct QRCodePairingView: View {
     let connectionInfo: ConnectionInfo
     let pairingCode: String
     let onCancel: () -> Void
 
-    @State private var timeRemaining = 120
+    @StateObject private var pairingTimer = PairingTimer()
     @State private var qrCodeImage: NSImage?
 
     var body: some View {
@@ -55,11 +85,12 @@ struct QRCodePairingView: View {
                     .font(.system(.caption, design: .monospaced))
             }
 
-            Text("剩余时间: \(timeRemaining)秒")
+            Text("剩余时间: \(pairingTimer.timeRemaining)秒")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
             Button("取消") {
+                pairingTimer.stop()
                 onCancel()
             }
             .buttonStyle(.bordered)
@@ -68,7 +99,13 @@ struct QRCodePairingView: View {
         .padding()
         .onAppear {
             generateQRCode()
-            startTimer()
+            pairingTimer.onTimeout = { [onCancel] in
+                onCancel()
+            }
+            pairingTimer.start()
+        }
+        .onDisappear {
+            pairingTimer.stop()
         }
     }
 
@@ -87,23 +124,11 @@ struct QRCodePairingView: View {
         filter.correctionLevel = "M"
 
         if let outputImage = filter.outputImage {
-            // Scale up the QR code
             let transform = CGAffineTransform(scaleX: 10, y: 10)
             let scaledImage = outputImage.transformed(by: transform)
 
             if let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) {
                 qrCodeImage = NSImage(cgImage: cgImage, size: NSSize(width: 250, height: 250))
-            }
-        }
-    }
-
-    private func startTimer() {
-        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
-            if timeRemaining > 0 {
-                timeRemaining -= 1
-            } else {
-                timer.invalidate()
-                onCancel()
             }
         }
     }
