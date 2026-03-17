@@ -1,4 +1,7 @@
+import AppKit
+import SharedCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MainWindow: View {
     @ObservedObject var controller: MenuBarController
@@ -20,23 +23,29 @@ struct MainWindow: View {
                 }
                 .tag(1)
 
+            DataRecordsTab(controller: controller)
+                .tabItem {
+                    Label("数据", systemImage: "tray.full")
+                }
+                .tag(2)
+
             PermissionsTab()
                 .tabItem {
                     Label("权限", systemImage: "lock.shield")
                 }
-                .tag(2)
+                .tag(3)
 
             AboutTab()
                 .tabItem {
                     Label("关于", systemImage: "info.circle")
                 }
-                .tag(3)
+                .tag(4)
 
             PermissionsDebugView()
                 .tabItem {
                     Label("调试", systemImage: "ladybug")
                 }
-                .tag(4)
+                .tag(5)
         }
         .frame(width: 600, height: 600)
     }
@@ -239,6 +248,7 @@ struct StatusTab: View {
 struct SettingsTab: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var controller: MenuBarController
+    @State private var serverPortText = ""
 
     var body: some View {
         Form {
@@ -276,10 +286,420 @@ struct SettingsTab: View {
                     Text("English").tag("en-US")
                 }
             }
+
+            Section(header: Text("网络服务")) {
+                HStack {
+                    Text("监听端口")
+                    Spacer()
+                    TextField("8899", text: $serverPortText)
+                        .frame(width: 100)
+                        .multilineTextAlignment(.trailing)
+                        .textFieldStyle(.roundedBorder)
+                        .onAppear {
+                            serverPortText = String(settings.serverPort)
+                        }
+                        .onChange(of: serverPortText) { _, newValue in
+                            let digitsOnly = newValue.filter(\.isNumber)
+                            if digitsOnly != serverPortText {
+                                serverPortText = digitsOnly
+                                return
+                            }
+
+                            guard let port = UInt16(digitsOnly), port >= 1024 else { return }
+                            if settings.serverPort != port {
+                                settings.serverPort = port
+                            }
+                        }
+                }
+
+                Text("默认端口已改为 8899。修改后如果服务正在运行，会自动重启到新端口。")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
         .formStyle(.grouped)
         .padding()
     }
+}
+
+// MARK: - Data Records Tab
+
+struct DataRecordsTab: View {
+    @ObservedObject var controller: MenuBarController
+    @State private var selectedFilter: DataRecordFilter = .all
+    @State private var searchText = ""
+    @State private var groupBySession = true
+
+    private enum DataRecordFilter: String, CaseIterable, Identifiable {
+        case all = "全部"
+        case voice = "语音"
+        case pairing = "配对/连接"
+
+        var id: String { rawValue }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("iOS 数据记录")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+
+                    Text("展示 iPhone 发来的数据，以及语音在 Mac 端转写后的最终文字。")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+
+                Picker("筛选", selection: $selectedFilter) {
+                    ForEach(DataRecordFilter.allCases) { filter in
+                        Text(filter.rawValue).tag(filter)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 220)
+
+                Button("复制日志") {
+                    copyFilteredRecords()
+                }
+                .buttonStyle(.bordered)
+                .disabled(filteredRecords.isEmpty)
+
+                Button("导出日志") {
+                    exportFilteredRecords()
+                }
+                .buttonStyle(.bordered)
+                .disabled(filteredRecords.isEmpty)
+
+                Button("清空记录") {
+                    controller.clearInboundDataRecords()
+                }
+                .buttonStyle(.bordered)
+                .disabled(controller.inboundDataRecords.isEmpty)
+            }
+
+            HStack(spacing: 12) {
+                TextField("搜索标题、内容、Session ID", text: $searchText)
+                    .textFieldStyle(.roundedBorder)
+
+                Toggle("按会话分组", isOn: $groupBySession)
+                    .toggleStyle(.checkbox)
+            }
+
+            HStack(spacing: 12) {
+                summaryBadge(title: "总数", value: "\(filteredRecords.count)", color: .secondary)
+                summaryBadge(title: "语音", value: "\(filteredVoiceCount)", color: .accentColor)
+                summaryBadge(title: "配对/连接", value: "\(filteredPairingCount)", color: .blue)
+                summaryBadge(title: "失败", value: "\(filteredFailureCount)", color: .red)
+            }
+
+            if filteredRecords.isEmpty {
+                ContentUnavailableView(
+                    "暂无数据",
+                    systemImage: "tray",
+                    description: Text(emptyStateDescription)
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 12, pinnedViews: .sectionHeaders) {
+                            if groupBySession {
+                                ForEach(groupedRecords, id: \.title) { section in
+                                    Section {
+                                        ForEach(section.records) { record in
+                                            recordCard(record)
+                                                .id(record.id)
+                                        }
+                                    } header: {
+                                        sectionHeader(section.title, count: section.records.count)
+                                    }
+                                }
+                            } else {
+                                ForEach(filteredRecords) { record in
+                                    recordCard(record)
+                                        .id(record.id)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .onChange(of: controller.inboundDataRecords.count) { _, _ in
+                        guard let latestRecord = filteredRecords.first else { return }
+                        proxy.scrollTo(latestRecord.id, anchor: .top)
+                    }
+                }
+            }
+        }
+        .padding()
+    }
+
+    private var filteredRecords: [InboundDataRecord] {
+        switch selectedFilter {
+        case .all:
+            return searchedRecords(controller.inboundDataRecords)
+        case .voice:
+            return searchedRecords(controller.inboundDataRecords.filter(\.isVoice))
+        case .pairing:
+            return searchedRecords(controller.inboundDataRecords.filter { !$0.isVoice })
+        }
+    }
+
+    private var groupedRecords: [GroupedDataRecords] {
+        var groups: [GroupedDataRecords] = []
+
+        for record in filteredRecords {
+            let sessionKey = extractSessionKey(from: record.detail) ?? "未归档会话"
+            if let index = groups.firstIndex(where: { $0.title == sessionKey }) {
+                groups[index].records.append(record)
+            } else {
+                groups.append(GroupedDataRecords(title: sessionKey, records: [record]))
+            }
+        }
+
+        return groups
+    }
+
+    private var filteredVoiceCount: Int {
+        filteredRecords.filter { $0.category == .voice }.count
+    }
+
+    private var filteredPairingCount: Int {
+        filteredRecords.filter { $0.category != .voice }.count
+    }
+
+    private var filteredFailureCount: Int {
+        filteredRecords.filter { $0.severity == .error }.count
+    }
+
+    private var emptyStateDescription: String {
+        if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "没有匹配当前关键词的数据记录。"
+        }
+
+        switch selectedFilter {
+        case .all:
+            return "当 iPhone 发来配对请求、语音流或识别文本后，这里会按时间顺序记录。"
+        case .voice:
+            return "当前还没有语音流或语音转写结果。"
+        case .pairing:
+            return "当前还没有配对或连接相关记录。"
+        }
+    }
+
+    private func copyFilteredRecords() {
+        let logText = buildLogText()
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(logText, forType: .string)
+    }
+
+    private func exportFilteredRecords() {
+        let panel = NSSavePanel()
+        panel.title = "导出数据日志"
+        panel.nameFieldStringValue = suggestedFileName
+        panel.allowedContentTypes = [.plainText]
+
+        guard panel.runModal() == .OK, let url = panel.url else {
+            return
+        }
+
+        do {
+            try buildLogText().write(to: url, atomically: true, encoding: .utf8)
+        } catch {
+            NSSound.beep()
+        }
+    }
+
+    private var suggestedFileName: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        return "VoiceMind-\(selectedFilter.rawValue)-\(formatter.string(from: Date())).txt"
+    }
+
+    private func buildLogText() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+
+        return filteredRecords.map { record in
+            let category = categoryTitle(for: record.category)
+            let severity = severityTitle(for: record.severity)
+            return """
+            [\(formatter.string(from: record.timestamp))] \(category) | \(severity) | \(record.title)
+            \(record.detail)
+            """
+        }
+        .joined(separator: "\n\n")
+    }
+
+    private func searchedRecords(_ records: [InboundDataRecord]) -> [InboundDataRecord] {
+        let keyword = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !keyword.isEmpty else { return records }
+
+        return records.filter {
+            $0.title.localizedCaseInsensitiveContains(keyword)
+            || $0.detail.localizedCaseInsensitiveContains(keyword)
+        }
+    }
+
+    private func extractSessionKey(from detail: String) -> String? {
+        detail
+            .split(separator: "\n")
+            .first(where: { $0.hasPrefix("Session: ") })
+            .map { String($0.dropFirst("Session: ".count)) }
+    }
+
+    @ViewBuilder
+    private func recordCard(_ record: InboundDataRecord) -> some View {
+        let failure = record.severity == .error
+
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label(record.title, systemImage: iconName(for: record, isFailure: failure))
+                    .font(.headline)
+                    .foregroundColor(recordColor(for: record, isFailure: failure))
+
+                Spacer()
+
+                Text(severityTitle(for: record.severity))
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(severityBadgeColor(for: record.severity).opacity(0.15))
+                    .foregroundColor(severityBadgeColor(for: record.severity))
+                    .clipShape(Capsule())
+
+                Text(record.timestamp, style: .time)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Text(record.detail)
+                .font(.system(.body, design: .monospaced))
+                .textSelection(.enabled)
+                .foregroundColor(failure ? .primary : .secondary)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(recordBackgroundColor(isFailure: failure))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(failure ? Color.red.opacity(0.45) : Color.clear, lineWidth: 1)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    @ViewBuilder
+    private func sectionHeader(_ title: String, count: Int) -> some View {
+        HStack {
+            Text(title)
+                .font(.headline)
+            Spacer()
+            Text("\(count) 条")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 6)
+        .background(.regularMaterial)
+    }
+
+    @ViewBuilder
+    private func summaryBadge(title: String, value: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.headline)
+                .foregroundColor(color)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color(NSColor.controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func isFailureRecord(_ record: InboundDataRecord) -> Bool {
+        record.severity == .error
+    }
+
+    private func recordColor(for record: InboundDataRecord, isFailure: Bool) -> Color {
+        if isFailure {
+            return .red
+        }
+
+        switch record.category {
+        case .voice:
+            return .accentColor
+        case .pairing:
+            return .blue
+        case .connection:
+            return .primary
+        }
+    }
+
+    private func recordBackgroundColor(isFailure: Bool) -> Color {
+        if isFailure {
+            return Color.red.opacity(0.08)
+        }
+
+        return Color(NSColor.controlBackgroundColor)
+    }
+
+    private func iconName(for record: InboundDataRecord, isFailure: Bool) -> String {
+        if isFailure {
+            return "exclamationmark.triangle.fill"
+        }
+
+        switch record.category {
+        case .voice:
+            return "waveform.circle.fill"
+        case .pairing:
+            return "iphone.and.arrow.forward"
+        case .connection:
+            return "tray.and.arrow.down.fill"
+        }
+    }
+
+    private func severityBadgeColor(for severity: InboundDataSeverity) -> Color {
+        switch severity {
+        case .info:
+            return .secondary
+        case .warning:
+            return .orange
+        case .error:
+            return .red
+        }
+    }
+
+    private func severityTitle(for severity: InboundDataSeverity) -> String {
+        switch severity {
+        case .info:
+            return "信息"
+        case .warning:
+            return "警告"
+        case .error:
+            return "错误"
+        }
+    }
+
+    private func categoryTitle(for category: InboundDataCategory) -> String {
+        switch category {
+        case .voice:
+            return "语音"
+        case .pairing:
+            return "配对"
+        case .connection:
+            return "连接"
+        }
+    }
+}
+
+private struct GroupedDataRecords {
+    let title: String
+    var records: [InboundDataRecord]
 }
 
 // MARK: - Permissions Tab

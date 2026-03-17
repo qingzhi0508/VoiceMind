@@ -13,6 +13,7 @@ class MenuBarController: NSObject, ObservableObject {
     @Published var pairingState: PairingState
     @Published var connectionState: ConnectionState
     @Published var pairingProgressMessage: String?
+    @Published var inboundDataRecords: [InboundDataRecord]
     @Published var accessibilityStatus: PermissionStatus
     @Published var inputMonitoringStatus: PermissionStatus
     @Published var isServiceRunning = false
@@ -33,6 +34,7 @@ class MenuBarController: NSObject, ObservableObject {
         self.pairingState = connectionManager.pairingState
         self.connectionState = connectionManager.connectionState
         self.pairingProgressMessage = connectionManager.pairingProgressMessage
+        self.inboundDataRecords = []
         self.accessibilityStatus = PermissionsManager.checkAccessibility()
         self.inputMonitoringStatus = PermissionsManager.checkInputMonitoring()
         super.init()
@@ -44,6 +46,13 @@ class MenuBarController: NSObject, ObservableObject {
         settings.$textInjectionMethod.sink { [weak self] _ in
             self?.updateTextInjector()
         }.store(in: &cancellables)
+
+        settings.$serverPort
+            .dropFirst()
+            .sink { [weak self] newPort in
+                self?.handleServerPortChange(newPort)
+            }
+            .store(in: &cancellables)
 
         setupStatusItem()
         setupConnectionManager()
@@ -113,9 +122,9 @@ class MenuBarController: NSObject, ObservableObject {
         guard !isServiceRunning else { return }
 
         do {
-            try connectionManager.start()
+            try connectionManager.start(port: settings.serverPort)
             isServiceRunning = true
-            print("✅ 服务已启动")
+            print("✅ 服务已启动，端口: \(settings.serverPort)")
         } catch {
             print("❌ 启动服务失败: \(error)")
             showError("启动服务失败: \(error.localizedDescription)")
@@ -461,6 +470,44 @@ class MenuBarController: NSObject, ObservableObject {
         default:
             break
         }
+    }
+
+    func appendInboundDataRecord(
+        title: String,
+        detail: String,
+        category: InboundDataCategory,
+        severity: InboundDataSeverity = .info
+    ) {
+        let record = InboundDataRecord(
+            timestamp: Date(),
+            title: title,
+            detail: detail,
+            category: category,
+            severity: severity
+        )
+        inboundDataRecords.insert(record, at: 0)
+
+        if inboundDataRecords.count > 200 {
+            inboundDataRecords = Array(inboundDataRecords.prefix(200))
+        }
+    }
+
+    func clearInboundDataRecords() {
+        inboundDataRecords.removeAll()
+    }
+
+    private func handleServerPortChange(_ newPort: UInt16) {
+        appendInboundDataRecord(
+            title: "监听端口已更新",
+            detail: "新的监听端口: \(newPort)",
+            category: .connection,
+            severity: .warning
+        )
+
+        guard isServiceRunning else { return }
+
+        stopNetworkServices()
+        startNetworkServices()
     }
 
     func refreshPublishedState() {

@@ -13,6 +13,7 @@ class AppSettings: ObservableObject {
         static let hotkeyModifiers = "hotkeyModifiers"
         static let hotkeyKey = "hotkeyKey"
         static let language = "language"
+        static let serverPort = "serverPort"
         static let hasLaunchedBefore = "hasLaunchedBefore"
     }
 
@@ -39,6 +40,12 @@ class AppSettings: ObservableObject {
     @Published var language: String {
         didSet {
             defaults.set(language, forKey: Keys.language)
+        }
+    }
+
+    @Published var serverPort: UInt16 {
+        didSet {
+            defaults.set(Int(serverPort), forKey: Keys.serverPort)
         }
     }
 
@@ -71,6 +78,9 @@ class AppSettings: ObservableObject {
         } else {
             self.language = "zh-CN" // Default
         }
+
+        let savedPort = defaults.integer(forKey: Keys.serverPort)
+        self.serverPort = savedPort > 0 ? UInt16(savedPort) : 8899
     }
 
     // MARK: - Helper Methods
@@ -80,5 +90,6 @@ class AppSettings: ObservableObject {
         hotkeyModifiers = 0x80000 // Option
         hotkeyKey = 49 // Space
         language = "zh-CN"
+        serverPort = 8899
     }
 }

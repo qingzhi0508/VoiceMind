@@ -21,12 +21,25 @@ extension MenuBarController: ConnectionManagerDelegate {
             self.refreshPublishedState()
             self.updateStatusIcon()
             self.updateMenu()
+            self.recordConnectionStateChange(state)
         }
     }
 
     func connectionManager(_ manager: ConnectionManager, didUpdatePairingProgress message: String?) {
         DispatchQueue.main.async {
             self.pairingProgressMessage = message
+        }
+    }
+
+    func connectionManager(
+        _ manager: ConnectionManager,
+        didRecordInboundEvent title: String,
+        detail: String,
+        category: InboundDataCategory,
+        severity: InboundDataSeverity
+    ) {
+        DispatchQueue.main.async {
+            self.appendInboundDataRecord(title: title, detail: detail, category: category, severity: severity)
         }
     }
 
@@ -46,14 +59,32 @@ extension MenuBarController: ConnectionManagerDelegate {
             return
         }
 
+        appendInboundDataRecord(
+            title: "收到识别文本",
+            detail: "Session: \(payload.sessionId)\n语言: \(payload.language)\n内容: \(payload.text)",
+            category: .voice
+        )
+
         // Validate session ID
         if let currentSessionId {
             guard payload.sessionId == currentSessionId else {
                 print("Ignoring result with mismatched session ID")
+                appendInboundDataRecord(
+                    title: "忽略识别结果",
+                    detail: "收到的 Session 与当前热键会话不一致。\n当前: \(currentSessionId)\n收到: \(payload.sessionId)",
+                    category: .voice,
+                    severity: .warning
+                )
                 return
             }
         } else {
             print("Accepting proactive speech result without active hotkey session")
+            appendInboundDataRecord(
+                title: "主动识别结果",
+                detail: "当前没有热键会话，按主动语音结果处理。\nSession: \(payload.sessionId)",
+                category: .voice,
+                severity: .warning
+            )
         }
 
         // Clear session
@@ -65,8 +96,20 @@ extension MenuBarController: ConnectionManagerDelegate {
         do {
             try textInjector.inject(payload.text)
         } catch TextInjectionError.accessibilityPermissionDenied {
+            appendInboundDataRecord(
+                title: "文本注入权限不足",
+                detail: "缺少辅助功能权限，无法直接注入文本。\n已提示用户授权或复制文本。\n内容: \(payload.text)",
+                category: .connection,
+                severity: .warning
+            )
             showTextInjectionPermissionError(with: payload.text)
         } catch {
+            appendInboundDataRecord(
+                title: "文本注入失败，已降级为复制",
+                detail: "注入错误: \(error.localizedDescription)\n内容: \(payload.text)",
+                category: .connection,
+                severity: .warning
+            )
             showTextCopyAlert(payload.text, error: error.localizedDescription)
         }
     }
@@ -165,7 +208,46 @@ extension MenuBarController: HotkeyMonitorDelegate {
     }
 
     private func handleSessionTimeout() {
+        appendInboundDataRecord(
+            title: "语音会话超时",
+            detail: "30 秒内未收到 iPhone 返回结果，已结束当前会话。",
+            category: .voice,
+            severity: .warning
+        )
         currentSessionId = nil
         showError("30秒内未收到 iPhone 响应")
+    }
+
+    private func recordConnectionStateChange(_ state: ConnectionState) {
+        switch state {
+        case .disconnected:
+            appendInboundDataRecord(
+                title: "连接已断开",
+                detail: "当前没有活跃的 iPhone 连接。",
+                category: .connection,
+                severity: .warning
+            )
+        case .connecting:
+            appendInboundDataRecord(
+                title: "正在建立连接",
+                detail: "Mac 正在等待与 iPhone 建立连接。",
+                category: .connection,
+                severity: .info
+            )
+        case .connected:
+            appendInboundDataRecord(
+                title: "连接已建立",
+                detail: "iPhone 与 Mac 已建立可用连接。",
+                category: .connection,
+                severity: .info
+            )
+        case .error(let error):
+            appendInboundDataRecord(
+                title: "连接错误",
+                detail: error.localizedDescription,
+                category: .connection,
+                severity: .error
+            )
+        }
     }
 }

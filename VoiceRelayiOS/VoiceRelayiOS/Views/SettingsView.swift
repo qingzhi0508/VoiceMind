@@ -1,4 +1,5 @@
 import SwiftUI
+import SharedCore
 
 struct SettingsView: View {
     @ObservedObject var viewModel: ContentViewModel
@@ -126,6 +127,20 @@ struct SettingsView: View {
 
             // About Section
             Section {
+                NavigationLink {
+                    IOSDataLogsView(viewModel: viewModel)
+                } label: {
+                    HStack {
+                        Image(systemName: "tray.full")
+                            .foregroundColor(.blue)
+                        Text("查看数据日志")
+                    }
+                }
+            } header: {
+                Text("调试")
+            }
+
+            Section {
                 HStack {
                     Text("版本")
                     Spacer()
@@ -214,6 +229,117 @@ struct SettingsView: View {
             return .orange
         case .disconnected:
             return .secondary
+        }
+    }
+}
+
+struct IOSDataLogsView: View {
+    @ObservedObject var viewModel: ContentViewModel
+    @State private var selectedFilter: IOSDataFilter = .all
+
+    private enum IOSDataFilter: String, CaseIterable, Identifiable {
+        case all = "全部"
+        case voice = "语音"
+        case connection = "连接"
+
+        var id: String { rawValue }
+    }
+
+    var body: some View {
+        List {
+            Section {
+                Picker("筛选", selection: $selectedFilter) {
+                    ForEach(IOSDataFilter.allCases) { filter in
+                        Text(filter.rawValue).tag(filter)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Button(role: .destructive) {
+                    viewModel.clearInboundDataRecords()
+                } label: {
+                    Text("清空日志")
+                }
+                .disabled(viewModel.inboundDataRecords.isEmpty)
+            }
+
+            if filteredRecords.isEmpty {
+                Section {
+                    ContentUnavailableView(
+                        "暂无日志",
+                        systemImage: "tray",
+                        description: Text("这里会展示 iPhone 侧记录的配对、连接和语音流事件。")
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+            } else {
+                ForEach(filteredRecords) { record in
+                    Section {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Label(record.title, systemImage: iconName(for: record))
+                                    .foregroundColor(color(for: record))
+                                Spacer()
+                                Text(record.timestamp, style: .time)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+
+                            Text(record.detail)
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundColor(.secondary)
+                                .textSelection(.enabled)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+        }
+        .navigationTitle("数据日志")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var filteredRecords: [InboundDataRecord] {
+        switch selectedFilter {
+        case .all:
+            return viewModel.inboundDataRecords
+        case .voice:
+            return viewModel.inboundDataRecords.filter { $0.category == .voice }
+        case .connection:
+            return viewModel.inboundDataRecords.filter { $0.category != .voice }
+        }
+    }
+
+    private func iconName(for record: InboundDataRecord) -> String {
+        if record.severity == .error {
+            return "exclamationmark.triangle.fill"
+        }
+
+        switch record.category {
+        case .voice:
+            return "waveform.circle.fill"
+        case .pairing:
+            return "iphone.and.arrow.forward"
+        case .connection:
+            return "antenna.radiowaves.left.and.right"
+        }
+    }
+
+    private func color(for record: InboundDataRecord) -> Color {
+        switch record.severity {
+        case .info:
+            switch record.category {
+            case .voice:
+                return .purple
+            case .pairing:
+                return .blue
+            case .connection:
+                return .green
+            }
+        case .warning:
+            return .orange
+        case .error:
+            return .red
         }
     }
 }

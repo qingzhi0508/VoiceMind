@@ -44,7 +44,7 @@ struct ManualConnectionView: View {
                             .autocorrectionDisabled()
                             .focused($focusedField, equals: .port)
                             .placeholder(when: port.isEmpty) {
-                                Text("例如：8080").foregroundColor(.gray)
+                                Text("例如：8899").foregroundColor(.gray)
                             }
                             .onChange(of: port) { _, newValue in
                                 let digitsOnly = newValue.filter(\.isNumber)

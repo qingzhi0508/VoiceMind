@@ -13,6 +13,7 @@ class ContentViewModel: ObservableObject {
     @Published var latestPairingFeedback: String?
     @Published var reconnectStatusMessage: String?
     @Published var pushToTalkStatusMessage: String?
+    @Published var inboundDataRecords: [InboundDataRecord] = []
 
     private let lastKnownHostKey = "voicerelay.lastKnownHost"
     private let lastKnownPortKey = "voicerelay.lastKnownPort"
@@ -49,6 +50,11 @@ class ContentViewModel: ObservableObject {
         print("   服务: \(service.name) (\(service.host):\(service.port))")
         print("   配对码: \(code)")
         latestPairingFeedback = nil
+        appendInboundDataRecord(
+            title: "发起配对",
+            detail: "服务: \(service.name)\n地址: \(service.host):\(service.port)\n配对码: \(code)",
+            category: .pairing
+        )
         saveLastKnownConnection(host: service.host, port: service.port, deviceName: service.name)
         connectionManager.pair(with: service, code: code)
     }
@@ -64,17 +70,32 @@ class ContentViewModel: ObservableObject {
         print("🔄 手动重连")
         latestPairingFeedback = "正在尝试重连到已配对的 Mac..."
         reconnectStatusMessage = "正在查找已配对的 Mac..."
+        appendInboundDataRecord(
+            title: "手动重连",
+            detail: "用户触发重连，正在查找已配对的 Mac。",
+            category: .connection
+        )
         reconnectToPairedDevice()
     }
 
     func connectToMac(ip: String, port: UInt16, deviceName: String? = nil) {
         latestPairingFeedback = nil
+        appendInboundDataRecord(
+            title: "直接连接 Mac",
+            detail: "地址: \(ip):\(port)\n设备: \(deviceName ?? "未知")",
+            category: .connection
+        )
         saveLastKnownConnection(host: ip, port: port, deviceName: deviceName)
         connectionManager.connectDirectly(ip: ip, port: port)
     }
 
     func pairWithCode(_ code: String, deviceName: String? = nil) {
         latestPairingFeedback = nil
+        appendInboundDataRecord(
+            title: "提交配对码",
+            detail: "设备: \(deviceName ?? lastKnownDeviceName ?? "未知")\n配对码: \(code)",
+            category: .pairing
+        )
         connectionManager.setPendingPairingDeviceName(deviceName ?? lastKnownDeviceName)
         connectionManager.pairWithCode(code)
     }
@@ -133,17 +154,34 @@ class ContentViewModel: ObservableObject {
             print("✅ 找到设备，开始连接: \(service.host):\(service.port)")
             latestPairingFeedback = "已找到 \(service.name)，正在建立连接..."
             reconnectStatusMessage = "已找到 \(service.name)，正在建立连接..."
+            appendInboundDataRecord(
+                title: "发现已配对设备",
+                detail: "设备: \(service.name)\n地址: \(service.host):\(service.port)",
+                category: .connection
+            )
             connectionManager.connect(to: service)
         } else if let lastKnownHost,
                   let lastKnownPort {
             print("📡 未找到 Bonjour 服务，回退到上次已知地址: \(lastKnownHost):\(lastKnownPort)")
             latestPairingFeedback = "未发现 Bonjour 服务，正在直连上次保存的地址..."
             reconnectStatusMessage = "未发现 Bonjour 服务，已回退到上次保存的地址直连..."
+            appendInboundDataRecord(
+                title: "回退到直连",
+                detail: "未发现 Bonjour 服务。\n地址: \(lastKnownHost):\(lastKnownPort)",
+                category: .connection,
+                severity: .warning
+            )
             connectionManager.connectDirectly(ip: lastKnownHost, port: lastKnownPort)
         } else {
             print("⚠️ 未找到已配对的设备，等待 Bonjour 发现...")
             latestPairingFeedback = "暂未发现已配对的 Mac，请确认 Mac 在线并与 iPhone 处于同一网络。"
             reconnectStatusMessage = "未发现已配对的 Mac，请确认 Mac 在线并与 iPhone 处于同一网络。"
+            appendInboundDataRecord(
+                title: "未发现已配对设备",
+                detail: "Bonjour 和上次保存地址都无法用于重连。",
+                category: .connection,
+                severity: .warning
+            )
         }
     }
 
@@ -167,6 +205,30 @@ class ContentViewModel: ObservableObject {
             UserDefaults.standard.set(deviceName, forKey: lastKnownDeviceNameKey)
         }
     }
+
+    func clearInboundDataRecords() {
+        inboundDataRecords.removeAll()
+    }
+
+    private func appendInboundDataRecord(
+        title: String,
+        detail: String,
+        category: InboundDataCategory,
+        severity: InboundDataSeverity = .info
+    ) {
+        let record = InboundDataRecord(
+            timestamp: Date(),
+            title: title,
+            detail: detail,
+            category: category,
+            severity: severity
+        )
+        inboundDataRecords.insert(record, at: 0)
+
+        if inboundDataRecords.count > 200 {
+            inboundDataRecords = Array(inboundDataRecords.prefix(200))
+        }
+    }
 }
 
 extension ContentViewModel: ConnectionManagerDelegate {
@@ -176,6 +238,11 @@ extension ContentViewModel: ConnectionManagerDelegate {
 
             if case .paired = state {
                 self.latestPairingFeedback = "Mac 已确认配对，正在完成绑定。"
+                self.appendInboundDataRecord(
+                    title: "配对成功",
+                    detail: "Mac 已确认配对，绑定已完成。",
+                    category: .pairing
+                )
                 self.showPairingView = false
                 // 配对成功后不需要重连，因为连接已经存在
                 // 只有在连接断开的情况下才需要重连
@@ -195,18 +262,40 @@ extension ContentViewModel: ConnectionManagerDelegate {
 
             switch state {
             case .connecting:
+                self.appendInboundDataRecord(
+                    title: "连接中",
+                    detail: "正在与 Mac 建立连接。",
+                    category: .connection
+                )
                 if self.reconnectStatusMessage != nil {
                     self.reconnectStatusMessage = self.reconnectStatusMessage ?? "正在建立连接..."
                 }
             case .connected:
+                self.appendInboundDataRecord(
+                    title: "连接成功",
+                    detail: "与 Mac 的连接已建立。",
+                    category: .connection
+                )
                 if self.reconnectStatusMessage != nil {
                     self.reconnectStatusMessage = "重连成功，已重新连接。"
                 }
             case .error(let message):
+                self.appendInboundDataRecord(
+                    title: "连接失败",
+                    detail: message,
+                    category: .connection,
+                    severity: .error
+                )
                 if self.reconnectStatusMessage != nil {
                     self.reconnectStatusMessage = "重连失败：\(message)"
                 }
             case .disconnected:
+                self.appendInboundDataRecord(
+                    title: "连接断开",
+                    detail: "当前与 Mac 没有活跃连接。",
+                    category: .connection,
+                    severity: .warning
+                )
                 if self.recognitionState == .listening {
                     self.pushToTalkStatusMessage = "连接已断开，无法继续发送语音结果。"
                 }
@@ -277,6 +366,12 @@ extension ContentViewModel: ConnectionManagerDelegate {
 
         DispatchQueue.main.async {
             self.latestPairingFeedback = message
+            self.appendInboundDataRecord(
+                title: "Mac 返回错误",
+                detail: message,
+                category: .pairing,
+                severity: .error
+            )
         }
     }
 }
@@ -335,11 +430,22 @@ extension ContentViewModel: SpeechControllerDelegate {
         currentSessionId = nil
         manualSessionId = nil
         pushToTalkStatusMessage = "语音结果已发送到 Mac。"
+        appendInboundDataRecord(
+            title: "发送识别结果",
+            detail: "Session: \(sessionId)\n语言: \(language)\n内容: \(text)",
+            category: .voice
+        )
     }
 
     func speechController(_ controller: SpeechController, didFailWithError error: Error) {
         print("Speech recognition error: \(error)")
         pushToTalkStatusMessage = error.localizedDescription
+        appendInboundDataRecord(
+            title: "语音识别失败",
+            detail: error.localizedDescription,
+            category: .voice,
+            severity: .error
+        )
 
         // Send error to Mac if we have a session
         if currentSessionId != nil || manualSessionId != nil {
@@ -377,7 +483,12 @@ extension ContentViewModel: BonjourBrowserDelegate {
     func browser(_ browser: BonjourBrowser, didFindService service: DiscoveredService) {
         DispatchQueue.main.async {
             if !self.discoveredServices.contains(where: { $0.id == service.id }) {
-                self.discoveredServices.append(service)
+            self.discoveredServices.append(service)
+            self.appendInboundDataRecord(
+                title: "发现 Bonjour 服务",
+                detail: "设备: \(service.name)\n地址: \(service.host):\(service.port)",
+                category: .connection
+            )
             }
 
             // Auto-connect if this is our paired device
@@ -393,6 +504,12 @@ extension ContentViewModel: BonjourBrowserDelegate {
     func browser(_ browser: BonjourBrowser, didRemoveService service: DiscoveredService) {
         DispatchQueue.main.async {
             self.discoveredServices.removeAll { $0.id == service.id }
+            self.appendInboundDataRecord(
+                title: "Bonjour 服务移除",
+                detail: "设备: \(service.name)",
+                category: .connection,
+                severity: .warning
+            )
         }
     }
 }
@@ -402,6 +519,11 @@ extension ContentViewModel: BonjourBrowserDelegate {
 extension ContentViewModel: AudioStreamControllerDelegate {
     func audioStreamController(_ controller: AudioStreamController, didStartStream payload: AudioStartPayload) {
         print("📤 发送 audioStart 消息")
+        appendInboundDataRecord(
+            title: "开始发送语音流",
+            detail: "Session: \(payload.sessionId)\n语言: \(payload.language)\n采样率: \(payload.sampleRate) Hz",
+            category: .voice
+        )
         guard let payloadData = try? JSONEncoder().encode(payload) else {
             print("❌ 无法编码 audioStart payload")
             return
@@ -452,6 +574,11 @@ extension ContentViewModel: AudioStreamControllerDelegate {
 
     func audioStreamController(_ controller: AudioStreamController, didEndStream payload: AudioEndPayload) {
         print("📤 发送 audioEnd 消息")
+        appendInboundDataRecord(
+            title: "结束语音流",
+            detail: "Session: \(payload.sessionId)",
+            category: .voice
+        )
         guard let payloadData = try? JSONEncoder().encode(payload) else {
             print("❌ 无法编码 audioEnd payload")
             return

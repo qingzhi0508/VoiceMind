@@ -6,6 +6,13 @@ protocol ConnectionManagerDelegate: AnyObject {
     func connectionManager(_ manager: ConnectionManager, didChangePairingState state: PairingState)
     func connectionManager(_ manager: ConnectionManager, didChangeConnectionState state: ConnectionState)
     func connectionManager(_ manager: ConnectionManager, didUpdatePairingProgress message: String?)
+    func connectionManager(
+        _ manager: ConnectionManager,
+        didRecordInboundEvent title: String,
+        detail: String,
+        category: InboundDataCategory,
+        severity: InboundDataSeverity
+    )
     func connectionManager(_ manager: ConnectionManager, didReceiveMessage envelope: MessageEnvelope)
 }
 
@@ -47,9 +54,9 @@ class ConnectionManager: NSObject {
         loadPairing()
     }
 
-    func start() throws {
+    func start(port: UInt16) throws {
         // WebSocketServer now handles both TCP server and Bonjour advertising
-        try server.start()
+        try server.start(port: port)
         print("✅ Connection manager started on port \(server.port)")
     }
 
@@ -120,10 +127,21 @@ class ConnectionManager: NSObject {
         print("   iOS ID: \(payload.iosId)")
         print("   配对码: \(payload.shortCode)")
         updatePairingProgress("已收到来自 \(payload.iosName) 的配对请求。")
+        recordInboundEvent(
+            title: "收到配对请求",
+            detail: "设备: \(payload.iosName)\n设备 ID: \(payload.iosId)\n配对码: \(payload.shortCode)",
+            category: .pairing
+        )
 
         guard case .pairing(let code, _) = pairingState else {
             print("❌ 配对失败: 不在配对模式")
             updatePairingProgress("收到配对请求，但当前不在配对模式。")
+            recordInboundEvent(
+                title: "配对失败",
+                detail: "收到配对请求，但当前不在配对模式。",
+                category: .pairing,
+                severity: .error
+            )
             sendError(code: "not_pairing", message: "Not in pairing mode")
             return
         }
@@ -133,6 +151,12 @@ class ConnectionManager: NSObject {
             print("   期望: \(code)")
             print("   收到: \(payload.shortCode)")
             updatePairingProgress("配对码校验失败，已拒绝此次请求。")
+            recordInboundEvent(
+                title: "配对失败",
+                detail: "配对码校验失败。\n期望: \(code)\n收到: \(payload.shortCode)",
+                category: .pairing,
+                severity: .error
+            )
             sendError(code: "invalid_code", message: "Invalid pairing code")
             return
         }
@@ -184,6 +208,12 @@ class ConnectionManager: NSObject {
         } catch {
             print("❌ 保存配对信息失败: \(error)")
             updatePairingProgress("保存配对信息失败：\(error.localizedDescription)")
+            recordInboundEvent(
+                title: "保存配对信息失败",
+                detail: error.localizedDescription,
+                category: .pairing,
+                severity: .error
+            )
             sendError(code: "pairing_failed", message: "Failed to save pairing: \(error)")
         }
     }
@@ -193,6 +223,12 @@ class ConnectionManager: NSObject {
     }
 
     private func sendError(code: String, message: String) {
+        recordInboundEvent(
+            title: "发送错误消息",
+            detail: "错误码: \(code)\n消息: \(message)",
+            category: .connection,
+            severity: .error
+        )
         let payload = ErrorPayload(code: code, message: message)
         guard let payloadData = try? JSONEncoder().encode(payload) else { return }
 
@@ -267,6 +303,11 @@ extension ConnectionManager: WebSocketServerDelegate {
             print("⚠️ 无法解析 Ping 消息")
             return
         }
+        recordInboundEvent(
+            title: "收到心跳",
+            detail: "Nonce: \(payload.nonce)",
+            category: .connection
+        )
 
         // Send Pong response
         let pongPayload = PongPayload(nonce: payload.nonce)
@@ -309,6 +350,11 @@ extension ConnectionManager: WebSocketServerDelegate {
         print("   采样率: \(payload.sampleRate) Hz")
         print("   通道数: \(payload.channels)")
         print("   格式: \(payload.format)")
+        recordInboundEvent(
+            title: "语音流开始",
+            detail: "Session: \(payload.sessionId)\n语言: \(payload.language)\n采样率: \(payload.sampleRate) Hz\n通道数: \(payload.channels)\n格式: \(payload.format)",
+            category: .voice
+        )
 
         do {
             try speechRecognizer.startRecognition(
@@ -331,6 +377,11 @@ extension ConnectionManager: WebSocketServerDelegate {
         }
 
         print("📥 收到音频数据: \(payload.audioData.count) 字节 (seq: \(payload.sequenceNumber))")
+        recordInboundEvent(
+            title: "语音数据包",
+            detail: "Session: \(payload.sessionId)\n序号: \(payload.sequenceNumber)\n字节数: \(payload.audioData.count)",
+            category: .voice
+        )
         speechRecognizer.processAudioData(payload.audioData)
     }
 
@@ -342,8 +393,28 @@ extension ConnectionManager: WebSocketServerDelegate {
         }
 
         print("   Session ID: \(payload.sessionId)")
+        recordInboundEvent(
+            title: "语音流结束",
+            detail: "Session: \(payload.sessionId)",
+            category: .voice
+        )
         speechRecognizer.stopRecognition()
         print("✅ 语音识别已停止")
+    }
+
+    private func recordInboundEvent(
+        title: String,
+        detail: String,
+        category: InboundDataCategory,
+        severity: InboundDataSeverity = .info
+    ) {
+        delegate?.connectionManager(
+            self,
+            didRecordInboundEvent: title,
+            detail: detail,
+            category: category,
+            severity: severity
+        )
     }
 }
 
@@ -352,6 +423,11 @@ extension ConnectionManager: WebSocketServerDelegate {
 extension ConnectionManager: MacSpeechRecognizerDelegate {
     func speechRecognizer(_ recognizer: MacSpeechRecognizer, didRecognizeText text: String, sessionId: String, language: String) {
         print("📝 识别结果: \(text)")
+        recordInboundEvent(
+            title: "语音转文字结果",
+            detail: "Session: \(sessionId)\n语言: \(language)\n内容: \(text)",
+            category: .voice
+        )
 
         // 将识别结果发送给 delegate（MenuBarController）进行文本注入
         let payload = ResultPayload(sessionId: sessionId, text: text, language: language)
@@ -382,6 +458,12 @@ extension ConnectionManager: MacSpeechRecognizerDelegate {
 
     func speechRecognizer(_ recognizer: MacSpeechRecognizer, didFailWithError error: Error, sessionId: String) {
         print("❌ 语音识别错误: \(error.localizedDescription)")
+        recordInboundEvent(
+            title: "语音转写失败",
+            detail: "Session: \(sessionId)\n错误: \(error.localizedDescription)",
+            category: .voice,
+            severity: .error
+        )
         sendError(code: "recognition_error", message: error.localizedDescription)
     }
 }

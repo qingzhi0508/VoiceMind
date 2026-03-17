@@ -19,50 +19,49 @@ class WebSocketServer {
         }
     }
 
-    func start(portRange: ClosedRange<UInt16> = 8000...9000) throws {
-        for port in portRange {
-            do {
-                // 配置 TCP 参数以保持长连接
-                let tcpOptions = NWProtocolTCP.Options()
-                tcpOptions.enableKeepalive = true
-                tcpOptions.keepaliveIdle = 30  // 30 秒后开始发送 keepalive
-                tcpOptions.keepaliveInterval = 10  // 每 10 秒发送一次
-                tcpOptions.keepaliveCount = 3  // 3 次失败后断开
-                tcpOptions.noDelay = true  // 禁用 Nagle 算法，减少延迟
+    func start(port: UInt16 = 8899) throws {
+        do {
+            // 配置 TCP 参数以保持长连接
+            let tcpOptions = NWProtocolTCP.Options()
+            tcpOptions.enableKeepalive = true
+            tcpOptions.keepaliveIdle = 30
+            tcpOptions.keepaliveInterval = 10
+            tcpOptions.keepaliveCount = 3
+            tcpOptions.noDelay = true
 
-                let parameters = NWParameters(tls: nil, tcp: tcpOptions)
-                parameters.allowLocalEndpointReuse = true
-                parameters.includePeerToPeer = true // Enable Bonjour
+            let parameters = NWParameters(tls: nil, tcp: tcpOptions)
+            parameters.allowLocalEndpointReuse = true
+            parameters.includePeerToPeer = true
 
-                let listener = try NWListener(using: parameters, on: NWEndpoint.Port(integerLiteral: port))
+            let listener = try NWListener(using: parameters, on: NWEndpoint.Port(integerLiteral: port))
 
-                // Configure Bonjour service
-                listener.service = NWListener.Service(
-                    name: Host.current().localizedName ?? "VoiceRelay Mac",
-                    type: "_voicerelay._tcp"
-                )
+            listener.service = NWListener.Service(
+                name: Host.current().localizedName ?? "VoiceRelay Mac",
+                type: "_voicerelay._tcp"
+            )
 
-                listener.stateUpdateHandler = { [weak self] newState in
-                    self?.handleListenerState(newState)
-                }
-
-                listener.newConnectionHandler = { [weak self] newConnection in
-                    self?.handleNewConnection(newConnection)
-                }
-
-                listener.start(queue: .main)
-                self.listener = listener
-                self.port = port
-                self.state = .connecting
-                print("✅ WebSocket server started on port \(port)")
-                print("✅ Bonjour service: _voicerelay._tcp")
-                print("✅ TCP Keep-Alive 已启用")
-                return
-            } catch {
-                continue
+            listener.stateUpdateHandler = { [weak self] newState in
+                self?.handleListenerState(newState)
             }
+
+            listener.newConnectionHandler = { [weak self] newConnection in
+                self?.handleNewConnection(newConnection)
+            }
+
+            listener.start(queue: .main)
+            self.listener = listener
+            self.port = port
+            self.state = .connecting
+            print("✅ WebSocket server started on port \(port)")
+            print("✅ Bonjour service: _voicerelay._tcp")
+            print("✅ TCP Keep-Alive 已启用")
+        } catch {
+            throw NSError(
+                domain: "WebSocketServer",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "端口 \(port) 已被占用或不可用，请在设置中更换端口。"]
+            )
         }
-        throw NSError(domain: "WebSocketServer", code: -1, userInfo: [NSLocalizedDescriptionKey: "No available port in range"])
     }
 
     func stop() {
