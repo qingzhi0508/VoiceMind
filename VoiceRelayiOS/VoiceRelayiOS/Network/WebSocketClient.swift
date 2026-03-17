@@ -35,7 +35,20 @@ class WebSocketClient {
         self.port = port
 
         let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host(host), port: NWEndpoint.Port(integerLiteral: port))
-        let connection = NWConnection(to: endpoint, using: .tcp)
+
+        // 配置 TCP 参数以保持长连接
+        let tcpOptions = NWProtocolTCP.Options()
+        tcpOptions.enableKeepalive = true
+        tcpOptions.keepaliveIdle = 30  // 30 秒后开始发送 keepalive
+        tcpOptions.keepaliveInterval = 10  // 每 10 秒发送一次
+        tcpOptions.keepaliveCount = 3  // 3 次失败后断开
+        tcpOptions.noDelay = true  // 禁用 Nagle 算法，减少延迟
+
+        let parameters = NWParameters(tls: nil, tcp: tcpOptions)
+        parameters.allowLocalEndpointReuse = true
+        parameters.includePeerToPeer = true
+
+        let connection = NWConnection(to: endpoint, using: parameters)
 
         connection.stateUpdateHandler = { [weak self] newState in
             self?.handleConnectionState(newState)
@@ -45,6 +58,7 @@ class WebSocketClient {
         self.connection = connection
         state = .connecting
         print("🔄 连接状态: connecting")
+        print("✅ TCP Keep-Alive 已启用")
     }
 
     func disconnect() {

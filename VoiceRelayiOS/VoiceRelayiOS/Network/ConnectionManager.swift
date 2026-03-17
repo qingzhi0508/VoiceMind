@@ -154,6 +154,7 @@ class ConnectionManager: NSObject {
     }
 
     private func startHeartbeat() {
+        print("❤️ 启动心跳定时器（每 30 秒）")
         heartbeatTimer?.invalidate()
         heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             self?.sendPing()
@@ -161,6 +162,7 @@ class ConnectionManager: NSObject {
     }
 
     private func stopHeartbeat() {
+        print("💔 停止心跳定时器")
         heartbeatTimer?.invalidate()
         heartbeatTimer = nil
         pongTimer?.invalidate()
@@ -168,6 +170,7 @@ class ConnectionManager: NSObject {
     }
 
     private func sendPing() {
+        print("💓 发送心跳 Ping")
         let nonce = UUID().uuidString
         currentPingNonce = nonce
 
@@ -258,12 +261,16 @@ extension ConnectionManager: WebSocketClientDelegate {
         // Handle pong
         if message.type == .pong {
             guard let payload = try? JSONDecoder().decode(PongPayload.self, from: message.payload) else {
+                print("⚠️ 无法解析 Pong 消息")
                 return
             }
 
             if payload.nonce == currentPingNonce {
+                print("💚 收到心跳 Pong 响应")
                 pongTimer?.invalidate()
                 pongTimer = nil
+            } else {
+                print("⚠️ Pong nonce 不匹配")
             }
             return
         }

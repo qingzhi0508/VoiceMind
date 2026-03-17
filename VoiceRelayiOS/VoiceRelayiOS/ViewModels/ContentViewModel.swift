@@ -175,7 +175,14 @@ extension ContentViewModel: ConnectionManagerDelegate {
             if case .paired = state {
                 self.latestPairingFeedback = "Mac 已确认配对，正在完成绑定。"
                 self.showPairingView = false
-                self.reconnectToPairedDevice()
+                // 配对成功后不需要重连，因为连接已经存在
+                // 只有在连接断开的情况下才需要重连
+                if self.connectionState == .disconnected {
+                    print("🔄 配对成功但连接已断开，尝试重连")
+                    self.reconnectToPairedDevice()
+                } else {
+                    print("✅ 配对成功，保持现有连接")
+                }
             }
         }
     }

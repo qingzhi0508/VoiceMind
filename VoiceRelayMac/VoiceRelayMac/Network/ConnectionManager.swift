@@ -200,6 +200,12 @@ extension ConnectionManager: WebSocketServerDelegate {
             return
         }
 
+        // Handle Ping message
+        if message.type == .ping {
+            handlePing(message)
+            return
+        }
+
         // Forward validated message to delegate
         delegate?.connectionManager(self, didReceiveMessage: message)
     }
@@ -207,5 +213,39 @@ extension ConnectionManager: WebSocketServerDelegate {
     func server(_ server: WebSocketServer, didChangeState state: ConnectionState) {
         connectionState = state
         delegate?.connectionManager(self, didChangeConnectionState: state)
+    }
+
+    private func handlePing(_ message: MessageEnvelope) {
+        print("💓 收到心跳 Ping")
+        guard let payload = try? JSONDecoder().decode(PingPayload.self, from: message.payload) else {
+            print("⚠️ 无法解析 Ping 消息")
+            return
+        }
+
+        // Send Pong response
+        let pongPayload = PongPayload(nonce: payload.nonce)
+        guard let pongData = try? JSONEncoder().encode(pongPayload) else {
+            print("❌ 无法编码 Pong 消息")
+            return
+        }
+
+        let timestamp = Date()
+        let hmac = hmacValidator?.generateHMACForEnvelope(
+            type: .pong,
+            payload: pongData,
+            timestamp: timestamp,
+            deviceId: deviceId
+        )
+
+        let envelope = MessageEnvelope(
+            type: .pong,
+            payload: pongData,
+            timestamp: timestamp,
+            deviceId: deviceId,
+            hmac: hmac
+        )
+
+        server.send(envelope)
+        print("💚 发送心跳 Pong 响应")
     }
 }
