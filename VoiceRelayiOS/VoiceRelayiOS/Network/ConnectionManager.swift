@@ -19,6 +19,7 @@ class ConnectionManager: NSObject {
     private let keychainService = "com.voicerelay.ios"
     private let keychainAccount = "pairing"
     let deviceId = UUID().uuidString
+    private var pendingPairingDeviceName: String?
 
     private(set) var pairingState: PairingState = .unpaired {
         didSet {
@@ -49,6 +50,7 @@ class ConnectionManager: NSObject {
     func pair(with service: DiscoveredService, code: String) {
         print("🔗 开始配对流程: \(service.name) (\(service.host):\(service.port))")
         print("🔐 配对码: \(code)")
+        pendingPairingDeviceName = service.name
         connect(to: service)
         queueOrSendPairConfirm(code: code)
     }
@@ -68,6 +70,10 @@ class ConnectionManager: NSObject {
     func pairWithCode(_ code: String) {
         print("🔐 使用配对码配对: \(code)")
         queueOrSendPairConfirm(code: code)
+    }
+
+    func setPendingPairingDeviceName(_ deviceName: String?) {
+        pendingPairingDeviceName = deviceName
     }
 
     func send(_ envelope: MessageEnvelope) {
@@ -119,22 +125,25 @@ class ConnectionManager: NSObject {
     }
 
     private func handlePairSuccess(_ payload: PairSuccessPayload, macId: String, macName: String) {
+        let resolvedMacName = pendingPairingDeviceName ?? macName
+
         print("🎉 收到配对成功消息")
         print("   Mac ID: \(macId)")
-        print("   Mac Name: \(macName)")
+        print("   Mac Name: \(resolvedMacName)")
         print("   共享密钥长度: \(payload.sharedSecret.count)")
 
         // Save pairing
         let pairing = PairingData(
             deviceId: macId,
-            deviceName: macName,
+            deviceName: resolvedMacName,
             sharedSecret: payload.sharedSecret
         )
 
         do {
             try KeychainManager.savePairing(pairing, service: keychainService, account: keychainAccount)
             hmacValidator = HMACValidator(sharedSecret: payload.sharedSecret)
-            pairingState = .paired(deviceId: macId, deviceName: macName)
+            pairingState = .paired(deviceId: macId, deviceName: resolvedMacName)
+            pendingPairingDeviceName = nil
 
             print("💾 配对信息已保存到 Keychain")
             print("❤️ 启动心跳")

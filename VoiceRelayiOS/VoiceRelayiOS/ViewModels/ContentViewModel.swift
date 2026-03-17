@@ -11,6 +11,11 @@ class ContentViewModel: ObservableObject {
     @Published var selectedLanguage: String = "zh-CN"
     @Published var showPairingView = false
     @Published var latestPairingFeedback: String?
+    @Published var reconnectStatusMessage: String?
+
+    private let lastKnownHostKey = "voicerelay.lastKnownHost"
+    private let lastKnownPortKey = "voicerelay.lastKnownPort"
+    private let lastKnownDeviceNameKey = "voicerelay.lastKnownDeviceName"
 
     private let connectionManager = ConnectionManager()
     private let speechController = SpeechController()
@@ -40,6 +45,7 @@ class ContentViewModel: ObservableObject {
         print("   服务: \(service.name) (\(service.host):\(service.port))")
         print("   配对码: \(code)")
         latestPairingFeedback = nil
+        saveLastKnownConnection(host: service.host, port: service.port, deviceName: service.name)
         connectionManager.pair(with: service, code: code)
     }
 
@@ -47,20 +53,25 @@ class ContentViewModel: ObservableObject {
         connectionManager.unpair()
         pairingState = .unpaired
         connectionState = .disconnected
+        reconnectStatusMessage = nil
     }
 
     func reconnect() {
         print("🔄 手动重连")
+        latestPairingFeedback = "正在尝试重连到已配对的 Mac..."
+        reconnectStatusMessage = "正在查找已配对的 Mac..."
         reconnectToPairedDevice()
     }
 
-    func connectToMac(ip: String, port: UInt16) {
+    func connectToMac(ip: String, port: UInt16, deviceName: String? = nil) {
         latestPairingFeedback = nil
+        saveLastKnownConnection(host: ip, port: port, deviceName: deviceName)
         connectionManager.connectDirectly(ip: ip, port: port)
     }
 
-    func pairWithCode(_ code: String) {
+    func pairWithCode(_ code: String, deviceName: String? = nil) {
         latestPairingFeedback = nil
+        connectionManager.setPendingPairingDeviceName(deviceName ?? lastKnownDeviceName)
         connectionManager.pairWithCode(code)
     }
 
@@ -90,12 +101,42 @@ class ContentViewModel: ObservableObject {
 
         print("🔍 查找已配对的设备: \(deviceName) (ID: \(deviceId))")
 
-        if let service = discoveredServices.first(where: { $0.id.uuidString == deviceId }) {
+        if let service = discoveredServices.first(where: { $0.id.uuidString == deviceId || $0.name == deviceName }) {
             print("✅ 找到设备，开始连接: \(service.host):\(service.port)")
+            latestPairingFeedback = "已找到 \(service.name)，正在建立连接..."
+            reconnectStatusMessage = "已找到 \(service.name)，正在建立连接..."
             connectionManager.connect(to: service)
+        } else if let lastKnownHost,
+                  let lastKnownPort {
+            print("📡 未找到 Bonjour 服务，回退到上次已知地址: \(lastKnownHost):\(lastKnownPort)")
+            latestPairingFeedback = "未发现 Bonjour 服务，正在直连上次保存的地址..."
+            reconnectStatusMessage = "未发现 Bonjour 服务，已回退到上次保存的地址直连..."
+            connectionManager.connectDirectly(ip: lastKnownHost, port: lastKnownPort)
         } else {
             print("⚠️ 未找到已配对的设备，等待 Bonjour 发现...")
-            // 设备可能还没被发现，等待 Bonjour 发现后会自动连接
+            latestPairingFeedback = "暂未发现已配对的 Mac，请确认 Mac 在线并与 iPhone 处于同一网络。"
+            reconnectStatusMessage = "未发现已配对的 Mac，请确认 Mac 在线并与 iPhone 处于同一网络。"
+        }
+    }
+
+    private var lastKnownHost: String? {
+        UserDefaults.standard.string(forKey: lastKnownHostKey)
+    }
+
+    private var lastKnownPort: UInt16? {
+        let port = UserDefaults.standard.integer(forKey: lastKnownPortKey)
+        return port > 0 ? UInt16(port) : nil
+    }
+
+    private var lastKnownDeviceName: String? {
+        UserDefaults.standard.string(forKey: lastKnownDeviceNameKey)
+    }
+
+    private func saveLastKnownConnection(host: String, port: UInt16, deviceName: String?) {
+        UserDefaults.standard.set(host, forKey: lastKnownHostKey)
+        UserDefaults.standard.set(Int(port), forKey: lastKnownPortKey)
+        if let deviceName, !deviceName.isEmpty {
+            UserDefaults.standard.set(deviceName, forKey: lastKnownDeviceNameKey)
         }
     }
 }
@@ -116,6 +157,23 @@ extension ContentViewModel: ConnectionManagerDelegate {
     func connectionManager(_ manager: ConnectionManager, didChangeConnectionState state: ConnectionState) {
         DispatchQueue.main.async {
             self.connectionState = state
+
+            switch state {
+            case .connecting:
+                if self.reconnectStatusMessage != nil {
+                    self.reconnectStatusMessage = self.reconnectStatusMessage ?? "正在建立连接..."
+                }
+            case .connected:
+                if self.reconnectStatusMessage != nil {
+                    self.reconnectStatusMessage = "重连成功，已重新连接。"
+                }
+            case .error(let message):
+                if self.reconnectStatusMessage != nil {
+                    self.reconnectStatusMessage = "重连失败：\(message)"
+                }
+            case .disconnected:
+                break
+            }
         }
     }
 
@@ -258,9 +316,10 @@ extension ContentViewModel: BonjourBrowserDelegate {
             }
 
             // Auto-connect if this is our paired device
-            if case .paired(let deviceId, _) = self.pairingState,
-               service.id.uuidString == deviceId,
+            if case .paired(let deviceId, let deviceName) = self.pairingState,
+               (service.id.uuidString == deviceId || service.name == deviceName),
                self.connectionState == .disconnected {
+                self.reconnectStatusMessage = "已发现已配对的 Mac，正在自动重连..."
                 self.connectionManager.connect(to: service)
             }
         }

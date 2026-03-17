@@ -96,6 +96,19 @@ struct SettingsView: View {
                         }
                     }
 
+                    if let reconnectStatusMessage = viewModel.reconnectStatusMessage {
+                        HStack(alignment: .top) {
+                            Image(systemName: reconnectStatusIcon)
+                                .foregroundColor(reconnectStatusColor)
+                                .font(.caption)
+                                .padding(.top, 2)
+                            Text(reconnectStatusMessage)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                        }
+                    }
+
                     Button(role: .destructive, action: {
                         viewModel.unpair()
                         dismiss()
@@ -175,6 +188,32 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
             }
+        }
+    }
+
+    private var reconnectStatusIcon: String {
+        switch viewModel.connectionState {
+        case .connected:
+            return "checkmark.circle.fill"
+        case .connecting:
+            return "arrow.triangle.2.circlepath"
+        case .error:
+            return "exclamationmark.triangle.fill"
+        case .disconnected:
+            return "antenna.radiowaves.left.and.right.slash"
+        }
+    }
+
+    private var reconnectStatusColor: Color {
+        switch viewModel.connectionState {
+        case .connected:
+            return .green
+        case .connecting:
+            return .blue
+        case .error:
+            return .orange
+        case .disconnected:
+            return .secondary
         }
     }
 }

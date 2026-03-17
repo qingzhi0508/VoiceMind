@@ -251,7 +251,7 @@ struct QRCodeScannerView: View {
         print("📡 连接到: \(info.ip):\(info.port)")
 
         // Connect to Mac
-        viewModel.connectToMac(ip: info.ip, port: info.port)
+        viewModel.connectToMac(ip: info.ip, port: info.port, deviceName: info.deviceName)
 
         let timeoutTask = DispatchWorkItem {
             guard isConnecting else { return }
@@ -277,7 +277,7 @@ struct QRCodeScannerView: View {
         viewModel.clearPairingFeedback()
         appendProgress("已提交 6 位配对码。")
         appendProgress("正在等待 Mac 校验配对码并返回结果...")
-        viewModel.pairWithCode(code)
+        viewModel.pairWithCode(code, deviceName: connectionInfo?.deviceName)
 
         let timeoutTask = DispatchWorkItem {
             guard isPairing else { return }

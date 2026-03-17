@@ -10,6 +10,7 @@ struct ContentView: View {
                 ConnectionStatusCard(
                     pairingState: viewModel.pairingState,
                     connectionState: viewModel.connectionState,
+                    reconnectStatusMessage: viewModel.reconnectStatusMessage,
                     onReconnect: {
                         viewModel.reconnect()
                     }
@@ -46,6 +47,7 @@ struct ContentView: View {
 struct ConnectionStatusCard: View {
     let pairingState: PairingState
     let connectionState: ConnectionState
+    let reconnectStatusMessage: String?
     let onReconnect: () -> Void
 
     var body: some View {
@@ -103,6 +105,20 @@ struct ConnectionStatusCard: View {
                     Spacer()
                 }
             }
+
+            if let reconnectStatusMessage,
+               case .paired = pairingState {
+                HStack(alignment: .top) {
+                    Image(systemName: reconnectStatusIcon)
+                        .foregroundColor(reconnectStatusColor)
+                        .font(.caption)
+                        .padding(.top, 2)
+                    Text(reconnectStatusMessage)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
+            }
         }
         .padding()
         .background(Color.gray.opacity(0.1))
@@ -140,6 +156,32 @@ struct ConnectionStatusCard: View {
             return "连接错误"
         default:
             return "未知"
+        }
+    }
+
+    private var reconnectStatusIcon: String {
+        switch connectionState {
+        case .connected:
+            return "checkmark.circle.fill"
+        case .connecting:
+            return "arrow.triangle.2.circlepath"
+        case .error:
+            return "exclamationmark.triangle.fill"
+        case .disconnected:
+            return "antenna.radiowaves.left.and.right.slash"
+        }
+    }
+
+    private var reconnectStatusColor: Color {
+        switch connectionState {
+        case .connected:
+            return .green
+        case .connecting:
+            return .blue
+        case .error:
+            return .orange
+        case .disconnected:
+            return .secondary
         }
     }
 }

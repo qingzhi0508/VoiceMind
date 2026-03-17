@@ -15,116 +15,120 @@ struct PairingView: View {
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 30) {
-                // Header
-                VStack(spacing: 10) {
-                    Image(systemName: "laptopcomputer.and.iphone")
-                        .font(.system(size: 60))
-                        .foregroundColor(.blue)
+            ScrollView {
+                VStack(spacing: 30) {
+                    // Header
+                    VStack(spacing: 10) {
+                        Image(systemName: “laptopcomputer.and.iphone”)
+                            .font(.system(size: 60))
+                            .foregroundColor(.blue)
 
-                    Text("与 Mac 配对")
-                        .font(.title)
-                        .fontWeight(.bold)
+                        Text(“与 Mac 配对”)
+                            .font(.title)
+                            .fontWeight(.bold)
 
-                    Text("优先使用扫码配对，也可以继续使用局域网自动发现。")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, 40)
+                        Text(“优先使用扫码配对，也可以继续使用局域网自动发现。”)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, 20)
 
-                VStack(spacing: 12) {
-                    Button {
-                        showQRCodeScanner = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "qrcode.viewfinder")
-                            Text("扫描二维码配对")
+                    VStack(spacing: 12) {
+                        Button {
+                            showQRCodeScanner = true
+                        } label: {
+                            HStack {
+                                Image(systemName: “qrcode.viewfinder”)
+                                Text(“扫描二维码配对”)
+                            }
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
                         }
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
+
+                        Text(“在 Mac 上点击”配对新设备”，然后扫描弹出的二维码。”)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
                     }
 
-                    Text("在 Mac 上点击“配对新设备”，然后扫描弹出的二维码。")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
+                    // Discovered Macs
+                    VStack(alignment: .leading, spacing: 15) {
+                        Text(“或手动选择局域网中的 Mac”)
+                            .font(.headline)
 
-                // Discovered Macs
-                VStack(alignment: .leading, spacing: 15) {
-                    Text("或手动选择局域网中的 Mac")
-                        .font(.headline)
-
-                    if viewModel.discoveredServices.isEmpty {
-                        HStack {
-                            ProgressView()
-                            Text("搜索中...")
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(12)
-                    } else {
-                        ForEach(viewModel.discoveredServices) { service in
-                            ServiceRow(
-                                service: service,
-                                isSelected: selectedService?.id == service.id
-                            )
-                            .onTapGesture {
-                                selectedService = service
+                        if viewModel.discoveredServices.isEmpty {
+                            HStack {
+                                ProgressView()
+                                Text(“搜索中...”)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(12)
+                        } else {
+                            ForEach(viewModel.discoveredServices) { service in
+                                ServiceRow(
+                                    service: service,
+                                    isSelected: selectedService?.id == service.id
+                                )
+                                .onTapGesture {
+                                    selectedService = service
+                                }
                             }
                         }
                     }
-                }
 
-                // Pairing Code Input
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("配对码")
-                        .font(.headline)
+                    // Pairing Code Input
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(“配对码”)
+                            .font(.headline)
 
-                    TextField("输入 6 位数字", text: $pairingCode)
-                        .keyboardType(.numberPad)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .font(.system(size: 24, weight: .medium, design: .monospaced))
-                        .multilineTextAlignment(.center)
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(12)
-                        .focused($isPairingCodeFocused)
-                        .onChange(of: pairingCode) { _, newValue in
-                            let digitsOnly = newValue.filter(\.isNumber)
-                            let trimmed = String(digitsOnly.prefix(6))
+                        TextField(“输入 6 位数字”, text: $pairingCode)
+                            .keyboardType(.numberPad)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .font(.system(size: 24, weight: .medium, design: .monospaced))
+                            .multilineTextAlignment(.center)
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(12)
+                            .focused($isPairingCodeFocused)
+                            .onChange(of: pairingCode) { _, newValue in
+                                let digitsOnly = newValue.filter(\.isNumber)
+                                let trimmed = String(digitsOnly.prefix(6))
 
-                            if trimmed != pairingCode {
-                                pairingCode = trimmed
-                                return
+                                if trimmed != pairingCode {
+                                    pairingCode = trimmed
+                                    return
+                                }
+
+                                if trimmed.count == 6 {
+                                    isPairingCodeFocused = false
+                                }
                             }
+                    }
 
-                            if trimmed.count == 6 {
-                                isPairingCodeFocused = false
-                            }
-                        }
+                    if !progressMessages.isEmpty {
+                        PairingProgressView(title: “当前进度”, steps: progressSteps)
+                    }
+
+                    // 添加底部间距，为按钮留出空间
+                    Spacer()
+                        .frame(height: 80)
                 }
-
-                if !progressMessages.isEmpty {
-                    PairingProgressView(title: "当前进度", steps: progressSteps)
-                }
-
-                Spacer()
+                .padding()
             }
-            .padding()
             .navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(“取消”) {
                         dismiss()
                     }
                 }
@@ -132,8 +136,8 @@ struct PairingView: View {
             .safeAreaInset(edge: .bottom) {
                 pairButtonBar
             }
-            .alert("配对失败", isPresented: $showError) {
-                Button("确定", role: .cancel) { }
+            .alert(“配对失败”, isPresented: $showError) {
+                Button(“确定”, role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }
@@ -142,7 +146,7 @@ struct PairingView: View {
             }
             .onAppear {
                 isPairingCodeFocused = true
-                appendProgress("请选择一台已发现的 Mac，并输入 6 位配对码。")
+                appendProgress(“请选择一台已发现的 Mac，并输入 6 位配对码。”)
             }
             .onChange(of: viewModel.connectionState) { _, newValue in
                 handleConnectionStateChange(newValue)
