@@ -5,6 +5,7 @@ import CryptoKit
 protocol ConnectionManagerDelegate: AnyObject {
     func connectionManager(_ manager: ConnectionManager, didChangePairingState state: PairingState)
     func connectionManager(_ manager: ConnectionManager, didChangeConnectionState state: ConnectionState)
+    func connectionManager(_ manager: ConnectionManager, didUpdatePairingProgress message: String?)
     func connectionManager(_ manager: ConnectionManager, didReceiveMessage envelope: MessageEnvelope)
 }
 
@@ -27,6 +28,11 @@ class ConnectionManager: NSObject {
     private(set) var connectionState: ConnectionState = .disconnected
 
     private var pairingTimer: Timer?
+    private(set) var pairingProgressMessage: String? {
+        didSet {
+            delegate?.connectionManager(self, didUpdatePairingProgress: pairingProgressMessage)
+        }
+    }
 
     // 语音识别器
     private lazy var speechRecognizer: MacSpeechRecognizer = {
@@ -70,6 +76,7 @@ class ConnectionManager: NSObject {
         print("   配对码: \(code)")
         print("   有效期: 2分钟")
         print("   过期时间: \(expiresAt)")
+        updatePairingProgress("已生成配对码，等待 iPhone 扫描二维码或输入配对码。")
 
         return code
     }
@@ -81,12 +88,14 @@ class ConnectionManager: NSObject {
         if case .pairing = pairingState {
             pairingState = .unpaired
         }
+        updatePairingProgress(nil)
     }
 
     func unpair() {
         try? KeychainManager.delete(service: keychainService, account: keychainAccount)
         hmacValidator = nil
         pairingState = .unpaired
+        updatePairingProgress(nil)
     }
 
     func send(_ envelope: MessageEnvelope) {
@@ -98,8 +107,10 @@ class ConnectionManager: NSObject {
             let pairing = try KeychainManager.retrievePairing(service: keychainService, account: keychainAccount)
             hmacValidator = HMACValidator(sharedSecret: pairing.sharedSecret)
             pairingState = .paired(deviceId: pairing.deviceId, deviceName: pairing.deviceName)
+            updatePairingProgress("已完成配对，可直接连接并开始使用。")
         } catch {
             pairingState = .unpaired
+            updatePairingProgress(nil)
         }
     }
 
@@ -108,9 +119,11 @@ class ConnectionManager: NSObject {
         print("   iOS 设备: \(payload.iosName)")
         print("   iOS ID: \(payload.iosId)")
         print("   配对码: \(payload.shortCode)")
+        updatePairingProgress("已收到来自 \(payload.iosName) 的配对请求。")
 
         guard case .pairing(let code, _) = pairingState else {
             print("❌ 配对失败: 不在配对模式")
+            updatePairingProgress("收到配对请求，但当前不在配对模式。")
             sendError(code: "not_pairing", message: "Not in pairing mode")
             return
         }
@@ -119,11 +132,13 @@ class ConnectionManager: NSObject {
             print("❌ 配对失败: 配对码不匹配")
             print("   期望: \(code)")
             print("   收到: \(payload.shortCode)")
+            updatePairingProgress("配对码校验失败，已拒绝此次请求。")
             sendError(code: "invalid_code", message: "Invalid pairing code")
             return
         }
 
         print("✅ 配对码验证通过")
+        updatePairingProgress("配对码校验通过，正在生成共享密钥。")
 
         // Generate shared secret
         var bytes = [UInt8](repeating: 0, count: 32)
@@ -140,11 +155,13 @@ class ConnectionManager: NSObject {
         )
 
         do {
+            updatePairingProgress("正在保存配对信息。")
             try KeychainManager.savePairing(pairing, service: keychainService, account: keychainAccount)
             hmacValidator = HMACValidator(sharedSecret: sharedSecret)
             pairingState = .paired(deviceId: payload.iosId, deviceName: payload.iosName)
 
             print("💾 配对信息已保存到 Keychain")
+            updatePairingProgress("配对信息已保存，正在向 iPhone 返回成功结果。")
 
             // Send success
             let successPayload = PairSuccessPayload(sharedSecret: sharedSecret)
@@ -160,13 +177,19 @@ class ConnectionManager: NSObject {
 
             print("📤 发送配对成功消息")
             print("✅ 配对完成: \(payload.iosName)")
+            updatePairingProgress("已返回配对成功结果，\(payload.iosName) 现在可以开始使用。")
 
             pairingTimer?.invalidate()
             pairingTimer = nil
         } catch {
             print("❌ 保存配对信息失败: \(error)")
+            updatePairingProgress("保存配对信息失败：\(error.localizedDescription)")
             sendError(code: "pairing_failed", message: "Failed to save pairing: \(error)")
         }
+    }
+
+    private func updatePairingProgress(_ message: String?) {
+        pairingProgressMessage = message
     }
 
     private func sendError(code: String, message: String) {

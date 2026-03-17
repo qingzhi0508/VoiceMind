@@ -24,6 +24,12 @@ extension MenuBarController: ConnectionManagerDelegate {
         }
     }
 
+    func connectionManager(_ manager: ConnectionManager, didUpdatePairingProgress message: String?) {
+        DispatchQueue.main.async {
+            self.pairingProgressMessage = message
+        }
+    }
+
     func connectionManager(_ manager: ConnectionManager, didReceiveMessage envelope: MessageEnvelope) {
         switch envelope.type {
         case .result:

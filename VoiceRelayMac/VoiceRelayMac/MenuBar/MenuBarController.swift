@@ -12,6 +12,7 @@ class MenuBarController: NSObject, ObservableObject {
 
     @Published var pairingState: PairingState
     @Published var connectionState: ConnectionState
+    @Published var pairingProgressMessage: String?
     @Published var accessibilityStatus: PermissionStatus
     @Published var inputMonitoringStatus: PermissionStatus
     @Published var isServiceRunning = false
@@ -31,6 +32,7 @@ class MenuBarController: NSObject, ObservableObject {
         self.hotkeyMonitor = HotkeyMonitor()
         self.pairingState = connectionManager.pairingState
         self.connectionState = connectionManager.connectionState
+        self.pairingProgressMessage = connectionManager.pairingProgressMessage
         self.accessibilityStatus = PermissionsManager.checkAccessibility()
         self.inputMonitoringStatus = PermissionsManager.checkInputMonitoring()
         super.init()
@@ -311,6 +313,7 @@ class MenuBarController: NSObject, ObservableObject {
         )
 
         let contentView = QRCodePairingView(
+            controller: self,
             connectionInfo: connectionInfo,
             pairingCode: code,
             onCancel: { [weak self] in
@@ -463,6 +466,7 @@ class MenuBarController: NSObject, ObservableObject {
     func refreshPublishedState() {
         pairingState = connectionManager.pairingState
         connectionState = connectionManager.connectionState
+        pairingProgressMessage = connectionManager.pairingProgressMessage
         refreshPermissionState()
     }
 }

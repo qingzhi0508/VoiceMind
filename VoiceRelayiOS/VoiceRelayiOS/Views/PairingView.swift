@@ -11,6 +11,7 @@ struct PairingView: View {
     @State private var errorMessage = ""
     @State private var isPairing = false
     @State private var progressMessages: [String] = []
+    @State private var pairingTimeoutTask: DispatchWorkItem?
     @FocusState private var isPairingCodeFocused: Bool
 
     var body: some View {
@@ -292,12 +293,23 @@ struct PairingView: View {
         isPairing = true
         errorMessage = ""
         showError = false
+        pairingTimeoutTask?.cancel()
         viewModel.clearPairingFeedback()
         progressMessages.removeAll()
         appendProgress("已选择 Mac：\(service.name)")
         appendProgress("正在连接 \(service.host):\(service.port)...")
-        appendProgress("连接成功后会自动发送配对码。")
+        appendProgress("连接成功后会自动发送配对请求。")
         viewModel.pair(with: service, code: pairingCode)
+
+        let timeoutTask = DispatchWorkItem {
+            guard isPairing else { return }
+            appendProgress("Mac 长时间未返回配对结果。")
+            isPairing = false
+            errorMessage = "配对超时，请确认 Mac 仍处于配对状态，并检查配对码是否正确。"
+            showError = true
+        }
+        pairingTimeoutTask = timeoutTask
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8, execute: timeoutTask)
     }
 
     private func handleConnectionStateChange(_ state: ConnectionState) {
@@ -310,10 +322,11 @@ struct PairingView: View {
             }
         case .connected:
             if isPairing {
-                appendProgress("连接已建立，正在等待 Mac 处理配对请求。")
+                appendProgress("连接已建立，配对请求已发送，正在等待 Mac 返回结果。")
             }
         case .error(let message):
             if isPairing {
+                pairingTimeoutTask?.cancel()
                 appendProgress("连接失败：\(message)")
                 isPairing = false
                 errorMessage = "连接失败：\(message)"
@@ -322,6 +335,10 @@ struct PairingView: View {
         case .disconnected:
             if isPairing {
                 appendProgress("连接已断开。")
+                pairingTimeoutTask?.cancel()
+                isPairing = false
+                errorMessage = "连接已断开，请重试配对。"
+                showError = true
             }
         }
     }
@@ -330,6 +347,7 @@ struct PairingView: View {
         switch state {
         case .paired:
             if isPairing {
+                pairingTimeoutTask?.cancel()
                 appendProgress("收到 Mac 的配对成功返回，正在完成绑定。")
                 isPairing = false
                 dismiss()

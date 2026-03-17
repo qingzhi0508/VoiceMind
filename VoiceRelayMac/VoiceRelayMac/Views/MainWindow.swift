@@ -61,13 +61,28 @@ struct StatusTab: View {
                         connectionStatusView
                     }
 
-                    if case .paired(let deviceId, let deviceName) = controller.pairingState {
+                    if case .paired(_, let deviceName) = controller.pairingState {
                         Divider()
                         HStack {
                             Text("配对设备:")
                             Spacer()
                             Text(deviceName)
                                 .foregroundColor(.secondary)
+                        }
+                    }
+
+                    if let progressMessage = controller.pairingProgressMessage {
+                        Divider()
+                        HStack(alignment: .top) {
+                            Text("配对进度:")
+                            Spacer()
+                            Label {
+                                Text(progressMessage)
+                                    .multilineTextAlignment(.trailing)
+                            } icon: {
+                                Image(systemName: pairingProgressIconName)
+                            }
+                            .foregroundColor(pairingProgressColor)
                         }
                     }
 
@@ -167,10 +182,26 @@ struct StatusTab: View {
         case .connected:
             Label("已连接", systemImage: "circle.fill")
                 .foregroundColor(.green)
-        case .error(let message):
+        case .error:
             Label("错误", systemImage: "exclamationmark.triangle")
                 .foregroundColor(.red)
         }
+    }
+
+    private var pairingProgressIconName: String {
+        if case .paired = controller.pairingState {
+            return "checkmark.circle.fill"
+        }
+
+        return "hourglass.circle.fill"
+    }
+
+    private var pairingProgressColor: Color {
+        if case .paired = controller.pairingState {
+            return .green
+        }
+
+        return .orange
     }
 
     private func getLocalIPAddress() -> String? {

@@ -33,6 +33,7 @@ class PairingTimer: ObservableObject {
 }
 
 struct QRCodePairingView: View {
+    @ObservedObject var controller: MenuBarController
     let connectionInfo: ConnectionInfo
     let pairingCode: String
     let onCancel: () -> Void
@@ -85,6 +86,20 @@ struct QRCodePairingView: View {
                     .font(.system(.caption, design: .monospaced))
             }
 
+            GroupBox(label: Label("配对进度", systemImage: "list.bullet.clipboard")) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: progressIconName)
+                        .foregroundColor(progressColor)
+                        .font(.title3)
+
+                    Text(controller.pairingProgressMessage ?? "等待 iPhone 发起配对。")
+                        .font(.callout)
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(12)
+            }
+
             Text("剩余时间: \(pairingTimer.timeRemaining)秒")
                 .font(.caption)
                 .foregroundColor(.secondary)
@@ -107,6 +122,22 @@ struct QRCodePairingView: View {
         .onDisappear {
             pairingTimer.stop()
         }
+    }
+
+    private var progressIconName: String {
+        if case .paired = controller.pairingState {
+            return "checkmark.circle.fill"
+        }
+
+        return "hourglass.circle.fill"
+    }
+
+    private var progressColor: Color {
+        if case .paired = controller.pairingState {
+            return .green
+        }
+
+        return .orange
     }
 
     private func generateQRCode() {
