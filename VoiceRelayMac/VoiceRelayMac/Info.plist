@@ -30,6 +30,8 @@
 	<string>VoiceMind 需要 Apple Events 权限来控制其他应用程序并注入文本。</string>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>VoiceMind 需要使用系统语音识别将来自 iPhone 的语音转换为文字并输入到当前光标位置。</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>VoiceMind 需要访问本地网络来与 iPhone 建立连接并提供语音输入服务。</string>
 	<key>NSBonjourServices</key>
