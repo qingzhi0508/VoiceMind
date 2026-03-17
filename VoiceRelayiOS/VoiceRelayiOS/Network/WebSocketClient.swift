@@ -133,17 +133,20 @@ class WebSocketClient {
 
             if let error = error {
                 print("❌ 接收长度失败: \(error)")
-                // 连接出错，停止接收
+                self.handleReceiveClosure()
                 return
             }
 
             guard let data = data, data.count == 4 else {
-                if let data = data {
+                if isComplete || data?.isEmpty == true {
+                    print("ℹ️ 服务端已关闭连接")
+                    self.handleReceiveClosure()
+                } else if let data = data {
                     print("⚠️ 接收到的长度数据不完整: \(data.count) 字节")
                 } else {
                     print("⚠️ 接收到空数据，连接可能已关闭")
+                    self.handleReceiveClosure()
                 }
-                // 数据不完整，停止接收
                 return
             }
 
@@ -160,11 +163,17 @@ class WebSocketClient {
             connection.receive(minimumIncompleteLength: Int(length), maximumLength: Int(length)) { data, _, isComplete, error in
                 if let error = error {
                     print("❌ 接收消息失败: \(error)")
+                    self.handleReceiveClosure()
                     return
                 }
 
                 guard let data = data else {
-                    print("⚠️ 接收到的消息数据为空")
+                    if isComplete {
+                        print("ℹ️ 服务端在消息体读取阶段关闭连接")
+                        self.handleReceiveClosure()
+                    } else {
+                        print("⚠️ 接收到的消息数据为空")
+                    }
                     return
                 }
 
@@ -200,5 +209,12 @@ class WebSocketClient {
         reconnectionManager.scheduleReconnect { [weak self] in
             self?.connect(to: host, port: port)
         }
+    }
+
+    private func handleReceiveClosure() {
+        connection?.cancel()
+        connection = nil
+        state = .disconnected
+        attemptReconnect()
     }
 }
