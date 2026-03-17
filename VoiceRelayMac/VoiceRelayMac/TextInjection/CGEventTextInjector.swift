@@ -13,10 +13,6 @@ class CGEventTextInjector: TextInjectionProtocol {
             throw TextInjectionError.accessibilityPermissionDenied
         }
 
-        guard FocusedInputDetector.detectionStatus() != .nonWritable else {
-            throw TextInjectionError.noFocusedInputTarget
-        }
-
         // Split into chunks for long text
         let chunks = text.chunked(into: chunkSize)
 
