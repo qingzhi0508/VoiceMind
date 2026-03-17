@@ -50,7 +50,7 @@ struct PairingView: View {
                             .cornerRadius(12)
                         }
 
-                        Text(“在 Mac 上点击\”配对新设备\”按钮，然后扫描弹出的二维码。”)
+                        Text("在 Mac 上点击\"配对新设备\"按钮，然后扫描弹出的二维码。")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
