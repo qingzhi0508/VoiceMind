@@ -41,9 +41,13 @@ extension MenuBarController: ConnectionManagerDelegate {
         }
 
         // Validate session ID
-        guard payload.sessionId == currentSessionId else {
-            print("Ignoring result with mismatched session ID")
-            return
+        if let currentSessionId {
+            guard payload.sessionId == currentSessionId else {
+                print("Ignoring result with mismatched session ID")
+                return
+            }
+        } else {
+            print("Accepting proactive speech result without active hotkey session")
         }
 
         // Clear session

@@ -12,6 +12,7 @@ class ContentViewModel: ObservableObject {
     @Published var showPairingView = false
     @Published var latestPairingFeedback: String?
     @Published var reconnectStatusMessage: String?
+    @Published var pushToTalkStatusMessage: String?
 
     private let lastKnownHostKey = "voicerelay.lastKnownHost"
     private let lastKnownPortKey = "voicerelay.lastKnownPort"
@@ -22,6 +23,7 @@ class ContentViewModel: ObservableObject {
     private let bonjourBrowser = BonjourBrowser()
 
     private var currentSessionId: String?
+    private var manualSessionId: String?
 
     init() {
         connectionManager.delegate = self
@@ -82,6 +84,30 @@ class ContentViewModel: ObservableObject {
     func updateLanguage(_ language: String) {
         selectedLanguage = language
         speechController.selectedLanguage = language
+    }
+
+    func startPushToTalk() {
+        guard canStartPushToTalk else { return }
+
+        do {
+            manualSessionId = try speechController.startManualListening()
+            pushToTalkStatusMessage = "正在监听语音，松开发送到 Mac。"
+        } catch {
+            pushToTalkStatusMessage = error.localizedDescription
+        }
+    }
+
+    func stopPushToTalk() {
+        guard recognitionState == .listening else { return }
+        pushToTalkStatusMessage = "正在整理语音结果..."
+        speechController.stopListening()
+    }
+
+    var canStartPushToTalk: Bool {
+        if case .paired = pairingState, case .connected = connectionState {
+            return recognitionState == .idle && checkPermissions()
+        }
+        return false
     }
 
     func requestPermissions(completion: @escaping (Bool) -> Void) {
@@ -172,6 +198,9 @@ extension ContentViewModel: ConnectionManagerDelegate {
                     self.reconnectStatusMessage = "重连失败：\(message)"
                 }
             case .disconnected:
+                if self.recognitionState == .listening {
+                    self.pushToTalkStatusMessage = "连接已断开，无法继续发送语音结果。"
+                }
                 break
             }
         }
@@ -239,11 +268,26 @@ extension ContentViewModel: SpeechControllerDelegate {
     func speechController(_ controller: SpeechController, didChangeState state: RecognitionState) {
         DispatchQueue.main.async {
             self.recognitionState = state
+
+            switch state {
+            case .idle:
+                if self.connectionState == .connected {
+                    self.pushToTalkStatusMessage = "按住麦克风开始说话。"
+                } else {
+                    self.pushToTalkStatusMessage = "连接 Mac 后可按住说话。"
+                }
+            case .listening:
+                self.pushToTalkStatusMessage = "正在监听语音，松开发送到 Mac。"
+            case .processing:
+                self.pushToTalkStatusMessage = "正在整理语音结果..."
+            case .sending:
+                self.pushToTalkStatusMessage = "正在发送结果到 Mac..."
+            }
         }
     }
 
     func speechController(_ controller: SpeechController, didRecognizeText text: String, language: String) {
-        guard let sessionId = currentSessionId else { return }
+        guard let sessionId = currentSessionId ?? manualSessionId else { return }
 
         // Send result back to Mac
         let payload = ResultPayload(
@@ -272,13 +316,16 @@ extension ContentViewModel: SpeechControllerDelegate {
 
         connectionManager.send(envelope)
         currentSessionId = nil
+        manualSessionId = nil
+        pushToTalkStatusMessage = "语音结果已发送到 Mac。"
     }
 
     func speechController(_ controller: SpeechController, didFailWithError error: Error) {
         print("Speech recognition error: \(error)")
+        pushToTalkStatusMessage = error.localizedDescription
 
         // Send error to Mac if we have a session
-        if currentSessionId != nil {
+        if currentSessionId != nil || manualSessionId != nil {
             let payload = ErrorPayload(
                 code: "SPEECH_ERROR",
                 message: error.localizedDescription
@@ -304,6 +351,7 @@ extension ContentViewModel: SpeechControllerDelegate {
 
             connectionManager.send(envelope)
             currentSessionId = nil
+            manualSessionId = nil
         }
     }
 }

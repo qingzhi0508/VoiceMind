@@ -76,6 +76,25 @@ class SpeechController: NSObject {
         }
     }
 
+    @discardableResult
+    func startManualListening() throws -> String {
+        guard checkPermissions() else {
+            throw NSError(domain: "SpeechController", code: -1, userInfo: [NSLocalizedDescriptionKey: "Permissions not granted"])
+        }
+
+        let sessionId = UUID().uuidString
+        currentSessionId = sessionId
+
+        do {
+            try startRecognition()
+            state = .listening
+            return sessionId
+        } catch {
+            currentSessionId = nil
+            throw error
+        }
+    }
+
     func stopListening() {
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
@@ -144,13 +163,13 @@ class SpeechController: NSObject {
     }
 
     private func finishRecognition(with text: String? = nil) {
-        guard let sessionId = currentSessionId else { return }
-
         state = .sending
 
         let finalText = text ?? lastRecognizedText
 
-        delegate?.speechController(self, didRecognizeText: finalText, language: selectedLanguage)
+        if !finalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            delegate?.speechController(self, didRecognizeText: finalText, language: selectedLanguage)
+        }
 
         cleanup()
         currentSessionId = nil

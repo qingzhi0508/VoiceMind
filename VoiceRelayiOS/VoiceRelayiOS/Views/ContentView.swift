@@ -17,7 +17,18 @@ struct ContentView: View {
                 )
 
                 // Recognition Status
-                RecognitionStatusView(state: viewModel.recognitionState)
+                RecognitionStatusView(
+                    state: viewModel.recognitionState,
+                    statusMessage: viewModel.pushToTalkStatusMessage,
+                    isEnabled: viewModel.canStartPushToTalk || viewModel.recognitionState != .idle,
+                    onPressChanged: { isPressing in
+                        if isPressing {
+                            viewModel.startPushToTalk()
+                        } else {
+                            viewModel.stopPushToTalk()
+                        }
+                    }
+                )
 
                 Spacer()
 
@@ -188,16 +199,56 @@ struct ConnectionStatusCard: View {
 
 struct RecognitionStatusView: View {
     let state: RecognitionState
+    let statusMessage: String?
+    let isEnabled: Bool
+    let onPressChanged: (Bool) -> Void
+
+    @State private var isPressing = false
 
     var body: some View {
         VStack(spacing: 15) {
-            Image(systemName: iconName)
-                .font(.system(size: 60))
-                .foregroundColor(iconColor)
+            ZStack {
+                Circle()
+                    .fill(buttonBackgroundColor)
+                    .frame(width: 120, height: 120)
+                    .overlay(
+                        Circle()
+                            .stroke(buttonBorderColor, lineWidth: isPressing ? 4 : 2)
+                    )
+                    .scaleEffect(isPressing ? 0.95 : 1)
+
+                Image(systemName: iconName)
+                    .font(.system(size: 52))
+                    .foregroundColor(iconColor)
+            }
+            .contentShape(Circle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard isEnabled else { return }
+                        if !isPressing {
+                            isPressing = true
+                            onPressChanged(true)
+                        }
+                    }
+                    .onEnded { _ in
+                        guard isPressing else { return }
+                        isPressing = false
+                        onPressChanged(false)
+                    }
+            )
 
             Text(statusText)
                 .font(.title2)
                 .fontWeight(.medium)
+
+            if let statusMessage {
+                Text(statusMessage)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
 
             if state == .listening {
                 WaveformView()
@@ -211,9 +262,9 @@ struct RecognitionStatusView: View {
     private var iconName: String {
         switch state {
         case .idle:
-            return "mic.circle"
+            return "mic.fill"
         case .listening:
-            return "mic.circle.fill"
+            return "waveform"
         case .processing:
             return "waveform.circle"
         case .sending:
@@ -224,9 +275,9 @@ struct RecognitionStatusView: View {
     private var iconColor: Color {
         switch state {
         case .idle:
-            return .gray
+            return isEnabled ? .blue : .gray
         case .listening:
-            return .red
+            return .white
         case .processing:
             return .blue
         case .sending:
@@ -237,13 +288,39 @@ struct RecognitionStatusView: View {
     private var statusText: String {
         switch state {
         case .idle:
-            return "准备就绪"
+            return isEnabled ? "按住说话" : "准备就绪"
         case .listening:
             return "正在聆听..."
         case .processing:
             return "处理中..."
         case .sending:
             return "发送结果..."
+        }
+    }
+
+    private var buttonBackgroundColor: Color {
+        switch state {
+        case .idle:
+            return isEnabled ? Color.blue.opacity(0.15) : Color.gray.opacity(0.12)
+        case .listening:
+            return .red
+        case .processing:
+            return Color.blue.opacity(0.15)
+        case .sending:
+            return Color.green.opacity(0.18)
+        }
+    }
+
+    private var buttonBorderColor: Color {
+        switch state {
+        case .idle:
+            return isEnabled ? .blue.opacity(0.5) : .gray.opacity(0.4)
+        case .listening:
+            return .red.opacity(0.8)
+        case .processing:
+            return .blue.opacity(0.5)
+        case .sending:
+            return .green.opacity(0.6)
         }
     }
 }

@@ -19,15 +19,15 @@ struct PairingView: View {
                 VStack(spacing: 30) {
                     // Header
                     VStack(spacing: 10) {
-                        Image(systemName: “laptopcomputer.and.iphone”)
+                        Image(systemName: "laptopcomputer.and.iphone")
                             .font(.system(size: 60))
                             .foregroundColor(.blue)
 
-                        Text(“与 Mac 配对”)
+                        Text("与 Mac 配对")
                             .font(.title)
                             .fontWeight(.bold)
 
-                        Text(“优先使用扫码配对，也可以继续使用局域网自动发现。”)
+                        Text("优先使用扫码配对，也可以继续使用局域网自动发现。")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -39,8 +39,8 @@ struct PairingView: View {
                             showQRCodeScanner = true
                         } label: {
                             HStack {
-                                Image(systemName: “qrcode.viewfinder”)
-                                Text(“扫描二维码配对”)
+                                Image(systemName: "qrcode.viewfinder")
+                                Text("扫描二维码配对")
                             }
                             .font(.headline)
                             .frame(maxWidth: .infinity)
@@ -50,7 +50,7 @@ struct PairingView: View {
                             .cornerRadius(12)
                         }
 
-                        Text(“在 Mac 上点击”配对新设备”，然后扫描弹出的二维码。”)
+                        Text("在 Mac 上点击“配对新设备”按钮，然后扫描弹出的二维码。")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -58,13 +58,13 @@ struct PairingView: View {
 
                     // Discovered Macs
                     VStack(alignment: .leading, spacing: 15) {
-                        Text(“或手动选择局域网中的 Mac”)
+                        Text("或手动选择局域网中的 Mac")
                             .font(.headline)
 
                         if viewModel.discoveredServices.isEmpty {
                             HStack {
                                 ProgressView()
-                                Text(“搜索中...”)
+                                Text("搜索中...")
                                     .foregroundColor(.secondary)
                             }
                             .frame(maxWidth: .infinity)
@@ -86,10 +86,10 @@ struct PairingView: View {
 
                     // Pairing Code Input
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(“配对码”)
+                        Text("配对码")
                             .font(.headline)
 
-                        TextField(“输入 6 位数字”, text: $pairingCode)
+                        TextField("输入 6 位数字", text: $pairingCode)
                             .keyboardType(.numberPad)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
@@ -115,7 +115,7 @@ struct PairingView: View {
                     }
 
                     if !progressMessages.isEmpty {
-                        PairingProgressView(title: “当前进度”, steps: progressSteps)
+                    PairingProgressView(title: "当前进度", steps: progressSteps)
                     }
 
                     // 添加底部间距，为按钮留出空间
@@ -128,7 +128,7 @@ struct PairingView: View {
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(“取消”) {
+                    Button("取消") {
                         dismiss()
                     }
                 }
@@ -136,8 +136,8 @@ struct PairingView: View {
             .safeAreaInset(edge: .bottom) {
                 pairButtonBar
             }
-            .alert(“配对失败”, isPresented: $showError) {
-                Button(“确定”, role: .cancel) { }
+            .alert("配对失败", isPresented: $showError) {
+                Button("确定", role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }
@@ -146,7 +146,7 @@ struct PairingView: View {
             }
             .onAppear {
                 isPairingCodeFocused = true
-                appendProgress(“请选择一台已发现的 Mac，并输入 6 位配对码。”)
+                appendProgress("请选择一台已发现的 Mac，并输入 6 位配对码。")
             }
             .onChange(of: viewModel.connectionState) { _, newValue in
                 handleConnectionStateChange(newValue)
