@@ -15,6 +15,8 @@ class AudioStreamController: NSObject {
     private var currentSessionId: String?
     private var sequenceNumber: Int = 0
     private var isStreaming: Bool = false
+    private var outputFormat: AVAudioFormat?
+    private var audioConverter: AVAudioConverter?
 
     var selectedLanguage: String = "zh-CN"
 
@@ -50,50 +52,73 @@ class AudioStreamController: NSObject {
         currentSessionId = sessionId
         sequenceNumber = 0
         isStreaming = true
+        do {
+            // 配置音频格式：16kHz, 单声道, PCM16
+            let sampleRate: Double = 16000
+            let channels: AVAudioChannelCount = 1
 
-        // 配置音频会话
-        let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
-        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            // 配置音频会话。不要强制设置输入通道数，部分设备在首次激活时会直接失败。
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+            try audioSession.setPreferredSampleRate(sampleRate)
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
 
-        // 配置音频格式：16kHz, 单声道, PCM16
-        let sampleRate: Double = 16000
-        let channels: AVAudioChannelCount = 1
+            guard let format = AVAudioFormat(
+                commonFormat: .pcmFormatInt16,
+                sampleRate: sampleRate,
+                channels: channels,
+                interleaved: false
+            ) else {
+                throw AudioStreamError.audioFormatError
+            }
 
-        guard let format = AVAudioFormat(
-            commonFormat: .pcmFormatInt16,
-            sampleRate: sampleRate,
-            channels: channels,
-            interleaved: false
-        ) else {
-            throw AudioStreamError.audioFormatError
+            print("📊 音频格式:")
+            print("   采样率: \(Int(sampleRate)) Hz")
+            print("   通道数: \(channels)")
+            print("   格式: PCM16")
+
+            // 发送 audioStart 消息
+            delegate?.audioStreamController(self, didStartStream: AudioStartPayload(
+                sessionId: sessionId,
+                language: selectedLanguage,
+                sampleRate: Int(sampleRate),
+                channels: Int(channels),
+                format: "pcm16"
+            ))
+
+            // 安装音频 tap
+            let inputNode = audioEngine.inputNode
+            let inputFormat = inputNode.outputFormat(forBus: 0)
+
+            guard let converter = AVAudioConverter(from: inputFormat, to: format) else {
+                throw AudioStreamError.audioFormatError
+            }
+
+            outputFormat = format
+            audioConverter = converter
+
+            inputNode.removeTap(onBus: 0)
+            inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { [weak self] buffer, _ in
+                self?.processAudioBuffer(buffer)
+            }
+
+            // 启动音频引擎
+            audioEngine.prepare()
+            try audioEngine.start()
+
+            print("✅ 音频引擎已启动")
+        } catch {
+            isStreaming = false
+            currentSessionId = nil
+            sequenceNumber = 0
+            outputFormat = nil
+            audioConverter = nil
+            audioEngine.stop()
+            audioEngine.inputNode.removeTap(onBus: 0)
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            print("❌ 启动音频流失败: \(error.localizedDescription)")
+            throw error
         }
-
-        print("📊 音频格式:")
-        print("   采样率: \(Int(sampleRate)) Hz")
-        print("   通道数: \(channels)")
-        print("   格式: PCM16")
-
-        // 发送 audioStart 消息
-        delegate?.audioStreamController(self, didStartStream: AudioStartPayload(
-            sessionId: sessionId,
-            language: selectedLanguage,
-            sampleRate: Int(sampleRate),
-            channels: Int(channels),
-            format: "pcm16"
-        ))
-
-        // 安装音频 tap
-        let inputNode = audioEngine.inputNode
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, time in
-            self?.processAudioBuffer(buffer)
-        }
-
-        // 启动音频引擎
-        audioEngine.prepare()
-        try audioEngine.start()
-
-        print("✅ 音频引擎已启动")
     }
 
     /// 停止音频流传输
@@ -109,8 +134,12 @@ class AudioStreamController: NSObject {
         // 停止音频引擎
         if audioEngine.isRunning {
             audioEngine.stop()
-            audioEngine.inputNode.removeTap(onBus: 0)
         }
+        audioEngine.inputNode.removeTap(onBus: 0)
+        audioConverter = nil
+        outputFormat = nil
+
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
 
         // 发送 audioEnd 消息
         if let sessionId = currentSessionId {
@@ -130,8 +159,13 @@ class AudioStreamController: NSObject {
             return
         }
 
+        guard let convertedBuffer = convertBufferIfNeeded(buffer) else {
+            print("⚠️ 无法转换音频缓冲区")
+            return
+        }
+
         // 将 AVAudioPCMBuffer 转换为 Data
-        guard let audioData = bufferToData(buffer) else {
+        guard let audioData = bufferToData(convertedBuffer) else {
             print("⚠️ 无法转换音频缓冲区")
             return
         }
@@ -151,6 +185,49 @@ class AudioStreamController: NSObject {
         if sequenceNumber % 100 == 0 {
             print("📤 已发送 \(sequenceNumber) 个音频包")
         }
+    }
+
+    private func convertBufferIfNeeded(_ buffer: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
+        guard let outputFormat = outputFormat, let audioConverter = audioConverter else {
+            return nil
+        }
+
+        if buffer.format == outputFormat {
+            return buffer
+        }
+
+        let ratio = outputFormat.sampleRate / buffer.format.sampleRate
+        let estimatedFrameCapacity = max(1, Int(ceil(Double(buffer.frameLength) * ratio)))
+
+        guard let convertedBuffer = AVAudioPCMBuffer(
+            pcmFormat: outputFormat,
+            frameCapacity: AVAudioFrameCount(estimatedFrameCapacity)
+        ) else {
+            return nil
+        }
+
+        var conversionError: NSError?
+        var hasProvidedInput = false
+
+        let status = audioConverter.convert(to: convertedBuffer, error: &conversionError) { _, outStatus in
+            if hasProvidedInput {
+                outStatus.pointee = .noDataNow
+                return nil
+            }
+
+            hasProvidedInput = true
+            outStatus.pointee = .haveData
+            return buffer
+        }
+
+        guard conversionError == nil, status != .error, convertedBuffer.frameLength > 0 else {
+            if let conversionError {
+                print("⚠️ 音频转换失败: \(conversionError.localizedDescription)")
+            }
+            return nil
+        }
+
+        return convertedBuffer
     }
 
     private func bufferToData(_ buffer: AVAudioPCMBuffer) -> Data? {

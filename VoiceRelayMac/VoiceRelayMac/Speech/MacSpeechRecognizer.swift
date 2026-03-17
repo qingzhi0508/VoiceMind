@@ -87,7 +87,7 @@ class MacSpeechRecognizer: NSObject {
 
         // 创建音频格式
         guard let format = AVAudioFormat(
-            commonFormat: .pcmFormatInt16,
+            commonFormat: .pcmFormatFloat32,
             sampleRate: self.sampleRate,
             channels: self.channels,
             interleaved: false
@@ -200,7 +200,9 @@ class MacSpeechRecognizer: NSObject {
 
     /// 将 Data 转换为 AVAudioPCMBuffer
     private func dataToAudioBuffer(_ data: Data, format: AVAudioFormat) -> AVAudioPCMBuffer? {
-        let frameCount = UInt32(data.count) / format.streamDescription.pointee.mBytesPerFrame
+        let bytesPerSample = MemoryLayout<Int16>.size
+        let channelCount = Int(format.channelCount)
+        let frameCount = UInt32(data.count / (bytesPerSample * max(channelCount, 1)))
 
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
             return nil
@@ -208,11 +210,24 @@ class MacSpeechRecognizer: NSObject {
 
         buffer.frameLength = frameCount
 
-        // 将 Data 复制到 buffer
-        let audioBuffer = buffer.audioBufferList.pointee.mBuffers
+        guard let floatChannelData = buffer.floatChannelData else {
+            return nil
+        }
+
+        // Shared protocol sends 16-bit PCM. Convert it to normalized Float32 samples
+        // before appending so the Speech framework receives a standard processing format.
         data.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
-            guard let baseAddress = bytes.baseAddress else { return }
-            audioBuffer.mData?.copyMemory(from: baseAddress, byteCount: Int(audioBuffer.mDataByteSize))
+            guard let samples = bytes.bindMemory(to: Int16.self).baseAddress else {
+                return
+            }
+
+            let totalFrames = Int(frameCount)
+            for frame in 0..<totalFrames {
+                for channel in 0..<channelCount {
+                    let sampleIndex = frame * channelCount + channel
+                    floatChannelData[channel][frame] = Float(samples[sampleIndex]) / Float(Int16.max)
+                }
+            }
         }
 
         return buffer

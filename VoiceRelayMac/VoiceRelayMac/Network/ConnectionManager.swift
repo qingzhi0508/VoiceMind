@@ -55,6 +55,9 @@ class ConnectionManager: NSObject {
     }
 
     func start(port: UInt16) throws {
+        // Prewarm speech recognition so permission prompts happen before the first live session.
+        _ = speechRecognizer
+
         // WebSocketServer now handles both TCP server and Bonjour advertising
         try server.start(port: port)
         print("✅ Connection manager started on port \(server.port)")
