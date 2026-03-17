@@ -20,6 +20,7 @@ class ContentViewModel: ObservableObject {
 
     private let connectionManager = ConnectionManager()
     private let speechController = SpeechController()
+    private let audioStreamController = AudioStreamController()
     private let bonjourBrowser = BonjourBrowser()
 
     private var currentSessionId: String?
@@ -28,6 +29,7 @@ class ContentViewModel: ObservableObject {
     init() {
         connectionManager.delegate = self
         speechController.delegate = self
+        audioStreamController.delegate = self
         bonjourBrowser.delegate = self
 
         // Load pairing state
@@ -231,8 +233,15 @@ extension ContentViewModel: ConnectionManagerDelegate {
             return
         }
 
+        print("🎤 收到 startListen 消息，使用音频流模式")
         currentSessionId = payload.sessionId
-        speechController.startListening(sessionId: payload.sessionId)
+
+        // 使用音频流模式（发送到 Mac 端识别）
+        do {
+            try audioStreamController.startStreaming(sessionId: payload.sessionId)
+        } catch {
+            print("❌ 启动音频流失败: \(error.localizedDescription)")
+        }
     }
 
     private func handleStopListen(_ envelope: MessageEnvelope) {
@@ -245,7 +254,8 @@ extension ContentViewModel: ConnectionManagerDelegate {
             return
         }
 
-        speechController.stopListening()
+        print("🛑 收到 stopListen 消息，停止音频流")
+        audioStreamController.stopStreaming()
     }
 
     private func handlePairingError(_ envelope: MessageEnvelope) {
@@ -384,5 +394,85 @@ extension ContentViewModel: BonjourBrowserDelegate {
         DispatchQueue.main.async {
             self.discoveredServices.removeAll { $0.id == service.id }
         }
+    }
+}
+
+// MARK: - AudioStreamControllerDelegate
+
+extension ContentViewModel: AudioStreamControllerDelegate {
+    func audioStreamController(_ controller: AudioStreamController, didStartStream payload: AudioStartPayload) {
+        print("📤 发送 audioStart 消息")
+        guard let payloadData = try? JSONEncoder().encode(payload) else {
+            print("❌ 无法编码 audioStart payload")
+            return
+        }
+
+        let timestamp = Date()
+        let hmac = connectionManager.hmacValidator?.generateHMACForEnvelope(
+            type: .audioStart,
+            payload: payloadData,
+            timestamp: timestamp,
+            deviceId: connectionManager.deviceId
+        )
+
+        let envelope = MessageEnvelope(
+            type: .audioStart,
+            payload: payloadData,
+            timestamp: timestamp,
+            deviceId: connectionManager.deviceId,
+            hmac: hmac
+        )
+
+        connectionManager.send(envelope)
+    }
+
+    func audioStreamController(_ controller: AudioStreamController, didCaptureAudio payload: AudioDataPayload) {
+        guard let payloadData = try? JSONEncoder().encode(payload) else {
+            return
+        }
+
+        let timestamp = Date()
+        let hmac = connectionManager.hmacValidator?.generateHMACForEnvelope(
+            type: .audioData,
+            payload: payloadData,
+            timestamp: timestamp,
+            deviceId: connectionManager.deviceId
+        )
+
+        let envelope = MessageEnvelope(
+            type: .audioData,
+            payload: payloadData,
+            timestamp: timestamp,
+            deviceId: connectionManager.deviceId,
+            hmac: hmac
+        )
+
+        connectionManager.send(envelope)
+    }
+
+    func audioStreamController(_ controller: AudioStreamController, didEndStream payload: AudioEndPayload) {
+        print("📤 发送 audioEnd 消息")
+        guard let payloadData = try? JSONEncoder().encode(payload) else {
+            print("❌ 无法编码 audioEnd payload")
+            return
+        }
+
+        let timestamp = Date()
+        let hmac = connectionManager.hmacValidator?.generateHMACForEnvelope(
+            type: .audioEnd,
+            payload: payloadData,
+            timestamp: timestamp,
+            deviceId: connectionManager.deviceId
+        )
+
+        let envelope = MessageEnvelope(
+            type: .audioEnd,
+            payload: payloadData,
+            timestamp: timestamp,
+            deviceId: connectionManager.deviceId,
+            hmac: hmac
+        )
+
+        connectionManager.send(envelope)
     }
 }

@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(cd VoiceRelayMac && xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug clean build 2>&1 | tail -30)"
+      "Bash(cd VoiceRelayMac && xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug clean build 2>&1 | tail -30)",
+      "Bash(chmod +x /Users/cayden/Data/my-data/voiceMind/test_speech_recognition.sh)"
     ]
   }
 }

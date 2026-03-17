@@ -85,3 +85,41 @@ public struct ErrorPayload: Codable {
         self.message = message
     }
 }
+
+// MARK: - 音频流 Payloads
+
+public struct AudioStartPayload: Codable {
+    public let sessionId: String
+    public let language: String
+    public let sampleRate: Int
+    public let channels: Int
+    public let format: String  // "pcm16"
+
+    public init(sessionId: String, language: String, sampleRate: Int, channels: Int, format: String = "pcm16") {
+        self.sessionId = sessionId
+        self.language = language
+        self.sampleRate = sampleRate
+        self.channels = channels
+        self.format = format
+    }
+}
+
+public struct AudioDataPayload: Codable {
+    public let sessionId: String
+    public let audioData: Data
+    public let sequenceNumber: Int
+
+    public init(sessionId: String, audioData: Data, sequenceNumber: Int) {
+        self.sessionId = sessionId
+        self.audioData = audioData
+        self.sequenceNumber = sequenceNumber
+    }
+}
+
+public struct AudioEndPayload: Codable {
+    public let sessionId: String
+
+    public init(sessionId: String) {
+        self.sessionId = sessionId
+    }
+}

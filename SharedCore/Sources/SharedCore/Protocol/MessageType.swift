@@ -10,4 +10,9 @@ public enum MessageType: String, Codable {
     case ping
     case pong
     case error
+
+    // 音频流消息类型
+    case audioStart     // iOS -> Mac: 开始音频流
+    case audioData      // iOS -> Mac: 音频数据
+    case audioEnd       // iOS -> Mac: 结束音频流
 }
