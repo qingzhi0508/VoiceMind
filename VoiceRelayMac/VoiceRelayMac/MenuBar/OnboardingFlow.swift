@@ -341,7 +341,7 @@ struct ReadyView: View {
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
-            Text("所有设置已完成，可以开始使用了")
+                Text("所有设置已完成，可以开始使用了")
                 .font(.title3)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -373,7 +373,7 @@ struct ReadyView: View {
                 Text("使用说明")
                     .font(.headline)
 
-                InstructionStep(number: 1, text: "点击下方按钮启动网络服务")
+                InstructionStep(number: 1, text: controller.isServiceRunning ? "网络服务已自动启动" : "点击下方按钮启动网络服务")
                 InstructionStep(number: 2, text: "在 iPhone 上打开 VoiceMind 应用")
                 InstructionStep(number: 3, text: "完成配对后，在 iPhone 上按住麦克风开始说话")
             }
@@ -387,8 +387,8 @@ struct ReadyView: View {
             // Start Button
             Button(action: onStart) {
                 HStack {
-                    Image(systemName: "power")
-                    Text("启动服务")
+                    Image(systemName: controller.isServiceRunning ? "arrow.right.circle.fill" : "power")
+                    Text(controller.isServiceRunning ? "继续" : "启动服务")
                 }
                 .font(.headline)
                 .frame(maxWidth: .infinity)
@@ -401,6 +401,9 @@ struct ReadyView: View {
         }
         .onAppear {
             fetchLocalIPAddress()
+            if controller.isServiceRunning {
+                onStart()
+            }
         }
     }
 
