@@ -11,6 +11,13 @@ struct ManualConnectionView: View {
     @State private var isConnecting = false
     @State private var isConnected = false
     @State private var errorMessage: String?
+    @FocusState private var focusedField: Field?
+
+    private enum Field {
+        case ipAddress
+        case port
+        case pairingCode
+    }
 
     var body: some View {
         NavigationView {
@@ -20,16 +27,26 @@ struct ManualConnectionView: View {
                     Section(header: Text("第一步：连接到 Mac")) {
                         TextField("IP 地址", text: $ipAddress)
                             .keyboardType(.decimalPad)
-                            .autocapitalization(.none)
-                            .disableAutocorrection(true)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .focused($focusedField, equals: .ipAddress)
                             .placeholder(when: ipAddress.isEmpty) {
                                 Text("例如：192.168.1.100").foregroundColor(.gray)
                             }
 
                         TextField("端口", text: $port)
                             .keyboardType(.numberPad)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .focused($focusedField, equals: .port)
                             .placeholder(when: port.isEmpty) {
                                 Text("例如：8080").foregroundColor(.gray)
+                            }
+                            .onChange(of: port) { _, newValue in
+                                let digitsOnly = newValue.filter(\.isNumber)
+                                if digitsOnly != port {
+                                    port = digitsOnly
+                                }
                             }
                     }
 
@@ -65,8 +82,24 @@ struct ManualConnectionView: View {
                     Section(header: Text("第二步：输入配对码")) {
                         TextField("6位配对码", text: $pairingCode)
                             .keyboardType(.numberPad)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
                             .font(.system(.title2, design: .monospaced))
                             .multilineTextAlignment(.center)
+                            .focused($focusedField, equals: .pairingCode)
+                            .onChange(of: pairingCode) { _, newValue in
+                                let digitsOnly = newValue.filter(\.isNumber)
+                                let trimmed = String(digitsOnly.prefix(6))
+
+                                if trimmed != pairingCode {
+                                    pairingCode = trimmed
+                                    return
+                                }
+
+                                if trimmed.count == 6 {
+                                    focusedField = nil
+                                }
+                            }
                     }
 
                     Section(header: Text("说明")) {
@@ -99,6 +132,12 @@ struct ManualConnectionView: View {
                         dismiss()
                     }
                 }
+            }
+            .onAppear {
+                focusedField = isConnected ? .pairingCode : .ipAddress
+            }
+            .onChange(of: isConnected) { _, newValue in
+                focusedField = newValue ? .pairingCode : .ipAddress
             }
         }
     }
@@ -138,6 +177,7 @@ struct ManualConnectionView: View {
         }
 
         errorMessage = nil
+        focusedField = nil
         print("🔐 发送配对码: \(pairingCode)")
 
         // Send pairing code

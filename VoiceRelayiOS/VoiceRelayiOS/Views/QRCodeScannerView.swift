@@ -186,6 +186,7 @@ struct PairingCodeInputView: View {
 
     @State private var pairingCode = ""
     @Environment(\.dismiss) var dismiss
+    @FocusState private var isPairingCodeFocused: Bool
 
     var body: some View {
         NavigationView {
@@ -217,15 +218,25 @@ struct PairingCodeInputView: View {
 
                     TextField("配对码", text: $pairingCode)
                         .keyboardType(.numberPad)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                         .font(.system(size: 36, design: .monospaced))
                         .multilineTextAlignment(.center)
                         .padding()
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(8)
-                        .onChange(of: pairingCode) { newValue in
-                            // Limit to 6 digits
-                            if newValue.count > 6 {
-                                pairingCode = String(newValue.prefix(6))
+                        .focused($isPairingCodeFocused)
+                        .onChange(of: pairingCode) { _, newValue in
+                            let digitsOnly = newValue.filter(\.isNumber)
+                            let trimmed = String(digitsOnly.prefix(6))
+
+                            if trimmed != pairingCode {
+                                pairingCode = trimmed
+                                return
+                            }
+
+                            if trimmed.count == 6 {
+                                isPairingCodeFocused = false
                             }
                         }
                 }
@@ -257,6 +268,9 @@ struct PairingCodeInputView: View {
                         dismiss()
                     }
                 }
+            }
+            .onAppear {
+                isPairingCodeFocused = true
             }
         }
     }

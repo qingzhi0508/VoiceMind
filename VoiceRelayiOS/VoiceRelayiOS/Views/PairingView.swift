@@ -9,6 +9,7 @@ struct PairingView: View {
     @State private var showQRCodeScanner = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @FocusState private var isPairingCodeFocused: Bool
 
     var body: some View {
         NavigationView {
@@ -87,15 +88,25 @@ struct PairingView: View {
 
                     TextField("输入 6 位数字", text: $pairingCode)
                         .keyboardType(.numberPad)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                         .font(.system(size: 24, weight: .medium, design: .monospaced))
                         .multilineTextAlignment(.center)
                         .padding()
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(12)
-                        .onChange(of: pairingCode) { newValue in
-                            // Limit to 6 digits
-                            if newValue.count > 6 {
-                                pairingCode = String(newValue.prefix(6))
+                        .focused($isPairingCodeFocused)
+                        .onChange(of: pairingCode) { _, newValue in
+                            let digitsOnly = newValue.filter(\.isNumber)
+                            let trimmed = String(digitsOnly.prefix(6))
+
+                            if trimmed != pairingCode {
+                                pairingCode = trimmed
+                                return
+                            }
+
+                            if trimmed.count == 6 {
+                                isPairingCodeFocused = false
                             }
                         }
                 }
@@ -130,6 +141,9 @@ struct PairingView: View {
             }
             .sheet(isPresented: $showQRCodeScanner) {
                 QRCodeScannerView(viewModel: viewModel)
+            }
+            .onAppear {
+                isPairingCodeFocused = true
             }
         }
     }

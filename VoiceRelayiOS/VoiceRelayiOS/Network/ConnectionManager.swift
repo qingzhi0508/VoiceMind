@@ -14,6 +14,7 @@ class ConnectionManager: NSObject {
 
     private let client = WebSocketClient()
     var hmacValidator: HMACValidator?
+    private var pendingPairConfirmEnvelope: MessageEnvelope?
 
     private let keychainService = "com.voicerelay.ios"
     private let keychainAccount = "pairing"
@@ -46,25 +47,7 @@ class ConnectionManager: NSObject {
 
     func pair(with service: DiscoveredService, code: String) {
         connect(to: service)
-
-        // Send pair confirm
-        let payload = PairConfirmPayload(
-            shortCode: code,
-            iosName: UIDevice.current.name,
-            iosId: deviceId
-        )
-
-        guard let payloadData = try? JSONEncoder().encode(payload) else { return }
-
-        let envelope = MessageEnvelope(
-            type: .pairConfirm,
-            payload: payloadData,
-            timestamp: Date(),
-            deviceId: deviceId,
-            hmac: nil
-        )
-
-        client.send(envelope)
+        queueOrSendPairConfirm(code: code)
     }
 
     func unpair() {
@@ -81,25 +64,7 @@ class ConnectionManager: NSObject {
 
     func pairWithCode(_ code: String) {
         print("🔐 使用配对码配对: \(code)")
-
-        // Send pair confirm
-        let payload = PairConfirmPayload(
-            shortCode: code,
-            iosName: UIDevice.current.name,
-            iosId: deviceId
-        )
-
-        guard let payloadData = try? JSONEncoder().encode(payload) else { return }
-
-        let envelope = MessageEnvelope(
-            type: .pairConfirm,
-            payload: payloadData,
-            timestamp: Date(),
-            deviceId: deviceId,
-            hmac: nil
-        )
-
-        client.send(envelope)
+        queueOrSendPairConfirm(code: code)
     }
 
     func send(_ envelope: MessageEnvelope) {
@@ -114,6 +79,35 @@ class ConnectionManager: NSObject {
         } catch {
             pairingState = .unpaired
         }
+    }
+
+    private func queueOrSendPairConfirm(code: String) {
+        guard let envelope = makePairConfirmEnvelope(code: code) else { return }
+
+        if case .connected = client.state {
+            pendingPairConfirmEnvelope = nil
+            client.send(envelope)
+        } else {
+            pendingPairConfirmEnvelope = envelope
+        }
+    }
+
+    private func makePairConfirmEnvelope(code: String) -> MessageEnvelope? {
+        let payload = PairConfirmPayload(
+            shortCode: code,
+            iosName: UIDevice.current.name,
+            iosId: deviceId
+        )
+
+        guard let payloadData = try? JSONEncoder().encode(payload) else { return nil }
+
+        return MessageEnvelope(
+            type: .pairConfirm,
+            payload: payloadData,
+            timestamp: Date(),
+            deviceId: deviceId,
+            hmac: nil
+        )
     }
 
     private func handlePairSuccess(_ payload: PairSuccessPayload, macId: String, macName: String) {
@@ -254,12 +248,18 @@ extension ConnectionManager: WebSocketClientDelegate {
 
         switch state {
         case .disconnected:
+            pendingPairConfirmEnvelope = nil
             connectionState = .disconnected
         case .connecting:
             connectionState = .connecting
         case .connected:
             connectionState = .connected
+            if let pendingPairConfirmEnvelope {
+                client.send(pendingPairConfirmEnvelope)
+                self.pendingPairConfirmEnvelope = nil
+            }
         case .error(let error):
+            pendingPairConfirmEnvelope = nil
             connectionState = .error(error.localizedDescription)
         }
 
