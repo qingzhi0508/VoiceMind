@@ -78,6 +78,7 @@ class ContentViewModel: ObservableObject {
             detail: "用户触发重连，正在查找已配对的 Mac。",
             category: .connection
         )
+        connectionManager.disconnect()
         reconnectToPairedDevice()
     }
 
@@ -310,9 +311,7 @@ extension ContentViewModel: ConnectionManagerDelegate {
                     detail: "与 Mac 的连接已建立。",
                     category: .connection
                 )
-                if self.reconnectStatusMessage != nil {
-                    self.reconnectStatusMessage = "重连成功，已重新连接。"
-                }
+                self.reconnectStatusMessage = "重连成功，已重新连接。"
             case .error(let message):
                 if message.contains("自动重连已停止") {
                     self.reconnectNeedsManualAction = true
@@ -327,6 +326,9 @@ extension ContentViewModel: ConnectionManagerDelegate {
                     self.reconnectStatusMessage = "重连失败：\(message)"
                 }
             case .disconnected:
+                if case .paired = self.pairingState, !self.reconnectNeedsManualAction {
+                    self.reconnectStatusMessage = "连接已断开，正在等待重新发现 Mac 或继续自动重连..."
+                }
                 self.appendInboundDataRecord(
                     title: "连接断开",
                     detail: "当前与 Mac 没有活跃连接。",
@@ -538,9 +540,15 @@ extension ContentViewModel: BonjourBrowserDelegate {
             // Auto-connect if this is our paired device
             if case .paired(let deviceId, let deviceName) = self.pairingState,
                (service.id.uuidString == deviceId || service.name == deviceName),
-               self.connectionState == .disconnected,
+               self.connectionState != .connected,
                !self.reconnectNeedsManualAction {
                 self.reconnectStatusMessage = "已发现已配对的 Mac，正在自动重连..."
+                self.connectionManager.connect(to: service)
+            } else if case .paired(let deviceId, let deviceName) = self.pairingState,
+                      (service.id.uuidString == deviceId || service.name == deviceName),
+                      self.reconnectNeedsManualAction {
+                self.reconnectNeedsManualAction = false
+                self.reconnectStatusMessage = "已重新发现已配对的 Mac，正在恢复连接..."
                 self.connectionManager.connect(to: service)
             }
         }

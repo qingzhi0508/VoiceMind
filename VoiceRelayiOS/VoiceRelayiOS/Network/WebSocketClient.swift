@@ -27,6 +27,8 @@ class WebSocketClient {
 
     private var connection: NWConnection?
     private let reconnectionManager = ReconnectionManager()
+    private var connectionTimeoutTimer: Timer?
+    private let connectionTimeout: TimeInterval = 8
 
     private(set) var state: WebSocketConnectionState = .disconnected {
         didSet {
@@ -49,6 +51,11 @@ class WebSocketClient {
         if resetReconnectState {
             reconnectionManager.reset()
         }
+
+        // Tear down any previous connection before starting a new attempt.
+        connectionTimeoutTimer?.invalidate()
+        connection?.cancel()
+        connection = nil
 
         let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host(host), port: NWEndpoint.Port(integerLiteral: port))
 
@@ -73,12 +80,15 @@ class WebSocketClient {
         connection.start(queue: .main)
         self.connection = connection
         state = .connecting
+        scheduleConnectionTimeout()
         print("🔄 连接状态: connecting")
         print("✅ TCP Keep-Alive 已启用")
     }
 
     func disconnect() {
         reconnectionManager.reset()
+        connectionTimeoutTimer?.invalidate()
+        connectionTimeoutTimer = nil
         connection?.cancel()
         connection = nil
         state = .disconnected
@@ -116,6 +126,8 @@ class WebSocketClient {
 
         switch newState {
         case .ready:
+            connectionTimeoutTimer?.invalidate()
+            connectionTimeoutTimer = nil
             state = .connected
             reconnectionManager.reset()
             print("✅ WebSocket 已连接")
@@ -124,14 +136,19 @@ class WebSocketClient {
         case .waiting(let error):
             print("⏳ WebSocket 等待中: \(error)")
             state = .connecting
+            scheduleConnectionTimeout()
 
         case .failed(let error):
+            connectionTimeoutTimer?.invalidate()
+            connectionTimeoutTimer = nil
             state = .error(error)
             print("❌ WebSocket 连接失败: \(error)")
             connection = nil
             attemptReconnect()
 
         case .cancelled:
+            connectionTimeoutTimer?.invalidate()
+            connectionTimeoutTimer = nil
             state = .disconnected
             print("🔌 WebSocket 已取消")
 
@@ -228,6 +245,8 @@ class WebSocketClient {
             },
             onExhausted: { [weak self] in
                 print("🛑 自动重连次数已用尽，停止继续重试")
+                self?.connectionTimeoutTimer?.invalidate()
+                self?.connectionTimeoutTimer = nil
                 self?.connection?.cancel()
                 self?.connection = nil
                 self?.state = .error(ReconnectionExhaustedError(maxAttempts: 3))
@@ -236,9 +255,27 @@ class WebSocketClient {
     }
 
     private func handleReceiveClosure() {
+        connectionTimeoutTimer?.invalidate()
+        connectionTimeoutTimer = nil
         connection?.cancel()
         connection = nil
         state = .disconnected
         attemptReconnect()
+    }
+
+    private func scheduleConnectionTimeout() {
+        connectionTimeoutTimer?.invalidate()
+        connectionTimeoutTimer = Timer.scheduledTimer(withTimeInterval: connectionTimeout, repeats: false) { [weak self] _ in
+            guard let self,
+                  case .connecting = self.state else {
+                return
+            }
+
+            print("⏱️ 连接超时，准备重试")
+            self.connection?.cancel()
+            self.connection = nil
+            self.state = .disconnected
+            self.attemptReconnect()
+        }
     }
 }
