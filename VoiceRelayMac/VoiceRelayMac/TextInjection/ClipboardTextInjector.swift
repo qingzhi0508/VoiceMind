@@ -12,6 +12,10 @@ class ClipboardTextInjector: TextInjectionProtocol {
             throw TextInjectionError.accessibilityPermissionDenied
         }
 
+        guard FocusedInputDetector.hasWritableFocusedElement() else {
+            throw TextInjectionError.noFocusedInputTarget
+        }
+
         // 1. Backup current clipboard content
         let pasteboard = NSPasteboard.general
         let backup = pasteboard.string(forType: .string)

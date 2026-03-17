@@ -10,5 +10,6 @@ protocol TextInjectionProtocol {
 
 enum TextInjectionError: Error {
     case accessibilityPermissionDenied
+    case noFocusedInputTarget
     case injectionFailed(String)
 }

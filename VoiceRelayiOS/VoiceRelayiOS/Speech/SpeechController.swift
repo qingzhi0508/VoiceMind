@@ -140,8 +140,14 @@ class SpeechController: NSObject {
             }
 
             if let error = error {
+                if self.state == .processing || self.state == .sending,
+                   !self.lastRecognizedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    self.finishRecognition(with: self.lastRecognizedText)
+                    return
+                }
+
                 self.delegate?.speechController(self, didFailWithError: error)
-                self.cleanup()
+                self.resetAfterFailure()
             }
         }
 
@@ -184,5 +190,12 @@ class SpeechController: NSObject {
         recognitionTask = nil
         finalResultTimer?.invalidate()
         finalResultTimer = nil
+    }
+
+    private func resetAfterFailure() {
+        cleanup()
+        currentSessionId = nil
+        lastRecognizedText = ""
+        state = .idle
     }
 }

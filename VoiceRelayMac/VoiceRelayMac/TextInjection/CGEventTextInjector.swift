@@ -13,6 +13,10 @@ class CGEventTextInjector: TextInjectionProtocol {
             throw TextInjectionError.accessibilityPermissionDenied
         }
 
+        guard FocusedInputDetector.hasWritableFocusedElement() else {
+            throw TextInjectionError.noFocusedInputTarget
+        }
+
         // Split into chunks for long text
         let chunks = text.chunked(into: chunkSize)
 
@@ -34,7 +38,7 @@ class CGEventTextInjector: TextInjectionProtocol {
 
     private func injectCharacter(_ char: Character) throws {
         let string = String(char)
-        guard let unicodeScalar = string.unicodeScalars.first else { return }
+        guard string.unicodeScalars.first != nil else { return }
 
         let keyCode = CGKeyCode(0) // Virtual key code for Unicode input
 

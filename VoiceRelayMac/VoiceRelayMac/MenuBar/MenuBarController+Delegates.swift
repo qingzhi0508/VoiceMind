@@ -95,6 +95,13 @@ extension MenuBarController: ConnectionManagerDelegate {
         // Inject text
         do {
             try textInjector.inject(payload.text)
+        } catch TextInjectionError.noFocusedInputTarget {
+            appendInboundDataRecord(
+                title: "未找到可输入控件",
+                detail: "当前没有检测到可写输入框，本次识别结果未自动输入。\n内容: \(payload.text)",
+                category: .connection,
+                severity: .warning
+            )
         } catch TextInjectionError.accessibilityPermissionDenied {
             appendInboundDataRecord(
                 title: "文本注入权限不足",
