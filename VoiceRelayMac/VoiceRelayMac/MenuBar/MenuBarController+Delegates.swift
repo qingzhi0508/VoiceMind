@@ -4,6 +4,8 @@ import SharedCore
 
 // MARK: - ConnectionManagerDelegate
 extension MenuBarController: ConnectionManagerDelegate {
+    private static let executeCommandKeyword = "执行"
+
     func connectionManager(_ manager: ConnectionManager, didChangePairingState state: PairingState) {
         DispatchQueue.main.async {
             self.refreshPublishedState()
@@ -92,6 +94,33 @@ extension MenuBarController: ConnectionManagerDelegate {
         sessionTimer?.invalidate()
         sessionTimer = nil
 
+        if shouldTriggerEnterCommand(for: payload.text) {
+            do {
+                try triggerReturnKey()
+                appendInboundDataRecord(
+                    title: "执行回车命令",
+                    detail: "识别到命令词“\(Self.executeCommandKeyword)”，已触发一次 Enter。",
+                    category: .voice
+                )
+            } catch TextInjectionError.accessibilityPermissionDenied {
+                appendInboundDataRecord(
+                    title: "执行回车失败",
+                    detail: "缺少辅助功能权限，无法发送 Enter 键事件。",
+                    category: .connection,
+                    severity: .warning
+                )
+                showTextInjectionPermissionError(with: payload.text)
+            } catch {
+                appendInboundDataRecord(
+                    title: "执行回车失败",
+                    detail: "发送 Enter 键事件失败：\(error.localizedDescription)",
+                    category: .connection,
+                    severity: .warning
+                )
+            }
+            return
+        }
+
         // Inject text
         do {
             try textInjector.inject(payload.text)
@@ -149,6 +178,28 @@ extension MenuBarController: ConnectionManagerDelegate {
         )
 
         connectionManager.send(pongEnvelope)
+    }
+
+    private func shouldTriggerEnterCommand(for text: String) -> Bool {
+        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+        return normalized == Self.executeCommandKeyword
+    }
+
+    private func triggerReturnKey() throws {
+        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false]
+        guard AXIsProcessTrustedWithOptions(options) else {
+            throw TextInjectionError.accessibilityPermissionDenied
+        }
+
+        let keyCode = CGKeyCode(36)
+
+        guard let keyDownEvent = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: true),
+              let keyUpEvent = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: false) else {
+            throw TextInjectionError.injectionFailed("Failed to create Return key event")
+        }
+
+        keyDownEvent.post(tap: .cghidEventTap)
+        keyUpEvent.post(tap: .cghidEventTap)
     }
 }
 
