@@ -57,13 +57,9 @@ class AppSettings: ObservableObject {
     // MARK: - Initialization
 
     private init() {
-        // Load text injection method
-        if let methodRaw = defaults.string(forKey: Keys.textInjectionMethod),
-           let method = TextInjectionMethod(rawValue: methodRaw) {
-            self.textInjectionMethod = method
-        } else {
-            self.textInjectionMethod = .clipboard // Default to clipboard
-        }
+        // Always use clipboard paste for the most reliable text injection behavior.
+        self.textInjectionMethod = .clipboard
+        defaults.set(TextInjectionMethod.clipboard.rawValue, forKey: Keys.textInjectionMethod)
 
         // Load hotkey configuration
         let savedModifiers = UInt(defaults.integer(forKey: Keys.hotkeyModifiers))

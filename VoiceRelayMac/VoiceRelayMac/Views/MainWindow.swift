@@ -245,18 +245,15 @@ struct SettingsTab: View {
     var body: some View {
         Form {
             Section(header: Text("文本注入方式")) {
-                Picker("注入方式", selection: $settings.textInjectionMethod) {
-                    ForEach(TextInjectionMethod.allCases, id: \.self) { method in
-                        VStack(alignment: .leading) {
-                            Text(method.displayName)
-                            Text(method.description)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .tag(method)
-                    }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("剪贴板粘贴")
+                        .font(.body)
+                        .fontWeight(.medium)
+
+                    Text("已固定为剪贴板粘贴，以获得最稳定的光标输入兼容性。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
-                .pickerStyle(.radioGroup)
             }
 
             Section(header: Text("语言")) {
