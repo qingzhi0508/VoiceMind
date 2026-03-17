@@ -92,7 +92,6 @@ class MenuBarController: NSObject, ObservableObject {
 
         menu.addItem(NSMenuItem(title: "显示状态...", action: #selector(showStatus), keyEquivalent: "s"))
         menu.addItem(NSMenuItem(title: "开始配对...", action: #selector(startPairing), keyEquivalent: "p"))
-        menu.addItem(NSMenuItem(title: "热键设置...", action: #selector(openHotkeySettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem(title: "权限设置...", action: #selector(openPermissions), keyEquivalent: ""))
 
         let unpairItem = NSMenuItem(title: "解除配对", action: #selector(unpairDevice), keyEquivalent: "")
@@ -132,7 +131,6 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func startNetworkServices() {
-        setupHotkeyMonitor()
         startServices()
     }
 
@@ -140,7 +138,6 @@ class MenuBarController: NSObject, ObservableObject {
         guard isServiceRunning else { return }
 
         connectionManager.stop()
-        hotkeyMonitor.stop()
         isServiceRunning = false
         print("🛑 服务已停止")
     }
@@ -214,10 +211,6 @@ class MenuBarController: NSObject, ObservableObject {
     func refreshPermissionState() {
         accessibilityStatus = PermissionsManager.checkAccessibility()
         inputMonitoringStatus = PermissionsManager.checkInputMonitoring()
-
-        if accessibilityStatus == .granted, inputMonitoringStatus == .granted {
-            _ = hotkeyMonitor.start()
-        }
     }
 
     func showPairingWindowFromUI() {

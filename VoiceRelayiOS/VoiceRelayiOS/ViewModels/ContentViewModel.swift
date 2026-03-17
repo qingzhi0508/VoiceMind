@@ -116,17 +116,23 @@ class ContentViewModel: ObservableObject {
         guard canStartPushToTalk else { return }
 
         do {
-            manualSessionId = try speechController.startManualListening()
-            pushToTalkStatusMessage = "正在监听语音，松开发送到 Mac。"
+            let sessionId = UUID().uuidString
+            manualSessionId = sessionId
+            try audioStreamController.startStreaming(sessionId: sessionId)
+            recognitionState = .listening
+            pushToTalkStatusMessage = "正在采集语音，松开后发送到 Mac 识别。"
         } catch {
+            recognitionState = .idle
+            manualSessionId = nil
             pushToTalkStatusMessage = error.localizedDescription
         }
     }
 
     func stopPushToTalk() {
         guard recognitionState == .listening else { return }
-        pushToTalkStatusMessage = "正在整理语音结果..."
-        speechController.stopListening()
+        recognitionState = .sending
+        pushToTalkStatusMessage = "正在发送语音到 Mac..."
+        audioStreamController.stopStreaming()
     }
 
     var canStartPushToTalk: Bool {
@@ -159,11 +165,11 @@ class ContentViewModel: ObservableObject {
     }
 
     func requestPermissions(completion: @escaping (Bool) -> Void) {
-        speechController.requestPermissions(completion: completion)
+        audioStreamController.requestPermissions(completion: completion)
     }
 
     func checkPermissions() -> Bool {
-        return speechController.checkPermissions()
+        return audioStreamController.checkPermissions()
     }
 
     private func reconnectToPairedDevice() {
@@ -329,6 +335,9 @@ extension ContentViewModel: ConnectionManagerDelegate {
                 )
                 if self.recognitionState == .listening {
                     self.pushToTalkStatusMessage = "连接已断开，无法继续发送语音结果。"
+                    self.recognitionState = .idle
+                    self.manualSessionId = nil
+                    self.audioStreamController.stopStreaming()
                 } else if self.reconnectNeedsManualAction {
                     self.pushToTalkStatusMessage = "自动重连已停止，按住按钮重新连接服务。"
                 }
@@ -555,6 +564,10 @@ extension ContentViewModel: BonjourBrowserDelegate {
 extension ContentViewModel: AudioStreamControllerDelegate {
     func audioStreamController(_ controller: AudioStreamController, didStartStream payload: AudioStartPayload) {
         print("📤 发送 audioStart 消息")
+        DispatchQueue.main.async {
+            self.recognitionState = .listening
+            self.pushToTalkStatusMessage = "正在采集语音，松开后发送到 Mac 识别。"
+        }
         appendInboundDataRecord(
             title: "开始发送语音流",
             detail: "Session: \(payload.sessionId)\n语言: \(payload.language)\n采样率: \(payload.sampleRate) Hz",
@@ -610,6 +623,11 @@ extension ContentViewModel: AudioStreamControllerDelegate {
 
     func audioStreamController(_ controller: AudioStreamController, didEndStream payload: AudioEndPayload) {
         print("📤 发送 audioEnd 消息")
+        DispatchQueue.main.async {
+            self.manualSessionId = nil
+            self.recognitionState = .idle
+            self.pushToTalkStatusMessage = "语音已发送到 Mac，正在识别并尝试输入到当前光标位置。"
+        }
         appendInboundDataRecord(
             title: "结束语音流",
             detail: "Session: \(payload.sessionId)",

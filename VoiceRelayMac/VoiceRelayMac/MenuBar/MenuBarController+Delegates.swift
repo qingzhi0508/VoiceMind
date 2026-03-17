@@ -96,9 +96,10 @@ extension MenuBarController: ConnectionManagerDelegate {
         do {
             try textInjector.inject(payload.text)
         } catch TextInjectionError.noFocusedInputTarget {
+            let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
             appendInboundDataRecord(
                 title: "未找到可输入控件",
-                detail: "当前没有检测到可写输入框，本次识别结果未自动输入。\n内容: \(payload.text)",
+                detail: "当前没有检测到可写输入框，本次识别结果未自动输入。\n内容: \(payload.text)\n\n\(focusedElementSummary)",
                 category: .connection,
                 severity: .warning
             )
@@ -111,9 +112,10 @@ extension MenuBarController: ConnectionManagerDelegate {
             )
             showTextInjectionPermissionError(with: payload.text)
         } catch {
+            let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
             appendInboundDataRecord(
                 title: "文本注入失败，已降级为复制",
-                detail: "注入错误: \(error.localizedDescription)\n内容: \(payload.text)",
+                detail: "注入错误: \(error.localizedDescription)\n内容: \(payload.text)\n\n\(focusedElementSummary)",
                 category: .connection,
                 severity: .warning
             )

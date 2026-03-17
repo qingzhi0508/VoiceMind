@@ -12,7 +12,7 @@ class ClipboardTextInjector: TextInjectionProtocol {
             throw TextInjectionError.accessibilityPermissionDenied
         }
 
-        guard FocusedInputDetector.hasWritableFocusedElement() else {
+        guard FocusedInputDetector.detectionStatus() != .nonWritable else {
             throw TextInjectionError.noFocusedInputTarget
         }
 

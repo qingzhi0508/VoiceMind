@@ -115,14 +115,6 @@ struct StatusTab: View {
                         Text(controller.isServiceRunning ? "运行中" : "已停止")
                             .foregroundColor(controller.isServiceRunning ? .green : .secondary)
                     }
-
-                    Divider()
-                    HStack {
-                        Text("快捷键监听:")
-                        Spacer()
-                        Text(controller.isServiceRunning ? "已启用" : "已禁用")
-                            .foregroundColor(controller.isServiceRunning ? .green : .secondary)
-                    }
                 }
                 .padding()
             }
@@ -265,19 +257,6 @@ struct SettingsTab: View {
                     }
                 }
                 .pickerStyle(.radioGroup)
-            }
-
-            Section(header: Text("快捷键配置")) {
-                HStack {
-                    Text("当前快捷键:")
-                    Spacer()
-                    Text("Option + Space")
-                        .foregroundColor(.secondary)
-                }
-
-                Button("自定义快捷键...") {
-                    controller.showHotkeySettings()
-                }
             }
 
             Section(header: Text("语言")) {

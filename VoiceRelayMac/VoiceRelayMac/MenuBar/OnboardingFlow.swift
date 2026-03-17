@@ -75,9 +75,9 @@ struct WelcomeView: View {
             // Features
             VStack(alignment: .leading, spacing: 16) {
                 FeatureRow(
-                    icon: "keyboard",
-                    title: "全局快捷键",
-                    description: "按住 Option+Space 即可开始语音输入"
+                    icon: "text.cursor",
+                    title: "光标自动输入",
+                    description: "识别结果会自动尝试输入到当前聚焦的文本框"
                 )
 
                 FeatureRow(
@@ -168,20 +168,10 @@ struct PermissionsCheckView: View {
                 PermissionItem(
                     icon: "lock.shield",
                     title: "辅助功能权限",
-                    description: "用于监听全局快捷键和注入文本到当前应用",
+                    description: "用于识别当前焦点并将转写结果输入到当前应用",
                     status: controller.accessibilityStatus,
                     onRequest: {
                         controller.requestAccessibilityPermissionFromUI()
-                    }
-                )
-
-                PermissionItem(
-                    icon: "eye",
-                    title: "输入监控权限",
-                    description: "用于检测快捷键按下事件",
-                    status: controller.inputMonitoringStatus,
-                    onRequest: {
-                        controller.requestInputMonitoringPermissionFromUI()
                     }
                 )
             }
@@ -232,8 +222,7 @@ struct PermissionsCheckView: View {
     }
 
     private var allPermissionsGranted: Bool {
-        controller.accessibilityStatus == .granted &&
-        controller.inputMonitoringStatus == .granted
+        controller.accessibilityStatus == .granted
     }
 }
 
@@ -369,9 +358,9 @@ struct ReadyView: View {
                 )
 
                 InfoCard(
-                    icon: "keyboard",
-                    title: "快捷键",
-                    value: "Option + Space",
+                    icon: "text.cursor",
+                    title: "输入方式",
+                    value: "iPhone 按住说话，Mac 自动转写并输入",
                     color: .purple
                 )
             }
@@ -386,7 +375,7 @@ struct ReadyView: View {
 
                 InstructionStep(number: 1, text: "点击下方按钮启动网络服务")
                 InstructionStep(number: 2, text: "在 iPhone 上打开 VoiceMind 应用")
-                InstructionStep(number: 3, text: "完成配对后即可使用")
+                InstructionStep(number: 3, text: "完成配对后，在 iPhone 上按住麦克风开始说话")
             }
             .padding()
             .background(Color.blue.opacity(0.05))
@@ -519,8 +508,7 @@ struct RunningStatusView: View {
                 // System Info
                 SystemInfoCard(
                     localIP: localIPAddress,
-                    accessibilityStatus: controller.accessibilityStatus,
-                    inputMonitoringStatus: controller.inputMonitoringStatus
+                    accessibilityStatus: controller.accessibilityStatus
                 )
 
                 // Device Connection
@@ -534,9 +522,6 @@ struct RunningStatusView: View {
                     pairingState: controller.pairingState,
                     onStartPairing: {
                         controller.showPairingWindowFromUI()
-                    },
-                    onOpenSettings: {
-                        controller.openHotkeySettingsFromUI()
                     },
                     onUnpair: {
                         controller.unpairDeviceFromUI()
@@ -666,7 +651,6 @@ struct StatusHeader: View {
 struct SystemInfoCard: View {
     let localIP: String
     let accessibilityStatus: PermissionStatus
-    let inputMonitoringStatus: PermissionStatus
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -675,9 +659,8 @@ struct SystemInfoCard: View {
 
             VStack(spacing: 8) {
                 SimpleInfoRow(icon: "network", title: "本机 IP", value: localIP, color: .blue)
-                SimpleInfoRow(icon: "keyboard", title: "快捷键", value: "Option + Space", color: .purple)
+                SimpleInfoRow(icon: "text.cursor", title: "输入方式", value: "iPhone 语音直传 Mac 转写", color: .purple)
                 SimpleInfoRow(icon: "lock.shield", title: "辅助功能", value: accessibilityStatus.displayText, color: accessibilityStatus.color)
-                SimpleInfoRow(icon: "eye", title: "输入监控", value: inputMonitoringStatus.displayText, color: inputMonitoringStatus.color)
             }
         }
         .padding()
@@ -748,7 +731,6 @@ struct DeviceConnectionCard: View {
 struct QuickActionsCard: View {
     let pairingState: PairingState
     let onStartPairing: () -> Void
-    let onOpenSettings: () -> Void
     let onUnpair: () -> Void
     let onStopService: () -> Void
 
@@ -767,15 +749,6 @@ struct QuickActionsCard: View {
             }
 
             HStack(spacing: 12) {
-                Button(action: onOpenSettings) {
-                    HStack {
-                        Image(systemName: "keyboard")
-                        Text("快捷键")
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-
                 if case .paired = pairingState {
                     Button(action: onUnpair) {
                         HStack {

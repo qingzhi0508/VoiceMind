@@ -31,12 +31,8 @@ struct StatusWindow: View {
                 // Permissions Section
                 PermissionsSection(
                     accessibilityStatus: controller.accessibilityStatus,
-                    inputMonitoringStatus: controller.inputMonitoringStatus,
                     onRequestAccessibility: {
                         controller.requestAccessibilityPermissionFromUI()
-                    },
-                    onRequestInputMonitoring: {
-                        controller.requestInputMonitoringPermissionFromUI()
                     }
                 )
 
@@ -54,9 +50,6 @@ struct StatusWindow: View {
                     pairingState: controller.pairingState,
                     onStartPairing: {
                         controller.showPairingWindowFromUI()
-                    },
-                    onOpenSettings: {
-                        controller.openHotkeySettingsFromUI()
                     },
                     onOpenPermissions: {
                         controller.openPermissionsFromUI()
@@ -214,24 +207,10 @@ struct SystemInfoSection: View {
                 )
 
                 InfoRow(
-                    icon: "keyboard",
-                    title: "默认快捷键",
-                    value: "Option + Space",
-                    color: .purple
-                )
-
-                InfoRow(
                     icon: "lock.shield",
                     title: "辅助功能权限",
                     value: accessibilityStatus.displayText,
                     color: accessibilityStatus.color
-                )
-
-                InfoRow(
-                    icon: "eye",
-                    title: "输入监控权限",
-                    value: inputMonitoringStatus.displayText,
-                    color: inputMonitoringStatus.color
                 )
             }
         }
@@ -335,36 +314,22 @@ struct DeviceConnectionSection: View {
 
 struct PermissionsSection: View {
     let accessibilityStatus: PermissionStatus
-    let inputMonitoringStatus: PermissionStatus
     let onRequestAccessibility: () -> Void
-    let onRequestInputMonitoring: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("权限管理")
                 .font(.headline)
 
-            if accessibilityStatus != .granted || inputMonitoringStatus != .granted {
+            if accessibilityStatus != .granted {
                 VStack(spacing: 8) {
-                    if accessibilityStatus != .granted {
-                        PermissionRequestRow(
-                            icon: "lock.shield",
-                            title: "辅助功能权限",
-                            description: "用于全局快捷键和文本注入",
-                            status: accessibilityStatus,
-                            onRequest: onRequestAccessibility
-                        )
-                    }
-
-                    if inputMonitoringStatus != .granted {
-                        PermissionRequestRow(
-                            icon: "eye",
-                            title: "输入监控权限",
-                            description: "用于监听快捷键",
-                            status: inputMonitoringStatus,
-                            onRequest: onRequestInputMonitoring
-                        )
-                    }
+                    PermissionRequestRow(
+                        icon: "lock.shield",
+                        title: "辅助功能权限",
+                        description: "用于识别当前光标位置并将转写文字输入到目标应用",
+                        status: accessibilityStatus,
+                        onRequest: onRequestAccessibility
+                    )
                 }
             } else {
                 HStack {
@@ -377,7 +342,7 @@ struct PermissionsSection: View {
             }
         }
         .padding()
-        .background(Color.orange.opacity(accessibilityStatus != .granted || inputMonitoringStatus != .granted ? 0.1 : 0.05))
+        .background(Color.orange.opacity(accessibilityStatus != .granted ? 0.1 : 0.05))
         .cornerRadius(12)
     }
 }
@@ -429,7 +394,7 @@ struct QuickStartSection: View {
                 GuideStep(number: 1, text: "在 iPhone 上打开 VoiceMind 应用")
                 GuideStep(number: 2, text: "点击下方\"开始配对\"按钮")
                 GuideStep(number: 3, text: "在 iPhone 上输入配对码")
-                GuideStep(number: 4, text: "配对成功后，按住 Option+Space 开始语音输入")
+                GuideStep(number: 4, text: "配对成功后，在 iPhone 上按住麦克风说话，Mac 会自动转写并尝试输入")
             }
         }
         .padding()
@@ -465,7 +430,6 @@ struct GuideStep: View {
 struct ActionButtonsSection: View {
     let pairingState: PairingState
     let onStartPairing: () -> Void
-    let onOpenSettings: () -> Void
     let onOpenPermissions: () -> Void
     let onUnpair: () -> Void
 
@@ -485,15 +449,6 @@ struct ActionButtonsSection: View {
             }
 
             HStack(spacing: 12) {
-                Button(action: onOpenSettings) {
-                    HStack {
-                        Image(systemName: "keyboard")
-                        Text("快捷键")
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-
                 Button(action: onOpenPermissions) {
                     HStack {
                         Image(systemName: "lock.shield")
