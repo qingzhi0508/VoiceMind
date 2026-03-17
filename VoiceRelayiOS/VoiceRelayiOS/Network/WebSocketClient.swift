@@ -7,6 +7,14 @@ protocol WebSocketClientDelegate: AnyObject {
     func client(_ client: WebSocketClient, didChangeState state: WebSocketConnectionState)
 }
 
+private struct ReconnectionExhaustedError: LocalizedError {
+    let maxAttempts: Int
+
+    var errorDescription: String? {
+        "自动重连已停止，连续 \(maxAttempts) 次连接失败，请手动重新连接。"
+    }
+}
+
 enum WebSocketConnectionState {
     case disconnected
     case connecting
@@ -30,9 +38,17 @@ class WebSocketClient {
     private var port: UInt16?
 
     func connect(to host: String, port: UInt16) {
+        connect(to: host, port: port, resetReconnectState: true)
+    }
+
+    private func connect(to host: String, port: UInt16, resetReconnectState: Bool) {
         print("🔗 开始连接到 \(host):\(port)")
         self.host = host
         self.port = port
+
+        if resetReconnectState {
+            reconnectionManager.reset()
+        }
 
         let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host(host), port: NWEndpoint.Port(integerLiteral: port))
 
@@ -206,9 +222,17 @@ class WebSocketClient {
         }
 
         print("🔄 计划重连到 \(host):\(port)")
-        reconnectionManager.scheduleReconnect { [weak self] in
-            self?.connect(to: host, port: port)
-        }
+        reconnectionManager.scheduleReconnect(
+            onReconnect: { [weak self] in
+                self?.connect(to: host, port: port, resetReconnectState: false)
+            },
+            onExhausted: { [weak self] in
+                print("🛑 自动重连次数已用尽，停止继续重试")
+                self?.connection?.cancel()
+                self?.connection = nil
+                self?.state = .error(ReconnectionExhaustedError(maxAttempts: 3))
+            }
+        )
     }
 
     private func handleReceiveClosure() {

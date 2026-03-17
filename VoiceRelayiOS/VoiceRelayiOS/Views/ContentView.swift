@@ -20,13 +20,10 @@ struct ContentView: View {
                 RecognitionStatusView(
                     state: viewModel.recognitionState,
                     statusMessage: viewModel.pushToTalkStatusMessage,
-                    isEnabled: viewModel.canStartPushToTalk || viewModel.recognitionState != .idle,
+                    isEnabled: viewModel.canStartPushToTalk || viewModel.canManuallyReconnectFromPrimaryButton || viewModel.recognitionState != .idle,
+                    showsReconnectAction: viewModel.canManuallyReconnectFromPrimaryButton,
                     onPressChanged: { isPressing in
-                        if isPressing {
-                            viewModel.startPushToTalk()
-                        } else {
-                            viewModel.stopPushToTalk()
-                        }
+                        viewModel.handlePrimaryButtonPressChanged(isPressing)
                     }
                 )
 
@@ -201,6 +198,7 @@ struct RecognitionStatusView: View {
     let state: RecognitionState
     let statusMessage: String?
     let isEnabled: Bool
+    let showsReconnectAction: Bool
     let onPressChanged: (Bool) -> Void
 
     @State private var isPressing = false
@@ -260,6 +258,9 @@ struct RecognitionStatusView: View {
     }
 
     private var iconName: String {
+        if showsReconnectAction {
+            return "antenna.radiowaves.left.and.right"
+        }
         switch state {
         case .idle:
             return "mic.fill"
@@ -273,6 +274,9 @@ struct RecognitionStatusView: View {
     }
 
     private var iconColor: Color {
+        if showsReconnectAction {
+            return isEnabled ? .orange : .gray
+        }
         switch state {
         case .idle:
             return isEnabled ? .blue : .gray
@@ -286,6 +290,9 @@ struct RecognitionStatusView: View {
     }
 
     private var statusText: String {
+        if showsReconnectAction {
+            return "连接服务"
+        }
         switch state {
         case .idle:
             return isEnabled ? "按住说话" : "准备就绪"
@@ -299,6 +306,9 @@ struct RecognitionStatusView: View {
     }
 
     private var buttonBackgroundColor: Color {
+        if showsReconnectAction {
+            return isEnabled ? Color.orange.opacity(0.15) : Color.gray.opacity(0.12)
+        }
         switch state {
         case .idle:
             return isEnabled ? Color.blue.opacity(0.15) : Color.gray.opacity(0.12)
@@ -312,6 +322,9 @@ struct RecognitionStatusView: View {
     }
 
     private var buttonBorderColor: Color {
+        if showsReconnectAction {
+            return isEnabled ? .orange.opacity(0.5) : .gray.opacity(0.4)
+        }
         switch state {
         case .idle:
             return isEnabled ? .blue.opacity(0.5) : .gray.opacity(0.4)

@@ -14,6 +14,7 @@ class ContentViewModel: ObservableObject {
     @Published var reconnectStatusMessage: String?
     @Published var pushToTalkStatusMessage: String?
     @Published var inboundDataRecords: [InboundDataRecord] = []
+    @Published var reconnectNeedsManualAction = false
 
     private let lastKnownHostKey = "voicerelay.lastKnownHost"
     private let lastKnownPortKey = "voicerelay.lastKnownPort"
@@ -64,10 +65,12 @@ class ContentViewModel: ObservableObject {
         pairingState = .unpaired
         connectionState = .disconnected
         reconnectStatusMessage = nil
+        reconnectNeedsManualAction = false
     }
 
     func reconnect() {
         print("🔄 手动重连")
+        reconnectNeedsManualAction = false
         latestPairingFeedback = "正在尝试重连到已配对的 Mac..."
         reconnectStatusMessage = "正在查找已配对的 Mac..."
         appendInboundDataRecord(
@@ -131,6 +134,28 @@ class ContentViewModel: ObservableObject {
             return recognitionState == .idle && checkPermissions()
         }
         return false
+    }
+
+    var canManuallyReconnectFromPrimaryButton: Bool {
+        if case .paired = pairingState {
+            return reconnectNeedsManualAction && recognitionState == .idle
+        }
+        return false
+    }
+
+    func handlePrimaryButtonPressChanged(_ isPressing: Bool) {
+        if canManuallyReconnectFromPrimaryButton {
+            if isPressing {
+                reconnect()
+            }
+            return
+        }
+
+        if isPressing {
+            startPushToTalk()
+        } else {
+            stopPushToTalk()
+        }
     }
 
     func requestPermissions(completion: @escaping (Bool) -> Void) {
@@ -237,6 +262,7 @@ extension ContentViewModel: ConnectionManagerDelegate {
             self.pairingState = state
 
             if case .paired = state {
+                self.reconnectNeedsManualAction = false
                 self.latestPairingFeedback = "Mac 已确认配对，正在完成绑定。"
                 self.appendInboundDataRecord(
                     title: "配对成功",
@@ -262,6 +288,7 @@ extension ContentViewModel: ConnectionManagerDelegate {
 
             switch state {
             case .connecting:
+                self.reconnectNeedsManualAction = false
                 self.appendInboundDataRecord(
                     title: "连接中",
                     detail: "正在与 Mac 建立连接。",
@@ -271,6 +298,7 @@ extension ContentViewModel: ConnectionManagerDelegate {
                     self.reconnectStatusMessage = self.reconnectStatusMessage ?? "正在建立连接..."
                 }
             case .connected:
+                self.reconnectNeedsManualAction = false
                 self.appendInboundDataRecord(
                     title: "连接成功",
                     detail: "与 Mac 的连接已建立。",
@@ -280,6 +308,9 @@ extension ContentViewModel: ConnectionManagerDelegate {
                     self.reconnectStatusMessage = "重连成功，已重新连接。"
                 }
             case .error(let message):
+                if message.contains("自动重连已停止") {
+                    self.reconnectNeedsManualAction = true
+                }
                 self.appendInboundDataRecord(
                     title: "连接失败",
                     detail: message,
@@ -298,6 +329,8 @@ extension ContentViewModel: ConnectionManagerDelegate {
                 )
                 if self.recognitionState == .listening {
                     self.pushToTalkStatusMessage = "连接已断开，无法继续发送语音结果。"
+                } else if self.reconnectNeedsManualAction {
+                    self.pushToTalkStatusMessage = "自动重连已停止，按住按钮重新连接服务。"
                 }
                 break
             }
@@ -383,7 +416,9 @@ extension ContentViewModel: SpeechControllerDelegate {
 
             switch state {
             case .idle:
-                if self.connectionState == .connected {
+                if self.canManuallyReconnectFromPrimaryButton {
+                    self.pushToTalkStatusMessage = "自动重连已停止，按住按钮重新连接服务。"
+                } else if self.connectionState == .connected {
                     self.pushToTalkStatusMessage = "按住麦克风开始说话。"
                 } else {
                     self.pushToTalkStatusMessage = "连接 Mac 后可按住说话。"
@@ -494,7 +529,8 @@ extension ContentViewModel: BonjourBrowserDelegate {
             // Auto-connect if this is our paired device
             if case .paired(let deviceId, let deviceName) = self.pairingState,
                (service.id.uuidString == deviceId || service.name == deviceName),
-               self.connectionState == .disconnected {
+               self.connectionState == .disconnected,
+               !self.reconnectNeedsManualAction {
                 self.reconnectStatusMessage = "已发现已配对的 Mac，正在自动重连..."
                 self.connectionManager.connect(to: service)
             }
