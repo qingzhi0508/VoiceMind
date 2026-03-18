@@ -30,6 +30,7 @@ struct ContentView: View {
                     statusMessage: viewModel.pushToTalkStatusMessage,
                     isEnabled: viewModel.canStartPushToTalk || viewModel.canManuallyReconnectFromPrimaryButton || viewModel.recognitionState != .idle,
                     showsReconnectAction: viewModel.canManuallyReconnectFromPrimaryButton,
+                    audioLevel: viewModel.audioLevel,
                     onPressChanged: { isPressing in
                         viewModel.handlePrimaryButtonPressChanged(isPressing)
                     }
@@ -214,6 +215,7 @@ struct RecognitionStatusView: View {
     let statusMessage: String?
     let isEnabled: Bool
     let showsReconnectAction: Bool
+    let audioLevel: CGFloat
     let onPressChanged: (Bool) -> Void
 
     @State private var isPressing = false
@@ -264,7 +266,7 @@ struct RecognitionStatusView: View {
             }
 
             if state == .listening {
-                WaveformView()
+                WaveformView(level: audioLevel)
                     .frame(height: 40)
             }
         }
@@ -354,57 +356,54 @@ struct RecognitionStatusView: View {
 }
 
 struct WaveformView: View {
-    @State private var phase: CGFloat = 0
-    @State private var amplitude: CGFloat = 0.5
+    let level: CGFloat
+
+    @State private var smoothedLevel: CGFloat = 0
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // 主波形
-                createWaveformPath(geometry: geometry, phase: phase, amplitude: amplitude)
-                .stroke(Color.red, lineWidth: 2)
-                
-                // 次要波形（更细、颜色更浅）
-                createWaveformPath(geometry: geometry, phase: phase + 0.2, amplitude: amplitude * 0.6)
-                .stroke(Color.red.opacity(0.6), lineWidth: 1)
-                
-                // 辅助波形（最细、颜色最浅）
-                createWaveformPath(geometry: geometry, phase: phase + 0.4, amplitude: amplitude * 0.3)
-                .stroke(Color.red.opacity(0.3), lineWidth: 1)
+        TimelineView(.animation) { timeline in
+            GeometryReader { geometry in
+                let amplitude = max(0.12, min(smoothedLevel * 2.2, 1.4))
+                let phase = timeline.date.timeIntervalSinceReferenceDate
+                Canvas { context, size in
+                    let centerY = size.height / 2
+                    let width = size.width
+                    let particleCount = 40
+                    let spacing = width / CGFloat(particleCount - 1)
+                    let baseRadius: CGFloat = 2.2
+
+                    for index in 0..<particleCount {
+                        let x = CGFloat(index) * spacing
+                        let progress = x / width
+                        let wave = sin((progress * 8 + phase) * .pi * 2)
+                        let wave2 = sin((progress * 3 + phase * 0.7) * .pi * 2) * 0.35
+                        let yOffset = (wave + wave2) * amplitude * (size.height * 0.28)
+                        let y = centerY + yOffset
+
+                        let intensity = min(1, max(0.2, amplitude))
+                        let radius = baseRadius + intensity * 1.8
+                        let alpha = 0.25 + intensity * 0.6
+                        let hue = 0.55 + 0.08 * sin(phase + Double(progress) * 2)
+                        let color = Color(hue: hue, saturation: 0.55, brightness: 0.95).opacity(alpha)
+
+                        let rect = CGRect(
+                            x: x - radius,
+                            y: y - radius,
+                            width: radius * 2,
+                            height: radius * 2
+                        )
+                        context.fill(Path(ellipseIn: rect), with: .color(color))
+                    }
+                }
             }
         }
         .onAppear {
-            // 主波形动画
-            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                phase = 1
-            }
-            
-            // 振幅变化动画（模拟语音强度）
-            withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
-                amplitude = 0.8
+            smoothedLevel = level
+        }
+        .onChange(of: level) { _, newValue in
+            withAnimation(.linear(duration: 0.04)) {
+                smoothedLevel = newValue
             }
         }
-    }
-    
-    private func createWaveformPath(geometry: GeometryProxy, phase: CGFloat, amplitude: CGFloat) -> Path {
-        var path = Path()
-        let width = geometry.size.width
-        let height = geometry.size.height
-        let midHeight = height / 2
-        let step = width / 100 // 更密集的点
-        
-        path.move(to: CGPoint(x: 0, y: midHeight))
-        
-        for x in stride(from: 0, through: width, by: step) {
-            let relativeX = x / width
-            // 组合多个正弦波以创建更复杂的波形
-            let sine1 = sin((relativeX + phase) * .pi * 8) * 0.7
-            let sine2 = sin((relativeX + phase) * .pi * 16) * 0.3
-            let combinedSine = (sine1 + sine2) * amplitude
-            let y = midHeight + combinedSine * (height / 2.5)
-            path.addLine(to: CGPoint(x: x, y: y))
-        }
-        
-        return path
     }
 }

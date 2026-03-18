@@ -1,6 +1,7 @@
 import Foundation
 import Speech
 import AVFoundation
+import CoreGraphics
 import SharedCore
 
 /// iOS 端音频流传输器
@@ -17,6 +18,11 @@ class AudioStreamController: NSObject {
     private var isStreaming: Bool = false
     private var outputFormat: AVAudioFormat?
     private var audioConverter: AVAudioConverter?
+    private var smoothedLevel: CGFloat = 0
+    private var lastLevelUpdateTime: TimeInterval = 0
+    private let levelSmoothing: CGFloat = 0.3
+    private let minDecibels: Float = -60
+    private let levelUpdateInterval: TimeInterval = 1.0 / 45.0
 
     var selectedLanguage: String = "zh-CN"
 
@@ -143,6 +149,9 @@ class AudioStreamController: NSObject {
         print("🛑 停止音频流传输")
 
         isStreaming = false
+        smoothedLevel = 0
+        lastLevelUpdateTime = 0
+        delegate?.audioStreamController(self, didUpdateAudioLevel: 0)
 
         // 停止音频引擎
         if audioEngine.isRunning {
@@ -171,6 +180,8 @@ class AudioStreamController: NSObject {
         guard isStreaming, let sessionId = currentSessionId else {
             return
         }
+
+        updateAudioLevel(with: buffer)
 
         guard let convertedBuffer = convertBufferIfNeeded(buffer) else {
             print("⚠️ 无法转换音频缓冲区")
@@ -255,6 +266,56 @@ class AudioStreamController: NSObject {
         let data = Data(bytes: channelDataPointer, count: frameLength * MemoryLayout<Int16>.size)
         return data
     }
+
+    private func updateAudioLevel(with buffer: AVAudioPCMBuffer) {
+        let level = normalizedLevel(from: buffer)
+        let smoothed = smoothedLevel + levelSmoothing * (level - smoothedLevel)
+        smoothedLevel = smoothed
+
+        let now = CACurrentMediaTime()
+        guard now - lastLevelUpdateTime >= levelUpdateInterval else { return }
+        lastLevelUpdateTime = now
+
+        delegate?.audioStreamController(self, didUpdateAudioLevel: smoothed)
+    }
+
+    private func normalizedLevel(from buffer: AVAudioPCMBuffer) -> CGFloat {
+        let frameLength = Int(buffer.frameLength)
+        guard frameLength > 0 else { return 0 }
+
+        if let channelData = buffer.floatChannelData {
+            let data = channelData.pointee
+            var sum: Float = 0
+            for i in 0..<frameLength {
+                let value = data[i]
+                sum += value * value
+            }
+            let rms = sqrt(sum / Float(frameLength))
+            return normalizeDecibels(from: rms)
+        }
+
+        if let channelData = buffer.int16ChannelData {
+            let data = channelData.pointee
+            var sum: Float = 0
+            for i in 0..<frameLength {
+                let value = Float(data[i]) / Float(Int16.max)
+                sum += value * value
+            }
+            let rms = sqrt(sum / Float(frameLength))
+            return normalizeDecibels(from: rms)
+        }
+
+        return 0
+    }
+
+    private func normalizeDecibels(from rms: Float) -> CGFloat {
+        let safeRms = max(rms, 0.000_000_1)
+        let decibels = 20 * log10(safeRms)
+        let clamped = max(decibels, minDecibels)
+        let normalized = (clamped - minDecibels) / (-minDecibels)
+        let boosted = pow(min(max(normalized, 0), 1), 0.5)
+        return CGFloat(boosted)
+    }
 }
 
 // MARK: - Delegate Protocol
@@ -263,6 +324,7 @@ protocol AudioStreamControllerDelegate: AnyObject {
     func audioStreamController(_ controller: AudioStreamController, didStartStream payload: AudioStartPayload)
     func audioStreamController(_ controller: AudioStreamController, didCaptureAudio payload: AudioDataPayload)
     func audioStreamController(_ controller: AudioStreamController, didEndStream payload: AudioEndPayload)
+    func audioStreamController(_ controller: AudioStreamController, didUpdateAudioLevel level: CGFloat)
 }
 
 // MARK: - Errors

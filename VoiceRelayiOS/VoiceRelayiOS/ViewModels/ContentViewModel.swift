@@ -15,6 +15,7 @@ class ContentViewModel: ObservableObject {
     @Published var pushToTalkStatusMessage: String?
     @Published var inboundDataRecords: [InboundDataRecord] = []
     @Published var reconnectNeedsManualAction = false
+    @Published var audioLevel: CGFloat = 0
 
     private let lastKnownHostKey = "voicerelay.lastKnownHost"
     private let lastKnownPortKey = "voicerelay.lastKnownPort"
@@ -606,6 +607,7 @@ extension ContentViewModel: AudioStreamControllerDelegate {
         DispatchQueue.main.async {
             self.recognitionState = .listening
             self.pushToTalkStatusMessage = self.localized("ptt_capturing")
+            self.audioLevel = 0
         }
         appendInboundDataRecord(
             title: localized("log_audio_start_title"),
@@ -666,6 +668,7 @@ extension ContentViewModel: AudioStreamControllerDelegate {
             self.manualSessionId = nil
             self.recognitionState = .idle
             self.pushToTalkStatusMessage = self.localized("ptt_sent_mac_processing")
+            self.audioLevel = 0
         }
         appendInboundDataRecord(
             title: localized("log_audio_end_title"),
@@ -694,5 +697,11 @@ extension ContentViewModel: AudioStreamControllerDelegate {
         )
 
         connectionManager.send(envelope)
+    }
+
+    func audioStreamController(_ controller: AudioStreamController, didUpdateAudioLevel level: CGFloat) {
+        DispatchQueue.main.async {
+            self.audioLevel = level
+        }
     }
 }
