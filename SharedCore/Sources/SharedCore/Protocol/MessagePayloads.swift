@@ -60,6 +60,18 @@ public struct ResultPayload: Codable {
     }
 }
 
+public struct PartialResultPayload: Codable {
+    public let sessionId: String
+    public let text: String
+    public let language: String
+
+    public init(sessionId: String, text: String, language: String) {
+        self.sessionId = sessionId
+        self.text = text
+        self.language = language
+    }
+}
+
 public struct PingPayload: Codable {
     public let nonce: String
 

@@ -98,7 +98,8 @@ class AudioStreamController: NSObject {
             audioConverter = converter
 
             inputNode.removeTap(onBus: 0)
-            inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { [weak self] buffer, _ in
+            // 使用更大的缓冲区（4096）减少网络传输次数，提高识别响应速度
+            inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
                 self?.processAudioBuffer(buffer)
             }
 
@@ -181,8 +182,8 @@ class AudioStreamController: NSObject {
 
         sequenceNumber += 1
 
-        // 每 100 个包打印一次日志
-        if sequenceNumber % 100 == 0 {
+        // 每 50 个包打印一次日志（因为包变大了，频率降低）
+        if sequenceNumber % 50 == 0 {
             print("📤 已发送 \(sequenceNumber) 个音频包")
         }
     }

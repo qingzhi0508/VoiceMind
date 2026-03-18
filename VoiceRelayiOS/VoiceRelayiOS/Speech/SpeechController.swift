@@ -102,9 +102,9 @@ class SpeechController: NSObject {
 
         state = .processing
 
-        // Wait up to 2 seconds for final result
+        // 缩短等待时间（从2秒减少到0.5秒），因为有部分结果实时反馈
         finalResultTimer?.invalidate()
-        finalResultTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
+        finalResultTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
             self?.finishRecognition()
         }
     }

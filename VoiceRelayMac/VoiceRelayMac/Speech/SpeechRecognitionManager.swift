@@ -1,5 +1,9 @@
 import Foundation
 
+extension Notification.Name {
+    static let speechEngineDidChange = Notification.Name("speechEngineDidChange")
+}
+
 /// 语音识别管理器
 /// 负责管理多个识别引擎，处理引擎注册、选择和音频路由
 class SpeechRecognitionManager {
@@ -65,6 +69,9 @@ class SpeechRecognitionManager {
 
         currentEngine = engine
         print("🎯 选择语音识别引擎: \(engine.displayName)")
+
+        // 通知引擎切换，以便更新 delegate
+        NotificationCenter.default.post(name: .speechEngineDidChange, object: engine)
     }
 
     /// 获取所有可用引擎

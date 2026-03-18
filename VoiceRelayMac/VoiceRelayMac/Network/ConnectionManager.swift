@@ -52,7 +52,21 @@ class ConnectionManager: NSObject {
         server.delegate = self
         loadPairing()
 
-        // Speech recognition delegate will be set after engine registration
+        // 监听引擎切换通知
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleEngineChange(_:)),
+            name: .speechEngineDidChange,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func handleEngineChange(_ notification: Notification) {
+        setupSpeechRecognition()
     }
 
     func start(port: UInt16) throws {
@@ -68,7 +82,7 @@ class ConnectionManager: NSObject {
 
     func setupSpeechRecognition() {
         speechManager.currentEngine?.delegate = self
-        print("✅ 语音识别代理已设置")
+        print("✅ 语音识别代理已设置 - 引擎: \(speechManager.currentEngine?.displayName ?? "nil")")
     }
 
     func startPairing() -> String {

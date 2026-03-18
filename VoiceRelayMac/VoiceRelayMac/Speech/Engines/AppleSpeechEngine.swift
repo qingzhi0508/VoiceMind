@@ -101,6 +101,11 @@ class AppleSpeechEngine: NSObject, SpeechRecognitionEngine {
         // 配置识别请求
         recognitionRequest.shouldReportPartialResults = true
 
+        // 添加任务提示，优化识别速度
+        if #available(macOS 13.0, *) {
+            recognitionRequest.addsPunctuation = true  // 自动添加标点
+        }
+
         // 优先使用设备上识别（离线）
         if recognizer.supportsOnDeviceRecognition {
             recognitionRequest.requiresOnDeviceRecognition = true
@@ -181,8 +186,8 @@ class AppleSpeechEngine: NSObject, SpeechRecognitionEngine {
         recognitionRequest?.endAudio()
         recognitionRequest = nil
 
-        // 延迟清理状态，等待最终结果回调完成
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+        // 缩短延迟清理时间（从2秒减少到0.5秒），因为有部分结果实时反馈
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.recognitionTask?.cancel()
             self?.recognitionTask = nil
             self?.currentSessionId = nil
