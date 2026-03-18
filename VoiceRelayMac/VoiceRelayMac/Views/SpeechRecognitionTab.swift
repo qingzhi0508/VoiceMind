@@ -15,6 +15,12 @@ struct SpeechRecognitionTab: View {
             // Engine selection section
             engineSelectionSection
 
+            Divider()
+                .padding(.vertical)
+
+            // Model management section
+            modelManagementSection
+
             Spacer()
         }
         .padding()
@@ -34,6 +40,49 @@ struct SpeechRecognitionTab: View {
                     ForEach(availableEngines, id: \.identifier) { engine in
                         engineRow(engine)
                     }
+                }
+            }
+            .padding()
+        }
+    }
+
+    @ViewBuilder
+    private var modelManagementSection: some View {
+        GroupBox(label: Label("模型管理", systemImage: "square.and.arrow.down")) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("管理本地语音识别模型")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                if let senseVoiceEngine = availableEngines.first(where: { $0.identifier == "sensevoice" }) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("SenseVoice Small")
+                                .font(.headline)
+
+                            Text("多语言语音识别模型，约 85MB")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Spacer()
+
+                        if senseVoiceEngine.isAvailable {
+                            Label("已下载", systemImage: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                                .font(.caption)
+                        } else {
+                            Button("下载模型") {
+                                // TODO: Implement model download
+                                print("下载 SenseVoice 模型")
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                } else {
+                    Text("SenseVoice 引擎未注册")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
                 }
             }
             .padding()
