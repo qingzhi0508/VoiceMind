@@ -30,25 +30,13 @@ class AudioStreamController: NSObject {
     // MARK: - Public Methods
 
     func checkPermissions() -> Bool {
-        if #available(iOS 17.0, *) {
-            return AVAudioApplication.shared.recordPermission == .granted
-        } else {
-            return AVAudioSession.sharedInstance().recordPermission == .granted
-        }
+        return AVAudioApplication.shared.recordPermission == .granted
     }
 
     func requestPermissions(completion: @escaping (Bool) -> Void) {
-        if #available(iOS 17.0, *) {
-            AVAudioApplication.requestRecordPermission { granted in
-                DispatchQueue.main.async {
-                    completion(granted)
-                }
-            }
-        } else {
-            AVAudioSession.sharedInstance().requestRecordPermission { granted in
-                DispatchQueue.main.async {
-                    completion(granted)
-                }
+        AVAudioApplication.requestRecordPermission { granted in
+            DispatchQueue.main.async {
+                completion(granted)
             }
         }
     }

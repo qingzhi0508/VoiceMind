@@ -30,6 +30,8 @@ class ConnectionManager: NSObject {
     private var heartbeatTimer: Timer?
     private var pongTimer: Timer?
     private var currentPingNonce: String?
+    private var connectionValidationTimer: Timer?
+    private var isConnectionValidated = false
 
     override init() {
         super.init()
@@ -207,6 +209,42 @@ class ConnectionManager: NSObject {
         client.disconnect()
     }
 
+    private func startConnectionValidation() {
+        print("🔍 开始连接验证")
+        isConnectionValidated = false
+        stopConnectionValidation()
+        
+        // 立即发送验证消息
+        sendPing()
+        
+        // 设置验证超时定时器
+        connectionValidationTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { [weak self] _ in
+            self?.handleConnectionValidationTimeout()
+        }
+    }
+
+    private func stopConnectionValidation() {
+        print("🛑 停止连接验证")
+        connectionValidationTimer?.invalidate()
+        connectionValidationTimer = nil
+    }
+
+    private func handleConnectionValidationTimeout() {
+        print("❌ 连接验证超时")
+        isConnectionValidated = false
+        client.disconnect()
+    }
+
+    private func validateConnection() {
+        print("✅ 连接验证成功")
+        isConnectionValidated = true
+        stopConnectionValidation()
+        
+        // 通知代理连接成功
+        let validatedState: ConnectionState = .connected
+        delegate?.connectionManager(self, didChangeConnectionState: validatedState)
+    }
+
     private func sendError(code: String, message: String) {
         let payload = ErrorPayload(code: code, message: message)
         guard let payloadData = try? JSONEncoder().encode(payload) else { return }
@@ -269,6 +307,11 @@ extension ConnectionManager: WebSocketClientDelegate {
                 print("💚 收到心跳 Pong 响应")
                 pongTimer?.invalidate()
                 pongTimer = nil
+                
+                // 如果连接尚未验证，验证它
+                if !isConnectionValidated {
+                    validateConnection()
+                }
             } else {
                 print("⚠️ Pong nonce 不匹配")
             }
@@ -286,27 +329,53 @@ extension ConnectionManager: WebSocketClientDelegate {
         case .disconnected:
             print("🔌 连接已断开")
             pendingPairConfirmEnvelope = nil
+            isConnectionValidated = false
+            stopConnectionValidation()
             connectionState = .disconnected
         case .connecting:
             print("🔄 正在连接...")
+            isConnectionValidated = false
+            stopConnectionValidation()
             connectionState = .connecting
         case .connected:
             print("✅ 连接已建立")
-            connectionState = .connected
+            connectionState = .connecting // 暂时保持连接中状态，直到验证完成
             if let pendingPairConfirmEnvelope {
                 print("📤 发送待发送的配对确认消息")
                 client.send(pendingPairConfirmEnvelope)
                 self.pendingPairConfirmEnvelope = nil
             }
+            
+            // 开始连接验证
+            if case .paired = pairingState {
+                startConnectionValidation()
+            } else {
+                // 未配对状态，直接认为连接成功
+                isConnectionValidated = true
+                let validatedState: ConnectionState = .connected
+                delegate?.connectionManager(self, didChangeConnectionState: validatedState)
+                stopHeartbeat() // 未配对状态不启动心跳
+            }
         case .error(let error):
             print("❌ 连接错误: \(error.localizedDescription)")
             pendingPairConfirmEnvelope = nil
+            isConnectionValidated = false
+            stopConnectionValidation()
             connectionState = .error(error.localizedDescription)
         }
 
-        delegate?.connectionManager(self, didChangeConnectionState: connectionState)
+        // 只有在非连接状态下才通知代理
+        if case .connected = state {
+            if case .paired = pairingState {
+                // 已配对状态在验证时避免重复通知
+            } else {
+                delegate?.connectionManager(self, didChangeConnectionState: connectionState)
+            }
+        } else {
+            delegate?.connectionManager(self, didChangeConnectionState: connectionState)
+        }
 
-        if case .connected = connectionState, case .paired = pairingState {
+        if isConnectionValidated, case .paired = pairingState {
             startHeartbeat()
         } else {
             stopHeartbeat()
