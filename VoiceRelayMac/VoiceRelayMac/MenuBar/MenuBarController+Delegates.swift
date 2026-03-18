@@ -57,9 +57,13 @@ extension MenuBarController: ConnectionManagerDelegate {
     }
 
     private func handleResultMessage(_ envelope: MessageEnvelope) {
+        print("🔔 handleResultMessage 被调用")
         guard let payload = try? JSONDecoder().decode(ResultPayload.self, from: envelope.payload) else {
+            print("❌ 无法解码 ResultPayload")
             return
         }
+
+        print("📝 解码成功 - 文本: \(payload.text), sessionId: \(payload.sessionId)")
 
         appendInboundDataRecord(
             title: "收到识别文本",
@@ -68,6 +72,7 @@ extension MenuBarController: ConnectionManagerDelegate {
         )
 
         // Validate session ID
+        print("🔍 验证 session ID - 当前: \(currentSessionId?.description ?? "nil"), 收到: \(payload.sessionId)")
         if let currentSessionId {
             guard payload.sessionId == currentSessionId else {
                 print("Ignoring result with mismatched session ID")
@@ -79,6 +84,7 @@ extension MenuBarController: ConnectionManagerDelegate {
                 )
                 return
             }
+            print("✅ Session ID 匹配")
         } else {
             print("Accepting proactive speech result without active hotkey session")
             appendInboundDataRecord(
@@ -94,26 +100,28 @@ extension MenuBarController: ConnectionManagerDelegate {
         sessionTimer?.invalidate()
         sessionTimer = nil
 
+        print(“🔍 检查是否需要执行回车命令”)
         if shouldTriggerEnterCommand(for: payload.text) {
+            print(“✅ 检测到执行命令，触发回车”)
             do {
                 try triggerReturnKey()
                 appendInboundDataRecord(
-                    title: "执行回车命令",
-                    detail: "识别到命令词“\(Self.executeCommandKeyword)”，已触发一次 Enter。",
+                    title: “执行回车命令”,
+                    detail: “识别到命令词”\(Self.executeCommandKeyword)”，已触发一次 Enter。”,
                     category: .voice
                 )
             } catch TextInjectionError.accessibilityPermissionDenied {
                 appendInboundDataRecord(
-                    title: "执行回车失败",
-                    detail: "缺少辅助功能权限，无法发送 Enter 键事件。",
+                    title: “执行回车失败”,
+                    detail: “缺少辅助功能权限，无法发送 Enter 键事件。”,
                     category: .connection,
                     severity: .warning
                 )
                 showTextInjectionPermissionError(with: payload.text)
             } catch {
                 appendInboundDataRecord(
-                    title: "执行回车失败",
-                    detail: "发送 Enter 键事件失败：\(error.localizedDescription)",
+                    title: “执行回车失败”,
+                    detail: “发送 Enter 键事件失败：\(error.localizedDescription)”,
                     category: .connection,
                     severity: .warning
                 )
@@ -122,8 +130,10 @@ extension MenuBarController: ConnectionManagerDelegate {
         }
 
         // Inject text
+        print(“💉 开始注入文本: \(payload.text)”)
         do {
             try textInjector.inject(payload.text)
+            print(“✅ 文本注入成功”)
         } catch TextInjectionError.noFocusedInputTarget {
             let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
             appendInboundDataRecord(
