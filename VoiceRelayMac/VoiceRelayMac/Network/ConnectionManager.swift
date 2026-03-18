@@ -41,23 +41,22 @@ class ConnectionManager: NSObject {
         }
     }
 
-    // 语音识别器
-    private lazy var speechRecognizer: MacSpeechRecognizer = {
-        let recognizer = MacSpeechRecognizer()
-        recognizer.delegate = self
-        return recognizer
-    }()
+    // 语音识别管理器
+    private let speechManager = SpeechRecognitionManager.shared
+
+    // 当前会话 ID（用于匹配识别结果）
+    private var currentSessionId: String?
 
     override init() {
         super.init()
         server.delegate = self
         loadPairing()
+
+        // Set delegate for speech recognition
+        speechManager.currentEngine?.delegate = self
     }
 
     func start(port: UInt16) throws {
-        // Prewarm speech recognition so permission prompts happen before the first live session.
-        _ = speechRecognizer
-
         // WebSocketServer now handles both TCP server and Bonjour advertising
         try server.start(port: port)
         print("✅ Connection manager started on port \(server.port)")
@@ -360,12 +359,11 @@ extension ConnectionManager: WebSocketServerDelegate {
         )
 
         do {
-            try speechRecognizer.startRecognition(
+            try speechManager.startRecognition(
                 sessionId: payload.sessionId,
-                languageCode: payload.language,
-                sampleRate: payload.sampleRate,
-                channels: payload.channels
+                language: payload.language
             )
+            currentSessionId = payload.sessionId
             print("✅ 语音识别已启动")
         } catch {
             print("❌ 启动语音识别失败: \(error.localizedDescription)")
@@ -385,7 +383,12 @@ extension ConnectionManager: WebSocketServerDelegate {
             detail: "Session: \(payload.sessionId)\n序号: \(payload.sequenceNumber)\n字节数: \(payload.audioData.count)",
             category: .voice
         )
-        speechRecognizer.processAudioData(payload.audioData)
+
+        do {
+            try speechManager.processAudioData(payload.audioData)
+        } catch {
+            print("❌ 处理音频数据失败: \(error.localizedDescription)")
+        }
     }
 
     private func handleAudioEnd(_ message: MessageEnvelope) {
@@ -401,8 +404,14 @@ extension ConnectionManager: WebSocketServerDelegate {
             detail: "Session: \(payload.sessionId)",
             category: .voice
         )
-        speechRecognizer.stopRecognition()
-        print("✅ 语音识别已停止")
+
+        do {
+            try speechManager.stopRecognition()
+            currentSessionId = nil
+            print("✅ 语音识别已停止")
+        } catch {
+            print("❌ 停止语音识别失败: \(error.localizedDescription)")
+        }
     }
 
     private func recordInboundEvent(
@@ -421,10 +430,15 @@ extension ConnectionManager: WebSocketServerDelegate {
     }
 }
 
-// MARK: - MacSpeechRecognizerDelegate
+// MARK: - SpeechRecognitionEngineDelegate
 
-extension ConnectionManager: MacSpeechRecognizerDelegate {
-    func speechRecognizer(_ recognizer: MacSpeechRecognizer, didRecognizeText text: String, sessionId: String, language: String) {
+extension ConnectionManager: SpeechRecognitionEngineDelegate {
+    func engine(
+        _ engine: SpeechRecognitionEngine,
+        didRecognizeText text: String,
+        sessionId: String,
+        language: String
+    ) {
         print("📝 识别结果: \(text)")
         recordInboundEvent(
             title: "语音转文字结果",
@@ -459,7 +473,11 @@ extension ConnectionManager: MacSpeechRecognizerDelegate {
         delegate?.connectionManager(self, didReceiveMessage: envelope)
     }
 
-    func speechRecognizer(_ recognizer: MacSpeechRecognizer, didFailWithError error: Error, sessionId: String) {
+    func engine(
+        _ engine: SpeechRecognitionEngine,
+        didFailWithError error: Error,
+        sessionId: String
+    ) {
         print("❌ 语音识别错误: \(error.localizedDescription)")
         recordInboundEvent(
             title: "语音转写失败",
@@ -469,4 +487,14 @@ extension ConnectionManager: MacSpeechRecognizerDelegate {
         )
         sendError(code: "recognition_error", message: error.localizedDescription)
     }
+
+    func engine(
+        _ engine: SpeechRecognitionEngine,
+        didReceivePartialResult text: String,
+        sessionId: String
+    ) {
+        // Optional: can be used for real-time display in the future
+        // For now, we only handle final results
+    }
 }
+
