@@ -25,31 +25,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Set activation policy to show in Dock
         NSApp.setActivationPolicy(.regular)
 
-        // Initialize speech recognition engine
-        initializeSpeechEngine()
+        Task {
+            await initializeSpeechEngine()
+            controller.startNetworkServices()
 
-        controller.startNetworkServices()
-
-        // Show onboarding on first launch
-        if !AppSettings.shared.hasLaunchedBefore {
-            AppSettings.shared.hasLaunchedBefore = true
-            controller.showOnboarding()
+            // Show onboarding on first launch
+            if !AppSettings.shared.hasLaunchedBefore {
+                AppSettings.shared.hasLaunchedBefore = true
+                controller.showOnboarding()
+            }
         }
     }
 
-    private func initializeSpeechEngine() {
+    private func initializeSpeechEngine() async {
         let appleSpeech = AppleSpeechEngine()
-        Task {
-            do {
-                try await appleSpeech.initialize()
-                SpeechRecognitionManager.shared.registerEngine(appleSpeech)
-                print("✅ Apple Speech 引擎已注册")
+        do {
+            try await appleSpeech.initialize()
+            SpeechRecognitionManager.shared.registerEngine(appleSpeech)
+            print("✅ Apple Speech 引擎已注册")
 
-                // Setup delegate after engine is registered
-                controller.connectionManager.setupSpeechRecognition()
-            } catch {
-                print("❌ Apple Speech 引擎初始化失败: \(error.localizedDescription)")
-            }
+            // Setup delegate after engine is registered
+            controller.connectionManager.setupSpeechRecognition()
+        } catch {
+            print("❌ Apple Speech 引擎初始化失败: \(error.localizedDescription)")
         }
     }
 
