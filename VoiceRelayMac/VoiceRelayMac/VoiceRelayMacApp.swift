@@ -72,17 +72,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             print("ℹ️ SenseVoice 模型未下载，跳过引擎注册")
         }
 
-        // 恢复之前选择的引擎
-        if let savedEngineId = UserDefaults.standard.string(forKey: "selectedEngineId") {
+        // Restore previously selected engine
+        let savedEngineId = UserDefaults.standard.selectedSpeechEngine
+        if !savedEngineId.isEmpty {
             do {
                 try SpeechRecognitionManager.shared.selectEngine(identifier: savedEngineId)
-                print("🔄 已恢复引擎选择: \(savedEngineId)")
+                print("✅ 恢复上次选择的引擎: \(savedEngineId)")
             } catch {
-                print("⚠️ 无法恢复引擎选择: \(error.localizedDescription)")
+                print("⚠️ 无法恢复引擎 \(savedEngineId)，使用默认引擎")
+                // Fallback to apple-speech
+                try? SpeechRecognitionManager.shared.selectEngine(identifier: "apple-speech")
             }
+        } else {
+            // First launch, select apple-speech as default
+            try? SpeechRecognitionManager.shared.selectEngine(identifier: "apple-speech")
+            UserDefaults.standard.selectedSpeechEngine = "apple-speech"
         }
 
-        // Setup delegate after engines are registered
+        // Setup speech recognition delegate
         controller.connectionManager.setupSpeechRecognition()
     }
 
