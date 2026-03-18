@@ -13,15 +13,20 @@ class ModelManager {
     /// 已注册的模型
     private var models: [String: ModelInfo] = [:]
 
+    /// 正在下载的模型 ID 集合
+    private var downloadingModels: Set<String> = []
+
     /// 串行队列保护并发访问
     private let queue = DispatchQueue(label: "com.voicerelay.modelmanager", qos: .userInitiated)
 
     private init() {
         // 获取 Application Support 目录
-        let appSupport = FileManager.default.urls(
+        guard let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
-        ).first!
+        ).first else {
+            fatalError("无法获取 Application Support 目录")
+        }
 
         // 创建模型存储目录
         modelsDirectory = appSupport
@@ -31,10 +36,14 @@ class ModelManager {
         registryFile = modelsDirectory.appendingPathComponent("models-registry.json")
 
         // 确保目录存在
-        try? FileManager.default.createDirectory(
-            at: modelsDirectory,
-            withIntermediateDirectories: true
-        )
+        do {
+            try FileManager.default.createDirectory(
+                at: modelsDirectory,
+                withIntermediateDirectories: true
+            )
+        } catch {
+            fatalError("无法创建模型存储目录: \(error.localizedDescription)")
+        }
 
         // 加载模型注册表
         loadRegistry()
@@ -135,53 +144,76 @@ class ModelManager {
         _ modelInfo: ModelInfo,
         progress: @escaping (Double) -> Void
     ) async throws {
+        // 检查是否已在下载
+        try queue.sync {
+            if downloadingModels.contains(modelInfo.id) {
+                throw ModelError.downloadFailed("模型正在下载中")
+            }
+            downloadingModels.insert(modelInfo.id)
+        }
+
+        // 确保下载完成后清理状态
+        defer {
+            queue.sync {
+                downloadingModels.remove(modelInfo.id)
+            }
+        }
+
         print("📦 开始下载模型: \(modelInfo.name)")
 
         // 创建模型目录
         let modelDir = modelsDirectory.appendingPathComponent(modelInfo.id)
-        try FileManager.default.createDirectory(
-            at: modelDir,
-            withIntermediateDirectories: true
-        )
 
-        // 下载所有文件
-        let totalFiles = modelInfo.files.count
-        var completedFiles = 0
-
-        for fileName in modelInfo.files {
-            let fileURL = modelInfo.downloadURL.appendingPathComponent(fileName)
-            let destinationURL = modelDir.appendingPathComponent(fileName)
-
-            print("📥 下载文件: \(fileName)")
-
-            try await downloadFile(
-                from: fileURL,
-                to: destinationURL,
-                fileProgress: { fileProgress in
-                    let overallProgress = (Double(completedFiles) + fileProgress) / Double(totalFiles)
-                    progress(overallProgress)
-                }
+        do {
+            try FileManager.default.createDirectory(
+                at: modelDir,
+                withIntermediateDirectories: true
             )
 
-            completedFiles += 1
-            progress(Double(completedFiles) / Double(totalFiles))
+            // 下载所有文件
+            let totalFiles = modelInfo.files.count
+            var completedFiles = 0
+
+            for fileName in modelInfo.files {
+                let fileURL = modelInfo.downloadURL.appendingPathComponent(fileName)
+                let destinationURL = modelDir.appendingPathComponent(fileName)
+
+                print("📥 下载文件: \(fileName)")
+
+                try await downloadFile(
+                    from: fileURL,
+                    to: destinationURL,
+                    fileProgress: { fileProgress in
+                        let overallProgress = (Double(completedFiles) + fileProgress) / Double(totalFiles)
+                        progress(overallProgress)
+                    }
+                )
+
+                completedFiles += 1
+                progress(Double(completedFiles) / Double(totalFiles))
+            }
+
+            // 保存元数据
+            var updatedModel = modelInfo
+            updatedModel.localPath = modelDir
+
+            let metadataURL = modelDir.appendingPathComponent("metadata.json")
+            let metadataData = try JSONEncoder().encode(updatedModel)
+            try metadataData.write(to: metadataURL)
+
+            // 更新注册表
+            queue.sync {
+                models[modelInfo.id] = updatedModel
+                saveRegistry()
+            }
+
+            print("✅ 模型下载完成: \(modelInfo.name)")
+        } catch {
+            // 清理部分下载的文件
+            print("❌ 下载失败，清理部分文件: \(error.localizedDescription)")
+            try? FileManager.default.removeItem(at: modelDir)
+            throw error
         }
-
-        // 保存元数据
-        var updatedModel = modelInfo
-        updatedModel.localPath = modelDir
-
-        let metadataURL = modelDir.appendingPathComponent("metadata.json")
-        let metadataData = try JSONEncoder().encode(updatedModel)
-        try metadataData.write(to: metadataURL)
-
-        // 更新注册表
-        queue.sync {
-            models[modelInfo.id] = updatedModel
-            saveRegistry()
-        }
-
-        print("✅ 模型下载完成: \(modelInfo.name)")
     }
 
     /// 下载单个文件
@@ -209,23 +241,23 @@ class ModelManager {
     /// 删除模型
     /// - Parameter modelInfo: 模型信息
     func deleteModel(_ modelInfo: ModelInfo) throws {
-        guard let localPath = modelInfo.localPath else {
-            throw ModelError.modelNotFound
-        }
+        try queue.sync {
+            guard let localPath = modelInfo.localPath else {
+                throw ModelError.modelNotFound
+            }
 
-        print("🗑️ 删除模型: \(modelInfo.name)")
+            print("🗑️ 删除模型: \(modelInfo.name)")
 
-        // 删除模型目录
-        try FileManager.default.removeItem(at: localPath)
+            // 删除模型目录
+            try FileManager.default.removeItem(at: localPath)
 
-        // 更新注册表
-        queue.sync {
+            // 更新注册表
             var updatedModel = modelInfo
             updatedModel.localPath = nil
             models[modelInfo.id] = updatedModel
             saveRegistry()
-        }
 
-        print("✅ 模型已删除: \(modelInfo.name)")
+            print("✅ 模型已删除: \(modelInfo.name)")
+        }
     }
 }
