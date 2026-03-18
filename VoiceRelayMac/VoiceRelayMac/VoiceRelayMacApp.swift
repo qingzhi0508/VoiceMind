@@ -74,8 +74,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 恢复之前选择的引擎
         if let savedEngineId = UserDefaults.standard.string(forKey: "selectedEngineId") {
-            SpeechRecognitionManager.shared.selectEngine(identifier: savedEngineId)
-            print("🔄 已恢复引擎选择: \(savedEngineId)")
+            do {
+                try SpeechRecognitionManager.shared.selectEngine(identifier: savedEngineId)
+                print("🔄 已恢复引擎选择: \(savedEngineId)")
+            } catch {
+                print("⚠️ 无法恢复引擎选择: \(error.localizedDescription)")
+            }
         }
 
         // Setup delegate after engines are registered
