@@ -45,6 +45,7 @@ struct ContentView: View {
             }
             .padding()
             .navigationTitle("VoiceMind")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $viewModel.showPairingView) {
                 PairingView(viewModel: viewModel)
             }
