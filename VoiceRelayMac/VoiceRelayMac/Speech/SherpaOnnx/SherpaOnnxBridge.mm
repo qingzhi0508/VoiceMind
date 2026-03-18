@@ -7,53 +7,64 @@
 #import <sherpa-onnx/c-api/c-api.h>
 
 @implementation SherpaOnnxRecognizer {
-    SherpaOnnxOnlineRecognizer *_recognizer;
-    SherpaOnnxOnlineStream *_stream;
+    const SherpaOnnxOfflineRecognizer *_recognizer;
+    const SherpaOnnxOfflineStream *_stream;
 }
 
 - (nullable instancetype)initWithModelPath:(NSString *)modelPath
                                 tokensPath:(NSString *)tokensPath
+                                  language:(NSString *)language
                                 sampleRate:(int)sampleRate {
     self = [super init];
     if (self) {
         // 配置识别器参数
-        SherpaOnnxOnlineRecognizerConfig config;
+        SherpaOnnxOfflineRecognizerConfig config;
         memset(&config, 0, sizeof(config));
-
-        // 设置模型路径
-        config.model_config.sense_voice.model = [modelPath UTF8String];
-        config.model_config.tokens = [tokensPath UTF8String];
-        config.model_config.num_threads = 2;
-        config.model_config.provider = "cpu";
-        config.model_config.debug = 0;
 
         // 设置特征提取参数
         config.feat_config.sample_rate = sampleRate;
         config.feat_config.feature_dim = 80;
 
+        // 设置 SenseVoice 模型路径
+        config.model_config.sense_voice.model = [modelPath UTF8String];
+        config.model_config.sense_voice.language = [language UTF8String];
+        config.model_config.sense_voice.use_itn = 1;  // 启用反文本规范化
+
+        // 设置通用模型参数
+        config.model_config.tokens = [tokensPath UTF8String];
+        config.model_config.num_threads = 2;
+        config.model_config.provider = "cpu";
+        config.model_config.debug = 0;
+
         // 创建识别器
-        _recognizer = SherpaOnnxCreateOnlineRecognizer(&config);
+        _recognizer = SherpaOnnxCreateOfflineRecognizer(&config);
         if (_recognizer == NULL) {
-            NSLog(@"❌ Failed to create sherpa-onnx recognizer");
+            NSLog(@"❌ Failed to create sherpa-onnx offline recognizer");
             return nil;
         }
 
         // 创建音频流
-        _stream = SherpaOnnxCreateOnlineStream(_recognizer);
+        _stream = SherpaOnnxCreateOfflineStream(_recognizer);
         if (_stream == NULL) {
-            NSLog(@"❌ Failed to create sherpa-onnx stream");
-            SherpaOnnxDestroyOnlineRecognizer(_recognizer);
+            NSLog(@"❌ Failed to create sherpa-onnx offline stream");
+            SherpaOnnxDestroyOfflineRecognizer(_recognizer);
             return nil;
         }
 
-        NSLog(@"✅ sherpa-onnx recognizer initialized");
+        NSLog(@"✅ sherpa-onnx offline recognizer initialized");
     }
     return self;
 }
 
 - (void)acceptWaveform:(const float *)samples count:(int)count {
     if (_stream != NULL) {
-        SherpaOnnxOnlineStreamAcceptWaveform(_stream, 16000, samples, count);
+        SherpaOnnxAcceptWaveformOffline(_stream, 16000, samples, count);
+    }
+}
+
+- (void)decode {
+    if (_recognizer != NULL && _stream != NULL) {
+        SherpaOnnxDecodeOfflineStream(_recognizer, _stream);
     }
 }
 
@@ -62,41 +73,89 @@
         return @"";
     }
 
-    const SherpaOnnxOnlineRecognizerResult *result =
-        SherpaOnnxGetOnlineStreamResult(_recognizer, _stream);
+    const SherpaOnnxOfflineRecognizerResult *result =
+        SherpaOnnxGetOfflineStreamResult(_stream);
 
     if (result == NULL) {
         return @"";
     }
 
-    NSString *text = [NSString stringWithUTF8String:result->text];
-    SherpaOnnxDestroyOnlineRecognizerResult(result);
+    NSString *text = result->text ? [NSString stringWithUTF8String:result->text] : @"";
+    SherpaOnnxDestroyOfflineRecognizerResult(result);
 
-    return text ? text : @"";
+    return text;
 }
 
-- (BOOL)isReady {
+- (NSString *)getLanguage {
     if (_recognizer == NULL || _stream == NULL) {
-        return NO;
+        return @"";
     }
 
-    return SherpaOnnxIsOnlineStreamReady(_recognizer, _stream) != 0;
+    const SherpaOnnxOfflineRecognizerResult *result =
+        SherpaOnnxGetOfflineStreamResult(_stream);
+
+    if (result == NULL) {
+        return @"";
+    }
+
+    NSString *lang = result->lang ? [NSString stringWithUTF8String:result->lang] : @"";
+    SherpaOnnxDestroyOfflineRecognizerResult(result);
+
+    return lang;
+}
+
+- (NSString *)getEmotion {
+    if (_recognizer == NULL || _stream == NULL) {
+        return @"";
+    }
+
+    const SherpaOnnxOfflineRecognizerResult *result =
+        SherpaOnnxGetOfflineStreamResult(_stream);
+
+    if (result == NULL) {
+        return @"";
+    }
+
+    NSString *emotion = result->emotion ? [NSString stringWithUTF8String:result->emotion] : @"";
+    SherpaOnnxDestroyOfflineRecognizerResult(result);
+
+    return emotion;
+}
+
+- (NSString *)getEvent {
+    if (_recognizer == NULL || _stream == NULL) {
+        return @"";
+    }
+
+    const SherpaOnnxOfflineRecognizerResult *result =
+        SherpaOnnxGetOfflineStreamResult(_stream);
+
+    if (result == NULL) {
+        return @"";
+    }
+
+    NSString *event = result->event ? [NSString stringWithUTF8String:result->event] : @"";
+    SherpaOnnxDestroyOfflineRecognizerResult(result);
+
+    return event;
 }
 
 - (void)reset {
     if (_stream != NULL) {
-        SherpaOnnxOnlineStreamReset(_stream);
+        // 销毁旧流并创建新流
+        SherpaOnnxDestroyOfflineStream(_stream);
+        _stream = SherpaOnnxCreateOfflineStream(_recognizer);
     }
 }
 
 - (void)releaseResources {
     if (_stream != NULL) {
-        SherpaOnnxDestroyOnlineStream(_stream);
+        SherpaOnnxDestroyOfflineStream(_stream);
         _stream = NULL;
     }
 
     if (_recognizer != NULL) {
-        SherpaOnnxDestroyOnlineRecognizer(_recognizer);
+        SherpaOnnxDestroyOfflineRecognizer(_recognizer);
         _recognizer = NULL;
     }
 }
