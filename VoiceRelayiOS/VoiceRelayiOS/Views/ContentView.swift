@@ -5,16 +5,24 @@ struct ContentView: View {
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 30) {
-                // Connection Status Card
-                ConnectionStatusCard(
-                    pairingState: viewModel.pairingState,
-                    connectionState: viewModel.connectionState,
-                    reconnectStatusMessage: viewModel.reconnectStatusMessage,
-                    onReconnect: {
-                        viewModel.reconnect()
-                    }
-                )
+            VStack {
+                // Connection Status Card - 只在非成功连接状态显示
+                if case .paired = viewModel.pairingState,
+                   case .connected = viewModel.connectionState {
+                    EmptyView()
+                } else {
+                    ConnectionStatusCard(
+                        pairingState: viewModel.pairingState,
+                        connectionState: viewModel.connectionState,
+                        reconnectStatusMessage: viewModel.reconnectStatusMessage,
+                        onReconnect: {
+                            viewModel.reconnect()
+                        }
+                    )
+                    .padding(.bottom, 20)
+                }
+
+                Spacer()
 
                 // Recognition Status
                 RecognitionStatusView(
@@ -36,16 +44,22 @@ struct ContentView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
+                    .padding(.bottom, 20)
                 }
 
-                // Settings
-                NavigationLink("设置") {
-                    SettingsView(viewModel: viewModel)
-                }
             }
             .padding()
             .navigationTitle("VoiceMind")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink {
+                        SettingsView(viewModel: viewModel)
+                    } label: {
+                        Image(systemName: "gear")
+                    }
+                }
+            }
             .sheet(isPresented: $viewModel.showPairingView) {
                 PairingView(viewModel: viewModel)
             }
@@ -209,7 +223,7 @@ struct RecognitionStatusView: View {
             ZStack {
                 Circle()
                     .fill(buttonBackgroundColor)
-                    .frame(width: 120, height: 120)
+                    .frame(width: 140, height: 140)
                     .overlay(
                         Circle()
                             .stroke(buttonBorderColor, lineWidth: isPressing ? 4 : 2)
@@ -217,7 +231,7 @@ struct RecognitionStatusView: View {
                     .scaleEffect(isPressing ? 0.95 : 1)
 
                 Image(systemName: iconName)
-                    .font(.system(size: 52))
+                    .font(.system(size: 60))
                     .foregroundColor(iconColor)
             }
             .contentShape(Circle())
@@ -254,7 +268,7 @@ struct RecognitionStatusView: View {
                     .frame(height: 40)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .center)
         .padding(.vertical, 40)
     }
 
