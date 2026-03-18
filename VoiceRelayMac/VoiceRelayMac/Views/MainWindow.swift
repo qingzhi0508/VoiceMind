@@ -23,29 +23,35 @@ struct MainWindow: View {
                 }
                 .tag(1)
 
+            SpeechRecognitionTab(controller: controller)
+                .tabItem {
+                    Label("语音识别", systemImage: "waveform.circle")
+                }
+                .tag(2)
+
             DataRecordsTab(controller: controller)
                 .tabItem {
                     Label("数据", systemImage: "tray.full")
                 }
-                .tag(2)
+                .tag(3)
 
             PermissionsTab()
                 .tabItem {
                     Label("权限", systemImage: "lock.shield")
                 }
-                .tag(3)
+                .tag(4)
 
             AboutTab()
                 .tabItem {
                     Label("关于", systemImage: "info.circle")
                 }
-                .tag(4)
+                .tag(5)
 
             PermissionsDebugView()
                 .tabItem {
                     Label("调试", systemImage: "ladybug")
                 }
-                .tag(5)
+                .tag(6)
         }
         .frame(width: 600, height: 600)
     }
