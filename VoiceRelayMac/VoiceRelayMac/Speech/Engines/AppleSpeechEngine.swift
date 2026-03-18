@@ -38,6 +38,7 @@ class AppleSpeechEngine: NSObject, SpeechRecognitionEngine {
         super.init()
         // 默认使用中文识别器
         currentRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
+        checkAvailability()
     }
 
     // MARK: - SpeechRecognitionEngine Methods
