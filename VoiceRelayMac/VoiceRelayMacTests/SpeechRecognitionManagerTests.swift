@@ -69,7 +69,7 @@ final class SpeechRecognitionManagerTests: XCTestCase {
 
 // Mock engine for testing
 class MockSpeechEngine: NSObject, SpeechRecognitionEngine {
-    let identifier = "mock-engine"
+    var identifier = "mock-engine"
     let displayName = "Mock Engine"
     let supportsStreaming = true
     var supportedLanguages: [String] = ["zh-CN", "en-US"]
@@ -96,5 +96,7 @@ class MockSpeechEngine: NSObject, SpeechRecognitionEngine {
 
     func stopRecognition() throws {
         stopRecognitionCalled = true
+        // Simulate recognition completion
+        delegate?.engine(self, didRecognizeText: "测试文本", sessionId: "test", language: "zh-CN")
     }
 }
