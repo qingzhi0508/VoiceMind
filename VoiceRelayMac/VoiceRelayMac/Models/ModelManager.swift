@@ -16,6 +16,12 @@ class ModelManager {
     /// 正在下载的模型 ID 集合
     private var downloadingModels: Set<String> = []
 
+    /// 初始化错误
+    private var initializationError: Error?
+
+    /// 是否正确初始化
+    private var isInitialized: Bool { initializationError == nil }
+
     /// 串行队列保护并发访问
     private let queue = DispatchQueue(label: "com.voicerelay.modelmanager", qos: .userInitiated)
 
@@ -25,7 +31,11 @@ class ModelManager {
             for: .applicationSupportDirectory,
             in: .userDomainMask
         ).first else {
-            fatalError("无法获取 Application Support 目录")
+            initializationError = ModelError.storageError
+            modelsDirectory = URL(fileURLWithPath: "/tmp/VoiceRelayMac/Models")
+            registryFile = modelsDirectory.appendingPathComponent("models-registry.json")
+            print("❌ 无法访问 Application Support 目录，使用临时目录")
+            return
         }
 
         // 创建模型存储目录
@@ -42,7 +52,9 @@ class ModelManager {
                 withIntermediateDirectories: true
             )
         } catch {
-            fatalError("无法创建模型存储目录: \(error.localizedDescription)")
+            initializationError = error
+            print("❌ 创建模型目录失败: \(error.localizedDescription)")
+            return
         }
 
         // 加载模型注册表
@@ -94,6 +106,10 @@ class ModelManager {
 
     /// 获取所有可用模型
     func availableModels() -> [ModelInfo] {
+        guard isInitialized else {
+            print("⚠️ ModelManager 未正确初始化")
+            return []
+        }
         return queue.sync {
             Array(models.values).sorted { $0.name < $1.name }
         }
@@ -101,6 +117,10 @@ class ModelManager {
 
     /// 获取已下载的模型
     func downloadedModels() -> [ModelInfo] {
+        guard isInitialized else {
+            print("⚠️ ModelManager 未正确初始化")
+            return []
+        }
         return queue.sync {
             models.values.filter { $0.isDownloaded }
         }
@@ -110,6 +130,10 @@ class ModelManager {
     /// - Parameter engineType: 引擎类型
     /// - Returns: 是否已下载
     func isModelDownloaded(engineType: String) -> Bool {
+        guard isInitialized else {
+            print("⚠️ ModelManager 未正确初始化")
+            return false
+        }
         return queue.sync {
             models.values.first { $0.engineType == engineType }?.isDownloaded ?? false
         }
@@ -119,6 +143,10 @@ class ModelManager {
     /// - Parameter engineType: 引擎类型
     /// - Returns: 模型目录路径
     func getModelPath(engineType: String) -> URL? {
+        guard isInitialized else {
+            print("⚠️ ModelManager 未正确初始化")
+            return nil
+        }
         return queue.sync {
             guard let model = models.values.first(where: { $0.engineType == engineType }),
                   model.isDownloaded,
@@ -144,6 +172,11 @@ class ModelManager {
         _ modelInfo: ModelInfo,
         progress: @escaping (Double) -> Void
     ) async throws {
+        guard isInitialized else {
+            print("⚠️ ModelManager 未正确初始化")
+            throw ModelError.storageError
+        }
+
         // 检查是否已在下载
         try queue.sync {
             if downloadingModels.contains(modelInfo.id) {
@@ -241,6 +274,11 @@ class ModelManager {
     /// 删除模型
     /// - Parameter modelInfo: 模型信息
     func deleteModel(_ modelInfo: ModelInfo) throws {
+        guard isInitialized else {
+            print("⚠️ ModelManager 未正确初始化")
+            throw ModelError.storageError
+        }
+
         try queue.sync {
             guard let localPath = modelInfo.localPath else {
                 throw ModelError.modelNotFound
