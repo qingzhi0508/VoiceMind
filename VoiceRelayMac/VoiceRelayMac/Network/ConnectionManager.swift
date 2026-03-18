@@ -52,8 +52,7 @@ class ConnectionManager: NSObject {
         server.delegate = self
         loadPairing()
 
-        // Set delegate for speech recognition
-        speechManager.currentEngine?.delegate = self
+        // Speech recognition delegate will be set after engine registration
     }
 
     func start(port: UInt16) throws {
@@ -65,6 +64,11 @@ class ConnectionManager: NSObject {
     func stop() {
         server.stop()
         print("🛑 Connection manager stopped")
+    }
+
+    func setupSpeechRecognition() {
+        speechManager.currentEngine?.delegate = self
+        print("✅ 语音识别代理已设置")
     }
 
     func startPairing() -> String {
@@ -388,6 +392,7 @@ extension ConnectionManager: WebSocketServerDelegate {
             try speechManager.processAudioData(payload.audioData)
         } catch {
             print("❌ 处理音频数据失败: \(error.localizedDescription)")
+            sendError(code: "audio_processing_failed", message: error.localizedDescription)
         }
     }
 
@@ -411,6 +416,7 @@ extension ConnectionManager: WebSocketServerDelegate {
             print("✅ 语音识别已停止")
         } catch {
             print("❌ 停止语音识别失败: \(error.localizedDescription)")
+            sendError(code: "recognition_stop_failed", message: error.localizedDescription)
         }
     }
 
