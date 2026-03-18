@@ -8,26 +8,37 @@ class ClipboardTextInjector: TextInjectionProtocol {
     private let restoreDelay: TimeInterval = 0.5 // 500ms
 
     func inject(_ text: String) throws {
+        print("📋 ClipboardTextInjector.inject() 被调用")
+        print("   文本: \(text)")
+
         guard checkAccessibilityPermission() else {
+            print("❌ 缺少辅助功能权限")
             throw TextInjectionError.accessibilityPermissionDenied
         }
+
+        print("✅ 辅助功能权限检查通过")
 
         // 1. Backup current clipboard content
         let pasteboard = NSPasteboard.general
         let backup = pasteboard.string(forType: .string)
+        print("💾 备份剪贴板内容")
 
         // 2. Set new text to clipboard
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+        print("📝 文本已复制到剪贴板")
 
         // 3. Simulate Cmd+V to paste
+        print("⌨️ 模拟 Cmd+V 粘贴")
         try simulatePaste()
+        print("✅ 粘贴命令已发送")
 
         // 4. Restore clipboard after delay
         DispatchQueue.main.asyncAfter(deadline: .now() + restoreDelay) {
             if let backup = backup {
                 pasteboard.clearContents()
                 pasteboard.setString(backup, forType: .string)
+                print("♻️ 剪贴板已恢复")
             }
         }
     }

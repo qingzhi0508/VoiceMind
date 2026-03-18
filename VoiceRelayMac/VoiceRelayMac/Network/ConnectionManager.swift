@@ -475,8 +475,10 @@ extension ConnectionManager: SpeechRecognitionEngineDelegate {
             hmac: hmac
         )
 
+        print("📤 调用 delegate.connectionManager(didReceiveMessage:)")
         // 通过 delegate 传递给 MenuBarController 进行文本注入
         delegate?.connectionManager(self, didReceiveMessage: envelope)
+        print("✅ delegate 调用完成")
     }
 
     func engine(
@@ -499,8 +501,46 @@ extension ConnectionManager: SpeechRecognitionEngineDelegate {
         didReceivePartialResult text: String,
         sessionId: String
     ) {
-        // Optional: can be used for real-time display in the future
-        // For now, we only handle final results
+        // 处理部分结果，提供实时反馈
+        print("📝 部分识别结果: \(text)")
+        recordInboundEvent(
+            title: "语音转文字部分结果",
+            detail: "Session: \(sessionId)\n内容: \(text)",
+            category: .voice
+        )
+
+        // 可选：将部分结果也发送给客户端，用于实时显示
+        // 注意：这里不插入文字，只有最终结果才插入
+        // 使用当前会话的语言（从 audioStart 时保存）
+        guard sessionId == currentSessionId else {
+            return
+        }
+
+        // 使用 "zh-CN" 作为默认语言，实际语言会在 audioStart 时确定
+        let payload = PartialResultPayload(sessionId: sessionId, text: text, language: "zh-CN")
+        guard let payloadData = try? JSONEncoder().encode(payload) else {
+            print("❌ 无法编码部分识别结果")
+            return
+        }
+
+        let timestamp = Date()
+        let hmac = hmacValidator?.generateHMACForEnvelope(
+            type: .partialResult,
+            payload: payloadData,
+            timestamp: timestamp,
+            deviceId: deviceId
+        )
+
+        let envelope = MessageEnvelope(
+            type: .partialResult,
+            payload: payloadData,
+            timestamp: timestamp,
+            deviceId: deviceId,
+            hmac: hmac
+        )
+
+        // 发送部分结果（可选，用于客户端实时显示）
+        server.send(envelope)
     }
 }
 
