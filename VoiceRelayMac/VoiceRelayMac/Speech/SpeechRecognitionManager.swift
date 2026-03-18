@@ -40,13 +40,19 @@ class SpeechRecognitionManager {
     /// - Parameter identifier: 引擎标识符
     func selectEngine(identifier: String) throws {
         try queue.sync {
-            guard let engine = engines[identifier] else {
-                throw SpeechError.noAvailableEngine
-            }
-
-            currentEngine = engine
-            print("🎯 选择语音识别引擎: \(engine.displayName)")
+            try selectEngineUnsafe(identifier: identifier)
         }
+    }
+
+    /// 选择引擎（内部方法，不使用队列锁）
+    /// - Parameter identifier: 引擎标识符
+    private func selectEngineUnsafe(identifier: String) throws {
+        guard let engine = engines[identifier] else {
+            throw SpeechError.noAvailableEngine
+        }
+
+        currentEngine = engine
+        print("🎯 选择语音识别引擎: \(engine.displayName)")
     }
 
     /// 获取所有可用引擎
@@ -82,7 +88,7 @@ class SpeechRecognitionManager {
             if !engine.isAvailable {
                 if engine.identifier != "apple-speech" {
                     print("⚠️ \(engine.displayName) 不可用，降级到 Apple Speech")
-                    try selectEngine(identifier: "apple-speech")
+                    try selectEngineUnsafe(identifier: "apple-speech")
                     guard let fallbackEngine = currentEngine else {
                         throw SpeechError.noAvailableEngine
                     }

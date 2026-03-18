@@ -23,7 +23,12 @@
       "Bash(/usr/bin/xcodebuild -project VoiceRelayMac/VoiceRelayMac.xcodeproj -scheme VoiceRelayMac -configuration Debug build 2>&1 | tail -50)",
       "Bash(/usr/bin/xcrun swiftc:*)",
       "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | tail -20)",
-      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | grep -E \"\\(BUILD|error:\\)\" | tail -5)"
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | grep -E \"\\(BUILD|error:\\)\" | tail -5)",
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug clean build 2>&1 | grep -A 5 -B 5 \"error:\" | head -50)",
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | grep -E \"\\(error:|warning:|BUILD SUCCEEDED|BUILD FAILED\\)\" | head -20)",
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | grep -E \"\\(error:|warning:|BUILD\\)\" | head -20)",
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug clean build 2>&1 | tail -50)",
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | grep -E \"\\(error:|BUILD\\)\" | tail -5)"
     ]
   }
 }
