@@ -39,8 +39,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func initializeSpeechEngine() async {
         // 初始化模型管理器（确保目录创建）
-        _ = ModelManager.shared
-        print("✅ 模型管理器已初始化")
+        let modelManager = ModelManager.shared
+        if !modelManager.isInitialized {
+            print("⚠️ 模型管理器初始化失败，模型下载功能将不可用")
+            // Note: App continues with degraded functionality
+        } else {
+            print("✅ 模型管理器已初始化")
+        }
 
         let appleSpeech = AppleSpeechEngine()
         do {

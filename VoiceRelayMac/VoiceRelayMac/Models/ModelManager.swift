@@ -20,7 +20,7 @@ class ModelManager {
     private var initializationError: Error?
 
     /// 是否正确初始化
-    private var isInitialized: Bool { initializationError == nil }
+    var isInitialized: Bool { initializationError == nil }
 
     /// 串行队列保护并发访问
     private let queue = DispatchQueue(label: "com.voicerelay.modelmanager", qos: .userInitiated)
