@@ -7,6 +7,7 @@ class SpeechRecognitionManager {
 
     /// 串行队列，保护共享状态的线程安全
     private let queue = DispatchQueue(label: "com.voicerelay.speechmanager", qos: .userInitiated)
+    private let queueKey = DispatchSpecificKey<Void>()
 
     /// 已注册的引擎
     private var engines: [String: SpeechRecognitionEngine] = [:]
@@ -17,7 +18,18 @@ class SpeechRecognitionManager {
     /// 当前会话 ID
     private var currentSessionId: String?
 
-    private init() {}
+    private init() {
+        queue.setSpecific(key: queueKey, value: ())
+    }
+
+    private func syncOnQueue<T>(_ block: () throws -> T) rethrows -> T {
+        if DispatchQueue.getSpecific(key: queueKey) != nil {
+            return try block()
+        }
+        return try queue.sync {
+            try block()
+        }
+    }
 
     // MARK: - Engine Management
 
@@ -39,7 +51,7 @@ class SpeechRecognitionManager {
     /// 选择引擎
     /// - Parameter identifier: 引擎标识符
     func selectEngine(identifier: String) throws {
-        try queue.sync {
+        try syncOnQueue {
             try selectEngineUnsafe(identifier: identifier)
         }
     }
@@ -58,7 +70,7 @@ class SpeechRecognitionManager {
     /// 获取所有可用引擎
     /// - Returns: 可用引擎列表
     func availableEngines() -> [SpeechRecognitionEngine] {
-        return queue.sync {
+        return syncOnQueue {
             Array(engines.values)
         }
     }
@@ -67,7 +79,7 @@ class SpeechRecognitionManager {
     /// - Parameter identifier: 引擎标识符
     /// - Returns: 引擎实例
     func getEngine(identifier: String) -> SpeechRecognitionEngine? {
-        return queue.sync {
+        return syncOnQueue {
             engines[identifier]
         }
     }
@@ -79,7 +91,7 @@ class SpeechRecognitionManager {
     ///   - sessionId: 会话 ID
     ///   - language: 识别语言
     func startRecognition(sessionId: String, language: String) throws {
-        try queue.sync {
+        try syncOnQueue {
             guard let engine = currentEngine else {
                 throw SpeechError.noEngineSelected
             }
@@ -110,7 +122,7 @@ class SpeechRecognitionManager {
     /// 处理音频数据
     /// - Parameter data: 音频数据
     func processAudioData(_ data: Data) throws {
-        try queue.sync {
+        try syncOnQueue {
             guard let engine = currentEngine else {
                 throw SpeechError.noEngineSelected
             }
@@ -121,7 +133,7 @@ class SpeechRecognitionManager {
 
     /// 停止识别
     func stopRecognition() throws {
-        try queue.sync {
+        try syncOnQueue {
             guard let engine = currentEngine else {
                 throw SpeechError.noEngineSelected
             }
@@ -136,7 +148,7 @@ class SpeechRecognitionManager {
 
     /// 打印引擎状态
     func logEngineStatus() {
-        queue.sync {
+        syncOnQueue {
             print("📊 语音识别引擎状态:")
             for (id, engine) in engines {
                 let status = engine.isAvailable ? "✅" : "❌"
