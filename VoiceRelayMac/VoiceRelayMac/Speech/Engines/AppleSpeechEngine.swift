@@ -111,9 +111,20 @@ class AppleSpeechEngine: NSObject, SpeechRecognitionEngine {
 
         // 开始识别任务
         recognitionTask = recognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
-            guard let self = self else { return }
-            guard let sessionId = self.currentSessionId else { return }
-            guard let language = self.currentLanguage else { return }
+            guard let self = self else {
+                print("⚠️ Apple Speech 回调: self 已释放")
+                return
+            }
+            guard let sessionId = self.currentSessionId else {
+                print("⚠️ Apple Speech 回调: sessionId 为空")
+                return
+            }
+            guard let language = self.currentLanguage else {
+                print("⚠️ Apple Speech 回调: language 为空")
+                return
+            }
+
+            print("🔔 Apple Speech 识别回调触发")
 
             if let result = result {
                 let text = result.bestTranscription.formattedString
@@ -126,6 +137,8 @@ class AppleSpeechEngine: NSObject, SpeechRecognitionEngine {
                     print("📝 Apple Speech 部分结果: \(text)")
                     self.delegate?.engine(self, didReceivePartialResult: text, sessionId: sessionId)
                 }
+            } else {
+                print("⚠️ Apple Speech 回调: result 为空")
             }
 
             if let error = error {
@@ -150,6 +163,8 @@ class AppleSpeechEngine: NSObject, SpeechRecognitionEngine {
         guard let buffer = dataToAudioBuffer(data, format: audioFormat) else {
             throw SpeechError.recognitionFailed("音频数据转换失败")
         }
+
+        print("🎵 处理音频数据: \(data.count) 字节 -> \(buffer.frameLength) 帧")
 
         // 追加到识别请求
         recognitionRequest.append(buffer)
