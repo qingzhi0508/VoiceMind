@@ -28,7 +28,9 @@
       "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | grep -E \"\\(error:|warning:|BUILD SUCCEEDED|BUILD FAILED\\)\" | head -20)",
       "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | grep -E \"\\(error:|warning:|BUILD\\)\" | head -20)",
       "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug clean build 2>&1 | tail -50)",
-      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | grep -E \"\\(error:|BUILD\\)\" | tail -5)"
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | grep -E \"\\(error:|BUILD\\)\" | tail -5)",
+      "Bash(otool -L /Users/cayden/Library/Developer/Xcode/DerivedData/VoiceRelay-alpibflfuaepgmdvsyexnlexdjay/Build/Products/Debug/VoiceRelayMac.app/Contents/Frameworks/libonnxruntime.dylib | head -5)",
+      "Bash(cd /Users/cayden/Library/Developer/Xcode/DerivedData/VoiceRelay-alpibflfuaepgmdvsyexnlexdjay/Build/Products/Debug/VoiceRelayMac.app/Contents/Frameworks && ln -sf libonnxruntime.dylib libonnxruntime.1.23.0.dylib && ls -la)"
     ]
   }
 }
