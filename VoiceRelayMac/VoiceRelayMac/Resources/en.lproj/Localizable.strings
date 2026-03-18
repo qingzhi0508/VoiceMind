@@ -1,0 +1,226 @@
+"app_title" = "VoiceMind";
+
+"cancel_button" = "Cancel";
+"save_button" = "Save";
+"refresh_button" = "Refresh";
+"grant_permission_button" = "Grant Permission";
+
+"hotkey_title" = "Hotkey Settings";
+"hotkey_modifier_label" = "Modifiers:";
+"hotkey_key_label" = "Key:";
+"hotkey_key_picker" = "Key";
+"hotkey_current_format" = "Current hotkey: %@";
+
+"pair_with_iphone_title" = "Pair with iPhone";
+"pair_with_iphone_instruction" = "Enter this code on your iPhone:";
+"pair_with_iphone_waiting" = "Waiting for iPhone to connect...";
+"pair_with_iphone_time_format" = "Time remaining: %@s";
+
+"permissions_title" = "Permissions";
+"permission_accessibility_title" = "Accessibility";
+"permission_accessibility_desc" = "Required for hotkeys and text injection";
+"permission_input_monitor_title" = "Input Monitoring";
+"permission_input_monitor_desc" = "Required for global hotkeys";
+
+
+"menu_status_unpaired" = "Not Paired";
+"menu_show_status" = "Show Status...";
+"menu_start_pairing" = "Start Pairing...";
+"menu_permissions" = "Permissions...";
+"menu_unpair" = "Unpair";
+"menu_quit" = "Quit";
+
+"window_title_main" = "VoiceMind";
+"window_title_onboarding" = "Welcome to VoiceMind";
+"window_title_hotkey" = "Hotkey Settings";
+"window_title_permissions" = "Permissions";
+"window_title_qr_pairing" = "QR Pairing";
+
+"unpair_alert_title" = "Unpair?";
+"unpair_alert_message" = "This will remove the pairing with your iPhone. You will need to pair again to use VoiceRelay.";
+"unpair_alert_button" = "Unpair";
+
+"error_title" = "Error";
+"error_local_ip" = "Unable to get local IP address";
+
+"status_access_unpaired" = "Not Paired";
+"status_access_pairing" = "Pairing";
+"status_access_connected" = "Connected";
+"status_menu_pairing" = "Pairing...";
+"status_menu_connected_format" = "Connected to %@";
+
+"text_copy_alert_title" = "Text Injection Failed";
+"text_copy_alert_message_format" = "Unable to inject text: %@
+
+You can copy the text manually.";
+"copy_text_button" = "Copy Text";
+
+"hotkey_permission_error" = "Unable to start hotkey monitoring. Please check system permissions and try again.";
+
+"text_injection_permission_title" = "Accessibility Permission Required";
+"text_injection_permission_message" = "VoiceRelay needs Accessibility permission to type results into the current app.
+
+You can also copy the text and paste manually.";
+"open_system_settings_button" = "Open System Settings";
+
+"log_server_port_updated_title" = "Listening Port Updated";
+"log_server_port_updated_detail_format" = "New listening port: %@";
+
+
+"status_loading" = "Loading...";
+"status_unavailable" = "Unavailable";
+
+"status_connected_ready" = "Connected - Ready for voice input";
+"status_connecting_iphone" = "Connecting to iPhone...";
+"status_paired_not_connected" = "Paired but not connected";
+"status_pairing" = "Pairing...";
+"status_unpaired_need_pair" = "Not paired - Pair with your iPhone first";
+"status_unknown" = "Unknown status";
+
+"system_info_title" = "System Info";
+"system_ip_title" = "Local IP Address";
+"system_accessibility_title" = "Accessibility Permission";
+
+"device_connection_title" = "Device Connection";
+"device_pairing_status" = "Pairing Status";
+"device_name" = "Device Name";
+"device_connection_status" = "Connection Status";
+
+"pairing_status_unpaired" = "Not Paired";
+"pairing_status_pairing" = "Pairing...";
+"pairing_status_paired" = "Paired";
+
+"connection_status_disconnected" = "Disconnected";
+"connection_status_connecting" = "Connecting...";
+"connection_status_connected" = "Connected";
+"connection_status_error_format" = "Error: %@";
+
+"permissions_section_title" = "Permissions";
+"permissions_accessibility_title" = "Accessibility Permission";
+"permissions_accessibility_desc" = "Needed to detect cursor position and insert transcribed text";
+"permissions_all_granted" = "All permissions granted";
+"authorize_button" = "Authorize";
+
+"quickstart_title" = "Quick Start";
+"quickstart_step1_format" = "Open %@ on your iPhone";
+"quickstart_step2" = "Click the \"Start Pairing\" button below";
+"quickstart_step3" = "Enter the pairing code on your iPhone";
+"quickstart_step4" = "After pairing, hold the mic on your iPhone to speak. The Mac will transcribe and type automatically.";
+
+"action_start_pairing" = "Start Pairing";
+"action_permissions" = "Permissions";
+"action_unpair" = "Unpair";
+
+
+"qr_pairing_title" = "QR Pairing";
+"qr_scan_instruction" = "Scan this QR code with your iPhone";
+"qr_manual_code_label" = "Or enter the pairing code manually:";
+"qr_connection_info_label" = "Connection Info:";
+"qr_ip_label_format" = "IP: %@";
+"qr_port_label_format" = "Port: %@";
+"qr_progress_title" = "Pairing Progress";
+"qr_progress_waiting" = "Waiting for iPhone to start pairing.";
+"qr_time_remaining_format" = "Time remaining: %@s";
+
+
+"speech_engine_title" = "Speech Recognition Engine";
+"speech_engine_select_title" = "Select Engine";
+"speech_engine_loading" = "Loading engines...";
+
+"model_management_title" = "Model Management";
+"model_management_desc" = "Manage local speech recognition models";
+"model_name_sensevoice" = "SenseVoice Small";
+"model_desc_sensevoice" = "Multilingual model, about 85MB";
+"model_downloaded" = "Downloaded";
+"model_download_button" = "Download Model";
+"model_engine_not_registered" = "SenseVoice engine not registered";
+
+"engine_available" = "Available";
+"engine_unavailable" = "Unavailable";
+"engine_supported_languages_format" = "Supported languages: %@";
+
+"tab_status" = "Status";
+"tab_settings" = "Settings";
+"tab_speech" = "Speech";
+"tab_data" = "Data";
+"tab_permissions" = "Permissions";
+"tab_about" = "About";
+"tab_debug" = "Debug";
+
+"status_connection_title" = "Connection Status";
+"status_label" = "Status:";
+"status_paired_device_label" = "Paired Device:";
+"status_pairing_progress_label" = "Pairing Progress:";
+"status_ip_label" = "IP Address:";
+"status_unknown_value" = "Unknown";
+"status_service_title" = "Service Status";
+"status_service_label" = "Network Service:";
+"status_service_running" = "Running";
+"status_service_stopped" = "Stopped";
+"status_action_start_service" = "Start Service";
+"status_action_stop_service" = "Stop Service";
+"status_action_start_pairing" = "Start Pairing";
+"status_paired_device_format" = "Paired Device: %@";
+"status_action_unpair" = "Unpair";
+"status_connection_disconnected" = "Disconnected";
+"status_connection_connecting" = "Connecting...";
+"status_connection_connected" = "Connected";
+"status_connection_error" = "Error";
+
+"settings_text_injection_title" = "Text Injection";
+"settings_text_injection_clipboard_title" = "Clipboard Paste";
+"settings_text_injection_clipboard_desc" = "Fixed to clipboard paste for the most reliable cursor input compatibility.";
+"settings_language_title" = "Language";
+"settings_language_picker" = "Recognition Language";
+"settings_language_zh" = "Chinese";
+"settings_language_en" = "English";
+"settings_network_title" = "Network Service";
+"settings_network_port_label" = "Listening Port";
+"settings_network_port_placeholder" = "8899";
+"settings_network_port_desc" = "The default port is now 8899. If the service is running, it will restart on the new port.";
+
+"data_filter_all" = "All";
+"data_filter_voice" = "Voice";
+"data_filter_pairing" = "Pairing/Connection";
+"data_title" = "iOS Data Records";
+"data_subtitle" = "Shows data from iPhone and the final transcribed text on Mac.";
+"data_filter_picker" = "Filter";
+"data_action_copy" = "Copy Logs";
+"data_action_export" = "Export Logs";
+"data_action_clear" = "Clear Records";
+"data_search_placeholder" = "Search title, content, Session ID";
+"data_group_by_session" = "Group by session";
+"data_summary_total" = "Total";
+"data_summary_voice" = "Voice";
+"data_summary_pairing" = "Pairing/Connection";
+"data_summary_failure" = "Failures";
+"data_empty_title" = "No Data";
+"data_session_unknown" = "Unassigned Session";
+"data_empty_search_desc" = "No records match the current keyword.";
+"data_empty_all_desc" = "Records will appear here after the iPhone sends pairing, audio, or recognition results.";
+"data_empty_voice_desc" = "No audio streams or transcription results yet.";
+"data_empty_pairing_desc" = "No pairing or connection records yet.";
+"data_export_title" = "Export Data Logs";
+"data_severity_info" = "Info";
+"data_severity_warning" = "Warning";
+"data_severity_error" = "Error";
+"data_category_voice" = "Voice";
+"data_category_pairing" = "Pairing";
+"data_category_connection" = "Connection";
+"data_section_count_format" = "%d items";
+
+"permissions_tab_title" = "System Permissions";
+"permissions_tab_accessibility_title" = "Accessibility";
+"permissions_tab_granted" = "Granted";
+"permissions_tab_denied" = "Denied";
+"permissions_tab_accessibility_desc" = "VoiceMind needs Accessibility permission to monitor global hotkeys and inject text.";
+"permissions_tab_input_title" = "Input Monitoring";
+"permissions_tab_input_desc" = "VoiceMind needs Input Monitoring permission to detect hotkey presses.";
+"permissions_tab_check" = "Check Permissions";
+"permissions_tab_request" = "Request Permissions";
+"permissions_tab_open_settings" = "Open System Settings";
+
+"about_version" = "Version 1.0.0";
+"about_title" = "Voice Input Assistant";
+"about_description" = "Use your iOS device for speech recognition and inject results into Mac apps in real time.";
+"about_help_link" = "View Help Documentation";

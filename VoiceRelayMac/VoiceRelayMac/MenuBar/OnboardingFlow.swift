@@ -59,7 +59,7 @@ struct WelcomeView: View {
                 .foregroundColor(.blue)
 
             // Title
-            Text("欢迎使用 VoiceMind")
+            Text("欢迎使用 语灵")
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
@@ -154,7 +154,7 @@ struct PermissionsCheckView: View {
                     .font(.largeTitle)
                     .fontWeight(.bold)
 
-                Text("VoiceMind 需要以下权限才能正常工作")
+                Text("语灵 需要以下权限才能正常工作")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -374,7 +374,7 @@ struct ReadyView: View {
                     .font(.headline)
 
                 InstructionStep(number: 1, text: controller.isServiceRunning ? "网络服务已自动启动" : "点击下方按钮启动网络服务")
-                InstructionStep(number: 2, text: "在 iPhone 上打开 VoiceMind 应用")
+                InstructionStep(number: 2, text: "在 iPhone 上打开 语灵 应用")
                 InstructionStep(number: 3, text: "完成配对后，在 iPhone 上按住麦克风开始说话")
             }
             .padding()
@@ -601,7 +601,7 @@ struct StatusHeader: View {
                 .foregroundColor(statusColor)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("VoiceMind")
+                Text("语灵")
                     .font(.title)
                     .fontWeight(.bold)
 

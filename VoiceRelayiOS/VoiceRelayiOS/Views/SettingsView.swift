@@ -8,8 +8,8 @@ struct SettingsView: View {
     @State private var showPermissionAlert = false
 
     private let languages = [
-        ("zh-CN", "中文（普通话）"),
-        ("en-US", "English (US)")
+        ("zh-CN", String(localized: "language_zh")),
+        ("en-US", String(localized: "language_en"))
     ]
 
     var body: some View {
@@ -34,19 +34,19 @@ struct SettingsView: View {
                     }
                 }
             } header: {
-                Text("识别语言")
+                Text(String(localized: "settings_language_header"))
             }
 
             // Permissions Section
             Section {
                 PermissionRow(
-                    title: "麦克风",
+                    title: String(localized: "settings_permission_microphone"),
                     icon: "mic.fill",
                     isGranted: viewModel.checkPermissions()
                 )
 
                 PermissionRow(
-                    title: "语音识别",
+                    title: String(localized: "settings_permission_speech"),
                     icon: "waveform",
                     isGranted: viewModel.checkPermissions()
                 )
@@ -55,23 +55,23 @@ struct SettingsView: View {
                     Button(action: requestPermissions) {
                         HStack {
                             Spacer()
-                            Text("请求权限")
+                            Text(String(localized: "settings_request_permissions"))
                                 .foregroundColor(.blue)
                             Spacer()
                         }
                     }
                 }
             } header: {
-                Text("权限")
+                Text(String(localized: "settings_permissions_header"))
             } footer: {
-                Text("VoiceMind 需要麦克风和语音识别权限才能正常工作")
+                Text(String(localized: "settings_permissions_footer"))
             }
 
             // Pairing Section
             if case .paired(_, let deviceName) = viewModel.pairingState {
                 Section {
                     HStack {
-                        Text("已配对设备")
+                        Text(String(localized: "settings_paired_device"))
                         Spacer()
                         Text(deviceName)
                             .foregroundColor(.secondary)
@@ -79,7 +79,7 @@ struct SettingsView: View {
 
                     // 显示连接状态和重连按钮
                     HStack {
-                        Text("连接状态")
+                        Text(String(localized: "settings_connection_status"))
                         Spacer()
                         connectionStatusBadge
                     }
@@ -91,7 +91,7 @@ struct SettingsView: View {
                             HStack {
                                 Spacer()
                                 Image(systemName: "arrow.clockwise")
-                                Text("重新连接")
+                                Text(String(localized: "settings_reconnect"))
                                 Spacer()
                             }
                         }
@@ -116,12 +116,12 @@ struct SettingsView: View {
                     }) {
                         HStack {
                             Spacer()
-                            Text("取消配对")
+                            Text(String(localized: "settings_unpair"))
                             Spacer()
                         }
                     }
                 } header: {
-                    Text("配对")
+                    Text(String(localized: "settings_pairing_header"))
                 }
             }
 
@@ -133,30 +133,30 @@ struct SettingsView: View {
                     HStack {
                         Image(systemName: "tray.full")
                             .foregroundColor(.blue)
-                        Text("查看数据日志")
+                        Text(String(localized: "settings_view_logs"))
                     }
                 }
             } header: {
-                Text("调试")
+                Text(String(localized: "settings_debug_header"))
             }
 
             Section {
                 HStack {
-                    Text("版本")
+                    Text(String(localized: "settings_version"))
                     Spacer()
                     Text("1.0.0")
                         .foregroundColor(.secondary)
                 }
             } header: {
-                Text("关于")
+                Text(String(localized: "settings_about_header"))
             }
         }
-        .navigationTitle("设置")
+        .navigationTitle(String(localized: "settings_title"))
         .navigationBarTitleDisplayMode(.inline)
-        .alert("权限请求", isPresented: $showPermissionAlert) {
-            Button("确定", role: .cancel) { }
+        .alert(String(localized: "settings_permission_alert_title"), isPresented: $showPermissionAlert) {
+            Button(String(localized: "ok_button"), role: .cancel) { }
         } message: {
-            Text("请在系统设置中授予麦克风和语音识别权限")
+            Text(String(localized: "settings_permission_alert_message"))
         }
     }
 
@@ -176,14 +176,14 @@ struct SettingsView: View {
                     Circle()
                         .fill(Color.green)
                         .frame(width: 8, height: 8)
-                    Text("已连接")
+                    Text(String(localized: "connection_status_connected"))
                         .foregroundColor(.secondary)
                 }
             case .connecting:
                 HStack(spacing: 4) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("连接中...")
+                    Text(String(localized: "connection_status_connecting"))
                         .foregroundColor(.secondary)
                 }
             case .disconnected:
@@ -191,7 +191,7 @@ struct SettingsView: View {
                     Circle()
                         .fill(Color.red)
                         .frame(width: 8, height: 8)
-                    Text("已断开")
+                    Text(String(localized: "connection_status_disconnected"))
                         .foregroundColor(.secondary)
                 }
             case .error:
@@ -199,7 +199,7 @@ struct SettingsView: View {
                     Circle()
                         .fill(Color.orange)
                         .frame(width: 8, height: 8)
-                    Text("错误")
+                    Text(String(localized: "settings_connection_status_error"))
                         .foregroundColor(.secondary)
                 }
             }
@@ -238,9 +238,9 @@ struct IOSDataLogsView: View {
     @State private var selectedFilter: IOSDataFilter = .all
 
     private enum IOSDataFilter: String, CaseIterable, Identifiable {
-        case all = "全部"
-        case voice = "语音"
-        case connection = "连接"
+        case all = "logs_filter_all"
+        case voice = "logs_filter_voice"
+        case connection = "logs_filter_connection"
 
         var id: String { rawValue }
     }
@@ -248,9 +248,9 @@ struct IOSDataLogsView: View {
     var body: some View {
         List {
             Section {
-                Picker("筛选", selection: $selectedFilter) {
+                Picker(String(localized: "logs_filter_label"), selection: $selectedFilter) {
                     ForEach(IOSDataFilter.allCases) { filter in
-                        Text(filter.rawValue).tag(filter)
+                        Text(String(localized: .init(filter.rawValue))).tag(filter)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -258,7 +258,7 @@ struct IOSDataLogsView: View {
                 Button(role: .destructive) {
                     viewModel.clearInboundDataRecords()
                 } label: {
-                    Text("清空日志")
+                    Text(String(localized: "logs_clear"))
                 }
                 .disabled(viewModel.inboundDataRecords.isEmpty)
             }
@@ -266,9 +266,9 @@ struct IOSDataLogsView: View {
             if filteredRecords.isEmpty {
                 Section {
                     ContentUnavailableView(
-                        "暂无日志",
+                        String(localized: "logs_empty_title"),
                         systemImage: "tray",
-                        description: Text("这里会展示 iPhone 侧记录的配对、连接和语音流事件。")
+                        description: Text(String(localized: "logs_empty_description"))
                     )
                     .frame(maxWidth: .infinity)
                 }
@@ -295,7 +295,7 @@ struct IOSDataLogsView: View {
                 }
             }
         }
-        .navigationTitle("数据日志")
+        .navigationTitle(String(localized: "logs_title"))
         .navigationBarTitleDisplayMode(.inline)
     }
 

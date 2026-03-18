@@ -1,0 +1,261 @@
+"app_title" = "语灵";
+
+"ok_button" = "确定";
+"cancel_button" = "取消";
+"reconnect_button" = "重连";
+
+"connection_status_unpaired" = "未配对";
+"connection_status_connected" = "已连接";
+"connection_status_connecting" = "连接中...";
+"connection_status_disconnected" = "已断开";
+"connection_status_error" = "连接错误";
+"connection_status_unknown" = "未知";
+"paired_device_format" = "已配对: %@";
+
+"pair_with_mac_button" = "与 Mac 配对";
+
+"recognition_connect_service" = "连接服务";
+"recognition_hold_to_talk" = "按住说话";
+"recognition_ready" = "准备就绪";
+"recognition_listening" = "正在聆听...";
+"recognition_processing" = "处理中...";
+"recognition_sending" = "发送结果...";
+
+"manual_step1_title" = "第一步：连接到 Mac";
+"manual_ip_label" = "IP 地址";
+"manual_ip_placeholder" = "例如：192.168.1.100";
+"manual_port_label" = "端口";
+"manual_port_placeholder" = "例如：8899";
+"manual_section_instruction" = "说明";
+"manual_instruction_connect" = "在 Mac 上点击「开始配对」，然后输入显示的 IP 地址和端口号";
+"manual_progress_title" = "当前进度";
+"manual_step2_title" = "第二步：输入配对码";
+"manual_pairing_code_label" = "6位配对码";
+"manual_instruction_pairing" = "输入 Mac 上显示的 6 位数字配对码";
+"manual_nav_title_connect" = "手动连接";
+"manual_nav_title_pair" = "输入配对码";
+"manual_progress_waiting_input" = "等待输入 Mac 的地址和端口。";
+"manual_step_connect_title" = "建立连接";
+"manual_step_connect_detail_default" = "输入 Mac 的地址和端口后开始连接。";
+"manual_step_code_title" = "提交配对码";
+"manual_step_finish_title" = "完成绑定";
+"manual_action_connecting" = "连接中...";
+"manual_action_pairing" = "配对中...";
+"manual_action_connect" = "连接";
+"manual_action_pair" = "配对";
+"manual_error_invalid_port" = "端口号无效";
+"manual_progress_connection_request_format" = "已提交连接请求：%@";
+"manual_progress_waiting_accept" = "正在等待 Mac 接受连接...";
+"manual_error_timeout" = "连接超时，请检查 IP 和端口是否正确，并确保 Mac 已启动服务";
+"manual_error_pairing_code_required" = "请输入 6 位配对码";
+"manual_progress_sent_code" = "已发送 6 位配对码。";
+"manual_progress_waiting_validate" = "正在等待 Mac 校验配对码并返回结果...";
+"manual_error_pairing_timeout" = "配对超时，请检查配对码是否正确，或确认 Mac 仍处于配对状态";
+"manual_progress_connecting" = "连接建立中...";
+"manual_progress_connected" = "连接已建立，可以输入配对码。";
+"manual_progress_connection_failed_format" = "Mac 返回连接失败：%@";
+"manual_error_connection_failed_format" = "连接失败：%@";
+"manual_progress_disconnected" = "连接已断开。";
+"manual_error_disconnected_retry" = "连接已断开，请重试";
+"manual_progress_pairing_success" = "收到 Mac 的配对成功返回，设备已绑定。";
+"manual_pairing_code_step_detail_connected" = "连接完成后，输入 6 位配对码并发送给 Mac。";
+"manual_pairing_code_step_detail_waiting" = "等待连接完成后再输入配对码。";
+"manual_finish_step_detail_default" = "等待 Mac 返回配对结果并保存绑定关系。";
+
+"pairing_title" = "与 Mac 配对";
+"pairing_subtitle" = "优先使用扫码配对，也可以继续使用局域网自动发现。";
+"pairing_scan_button" = "扫描二维码配对";
+"pairing_scan_hint" = "在 Mac 上点击\"配对新设备\"按钮，然后扫描弹出的二维码。";
+"pairing_or_manual_title" = "或手动选择局域网中的 Mac";
+"pairing_searching" = "搜索中...";
+"pairing_code_title" = "配对码";
+"pairing_code_placeholder" = "输入 6 位数字";
+"pairing_progress_title" = "当前进度";
+"pairing_failed_title" = "配对失败";
+"pairing_initial_progress" = "请选择一台已发现的 Mac，并输入 6 位配对码。";
+"pairing_step_select_title" = "选择设备";
+"pairing_step_connect_title" = "建立连接";
+"pairing_step_finish_title" = "完成绑定";
+"pairing_select_detail_format" = "已选择 %@，配对码长度 %@/6。";
+"pairing_select_detail_default" = "从局域网列表中选择一台 Mac。";
+"pairing_connection_detail_default" = "连接成功后会自动发送配对请求。";
+"pairing_finish_detail_default" = "等待 Mac 校验配对码并完成绑定。";
+"pairing_button_pair" = "配对";
+"pairing_button_pairing" = "配对中...";
+"pairing_progress_selected_mac_format" = "已选择 Mac：%@";
+"pairing_progress_connecting_format" = "正在连接 %@:%@...";
+"pairing_progress_send_after_connect" = "连接成功后会自动发送配对请求。";
+"pairing_timeout_no_response" = "Mac 长时间未返回配对结果。";
+"pairing_error_timeout" = "配对超时，请确认 Mac 仍处于配对状态，并检查配对码是否正确。";
+"pairing_progress_connecting_state" = "正在建立连接...";
+"pairing_progress_connected_waiting" = "连接已建立，配对请求已发送，正在等待 Mac 返回结果。";
+"pairing_progress_connection_failed_format" = "连接失败：%@";
+"pairing_error_connection_failed_format" = "连接失败：%@";
+"pairing_progress_disconnected" = "连接已断开。";
+"pairing_error_disconnected_retry" = "连接已断开，请重试配对。";
+"pairing_progress_pairing_success" = "收到 Mac 的配对成功返回，正在完成绑定。";
+
+"qr_scan_title" = "扫描 Mac 上的二维码";
+"qr_camera_starting" = "正在启动相机...";
+"qr_connecting" = "连接中...";
+"qr_progress_title" = "当前进度";
+"qr_manual_input" = "手动输入连接信息";
+"qr_nav_title" = "扫码配对";
+"qr_scan_step_title" = "扫描二维码";
+"qr_scan_step_detail_default" = "扫描 Mac 上展示的二维码，读取连接信息。";
+"qr_connect_step_title" = "建立连接";
+"qr_connect_step_detail_default" = "扫码成功后会自动连接到 Mac。";
+"qr_finish_step_title" = "完成绑定";
+"qr_finish_step_detail_default" = "连接成功后输入配对码，等待 Mac 完成绑定。";
+"qr_progress_waiting_scan" = "正在等待扫码，读取 Mac 的连接信息。";
+"qr_error_camera_permission" = "需要相机权限才能扫描二维码";
+"qr_error_invalid_code" = "无效的二维码格式";
+"qr_progress_qr_parse_failed" = "二维码解析失败，请重新扫描。";
+"qr_progress_qr_parsed_format" = "二维码解析成功，已识别设备：%@";
+"qr_progress_qr_connecting_format" = "正在连接 %@:%@...";
+"qr_error_timeout" = "连接超时，请重新扫描二维码或稍后重试";
+"qr_progress_timeout" = "连接超时，请重新扫描二维码。";
+"qr_progress_sent_code" = "已提交 6 位配对码。";
+"qr_progress_waiting_validate" = "正在等待 Mac 校验配对码并返回结果...";
+"qr_error_pairing_timeout" = "配对超时，请确认 Mac 仍处于配对状态";
+"qr_progress_pairing_timeout" = "配对超时，请重新输入配对码。";
+"qr_progress_connecting_state" = "正在建立连接...";
+"qr_progress_connected_enter_code" = "连接已建立，请输入 Mac 上显示的 6 位配对码。";
+"qr_progress_connection_failed_format" = "连接失败：%@";
+"qr_error_connection_failed_format" = "连接失败：%@";
+"qr_progress_disconnected" = "连接已断开。";
+"qr_progress_pairing_success" = "收到 Mac 的配对成功返回，设备已绑定。";
+"qr_pairing_code_title" = "输入配对码";
+"qr_connected_to" = "已连接到:";
+"qr_pairing_code_hint" = "请输入 Mac 上显示的 6 位数字";
+"qr_pairing_code_placeholder" = "配对码";
+
+"settings_title" = "设置";
+"settings_language_header" = "识别语言";
+"settings_permissions_header" = "权限";
+"settings_permission_microphone" = "麦克风";
+"settings_permission_speech" = "语音识别";
+"settings_request_permissions" = "请求权限";
+"settings_permissions_footer" = "语灵 需要麦克风和语音识别权限才能正常工作";
+"settings_paired_device" = "已配对设备";
+"settings_connection_status" = "连接状态";
+"settings_reconnect" = "重新连接";
+"settings_unpair" = "取消配对";
+"settings_pairing_header" = "配对";
+"settings_debug_header" = "调试";
+"settings_view_logs" = "查看数据日志";
+"settings_about_header" = "关于";
+"settings_version" = "版本";
+"settings_permission_alert_title" = "权限请求";
+"settings_permission_alert_message" = "请在系统设置中授予麦克风和语音识别权限";
+"settings_connection_status_error" = "错误";
+
+"language_zh" = "中文（普通话）";
+"language_en" = "English (US)";
+
+"logs_title" = "数据日志";
+"logs_filter_label" = "筛选";
+"logs_filter_all" = "全部";
+"logs_filter_voice" = "语音";
+"logs_filter_connection" = "连接";
+"logs_clear" = "清空日志";
+"logs_empty_title" = "暂无日志";
+"logs_empty_description" = "这里会展示 iPhone 侧记录的配对、连接和语音流事件。";
+
+"reconnect_exhausted_format" = "自动重连已停止，连续 %@ 次连接失败，请手动重新连接。";
+
+"keyword_connection" = "连接";
+"keyword_pairing_code" = "配对码";
+"keyword_validation" = "校验";
+"keyword_pairing_mode" = "配对模式";
+"keyword_success" = "成功";
+"keyword_binding" = "绑定";
+"keyword_return" = "返回";
+"keyword_qr" = "二维码";
+"keyword_scan" = "扫码";
+"keyword_connection_info" = "连接信息";
+"keyword_failed" = "失败";
+"keyword_incorrect" = "不正确";
+"keyword_disconnected" = "断开";
+"keyword_not_in_pairing_mode" = "不在配对模式";
+
+
+"reconnect_trying" = "正在尝试重连到已配对的 Mac...";
+"reconnect_searching" = "正在查找已配对的 Mac...";
+"reconnect_found_format" = "已找到 %@，正在建立连接...";
+"reconnect_no_bonjour" = "未发现 Bonjour 服务，正在直连上次保存的地址...";
+"reconnect_fallback" = "未发现 Bonjour 服务，已回退到上次保存的地址直连...";
+"reconnect_not_found" = "暂未发现已配对的 Mac，请确认 Mac 在线并与 iPhone 处于同一网络。";
+"reconnect_connecting" = "正在建立连接...";
+"reconnect_success" = "重连成功，已重新连接。";
+"reconnect_failed_format" = "重连失败：%@";
+"reconnect_waiting" = "连接已断开，正在等待重新发现 Mac 或继续自动重连...";
+"reconnect_found_auto" = "已发现已配对的 Mac，正在自动重连...";
+"reconnect_found_again" = "已重新发现已配对的 Mac，正在恢复连接...";
+"reconnect_exhausted_snippet" = "自动重连已停止";
+
+"pairing_confirmed_binding" = "Mac 已确认配对，正在完成绑定。";
+"pairing_confirmed_done" = "Mac 已确认配对，绑定已完成。";
+"pairing_code_incorrect" = "Mac 返回：配对码不正确。";
+"pairing_not_in_pairing_mode" = "Mac 返回：当前不在配对模式。";
+"pairing_save_failed" = "Mac 返回：保存配对信息失败。";
+"pairing_mac_error_format" = "Mac 返回：%@";
+
+"ptt_capturing" = "正在采集语音，松开后发送到 Mac 识别。";
+"ptt_sending_audio" = "正在发送语音到 Mac...";
+"ptt_connection_lost" = "连接已断开，无法继续发送语音结果。";
+"ptt_hold_to_reconnect" = "自动重连已停止，按住按钮重新连接服务。";
+"ptt_hold_to_talk" = "按住麦克风开始说话。";
+"ptt_connect_to_talk" = "连接 Mac 后可按住说话。";
+"ptt_listening" = "正在监听语音，松开发送到 Mac。";
+"ptt_processing" = "正在整理语音结果...";
+"ptt_sending_result" = "正在发送结果到 Mac...";
+"ptt_sent" = "语音结果已发送到 Mac。";
+"ptt_sent_mac_processing" = "语音已发送到 Mac，正在识别并尝试输入到当前光标位置。";
+
+"log_title_pairing_start" = "发起配对";
+"log_detail_pairing_start_format" = "服务: %@
+地址: %@:%@
+配对码: %@";
+"log_title_manual_reconnect" = "手动重连";
+"log_detail_manual_reconnect" = "用户触发重连，正在查找已配对的 Mac。";
+"log_title_direct_connect" = "直接连接 Mac";
+"log_detail_direct_connect_format" = "地址: %@:%@
+设备: %@";
+"log_title_submit_pairing_code" = "提交配对码";
+"log_detail_submit_pairing_code_format" = "设备: %@
+配对码: %@";
+"log_title_paired_device_found" = "发现已配对设备";
+"log_detail_paired_device_found_format" = "设备: %@
+地址: %@:%@";
+"log_title_fallback_direct" = "回退到直连";
+"log_detail_fallback_direct_format" = "未发现 Bonjour 服务。
+地址: %@:%@";
+"log_title_no_paired_device" = "未发现已配对设备";
+"log_detail_no_paired_device" = "Bonjour 和上次保存地址都无法用于重连。";
+"log_pairing_success_title" = "配对成功";
+"log_pairing_success_detail" = "Mac 已确认配对，绑定已完成。";
+"log_connecting_title" = "连接中";
+"log_connecting_detail" = "正在与 Mac 建立连接。";
+"log_connected_title" = "连接成功";
+"log_connected_detail" = "与 Mac 的连接已建立。";
+"log_connection_failed_title" = "连接失败";
+"log_disconnected_title" = "连接断开";
+"log_disconnected_detail" = "当前与 Mac 没有活跃连接。";
+"log_error_from_mac_title" = "Mac 返回错误";
+"log_speech_result_title" = "发送识别结果";
+"log_speech_result_detail_format" = "Session: %@
+语言: %@
+内容: %@";
+"log_speech_error_title" = "语音识别失败";
+"log_bonjour_found_title" = "发现 Bonjour 服务";
+"log_bonjour_found_detail_format" = "设备: %@
+地址: %@:%@";
+"log_bonjour_removed_title" = "Bonjour 服务移除";
+"log_bonjour_removed_detail_format" = "设备: %@";
+"log_audio_start_title" = "开始发送语音流";
+"log_audio_start_detail_format" = "Session: %@
+语言: %@
+采样率: %@ Hz";
+"log_audio_end_title" = "结束语音流";
+"log_audio_end_detail_format" = "Session: %@";

@@ -12,11 +12,11 @@ struct HotkeySettingsWindow: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("热键设置")
+            Text(String(localized: "hotkey_title"))
                 .font(.title)
 
             VStack(alignment: .leading, spacing: 10) {
-                Text("修饰键：")
+                Text(String(localized: "hotkey_modifier_label"))
                     .font(.headline)
 
                 ForEach(modifierOptions, id: \.self) { modifier in
@@ -32,11 +32,11 @@ struct HotkeySettingsWindow: View {
                     ))
                 }
 
-                Text("按键：")
+                Text(String(localized: "hotkey_key_label"))
                     .font(.headline)
                     .padding(.top)
 
-                Picker("按键", selection: $selectedKey) {
+                Picker(String(localized: "hotkey_key_picker"), selection: $selectedKey) {
                     ForEach(keyOptions, id: \.self) { key in
                         Text(key).tag(key)
                     }
@@ -45,16 +45,16 @@ struct HotkeySettingsWindow: View {
             }
             .padding()
 
-            Text("当前热键: \(hotkeyDisplayString)")
+            Text(String(format: String(localized: "hotkey_current_format"), hotkeyDisplayString))
                 .font(.caption)
                 .foregroundColor(.secondary)
 
             HStack {
-                Button("取消") {
+                Button(String(localized: "cancel_button")) {
                     // Close window
                 }
 
-                Button("保存") {
+                Button(String(localized: "save_button")) {
                     saveHotkey()
                 }
                 .buttonStyle(.borderedProminent)

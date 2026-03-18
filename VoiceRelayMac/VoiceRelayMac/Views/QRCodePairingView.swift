@@ -43,10 +43,10 @@ struct QRCodePairingView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("扫码配对")
+            Text(String(localized: "qr_pairing_title"))
                 .font(.title)
 
-            Text("使用 iPhone 扫描此二维码")
+            Text(String(localized: "qr_scan_instruction"))
                 .font(.headline)
 
             // QR Code
@@ -64,7 +64,7 @@ struct QRCodePairingView: View {
             }
 
             VStack(spacing: 8) {
-                Text("或手动输入配对码：")
+                Text(String(localized: "qr_manual_code_label"))
                     .font(.caption)
                     .foregroundColor(.secondary)
 
@@ -77,22 +77,22 @@ struct QRCodePairingView: View {
             }
 
             VStack(spacing: 4) {
-                Text("连接信息：")
+                Text(String(localized: "qr_connection_info_label"))
                     .font(.caption)
                     .foregroundColor(.secondary)
-                Text("IP: \(connectionInfo.ip)")
+                Text(String(format: String(localized: "qr_ip_label_format"), connectionInfo.ip))
                     .font(.system(.caption, design: .monospaced))
-                Text("端口: \(connectionInfo.port)")
+                Text(String(format: String(localized: "qr_port_label_format"), "\(connectionInfo.port)"))
                     .font(.system(.caption, design: .monospaced))
             }
 
-            GroupBox(label: Label("配对进度", systemImage: "list.bullet.clipboard")) {
+            GroupBox(label: Label(String(localized: "qr_progress_title"), systemImage: "list.bullet.clipboard")) {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: progressIconName)
                         .foregroundColor(progressColor)
                         .font(.title3)
 
-                    Text(controller.pairingProgressMessage ?? "等待 iPhone 发起配对。")
+                    Text(controller.pairingProgressMessage ?? String(localized: "qr_progress_waiting"))
                         .font(.callout)
                         .foregroundColor(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -100,11 +100,11 @@ struct QRCodePairingView: View {
                 .padding(12)
             }
 
-            Text("剩余时间: \(pairingTimer.timeRemaining)秒")
+            Text(String(format: String(localized: "qr_time_remaining_format"), "\(pairingTimer.timeRemaining)"))
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            Button("取消") {
+            Button(String(localized: "cancel_button")) {
                 pairingTimer.stop()
                 onCancel()
             }

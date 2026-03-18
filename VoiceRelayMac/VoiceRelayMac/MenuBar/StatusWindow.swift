@@ -4,7 +4,7 @@ import Network
 
 struct StatusWindow: View {
     @ObservedObject var controller: MenuBarController
-    @State private var localIPAddress: String = "获取中..."
+    @State private var localIPAddress: String = String(localized: "status_loading")
 
     var body: some View {
         ScrollView {
@@ -73,7 +73,7 @@ struct StatusWindow: View {
     }
 
     private func fetchLocalIPAddress() {
-        localIPAddress = getLocalIPAddress() ?? "未获取到"
+        localIPAddress = getLocalIPAddress() ?? String(localized: "status_unavailable")
     }
 
     private func getLocalIPAddress() -> String? {
@@ -118,7 +118,7 @@ struct HeaderSection: View {
                 .foregroundColor(statusColor)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("VoiceMind")
+                Text(String(localized: "app_title"))
                     .font(.title)
                     .fontWeight(.bold)
 
@@ -171,17 +171,17 @@ struct HeaderSection: View {
     private var statusText: String {
         switch (pairingState, connectionState) {
         case (.paired, .connected):
-            return "已连接 - 可以使用语音输入"
+            return String(localized: "status_connected_ready")
         case (.paired, .connecting):
-            return "正在连接到 iPhone..."
+            return String(localized: "status_connecting_iphone")
         case (.paired, .disconnected):
-            return "已配对但未连接"
+            return String(localized: "status_paired_not_connected")
         case (.pairing, _):
-            return "正在配对..."
+            return String(localized: "status_pairing")
         case (.unpaired, _):
-            return "未配对 - 请先与 iPhone 配对"
+            return String(localized: "status_unpaired_need_pair")
         default:
-            return "未知状态"
+            return String(localized: "status_unknown")
         }
     }
 }
@@ -195,20 +195,20 @@ struct SystemInfoSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("系统信息")
+            Text(String(localized: "system_info_title"))
                 .font(.headline)
 
             VStack(spacing: 8) {
                 InfoRow(
                     icon: "network",
-                    title: "本机 IP 地址",
+                    title: String(localized: "system_ip_title"),
                     value: localIP,
                     color: .blue
                 )
 
                 InfoRow(
                     icon: "lock.shield",
-                    title: "辅助功能权限",
+                    title: String(localized: "system_accessibility_title"),
                     value: accessibilityStatus.displayText,
                     color: accessibilityStatus.color
                 )
@@ -228,13 +228,13 @@ struct DeviceConnectionSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("设备连接")
+            Text(String(localized: "device_connection_title"))
                 .font(.headline)
 
             VStack(spacing: 8) {
                 InfoRow(
                     icon: "iphone",
-                    title: "配对状态",
+                    title: String(localized: "device_pairing_status"),
                     value: pairingStatusText,
                     color: pairingStatusColor
                 )
@@ -242,7 +242,7 @@ struct DeviceConnectionSection: View {
                 if case .paired(_, let deviceName) = pairingState {
                     InfoRow(
                         icon: "person.circle",
-                        title: "设备名称",
+                        title: String(localized: "device_name"),
                         value: deviceName,
                         color: .blue
                     )
@@ -250,7 +250,7 @@ struct DeviceConnectionSection: View {
 
                 InfoRow(
                     icon: "wifi",
-                    title: "连接状态",
+                    title: String(localized: "device_connection_status"),
                     value: connectionStatusText,
                     color: connectionStatusColor
                 )
@@ -264,11 +264,11 @@ struct DeviceConnectionSection: View {
     private var pairingStatusText: String {
         switch pairingState {
         case .unpaired:
-            return "未配对"
+            return String(localized: "pairing_status_unpaired")
         case .pairing:
-            return "配对中..."
+            return String(localized: "pairing_status_pairing")
         case .paired:
-            return "已配对"
+            return String(localized: "pairing_status_paired")
         }
     }
 
@@ -286,13 +286,13 @@ struct DeviceConnectionSection: View {
     private var connectionStatusText: String {
         switch connectionState {
         case .disconnected:
-            return "未连接"
+            return String(localized: "connection_status_disconnected")
         case .connecting:
-            return "连接中..."
+            return String(localized: "connection_status_connecting")
         case .connected:
-            return "已连接"
+            return String(localized: "connection_status_connected")
         case .error(let error):
-            return "错误: \(error.localizedDescription)"
+            return String(format: String(localized: "connection_status_error_format"), error.localizedDescription)
         }
     }
 
@@ -318,15 +318,15 @@ struct PermissionsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("权限管理")
+            Text(String(localized: "permissions_section_title"))
                 .font(.headline)
 
             if accessibilityStatus != .granted {
                 VStack(spacing: 8) {
                     PermissionRequestRow(
                         icon: "lock.shield",
-                        title: "辅助功能权限",
-                        description: "用于识别当前光标位置并将转写文字输入到目标应用",
+                        title: String(localized: "permissions_accessibility_title"),
+                        description: String(localized: "permissions_accessibility_desc"),
                         status: accessibilityStatus,
                         onRequest: onRequestAccessibility
                     )
@@ -335,7 +335,7 @@ struct PermissionsSection: View {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.green)
-                    Text("所有权限已授予")
+                    Text(String(localized: "permissions_all_granted"))
                         .foregroundColor(.secondary)
                 }
                 .padding(.vertical, 4)
@@ -370,7 +370,7 @@ struct PermissionRequestRow: View {
 
             Spacer()
 
-            Button("授权") {
+            Button(String(localized: "authorize_button")) {
                 onRequest()
             }
             .buttonStyle(.borderedProminent)
@@ -387,14 +387,14 @@ struct QuickStartSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("快速开始")
+            Text(String(localized: "quickstart_title"))
                 .font(.headline)
 
             VStack(alignment: .leading, spacing: 8) {
-                GuideStep(number: 1, text: "在 iPhone 上打开 VoiceMind 应用")
-                GuideStep(number: 2, text: "点击下方\"开始配对\"按钮")
-                GuideStep(number: 3, text: "在 iPhone 上输入配对码")
-                GuideStep(number: 4, text: "配对成功后，在 iPhone 上按住麦克风说话，Mac 会自动转写并尝试输入")
+                GuideStep(number: 1, text: String(format: String(localized: "quickstart_step1_format"), String(localized: "app_title")))
+                GuideStep(number: 2, text: String(localized: "quickstart_step2"))
+                GuideStep(number: 3, text: String(localized: "quickstart_step3"))
+                GuideStep(number: 4, text: String(localized: "quickstart_step4"))
             }
         }
         .padding()
@@ -439,7 +439,7 @@ struct ActionButtonsSection: View {
                 Button(action: onStartPairing) {
                     HStack {
                         Image(systemName: "link")
-                        Text("开始配对")
+                        Text(String(localized: "action_start_pairing"))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
@@ -452,7 +452,7 @@ struct ActionButtonsSection: View {
                 Button(action: onOpenPermissions) {
                     HStack {
                         Image(systemName: "lock.shield")
-                        Text("权限")
+                        Text(String(localized: "action_permissions"))
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -462,7 +462,7 @@ struct ActionButtonsSection: View {
                     Button(action: onUnpair) {
                         HStack {
                             Image(systemName: "link.badge.minus")
-                            Text("解除配对")
+                            Text(String(localized: "action_unpair"))
                         }
                         .frame(maxWidth: .infinity)
                     }

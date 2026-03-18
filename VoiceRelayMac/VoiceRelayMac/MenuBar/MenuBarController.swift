@@ -74,7 +74,7 @@ class MenuBarController: NSObject, ObservableObject {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "mic.circle", accessibilityDescription: "VoiceRelay")
+            button.image = NSImage(systemSymbolName: "mic.circle", accessibilityDescription: String(localized: "app_title"))
             updateStatusIcon()
         }
 
@@ -84,22 +84,22 @@ class MenuBarController: NSObject, ObservableObject {
     private func setupMenu() {
         let menu = NSMenu()
 
-        let statusItem = NSMenuItem(title: "未配对", action: nil, keyEquivalent: "")
+        let statusItem = NSMenuItem(title: String(localized: "menu_status_unpaired"), action: nil, keyEquivalent: "")
         statusItem.tag = 100 // For updating later
         menu.addItem(statusItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        menu.addItem(NSMenuItem(title: "显示状态...", action: #selector(showStatus), keyEquivalent: "s"))
-        menu.addItem(NSMenuItem(title: "开始配对...", action: #selector(startPairing), keyEquivalent: "p"))
-        menu.addItem(NSMenuItem(title: "权限设置...", action: #selector(openPermissions), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: String(localized: "menu_show_status"), action: #selector(showStatus), keyEquivalent: "s"))
+        menu.addItem(NSMenuItem(title: String(localized: "menu_start_pairing"), action: #selector(startPairing), keyEquivalent: "p"))
+        menu.addItem(NSMenuItem(title: String(localized: "menu_permissions"), action: #selector(openPermissions), keyEquivalent: ""))
 
-        let unpairItem = NSMenuItem(title: "解除配对", action: #selector(unpairDevice), keyEquivalent: "")
+        let unpairItem = NSMenuItem(title: String(localized: "menu_unpair"), action: #selector(unpairDevice), keyEquivalent: "")
         unpairItem.tag = 101 // For showing/hiding
         menu.addItem(unpairItem)
 
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "退出", action: #selector(quit), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: String(localized: "menu_quit"), action: #selector(quit), keyEquivalent: "q"))
 
         self.statusItem.menu = menu
         updateMenu()
@@ -155,7 +155,7 @@ class MenuBarController: NSObject, ObservableObject {
                 backing: .buffered,
                 defer: false
             )
-            window.title = "VoiceMind"
+            window.title = String(localized: "window_title_main")
             window.setContentSize(NSSize(width: 500, height: 600))
             window.contentView = NSHostingView(rootView: MainWindow(controller: self))
             window.center()
@@ -182,7 +182,7 @@ class MenuBarController: NSObject, ObservableObject {
                 backing: .buffered,
                 defer: false
             )
-            window.title = "欢迎使用 VoiceMind"
+            window.title = String(localized: "window_title_onboarding")
             window.contentView = NSHostingView(rootView: contentView)
             window.center()
             window.isReleasedWhenClosed = false
@@ -244,7 +244,7 @@ class MenuBarController: NSObject, ObservableObject {
                 backing: .buffered,
                 defer: false
             )
-            window.title = "热键设置"
+            window.title = String(localized: "window_title_hotkey")
             window.contentView = NSHostingView(rootView: contentView)
             window.center()
             window.delegate = self
@@ -265,7 +265,7 @@ class MenuBarController: NSObject, ObservableObject {
                 backing: .buffered,
                 defer: false
             )
-            window.title = "权限设置"
+            window.title = String(localized: "window_title_permissions")
             window.contentView = NSHostingView(rootView: contentView)
             window.center()
             window.delegate = self
@@ -278,10 +278,10 @@ class MenuBarController: NSObject, ObservableObject {
 
     @objc private func unpairDevice() {
         let alert = NSAlert()
-        alert.messageText = "解除配对？"
-        alert.informativeText = "这将移除与 iPhone 的配对。你需要重新配对才能使用 VoiceRelay。"
-        alert.addButton(withTitle: "解除配对")
-        alert.addButton(withTitle: "取消")
+        alert.messageText = String(localized: "unpair_alert_title")
+        alert.informativeText = String(localized: "unpair_alert_message")
+        alert.addButton(withTitle: String(localized: "unpair_alert_button"))
+        alert.addButton(withTitle: String(localized: "cancel_button"))
         alert.alertStyle = .warning
 
         if alert.runModal() == .alertFirstButtonReturn {
@@ -302,7 +302,7 @@ class MenuBarController: NSObject, ObservableObject {
 
         // Get local IP address
         guard let ipAddress = getLocalIPAddress() else {
-            showError("无法获取本地 IP 地址")
+            showError(String(localized: "error_local_ip"))
             return
         }
 
@@ -330,7 +330,7 @@ class MenuBarController: NSObject, ObservableObject {
             backing: .buffered,
             defer: false
         )
-        window.title = "扫码配对"
+        window.title = String(localized: "window_title_qr_pairing")
         window.contentView = NSHostingView(rootView: contentView)
         window.center()
         window.isReleasedWhenClosed = false
@@ -375,11 +375,11 @@ class MenuBarController: NSObject, ObservableObject {
 
         switch connectionManager.pairingState {
         case .unpaired:
-            button.image = NSImage(systemSymbolName: "mic.circle", accessibilityDescription: "未配对")
+            button.image = NSImage(systemSymbolName: "mic.circle", accessibilityDescription: String(localized: "status_access_unpaired"))
         case .pairing:
-            button.image = NSImage(systemSymbolName: "mic.circle.fill", accessibilityDescription: "配对中")
+            button.image = NSImage(systemSymbolName: "mic.circle.fill", accessibilityDescription: String(localized: "status_access_pairing"))
         case .paired:
-            button.image = NSImage(systemSymbolName: "mic.circle.fill", accessibilityDescription: "已连接")
+            button.image = NSImage(systemSymbolName: "mic.circle.fill", accessibilityDescription: String(localized: "status_access_connected"))
         }
     }
 
@@ -390,11 +390,11 @@ class MenuBarController: NSObject, ObservableObject {
         if let statusItem = menu.item(withTag: 100) {
             switch connectionManager.pairingState {
             case .unpaired:
-                statusItem.title = "未配对"
+                statusItem.title = String(localized: "menu_status_unpaired")
             case .pairing:
-                statusItem.title = "配对中..."
+                statusItem.title = String(localized: "status_menu_pairing")
             case .paired(_, let deviceName):
-                statusItem.title = "已连接到 \(deviceName)"
+                statusItem.title = String(format: String(localized: "status_menu_connected_format"), deviceName)
             }
         }
 
@@ -411,7 +411,7 @@ class MenuBarController: NSObject, ObservableObject {
 
     func showError(_ message: String) {
         let alert = NSAlert()
-        alert.messageText = "错误"
+        alert.messageText = String(localized: "error_title")
         alert.informativeText = message
         alert.alertStyle = .critical
         alert.runModal()
@@ -419,10 +419,10 @@ class MenuBarController: NSObject, ObservableObject {
 
     func showTextCopyAlert(_ text: String, error: String) {
         let alert = NSAlert()
-        alert.messageText = "文本注入失败"
-        alert.informativeText = "无法注入文本: \(error)\n\n你可以手动复制文本。"
-        alert.addButton(withTitle: "复制文本")
-        alert.addButton(withTitle: "取消")
+        alert.messageText = String(localized: "text_copy_alert_title")
+        alert.informativeText = String(format: String(localized: "text_copy_alert_message_format"), error)
+        alert.addButton(withTitle: String(localized: "copy_text_button"))
+        alert.addButton(withTitle: String(localized: "cancel_button"))
         alert.alertStyle = .warning
 
         if alert.runModal() == .alertFirstButtonReturn {
@@ -442,16 +442,16 @@ class MenuBarController: NSObject, ObservableObject {
             return
         }
 
-        showError("无法启动热键监听。请检查系统权限设置后重试。")
+        showError(String(localized: "hotkey_permission_error"))
     }
 
     func showTextInjectionPermissionError(with text: String) {
         let alert = NSAlert()
-        alert.messageText = "缺少辅助功能权限"
-        alert.informativeText = "VoiceRelay 需要“辅助功能”权限才能把识别结果输入到当前应用。\n\n你也可以先复制文本再手动粘贴。"
-        alert.addButton(withTitle: "打开系统设置")
-        alert.addButton(withTitle: "复制文本")
-        alert.addButton(withTitle: "取消")
+        alert.messageText = String(localized: "text_injection_permission_title")
+        alert.informativeText = String(localized: "text_injection_permission_message")
+        alert.addButton(withTitle: String(localized: "open_system_settings_button"))
+        alert.addButton(withTitle: String(localized: "copy_text_button"))
+        alert.addButton(withTitle: String(localized: "cancel_button"))
         alert.alertStyle = .warning
 
         switch alert.runModal() {
@@ -491,8 +491,8 @@ class MenuBarController: NSObject, ObservableObject {
 
     private func handleServerPortChange(_ newPort: UInt16) {
         appendInboundDataRecord(
-            title: "监听端口已更新",
-            detail: "新的监听端口: \(newPort)",
+            title: String(localized: "log_server_port_updated_title"),
+            detail: String(format: String(localized: "log_server_port_updated_detail_format"), "\(newPort)"),
             category: .connection,
             severity: .warning
         )

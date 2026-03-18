@@ -13,43 +13,43 @@ struct MainWindow: View {
         TabView(selection: $selectedTab) {
             StatusTab(controller: controller)
                 .tabItem {
-                    Label("状态", systemImage: "antenna.radiowaves.left.and.right")
+                    Label(String(localized: "tab_status"), systemImage: "antenna.radiowaves.left.and.right")
                 }
                 .tag(0)
 
             SettingsTab(settings: settings, controller: controller)
                 .tabItem {
-                    Label("设置", systemImage: "gearshape")
+                    Label(String(localized: "tab_settings"), systemImage: "gearshape")
                 }
                 .tag(1)
 
             SpeechRecognitionTab(controller: controller)
                 .tabItem {
-                    Label("语音识别", systemImage: "waveform.circle")
+                    Label(String(localized: "tab_speech"), systemImage: "waveform.circle")
                 }
                 .tag(2)
 
             DataRecordsTab(controller: controller)
                 .tabItem {
-                    Label("数据", systemImage: "tray.full")
+                    Label(String(localized: "tab_data"), systemImage: "tray.full")
                 }
                 .tag(3)
 
             PermissionsTab()
                 .tabItem {
-                    Label("权限", systemImage: "lock.shield")
+                    Label(String(localized: "tab_permissions"), systemImage: "lock.shield")
                 }
                 .tag(4)
 
             AboutTab()
                 .tabItem {
-                    Label("关于", systemImage: "info.circle")
+                    Label(String(localized: "tab_about"), systemImage: "info.circle")
                 }
                 .tag(5)
 
             PermissionsDebugView()
                 .tabItem {
-                    Label("调试", systemImage: "ladybug")
+                    Label(String(localized: "tab_debug"), systemImage: "ladybug")
                 }
                 .tag(6)
         }
@@ -64,14 +64,14 @@ struct StatusTab: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("🎤 VoiceMind")
+            Text("🎤 \(String(localized: "app_title"))")
                 .font(.system(size: 32, weight: .bold))
 
             // Connection Status
-            GroupBox(label: Label("连接状态", systemImage: "network")) {
+            GroupBox(label: Label(String(localized: "status_connection_title"), systemImage: "network")) {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Text("状态:")
+                        Text(String(localized: "status_label"))
                         Spacer()
                         connectionStatusView
                     }
@@ -79,7 +79,7 @@ struct StatusTab: View {
                     if case .paired(_, let deviceName) = controller.pairingState {
                         Divider()
                         HStack {
-                            Text("配对设备:")
+                            Text(String(localized: "status_paired_device_label"))
                             Spacer()
                             Text(deviceName)
                                 .foregroundColor(.secondary)
@@ -89,7 +89,7 @@ struct StatusTab: View {
                     if let progressMessage = controller.pairingProgressMessage {
                         Divider()
                         HStack(alignment: .top) {
-                            Text("配对进度:")
+                            Text(String(localized: "status_pairing_progress_label"))
                             Spacer()
                             Label {
                                 Text(progressMessage)
@@ -103,9 +103,9 @@ struct StatusTab: View {
 
                     Divider()
                     HStack {
-                        Text("IP 地址:")
+                        Text(String(localized: "status_ip_label"))
                         Spacer()
-                        Text(getLocalIPAddress() ?? "未知")
+                        Text(getLocalIPAddress() ?? String(localized: "status_unknown_value"))
                             .foregroundColor(.secondary)
                     }
                 }
@@ -113,12 +113,12 @@ struct StatusTab: View {
             }
 
             // Service Status
-            GroupBox(label: Label("服务状态", systemImage: "server.rack")) {
+            GroupBox(label: Label(String(localized: "status_service_title"), systemImage: "server.rack")) {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Text("网络服务:")
+                        Text(String(localized: "status_service_label"))
                         Spacer()
-                        Text(controller.isServiceRunning ? "运行中" : "已停止")
+                        Text(controller.isServiceRunning ? String(localized: "status_service_running") : String(localized: "status_service_stopped"))
                             .foregroundColor(controller.isServiceRunning ? .green : .secondary)
                     }
                 }
@@ -133,7 +133,7 @@ struct StatusTab: View {
                     Button(action: {
                         controller.startNetworkServices()
                     }) {
-                        Label("启动服务", systemImage: "play.fill")
+                        Label(String(localized: "status_action_start_service"), systemImage: "play.fill")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
@@ -141,7 +141,7 @@ struct StatusTab: View {
                     Button(action: {
                         controller.stopNetworkServices()
                     }) {
-                        Label("停止服务", systemImage: "stop.fill")
+                        Label(String(localized: "status_action_stop_service"), systemImage: "stop.fill")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
@@ -155,17 +155,17 @@ struct StatusTab: View {
                     Button(action: {
                         controller.showPairingWindowFromUI()
                     }) {
-                        Label("开始配对", systemImage: "iphone.and.arrow.forward")
+                        Label(String(localized: "status_action_start_pairing"), systemImage: "iphone.and.arrow.forward")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
                     .padding(.horizontal)
                 } else if case .paired(_, let deviceName) = controller.pairingState {
                     HStack {
-                        Text("已配对设备: \(deviceName)")
+                        Text(String(format: String(localized: "status_paired_device_format"), deviceName))
                             .foregroundColor(.secondary)
                         Spacer()
-                        Button("解除配对") {
+                        Button(String(localized: "status_action_unpair")) {
                             controller.unpairDeviceFromUI()
                         }
                         .buttonStyle(.bordered)
@@ -181,16 +181,16 @@ struct StatusTab: View {
     private var connectionStatusView: some View {
         switch controller.connectionState {
         case .disconnected:
-            Label("未连接", systemImage: "circle")
+            Label(String(localized: "status_connection_disconnected"), systemImage: "circle")
                 .foregroundColor(.secondary)
         case .connecting:
-            Label("连接中...", systemImage: "circle.dotted")
+            Label(String(localized: "status_connection_connecting"), systemImage: "circle.dotted")
                 .foregroundColor(.orange)
         case .connected:
-            Label("已连接", systemImage: "circle.fill")
+            Label(String(localized: "status_connection_connected"), systemImage: "circle.fill")
                 .foregroundColor(.green)
         case .error:
-            Label("错误", systemImage: "exclamationmark.triangle")
+            Label(String(localized: "status_connection_error"), systemImage: "exclamationmark.triangle")
                 .foregroundColor(.red)
         }
     }
@@ -250,30 +250,30 @@ struct SettingsTab: View {
 
     var body: some View {
         Form {
-            Section(header: Text("文本注入方式")) {
+            Section(header: Text(String(localized: "settings_text_injection_title"))) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("剪贴板粘贴")
+                    Text(String(localized: "settings_text_injection_clipboard_title"))
                         .font(.body)
                         .fontWeight(.medium)
 
-                    Text("已固定为剪贴板粘贴，以获得最稳定的光标输入兼容性。")
+                    Text(String(localized: "settings_text_injection_clipboard_desc"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
 
-            Section(header: Text("语言")) {
-                Picker("识别语言", selection: $settings.language) {
-                    Text("中文").tag("zh-CN")
-                    Text("English").tag("en-US")
+            Section(header: Text(String(localized: "settings_language_title"))) {
+                Picker(String(localized: "settings_language_picker"), selection: $settings.language) {
+                    Text(String(localized: "settings_language_zh")).tag("zh-CN")
+                    Text(String(localized: "settings_language_en")).tag("en-US")
                 }
             }
 
-            Section(header: Text("网络服务")) {
+            Section(header: Text(String(localized: "settings_network_title"))) {
                 HStack {
-                    Text("监听端口")
+                    Text(String(localized: "settings_network_port_label"))
                     Spacer()
-                    TextField("8899", text: $serverPortText)
+                    TextField(String(localized: "settings_network_port_placeholder"), text: $serverPortText)
                         .frame(width: 100)
                         .multilineTextAlignment(.trailing)
                         .textFieldStyle(.roundedBorder)
@@ -294,7 +294,7 @@ struct SettingsTab: View {
                         }
                 }
 
-                Text("默认端口已改为 8899。修改后如果服务正在运行，会自动重启到新端口。")
+                Text(String(localized: "settings_network_port_desc"))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -313,49 +313,64 @@ struct DataRecordsTab: View {
     @State private var groupBySession = true
 
     private enum DataRecordFilter: String, CaseIterable, Identifiable {
-        case all = "全部"
-        case voice = "语音"
-        case pairing = "配对/连接"
+        case all
+        case voice
+        case pairing
 
         var id: String { rawValue }
+
+        var titleKey: String {
+            switch self {
+            case .all:
+                return "data_filter_all"
+            case .voice:
+                return "data_filter_voice"
+            case .pairing:
+                return "data_filter_pairing"
+            }
+        }
+
+        var title: String {
+            String(localized: .init(titleKey))
+        }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("iOS 数据记录")
+                    Text(String(localized: "data_title"))
                         .font(.title2)
                         .fontWeight(.semibold)
 
-                    Text("展示 iPhone 发来的数据，以及语音在 Mac 端转写后的最终文字。")
+                    Text(String(localized: "data_subtitle"))
                         .font(.callout)
                         .foregroundColor(.secondary)
                 }
 
                 Spacer()
 
-                Picker("筛选", selection: $selectedFilter) {
+                Picker(String(localized: "data_filter_picker"), selection: $selectedFilter) {
                     ForEach(DataRecordFilter.allCases) { filter in
-                        Text(filter.rawValue).tag(filter)
+                        Text(filter.title).tag(filter)
                     }
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 220)
 
-                Button("复制日志") {
+                Button(String(localized: "data_action_copy")) {
                     copyFilteredRecords()
                 }
                 .buttonStyle(.bordered)
                 .disabled(filteredRecords.isEmpty)
 
-                Button("导出日志") {
+                Button(String(localized: "data_action_export")) {
                     exportFilteredRecords()
                 }
                 .buttonStyle(.bordered)
                 .disabled(filteredRecords.isEmpty)
 
-                Button("清空记录") {
+                Button(String(localized: "data_action_clear")) {
                     controller.clearInboundDataRecords()
                 }
                 .buttonStyle(.bordered)
@@ -363,23 +378,23 @@ struct DataRecordsTab: View {
             }
 
             HStack(spacing: 12) {
-                TextField("搜索标题、内容、Session ID", text: $searchText)
+                TextField(String(localized: "data_search_placeholder"), text: $searchText)
                     .textFieldStyle(.roundedBorder)
 
-                Toggle("按会话分组", isOn: $groupBySession)
+                Toggle(String(localized: "data_group_by_session"), isOn: $groupBySession)
                     .toggleStyle(.checkbox)
             }
 
             HStack(spacing: 12) {
-                summaryBadge(title: "总数", value: "\(filteredRecords.count)", color: .secondary)
-                summaryBadge(title: "语音", value: "\(filteredVoiceCount)", color: .accentColor)
-                summaryBadge(title: "配对/连接", value: "\(filteredPairingCount)", color: .blue)
-                summaryBadge(title: "失败", value: "\(filteredFailureCount)", color: .red)
+                summaryBadge(title: String(localized: "data_summary_total"), value: "\(filteredRecords.count)", color: .secondary)
+                summaryBadge(title: String(localized: "data_summary_voice"), value: "\(filteredVoiceCount)", color: .accentColor)
+                summaryBadge(title: String(localized: "data_summary_pairing"), value: "\(filteredPairingCount)", color: .blue)
+                summaryBadge(title: String(localized: "data_summary_failure"), value: "\(filteredFailureCount)", color: .red)
             }
 
             if filteredRecords.isEmpty {
                 ContentUnavailableView(
-                    "暂无数据",
+                    String(localized: "data_empty_title"),
                     systemImage: "tray",
                     description: Text(emptyStateDescription)
                 )
@@ -433,7 +448,7 @@ struct DataRecordsTab: View {
         var groups: [GroupedDataRecords] = []
 
         for record in filteredRecords {
-            let sessionKey = extractSessionKey(from: record.detail) ?? "未归档会话"
+            let sessionKey = extractSessionKey(from: record.detail) ?? String(localized: "data_session_unknown")
             if let index = groups.firstIndex(where: { $0.title == sessionKey }) {
                 groups[index].records.append(record)
             } else {
@@ -458,16 +473,16 @@ struct DataRecordsTab: View {
 
     private var emptyStateDescription: String {
         if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "没有匹配当前关键词的数据记录。"
+            return String(localized: "data_empty_search_desc")
         }
 
         switch selectedFilter {
         case .all:
-            return "当 iPhone 发来配对请求、语音流或识别文本后，这里会按时间顺序记录。"
+            return String(localized: "data_empty_all_desc")
         case .voice:
-            return "当前还没有语音流或语音转写结果。"
+            return String(localized: "data_empty_voice_desc")
         case .pairing:
-            return "当前还没有配对或连接相关记录。"
+            return String(localized: "data_empty_pairing_desc")
         }
     }
 
@@ -479,7 +494,7 @@ struct DataRecordsTab: View {
 
     private func exportFilteredRecords() {
         let panel = NSSavePanel()
-        panel.title = "导出数据日志"
+        panel.title = String(localized: "data_export_title")
         panel.nameFieldStringValue = suggestedFileName
         panel.allowedContentTypes = [.plainText]
 
@@ -497,7 +512,7 @@ struct DataRecordsTab: View {
     private var suggestedFileName: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd-HHmmss"
-        return "VoiceMind-\(selectedFilter.rawValue)-\(formatter.string(from: Date())).txt"
+        return "\(String(localized: "app_title"))-\(selectedFilter.title)-\(formatter.string(from: Date())).txt"
     }
 
     private func buildLogText() -> String {
@@ -578,7 +593,7 @@ struct DataRecordsTab: View {
             Text(title)
                 .font(.headline)
             Spacer()
-            Text("\(count) 条")
+            Text(String(format: String(localized: "data_section_count_format"), count))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -659,22 +674,22 @@ struct DataRecordsTab: View {
     private func severityTitle(for severity: InboundDataSeverity) -> String {
         switch severity {
         case .info:
-            return "信息"
+            return String(localized: "data_severity_info")
         case .warning:
-            return "警告"
+            return String(localized: "data_severity_warning")
         case .error:
-            return "错误"
+            return String(localized: "data_severity_error")
         }
     }
 
     private func categoryTitle(for category: InboundDataCategory) -> String {
         switch category {
         case .voice:
-            return "语音"
+            return String(localized: "data_category_voice")
         case .pairing:
-            return "配对"
+            return String(localized: "data_category_pairing")
         case .connection:
-            return "连接"
+            return String(localized: "data_category_connection")
         }
     }
 }
@@ -692,7 +707,7 @@ struct PermissionsTab: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("系统权限")
+            Text(String(localized: "permissions_tab_title"))
                 .font(.title)
                 .padding(.top)
 
@@ -701,13 +716,13 @@ struct PermissionsTab: View {
                     HStack {
                         Image(systemName: accessibilityGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
                             .foregroundColor(accessibilityGranted ? .green : .red)
-                        Text("辅助功能")
+                        Text(String(localized: "permissions_tab_accessibility_title"))
                         Spacer()
-                        Text(accessibilityGranted ? "已授予" : "未授予")
+                        Text(accessibilityGranted ? String(localized: "permissions_tab_granted") : String(localized: "permissions_tab_denied"))
                             .foregroundColor(.secondary)
                     }
 
-                    Text("VoiceMind 需要辅助功能权限来监听全局快捷键和注入文本")
+                    Text(String(localized: "permissions_tab_accessibility_desc"))
                         .font(.caption)
                         .foregroundColor(.secondary)
 
@@ -716,13 +731,13 @@ struct PermissionsTab: View {
                     HStack {
                         Image(systemName: inputMonitoringGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
                             .foregroundColor(inputMonitoringGranted ? .green : .red)
-                        Text("输入监控")
+                        Text(String(localized: "permissions_tab_input_title"))
                         Spacer()
-                        Text(inputMonitoringGranted ? "已授予" : "未授予")
+                        Text(inputMonitoringGranted ? String(localized: "permissions_tab_granted") : String(localized: "permissions_tab_denied"))
                             .foregroundColor(.secondary)
                     }
 
-                    Text("VoiceMind 需要输入监控权限来检测快捷键按下事件")
+                    Text(String(localized: "permissions_tab_input_desc"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -730,17 +745,17 @@ struct PermissionsTab: View {
             }
 
             HStack(spacing: 15) {
-                Button("检查权限") {
+                Button(String(localized: "permissions_tab_check")) {
                     checkPermissions()
                 }
                 .buttonStyle(.bordered)
 
-                Button("请求权限") {
+                Button(String(localized: "permissions_tab_request")) {
                     requestPermissions()
                 }
                 .buttonStyle(.borderedProminent)
 
-                Button("打开系统设置") {
+                Button(String(localized: "permissions_tab_open_settings")) {
                     PermissionsManager.openSystemPreferences(for: .accessibility)
                 }
                 .buttonStyle(.bordered)
@@ -778,26 +793,26 @@ struct AboutTab: View {
                 .font(.system(size: 60))
                 .foregroundColor(.accentColor)
 
-            Text("VoiceMind")
+            Text(String(localized: "app_title"))
                 .font(.title)
 
-            Text("版本 1.0.0")
+            Text(String(localized: "about_version"))
                 .foregroundColor(.secondary)
 
             Divider()
                 .padding(.horizontal, 50)
 
-            Text("语音输入助手")
+            Text(String(localized: "about_title"))
                 .font(.headline)
 
-            Text("通过 iOS 设备进行语音识别，将结果实时注入到 Mac 应用中")
+            Text(String(localized: "about_description"))
                 .multilineTextAlignment(.center)
                 .foregroundColor(.secondary)
                 .padding(.horizontal)
 
             Spacer()
 
-            Link("查看帮助文档", destination: URL(string: "https://github.com")!)
+            Link(String(localized: "about_help_link"), destination: URL(string: "https://github.com")!)
                 .buttonStyle(.bordered)
         }
         .padding()

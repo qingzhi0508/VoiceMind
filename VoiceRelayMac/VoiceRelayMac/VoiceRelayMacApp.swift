@@ -10,7 +10,7 @@ struct VoiceRelayMacApp: App {
         }
         .commands {
             CommandGroup(replacing: .appInfo) {
-                Button("关于 VoiceMind") {
+                Button("关于 语灵") {
                     // Show about window
                 }
             }

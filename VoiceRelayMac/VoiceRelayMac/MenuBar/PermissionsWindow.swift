@@ -6,13 +6,13 @@ struct PermissionsWindow: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("权限设置")
+            Text(String(localized: "permissions_title"))
                 .font(.title)
 
             VStack(alignment: .leading, spacing: 15) {
                 PermissionRow(
-                    title: "辅助功能",
-                    description: "监听热键和注入文本所需",
+                    title: String(localized: "permission_accessibility_title"),
+                    description: String(localized: "permission_accessibility_desc"),
                     isGranted: accessibilityGranted,
                     onRequest: {
                         PermissionsManager.requestAccessibility()
@@ -21,8 +21,8 @@ struct PermissionsWindow: View {
                 )
 
                 PermissionRow(
-                    title: "输入监控",
-                    description: "全局监听热键所需",
+                    title: String(localized: "permission_input_monitor_title"),
+                    description: String(localized: "permission_input_monitor_desc"),
                     isGranted: inputMonitoringGranted,
                     onRequest: {
                         PermissionsManager.requestInputMonitoring()
@@ -31,7 +31,7 @@ struct PermissionsWindow: View {
             }
             .padding()
 
-            Button("刷新") {
+            Button(String(localized: "refresh_button")) {
                 checkPermissions()
             }
         }
@@ -71,7 +71,7 @@ struct PermissionRow: View {
                     .foregroundColor(.green)
                     .font(.title2)
             } else {
-                Button("授予权限") {
+                Button(String(localized: "grant_permission_button")) {
                     onRequest()
                 }
             }

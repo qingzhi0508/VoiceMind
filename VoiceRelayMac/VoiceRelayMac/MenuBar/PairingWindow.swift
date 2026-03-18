@@ -8,10 +8,10 @@ struct PairingWindow: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("与 iPhone 配对")
+            Text(String(localized: "pair_with_iphone_title"))
                 .font(.title)
 
-            Text("在 iPhone 上输入此代码：")
+            Text(String(localized: "pair_with_iphone_instruction"))
                 .font(.headline)
 
             Text(code)
@@ -20,15 +20,15 @@ struct PairingWindow: View {
                 .background(Color.gray.opacity(0.2))
                 .cornerRadius(10)
 
-            Text("等待 iPhone 连接...")
+            Text(String(localized: "pair_with_iphone_waiting"))
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            Text("剩余时间: \(timeRemaining)秒")
+            Text(String(format: String(localized: "pair_with_iphone_time_format"), "\(timeRemaining)"))
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            Button("取消") {
+            Button(String(localized: "cancel_button")) {
                 onCancel()
             }
         }

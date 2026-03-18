@@ -28,23 +28,23 @@ struct ManualConnectionView: View {
             Form {
                 if !isConnected {
                     // Step 1: Connection Info
-                    Section(header: Text("第一步：连接到 Mac")) {
-                        TextField("IP 地址", text: $ipAddress)
+                    Section(header: Text(String(localized: "manual_step1_title"))) {
+                        TextField(String(localized: "manual_ip_label"), text: $ipAddress)
                             .keyboardType(.decimalPad)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .focused($focusedField, equals: .ipAddress)
                             .placeholder(when: ipAddress.isEmpty) {
-                                Text("例如：192.168.1.100").foregroundColor(.gray)
+                                Text(String(localized: "manual_ip_placeholder")).foregroundColor(.gray)
                             }
 
-                        TextField("端口", text: $port)
+                        TextField(String(localized: "manual_port_label"), text: $port)
                             .keyboardType(.numberPad)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .focused($focusedField, equals: .port)
                             .placeholder(when: port.isEmpty) {
-                                Text("例如：8899").foregroundColor(.gray)
+                                Text(String(localized: "manual_port_placeholder")).foregroundColor(.gray)
                             }
                             .onChange(of: port) { _, newValue in
                                 let digitsOnly = newValue.filter(\.isNumber)
@@ -54,8 +54,8 @@ struct ManualConnectionView: View {
                             }
                     }
 
-                    Section(header: Text("说明")) {
-                        Text("在 Mac 上点击「开始配对」，然后输入显示的 IP 地址和端口号")
+                    Section(header: Text(String(localized: "manual_section_instruction"))) {
+                        Text(String(localized: "manual_instruction_connect"))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -69,13 +69,13 @@ struct ManualConnectionView: View {
                     }
 
                     if !progressMessages.isEmpty {
-                        PairingProgressView(title: "当前进度", steps: progressSteps)
+                        PairingProgressView(title: String(localized: "manual_progress_title"), steps: progressSteps)
                     }
 
                 } else {
                     // Step 2: Pairing Code
-                    Section(header: Text("第二步：输入配对码")) {
-                        TextField("6位配对码", text: $pairingCode)
+                    Section(header: Text(String(localized: "manual_step2_title"))) {
+                        TextField(String(localized: "manual_pairing_code_label"), text: $pairingCode)
                             .keyboardType(.numberPad)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
@@ -97,8 +97,8 @@ struct ManualConnectionView: View {
                             }
                     }
 
-                    Section(header: Text("说明")) {
-                        Text("输入 Mac 上显示的 6 位数字配对码")
+                    Section(header: Text(String(localized: "manual_section_instruction"))) {
+                        Text(String(localized: "manual_instruction_pairing"))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -112,17 +112,17 @@ struct ManualConnectionView: View {
                     }
 
                     if !progressMessages.isEmpty {
-                        PairingProgressView(title: "当前进度", steps: progressSteps)
+                        PairingProgressView(title: String(localized: "manual_progress_title"), steps: progressSteps)
                     }
 
                 }
             }
-            .navigationTitle(isConnected ? "输入配对码" : "手动连接")
+            .navigationTitle(isConnected ? String(localized: "manual_nav_title_pair") : String(localized: "manual_nav_title_connect"))
             .navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
+                    Button(String(localized: "cancel_button")) {
                         dismiss()
                     }
                 }
@@ -132,7 +132,7 @@ struct ManualConnectionView: View {
             }
             .onAppear {
                 focusedField = isConnected ? .pairingCode : .ipAddress
-                appendProgress("等待输入 Mac 的地址和端口。")
+                appendProgress(String(localized: "manual_progress_waiting_input"))
             }
             .onChange(of: isConnected) { _, newValue in
                 focusedField = newValue ? .pairingCode : .ipAddress
@@ -146,7 +146,7 @@ struct ManualConnectionView: View {
             .onChange(of: viewModel.latestPairingFeedback) { _, newValue in
                 guard let newValue else { return }
                 appendProgress(newValue)
-                if newValue.contains("不正确") || newValue.contains("不在配对模式") || newValue.contains("失败") {
+                if newValue.contains(keywordIncorrect) || newValue.contains(keywordNotInPairingMode) || newValue.contains(keywordFailed) {
                     isPairing = false
                     pairingTimeoutTask?.cancel()
                     errorMessage = newValue
@@ -159,19 +159,19 @@ struct ManualConnectionView: View {
         [
             PairingStepItem(
                 id: "connect",
-                title: "建立连接",
-                detail: progressMessages.first ?? "输入 Mac 的地址和端口后开始连接。",
+                title: String(localized: "manual_step_connect_title"),
+                detail: progressMessages.first ?? String(localized: "manual_step_connect_detail_default"),
                 state: connectStepState
             ),
             PairingStepItem(
                 id: "code",
-                title: "提交配对码",
+                title: String(localized: "manual_step_code_title"),
                 detail: pairingCodeStepDetail,
                 state: codeStepState
             ),
             PairingStepItem(
                 id: "finish",
-                title: "完成绑定",
+                title: String(localized: "manual_step_finish_title"),
                 detail: finishStepDetail,
                 state: finishStepState
             )
@@ -206,12 +206,12 @@ struct ManualConnectionView: View {
 
     private var actionButtonTitle: String {
         if isConnecting {
-            return "连接中..."
+            return String(localized: "manual_action_connecting")
         }
         if isPairing {
-            return "配对中..."
+            return String(localized: "manual_action_pairing")
         }
-        return isConnected ? "配对" : "连接"
+        return isConnected ? String(localized: "manual_action_pair") : String(localized: "manual_action_connect")
     }
 
     private var actionButtonDisabled: Bool {
@@ -222,7 +222,7 @@ struct ManualConnectionView: View {
     }
 
     private var connectStepState: PairingStepState {
-        if let errorMessage, errorMessage.contains("连接") {
+        if let errorMessage, errorMessage.contains(keywordConnection) {
             return .failed
         }
         if isConnected || viewModel.connectionState == .connected {
@@ -235,7 +235,7 @@ struct ManualConnectionView: View {
     }
 
     private var codeStepState: PairingStepState {
-        if let errorMessage, !errorMessage.contains("连接") {
+        if let errorMessage, !errorMessage.contains(keywordConnection) {
             return .failed
         }
         if case .paired = viewModel.pairingState {
@@ -248,7 +248,7 @@ struct ManualConnectionView: View {
     }
 
     private var finishStepState: PairingStepState {
-        if let errorMessage, !errorMessage.contains("连接") {
+        if let errorMessage, !errorMessage.contains(keywordConnection) {
             return .failed
         }
         if case .paired = viewModel.pairingState {
@@ -261,22 +261,22 @@ struct ManualConnectionView: View {
     }
 
     private var pairingCodeStepDetail: String {
-        if let message = progressMessages.last(where: { $0.contains("配对码") || $0.contains("校验") || $0.contains("配对模式") }) {
+        if let message = progressMessages.last(where: { $0.contains(keywordPairingCode) || $0.contains(keywordValidation) || $0.contains(keywordPairingMode) }) {
             return message
         }
-        return isConnected ? "连接完成后，输入 6 位配对码并发送给 Mac。" : "等待连接完成后再输入配对码。"
+        return isConnected ? String(localized: "manual_pairing_code_step_detail_connected") : String(localized: "manual_pairing_code_step_detail_waiting")
     }
 
     private var finishStepDetail: String {
-        if let message = progressMessages.last(where: { $0.contains("成功") || $0.contains("绑定") || $0.contains("返回") }) {
+        if let message = progressMessages.last(where: { $0.contains(keywordSuccess) || $0.contains(keywordBinding) || $0.contains(keywordReturn) }) {
             return message
         }
-        return "等待 Mac 返回配对结果并保存绑定关系。"
+        return String(localized: "manual_finish_step_detail_default")
     }
 
     private func connect() {
         guard let portNumber = UInt16(port) else {
-            errorMessage = "端口号无效"
+            errorMessage = String(localized: "manual_error_invalid_port")
             return
         }
 
@@ -287,8 +287,8 @@ struct ManualConnectionView: View {
         connectionTimeoutTask?.cancel()
         viewModel.clearPairingFeedback()
         progressMessages.removeAll()
-        appendProgress("已提交连接请求：\(ipAddress):\(portNumber)")
-        appendProgress("正在等待 Mac 接受连接...")
+        appendProgress(String(format: String(localized: "manual_progress_connection_request_format"), "\(ipAddress):\(portNumber)"))
+        appendProgress(String(localized: "manual_progress_waiting_accept"))
 
         print("📡 尝试连接到: \(ipAddress):\(portNumber)")
 
@@ -298,7 +298,7 @@ struct ManualConnectionView: View {
         let timeoutTask = DispatchWorkItem {
             guard isConnecting else { return }
             isConnecting = false
-            errorMessage = "连接超时，请检查 IP 和端口是否正确，并确保 Mac 已启动服务"
+            errorMessage = String(localized: "manual_error_timeout")
         }
         connectionTimeoutTask = timeoutTask
         DispatchQueue.main.asyncAfter(deadline: .now() + 8, execute: timeoutTask)
@@ -306,7 +306,7 @@ struct ManualConnectionView: View {
 
     private func pair() {
         guard pairingCode.count == 6 else {
-            errorMessage = "请输入 6 位配对码"
+            errorMessage = String(localized: "manual_error_pairing_code_required")
             return
         }
 
@@ -315,8 +315,8 @@ struct ManualConnectionView: View {
         isPairing = true
         pairingTimeoutTask?.cancel()
         viewModel.clearPairingFeedback()
-        appendProgress("已发送 6 位配对码。")
-        appendProgress("正在等待 Mac 校验配对码并返回结果...")
+        appendProgress(String(localized: "manual_progress_sent_code"))
+        appendProgress(String(localized: "manual_progress_waiting_validate"))
         print("🔐 发送配对码: \(pairingCode)")
 
         // Send pairing code
@@ -325,7 +325,7 @@ struct ManualConnectionView: View {
         let timeoutTask = DispatchWorkItem {
             guard isPairing else { return }
             isPairing = false
-            errorMessage = "配对超时，请检查配对码是否正确，或确认 Mac 仍处于配对状态"
+            errorMessage = String(localized: "manual_error_pairing_timeout")
         }
         pairingTimeoutTask = timeoutTask
         DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: timeoutTask)
@@ -334,16 +334,16 @@ struct ManualConnectionView: View {
     private func handleConnectionStateChange(_ state: ConnectionState) {
         switch state {
         case .connecting:
-            appendProgress("连接建立中...")
+            appendProgress(String(localized: "manual_progress_connecting"))
         case .connected:
-            appendProgress("连接已建立，可以输入配对码。")
+            appendProgress(String(localized: "manual_progress_connected"))
             connectionTimeoutTask?.cancel()
             isConnecting = false
             isConnected = true
             errorMessage = nil
             print("✅ 连接成功")
         case .error(let message):
-            appendProgress("Mac 返回连接失败：\(message)")
+            appendProgress(String(format: String(localized: "manual_progress_connection_failed_format"), message))
             connectionTimeoutTask?.cancel()
             isConnecting = false
             isConnected = false
@@ -351,14 +351,14 @@ struct ManualConnectionView: View {
                 pairingTimeoutTask?.cancel()
                 isPairing = false
             }
-            errorMessage = "连接失败：\(message)"
+            errorMessage = String(format: String(localized: "manual_error_connection_failed_format"), message)
             print("❌ 连接失败: \(message)")
         case .disconnected:
-            appendProgress("连接已断开。")
+            appendProgress(String(localized: "manual_progress_disconnected"))
             if isConnecting {
                 connectionTimeoutTask?.cancel()
                 isConnecting = false
-                errorMessage = "连接已断开，请重试"
+                errorMessage = String(localized: "manual_error_disconnected_retry")
                 print("❌ 连接已断开")
             }
         }
@@ -367,7 +367,7 @@ struct ManualConnectionView: View {
     private func handlePairingStateChange(_ state: PairingState) {
         switch state {
         case .paired:
-            appendProgress("收到 Mac 的配对成功返回，设备已绑定。")
+            appendProgress(String(localized: "manual_progress_pairing_success"))
             pairingTimeoutTask?.cancel()
             isPairing = false
             errorMessage = nil
@@ -382,6 +382,17 @@ struct ManualConnectionView: View {
         guard progressMessages.last != message else { return }
         progressMessages.append(message)
     }
+
+    private var keywordConnection: String { String(localized: "keyword_connection") }
+    private var keywordPairingCode: String { String(localized: "keyword_pairing_code") }
+    private var keywordValidation: String { String(localized: "keyword_validation") }
+    private var keywordPairingMode: String { String(localized: "keyword_pairing_mode") }
+    private var keywordSuccess: String { String(localized: "keyword_success") }
+    private var keywordBinding: String { String(localized: "keyword_binding") }
+    private var keywordReturn: String { String(localized: "keyword_return") }
+    private var keywordFailed: String { String(localized: "keyword_failed") }
+    private var keywordIncorrect: String { String(localized: "keyword_incorrect") }
+    private var keywordNotInPairingMode: String { String(localized: "keyword_not_in_pairing_mode") }
 }
 
 extension View {

@@ -11,7 +11,7 @@ private struct ReconnectionExhaustedError: LocalizedError {
     let maxAttempts: Int
 
     var errorDescription: String? {
-        "自动重连已停止，连续 \(maxAttempts) 次连接失败，请手动重新连接。"
+        String(format: String(localized: "reconnect_exhausted_format"), "\(maxAttempts)")
     }
 }
 

@@ -21,7 +21,7 @@ struct QRCodeScannerView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
-                Text("扫描 Mac 上的二维码")
+                Text(String(localized: "qr_scan_title"))
                     .font(.headline)
                     .padding(.top)
 
@@ -41,7 +41,7 @@ struct QRCodeScannerView: View {
                                     Image(systemName: "camera.fill")
                                         .font(.system(size: 60))
                                         .foregroundColor(.white)
-                                    Text("正在启动相机...")
+                                    Text(String(localized: "qr_camera_starting"))
                                         .foregroundColor(.white)
                                         .padding(.top)
                                 }
@@ -66,26 +66,26 @@ struct QRCodeScannerView: View {
                 if isConnecting {
                     HStack {
                         ProgressView()
-                        Text("连接中...")
+                        Text(String(localized: "qr_connecting"))
                     }
                 }
 
                 if !progressMessages.isEmpty {
-                    PairingProgressView(title: "当前进度", steps: progressSteps)
+                    PairingProgressView(title: String(localized: "qr_progress_title"), steps: progressSteps)
                 }
 
-                Button("手动输入连接信息") {
+                Button(String(localized: "qr_manual_input")) {
                     showManualInput = true
                 }
                 .buttonStyle(.bordered)
 
                 Spacer()
             }
-            .navigationTitle("扫码配对")
+            .navigationTitle(String(localized: "qr_nav_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
+                    Button(String(localized: "cancel_button")) {
                         scanner.stopScanning()
                         dismiss()
                     }
@@ -111,7 +111,7 @@ struct QRCodeScannerView: View {
             .onChange(of: viewModel.latestPairingFeedback) { _, newValue in
                 guard let newValue else { return }
                 appendProgress(newValue)
-                if newValue.contains("不正确") || newValue.contains("不在配对模式") || newValue.contains("失败") {
+                if newValue.contains(keywordIncorrect) || newValue.contains(keywordNotInPairingMode) || newValue.contains(keywordFailed) {
                     isPairing = false
                     pairingTimeoutTask?.cancel()
                     errorMessage = newValue
@@ -140,19 +140,19 @@ struct QRCodeScannerView: View {
         [
             PairingStepItem(
                 id: "scan",
-                title: "扫描二维码",
+                title: String(localized: "qr_scan_step_title"),
                 detail: scanStepDetail,
                 state: scanStepState
             ),
             PairingStepItem(
                 id: "connect",
-                title: "建立连接",
+                title: String(localized: "qr_connect_step_title"),
                 detail: connectionStepDetail,
                 state: connectionStepState
             ),
             PairingStepItem(
                 id: "finish",
-                title: "完成绑定",
+                title: String(localized: "qr_finish_step_title"),
                 detail: finishStepDetail,
                 state: finishStepState
             )
@@ -160,14 +160,14 @@ struct QRCodeScannerView: View {
     }
 
     private var scanStepState: PairingStepState {
-        if let errorMessage, errorMessage.contains("二维码") {
+        if let errorMessage, errorMessage.contains(keywordQR) {
             return .failed
         }
         return connectionInfo == nil ? .active : .completed
     }
 
     private var connectionStepState: PairingStepState {
-        if let errorMessage, errorMessage.contains("连接") {
+        if let errorMessage, errorMessage.contains(keywordConnection) {
             return .failed
         }
         switch viewModel.connectionState {
@@ -184,7 +184,7 @@ struct QRCodeScannerView: View {
 
     private var finishStepState: PairingStepState {
         if let feedback = viewModel.latestPairingFeedback,
-           (feedback.contains("不正确") || feedback.contains("不在配对模式") || feedback.contains("失败")) {
+           (feedback.contains(keywordIncorrect) || feedback.contains(keywordNotInPairingMode) || feedback.contains(keywordFailed)) {
             return .failed
         }
         if case .paired = viewModel.pairingState {
@@ -194,33 +194,33 @@ struct QRCodeScannerView: View {
     }
 
     private var scanStepDetail: String {
-        if let message = progressMessages.first(where: { $0.contains("二维码") || $0.contains("扫码") || $0.contains("连接信息") }) {
+        if let message = progressMessages.first(where: { $0.contains(keywordQR) || $0.contains(keywordScan) || $0.contains(keywordConnectionInfo) }) {
             return message
         }
-        return "扫描 Mac 上展示的二维码，读取连接信息。"
+        return String(localized: "qr_scan_step_detail_default")
     }
 
     private var connectionStepDetail: String {
-        if let message = progressMessages.last(where: { $0.contains("连接") }) {
+        if let message = progressMessages.last(where: { $0.contains(keywordConnection) }) {
             return message
         }
-        return "扫码成功后会自动连接到 Mac。"
+        return String(localized: "qr_connect_step_detail_default")
     }
 
     private var finishStepDetail: String {
-        if let message = progressMessages.last(where: { $0.contains("配对") || $0.contains("绑定") || $0.contains("返回") || $0.contains("成功") }) {
+        if let message = progressMessages.last(where: { $0.contains(keywordPairingCode) || $0.contains(keywordBinding) || $0.contains(keywordReturn) || $0.contains(keywordSuccess) }) {
             return message
         }
-        return "连接成功后输入配对码，等待 Mac 完成绑定。"
+        return String(localized: "qr_finish_step_detail_default")
     }
 
     private func startScanning() {
-        appendProgress("正在等待扫码，读取 Mac 的连接信息。")
+        appendProgress(String(localized: "qr_progress_waiting_scan"))
         scanner.requestCameraPermission { granted in
             if granted {
                 _ = scanner.startScanning()
             } else {
-                errorMessage = "需要相机权限才能扫描二维码"
+                errorMessage = String(localized: "qr_error_camera_permission")
             }
         }
     }
@@ -229,8 +229,8 @@ struct QRCodeScannerView: View {
         print("📱 扫描到二维码: \(code)")
 
         guard let info = ConnectionInfo.fromQRCodeString(code) else {
-            errorMessage = "无效的二维码格式"
-            appendProgress("二维码解析失败，请重新扫描。")
+            errorMessage = String(localized: "qr_error_invalid_code")
+            appendProgress(String(localized: "qr_progress_qr_parse_failed"))
             scanner.scannedCode = nil
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 errorMessage = nil
@@ -245,8 +245,8 @@ struct QRCodeScannerView: View {
         connectionTimeoutTask?.cancel()
         viewModel.clearPairingFeedback()
         progressMessages.removeAll()
-        appendProgress("二维码解析成功，已识别设备：\(info.deviceName)")
-        appendProgress("正在连接 \(info.ip):\(info.port)...")
+        appendProgress(String(format: String(localized: "qr_progress_qr_parsed_format"), info.deviceName))
+        appendProgress(String(format: String(localized: "qr_progress_qr_connecting_format"), info.ip, "\(info.port)"))
 
         print("📡 连接到: \(info.ip):\(info.port)")
 
@@ -256,8 +256,8 @@ struct QRCodeScannerView: View {
         let timeoutTask = DispatchWorkItem {
             guard isConnecting else { return }
             isConnecting = false
-            errorMessage = "连接超时，请重新扫描二维码或稍后重试"
-            appendProgress("连接超时，请重新扫描二维码。")
+            errorMessage = String(localized: "qr_error_timeout")
+            appendProgress(String(localized: "qr_progress_timeout"))
             scanner.scannedCode = nil
             connectionInfo = nil
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -275,15 +275,15 @@ struct QRCodeScannerView: View {
         errorMessage = nil
         pairingTimeoutTask?.cancel()
         viewModel.clearPairingFeedback()
-        appendProgress("已提交 6 位配对码。")
-        appendProgress("正在等待 Mac 校验配对码并返回结果...")
+        appendProgress(String(localized: "qr_progress_sent_code"))
+        appendProgress(String(localized: "qr_progress_waiting_validate"))
         viewModel.pairWithCode(code, deviceName: connectionInfo?.deviceName)
 
         let timeoutTask = DispatchWorkItem {
             guard isPairing else { return }
             isPairing = false
-            errorMessage = "配对超时，请确认 Mac 仍处于配对状态"
-            appendProgress("配对超时，请重新输入配对码。")
+            errorMessage = String(localized: "qr_error_pairing_timeout")
+            appendProgress(String(localized: "qr_progress_pairing_timeout"))
         }
         pairingTimeoutTask = timeoutTask
         DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: timeoutTask)
@@ -292,11 +292,11 @@ struct QRCodeScannerView: View {
     private func handleConnectionStateChange(_ state: ConnectionState) {
         switch state {
         case .connecting:
-            appendProgress("正在建立连接...")
+            appendProgress(String(localized: "qr_progress_connecting_state"))
         case .connected:
             connectionTimeoutTask?.cancel()
             isConnecting = false
-            appendProgress("连接已建立，请输入 Mac 上显示的 6 位配对码。")
+            appendProgress(String(localized: "qr_progress_connected_enter_code"))
             if connectionInfo != nil, !showPairingCodeInput, !isPairing {
                 print("✅ 连接成功，显示配对码输入")
                 showPairingCodeInput = true
@@ -304,13 +304,13 @@ struct QRCodeScannerView: View {
         case .error(let message):
             connectionTimeoutTask?.cancel()
             isConnecting = false
-            appendProgress("连接失败：\(message)")
-            errorMessage = "连接失败：\(message)"
+            appendProgress(String(format: String(localized: "qr_progress_connection_failed_format"), message))
+            errorMessage = String(format: String(localized: "qr_error_connection_failed_format"), message)
             scanner.scannedCode = nil
             connectionInfo = nil
         case .disconnected:
             if isConnecting || isPairing {
-                appendProgress("连接已断开。")
+                appendProgress(String(localized: "qr_progress_disconnected"))
             }
             isConnecting = false
         }
@@ -321,7 +321,7 @@ struct QRCodeScannerView: View {
         case .paired:
             pairingTimeoutTask?.cancel()
             isPairing = false
-            appendProgress("收到 Mac 的配对成功返回，设备已绑定。")
+            appendProgress(String(localized: "qr_progress_pairing_success"))
             print("✅ 配对成功")
             dismiss()
         case .unpaired, .pairing:
@@ -333,6 +333,18 @@ struct QRCodeScannerView: View {
         guard progressMessages.last != message else { return }
         progressMessages.append(message)
     }
+
+    private var keywordConnection: String { String(localized: "keyword_connection") }
+    private var keywordQR: String { String(localized: "keyword_qr") }
+    private var keywordScan: String { String(localized: "keyword_scan") }
+    private var keywordConnectionInfo: String { String(localized: "keyword_connection_info") }
+    private var keywordPairingCode: String { String(localized: "keyword_pairing_code") }
+    private var keywordBinding: String { String(localized: "keyword_binding") }
+    private var keywordReturn: String { String(localized: "keyword_return") }
+    private var keywordSuccess: String { String(localized: "keyword_success") }
+    private var keywordFailed: String { String(localized: "keyword_failed") }
+    private var keywordIncorrect: String { String(localized: "keyword_incorrect") }
+    private var keywordNotInPairingMode: String { String(localized: "keyword_not_in_pairing_mode") }
 }
 
 struct PairingCodeInputView: View {
@@ -347,13 +359,13 @@ struct PairingCodeInputView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 30) {
-                Text("输入配对码")
+                Text(String(localized: "qr_pairing_code_title"))
                     .font(.title2)
                     .padding(.top)
 
                 if let info = connectionInfo {
                     VStack(spacing: 8) {
-                        Text("已连接到:")
+                        Text(String(localized: "qr_connected_to"))
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Text(info.deviceName)
@@ -368,11 +380,11 @@ struct PairingCodeInputView: View {
                 }
 
                 VStack(spacing: 10) {
-                    Text("请输入 Mac 上显示的 6 位数字")
+                    Text(String(localized: "qr_pairing_code_hint"))
                         .font(.caption)
                         .foregroundColor(.secondary)
 
-                    TextField("配对码", text: $pairingCode)
+                    TextField(String(localized: "qr_pairing_code_placeholder"), text: $pairingCode)
                         .keyboardType(.numberPad)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
@@ -405,7 +417,7 @@ struct PairingCodeInputView: View {
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
+                    Button(String(localized: "cancel_button")) {
                         onCancel()
                         dismiss()
                     }
@@ -427,7 +439,7 @@ struct PairingCodeInputView: View {
                 onPair(pairingCode)
                 dismiss()
             }) {
-                Text("配对")
+                Text(String(localized: "pairing_button_pair"))
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)

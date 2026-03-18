@@ -8,7 +8,7 @@ struct SpeechRecognitionTab: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("语音识别引擎")
+            Text(String(localized: "speech_engine_title"))
                 .font(.title2)
                 .fontWeight(.semibold)
 
@@ -31,10 +31,10 @@ struct SpeechRecognitionTab: View {
 
     @ViewBuilder
     private var engineSelectionSection: some View {
-        GroupBox(label: Label("选择识别引擎", systemImage: "waveform.circle")) {
+        GroupBox(label: Label(String(localized: "speech_engine_select_title"), systemImage: "waveform.circle")) {
             VStack(alignment: .leading, spacing: 12) {
                 if availableEngines.isEmpty {
-                    Text("正在加载引擎...")
+                    Text(String(localized: "speech_engine_loading"))
                         .foregroundColor(.secondary)
                 } else {
                     ForEach(availableEngines, id: \.identifier) { engine in
@@ -48,19 +48,19 @@ struct SpeechRecognitionTab: View {
 
     @ViewBuilder
     private var modelManagementSection: some View {
-        GroupBox(label: Label("模型管理", systemImage: "square.and.arrow.down")) {
+        GroupBox(label: Label(String(localized: "model_management_title"), systemImage: "square.and.arrow.down")) {
             VStack(alignment: .leading, spacing: 12) {
-                Text("管理本地语音识别模型")
+                Text(String(localized: "model_management_desc"))
                     .font(.caption)
                     .foregroundColor(.secondary)
 
                 if let senseVoiceEngine = availableEngines.first(where: { $0.identifier == "sensevoice" }) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("SenseVoice Small")
+                            Text(String(localized: "model_name_sensevoice"))
                                 .font(.headline)
 
-                            Text("多语言语音识别模型，约 85MB")
+                            Text(String(localized: "model_desc_sensevoice"))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -68,11 +68,11 @@ struct SpeechRecognitionTab: View {
                         Spacer()
 
                         if senseVoiceEngine.isAvailable {
-                            Label("已下载", systemImage: "checkmark.circle.fill")
+                            Label(String(localized: "model_downloaded"), systemImage: "checkmark.circle.fill")
                                 .foregroundColor(.green)
                                 .font(.caption)
                         } else {
-                            Button("下载模型") {
+                            Button(String(localized: "model_download_button")) {
                                 // TODO: Implement model download
                                 print("下载 SenseVoice 模型")
                             }
@@ -80,7 +80,7 @@ struct SpeechRecognitionTab: View {
                         }
                     }
                 } else {
-                    Text("SenseVoice 引擎未注册")
+                    Text(String(localized: "model_engine_not_registered"))
                         .foregroundColor(.secondary)
                         .font(.caption)
                 }
@@ -105,16 +105,16 @@ struct SpeechRecognitionTab: View {
 
                 HStack {
                     if engine.isAvailable {
-                        Label("可用", systemImage: "checkmark.circle.fill")
+                        Label(String(localized: "engine_available"), systemImage: "checkmark.circle.fill")
                             .foregroundColor(.green)
                             .font(.caption)
                     } else {
-                        Label("不可用", systemImage: "xmark.circle.fill")
+                        Label(String(localized: "engine_unavailable"), systemImage: "xmark.circle.fill")
                             .foregroundColor(.red)
                             .font(.caption)
                     }
 
-                    Text("支持语言: \(engine.supportedLanguages.prefix(3).joined(separator: ", "))")
+                    Text(String(format: String(localized: "engine_supported_languages_format"), engine.supportedLanguages.prefix(3).joined(separator: ", ")))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

@@ -28,6 +28,13 @@ class ContentViewModel: ObservableObject {
     private var currentSessionId: String?
     private var manualSessionId: String?
 
+    private func localized(_ key: String, _ args: CVarArg...) -> String {
+        if args.isEmpty {
+            return String(localized: .init(key))
+        }
+        return String(format: String(localized: .init(key)), arguments: args)
+    }
+
     init() {
         connectionManager.delegate = self
         speechController.delegate = self
@@ -52,8 +59,14 @@ class ContentViewModel: ObservableObject {
         print("   配对码: \(code)")
         latestPairingFeedback = nil
         appendInboundDataRecord(
-            title: "发起配对",
-            detail: "服务: \(service.name)\n地址: \(service.host):\(service.port)\n配对码: \(code)",
+            title: localized("log_title_pairing_start"),
+            detail: localized(
+                "log_detail_pairing_start_format",
+                service.name,
+                service.host,
+                "\(service.port)",
+                code
+            ),
             category: .pairing
         )
         saveLastKnownConnection(host: service.host, port: service.port, deviceName: service.name)
@@ -71,11 +84,11 @@ class ContentViewModel: ObservableObject {
     func reconnect() {
         print("🔄 手动重连")
         reconnectNeedsManualAction = false
-        latestPairingFeedback = "正在尝试重连到已配对的 Mac..."
-        reconnectStatusMessage = "正在查找已配对的 Mac..."
+        latestPairingFeedback = localized("reconnect_trying")
+        reconnectStatusMessage = localized("reconnect_searching")
         appendInboundDataRecord(
-            title: "手动重连",
-            detail: "用户触发重连，正在查找已配对的 Mac。",
+            title: localized("log_title_manual_reconnect"),
+            detail: localized("log_detail_manual_reconnect"),
             category: .connection
         )
         connectionManager.disconnect()
@@ -85,8 +98,13 @@ class ContentViewModel: ObservableObject {
     func connectToMac(ip: String, port: UInt16, deviceName: String? = nil) {
         latestPairingFeedback = nil
         appendInboundDataRecord(
-            title: "直接连接 Mac",
-            detail: "地址: \(ip):\(port)\n设备: \(deviceName ?? "未知")",
+            title: localized("log_title_direct_connect"),
+            detail: localized(
+                "log_detail_direct_connect_format",
+                ip,
+                "\(port)",
+                deviceName ?? localized("connection_status_unknown")
+            ),
             category: .connection
         )
         saveLastKnownConnection(host: ip, port: port, deviceName: deviceName)
@@ -96,8 +114,12 @@ class ContentViewModel: ObservableObject {
     func pairWithCode(_ code: String, deviceName: String? = nil) {
         latestPairingFeedback = nil
         appendInboundDataRecord(
-            title: "提交配对码",
-            detail: "设备: \(deviceName ?? lastKnownDeviceName ?? "未知")\n配对码: \(code)",
+            title: localized("log_title_submit_pairing_code"),
+            detail: localized(
+                "log_detail_submit_pairing_code_format",
+                deviceName ?? lastKnownDeviceName ?? localized("connection_status_unknown"),
+                code
+            ),
             category: .pairing
         )
         connectionManager.setPendingPairingDeviceName(deviceName ?? lastKnownDeviceName)
@@ -121,7 +143,7 @@ class ContentViewModel: ObservableObject {
             manualSessionId = sessionId
             try audioStreamController.startStreaming(sessionId: sessionId)
             recognitionState = .listening
-            pushToTalkStatusMessage = "正在采集语音，松开后发送到 Mac 识别。"
+            pushToTalkStatusMessage = localized("ptt_capturing")
         } catch {
             recognitionState = .idle
             manualSessionId = nil
@@ -132,7 +154,7 @@ class ContentViewModel: ObservableObject {
     func stopPushToTalk() {
         guard recognitionState == .listening else { return }
         recognitionState = .sending
-        pushToTalkStatusMessage = "正在发送语音到 Mac..."
+        pushToTalkStatusMessage = localized("ptt_sending_audio")
         audioStreamController.stopStreaming()
     }
 
@@ -184,33 +206,42 @@ class ContentViewModel: ObservableObject {
 
         if let service = discoveredServices.first(where: { $0.id.uuidString == deviceId || $0.name == deviceName }) {
             print("✅ 找到设备，开始连接: \(service.host):\(service.port)")
-            latestPairingFeedback = "已找到 \(service.name)，正在建立连接..."
-            reconnectStatusMessage = "已找到 \(service.name)，正在建立连接..."
+            latestPairingFeedback = localized("reconnect_found_format", service.name)
+            reconnectStatusMessage = localized("reconnect_found_format", service.name)
             appendInboundDataRecord(
-                title: "发现已配对设备",
-                detail: "设备: \(service.name)\n地址: \(service.host):\(service.port)",
+                title: localized("log_title_paired_device_found"),
+                detail: localized(
+                    "log_detail_paired_device_found_format",
+                    service.name,
+                    service.host,
+                    "\(service.port)"
+                ),
                 category: .connection
             )
             connectionManager.connect(to: service)
         } else if let lastKnownHost,
                   let lastKnownPort {
             print("📡 未找到 Bonjour 服务，回退到上次已知地址: \(lastKnownHost):\(lastKnownPort)")
-            latestPairingFeedback = "未发现 Bonjour 服务，正在直连上次保存的地址..."
-            reconnectStatusMessage = "未发现 Bonjour 服务，已回退到上次保存的地址直连..."
+            latestPairingFeedback = localized("reconnect_no_bonjour")
+            reconnectStatusMessage = localized("reconnect_fallback")
             appendInboundDataRecord(
-                title: "回退到直连",
-                detail: "未发现 Bonjour 服务。\n地址: \(lastKnownHost):\(lastKnownPort)",
+                title: localized("log_title_fallback_direct"),
+                detail: localized(
+                    "log_detail_fallback_direct_format",
+                    lastKnownHost,
+                    "\(lastKnownPort)"
+                ),
                 category: .connection,
                 severity: .warning
             )
             connectionManager.connectDirectly(ip: lastKnownHost, port: lastKnownPort)
         } else {
             print("⚠️ 未找到已配对的设备，等待 Bonjour 发现...")
-            latestPairingFeedback = "暂未发现已配对的 Mac，请确认 Mac 在线并与 iPhone 处于同一网络。"
-            reconnectStatusMessage = "未发现已配对的 Mac，请确认 Mac 在线并与 iPhone 处于同一网络。"
+            latestPairingFeedback = localized("reconnect_not_found")
+            reconnectStatusMessage = localized("reconnect_not_found")
             appendInboundDataRecord(
-                title: "未发现已配对设备",
-                detail: "Bonjour 和上次保存地址都无法用于重连。",
+                title: localized("log_title_no_paired_device"),
+                detail: localized("log_detail_no_paired_device"),
                 category: .connection,
                 severity: .warning
             )
@@ -270,10 +301,10 @@ extension ContentViewModel: ConnectionManagerDelegate {
 
             if case .paired = state {
                 self.reconnectNeedsManualAction = false
-                self.latestPairingFeedback = "Mac 已确认配对，正在完成绑定。"
+                self.latestPairingFeedback = self.localized("pairing_confirmed_binding")
                 self.appendInboundDataRecord(
-                    title: "配对成功",
-                    detail: "Mac 已确认配对，绑定已完成。",
+                    title: self.localized("log_pairing_success_title"),
+                    detail: self.localized("log_pairing_success_detail"),
                     category: .pairing
                 )
                 self.showPairingView = false
@@ -297,51 +328,51 @@ extension ContentViewModel: ConnectionManagerDelegate {
             case .connecting:
                 self.reconnectNeedsManualAction = false
                 self.appendInboundDataRecord(
-                    title: "连接中",
-                    detail: "正在与 Mac 建立连接。",
+                    title: self.localized("log_connecting_title"),
+                    detail: self.localized("log_connecting_detail"),
                     category: .connection
                 )
                 if self.reconnectStatusMessage != nil {
-                    self.reconnectStatusMessage = self.reconnectStatusMessage ?? "正在建立连接..."
+                    self.reconnectStatusMessage = self.reconnectStatusMessage ?? self.localized("reconnect_connecting")
                 }
             case .connected:
                 self.reconnectNeedsManualAction = false
                 self.appendInboundDataRecord(
-                    title: "连接成功",
-                    detail: "与 Mac 的连接已建立。",
+                    title: self.localized("log_connected_title"),
+                    detail: self.localized("log_connected_detail"),
                     category: .connection
                 )
-                self.reconnectStatusMessage = "重连成功，已重新连接。"
+                self.reconnectStatusMessage = self.localized("reconnect_success")
             case .error(let message):
-                if message.contains("自动重连已停止") {
+                if message.contains(self.localized("reconnect_exhausted_snippet")) {
                     self.reconnectNeedsManualAction = true
                 }
                 self.appendInboundDataRecord(
-                    title: "连接失败",
+                    title: self.localized("log_connection_failed_title"),
                     detail: message,
                     category: .connection,
                     severity: .error
                 )
                 if self.reconnectStatusMessage != nil {
-                    self.reconnectStatusMessage = "重连失败：\(message)"
+                    self.reconnectStatusMessage = self.localized("reconnect_failed_format", message)
                 }
             case .disconnected:
                 if case .paired = self.pairingState, !self.reconnectNeedsManualAction {
-                    self.reconnectStatusMessage = "连接已断开，正在等待重新发现 Mac 或继续自动重连..."
+                    self.reconnectStatusMessage = self.localized("reconnect_waiting")
                 }
                 self.appendInboundDataRecord(
-                    title: "连接断开",
-                    detail: "当前与 Mac 没有活跃连接。",
+                    title: self.localized("log_disconnected_title"),
+                    detail: self.localized("log_disconnected_detail"),
                     category: .connection,
                     severity: .warning
                 )
                 if self.recognitionState == .listening {
-                    self.pushToTalkStatusMessage = "连接已断开，无法继续发送语音结果。"
+                    self.pushToTalkStatusMessage = self.localized("ptt_connection_lost")
                     self.recognitionState = .idle
                     self.manualSessionId = nil
                     self.audioStreamController.stopStreaming()
                 } else if self.reconnectNeedsManualAction {
-                    self.pushToTalkStatusMessage = "自动重连已停止，按住按钮重新连接服务。"
+                    self.pushToTalkStatusMessage = self.localized("ptt_hold_to_reconnect")
                 }
                 break
             }
@@ -399,19 +430,19 @@ extension ContentViewModel: ConnectionManagerDelegate {
         let message: String
         switch payload.code {
         case "invalid_code":
-            message = "Mac 返回：配对码不正确。"
+            message = localized("pairing_code_incorrect")
         case "not_pairing":
-            message = "Mac 返回：当前不在配对模式。"
+            message = localized("pairing_not_in_pairing_mode")
         case "pairing_failed":
-            message = "Mac 返回：保存配对信息失败。"
+            message = localized("pairing_save_failed")
         default:
-            message = "Mac 返回：\(payload.message)"
+            message = localized("pairing_mac_error_format", payload.message)
         }
 
         DispatchQueue.main.async {
             self.latestPairingFeedback = message
             self.appendInboundDataRecord(
-                title: "Mac 返回错误",
+                title: self.localized("log_error_from_mac_title"),
                 detail: message,
                 category: .pairing,
                 severity: .error
@@ -428,18 +459,18 @@ extension ContentViewModel: SpeechControllerDelegate {
             switch state {
             case .idle:
                 if self.canManuallyReconnectFromPrimaryButton {
-                    self.pushToTalkStatusMessage = "自动重连已停止，按住按钮重新连接服务。"
+                    self.pushToTalkStatusMessage = self.localized("ptt_hold_to_reconnect")
                 } else if self.connectionState == .connected {
-                    self.pushToTalkStatusMessage = "按住麦克风开始说话。"
+                    self.pushToTalkStatusMessage = self.localized("ptt_hold_to_talk")
                 } else {
-                    self.pushToTalkStatusMessage = "连接 Mac 后可按住说话。"
+                    self.pushToTalkStatusMessage = self.localized("ptt_connect_to_talk")
                 }
             case .listening:
-                self.pushToTalkStatusMessage = "正在监听语音，松开发送到 Mac。"
+                self.pushToTalkStatusMessage = self.localized("ptt_listening")
             case .processing:
-                self.pushToTalkStatusMessage = "正在整理语音结果..."
+                self.pushToTalkStatusMessage = self.localized("ptt_processing")
             case .sending:
-                self.pushToTalkStatusMessage = "正在发送结果到 Mac..."
+                self.pushToTalkStatusMessage = self.localized("ptt_sending_result")
             }
         }
     }
@@ -475,10 +506,10 @@ extension ContentViewModel: SpeechControllerDelegate {
         connectionManager.send(envelope)
         currentSessionId = nil
         manualSessionId = nil
-        pushToTalkStatusMessage = "语音结果已发送到 Mac。"
+        pushToTalkStatusMessage = localized("ptt_sent")
         appendInboundDataRecord(
-            title: "发送识别结果",
-            detail: "Session: \(sessionId)\n语言: \(language)\n内容: \(text)",
+            title: localized("log_speech_result_title"),
+            detail: localized("log_speech_result_detail_format", sessionId, language, text),
             category: .voice
         )
     }
@@ -487,7 +518,7 @@ extension ContentViewModel: SpeechControllerDelegate {
         print("Speech recognition error: \(error)")
         pushToTalkStatusMessage = error.localizedDescription
         appendInboundDataRecord(
-            title: "语音识别失败",
+            title: localized("log_speech_error_title"),
             detail: error.localizedDescription,
             category: .voice,
             severity: .error
@@ -531,8 +562,8 @@ extension ContentViewModel: BonjourBrowserDelegate {
             if !self.discoveredServices.contains(where: { $0.id == service.id }) {
             self.discoveredServices.append(service)
             self.appendInboundDataRecord(
-                title: "发现 Bonjour 服务",
-                detail: "设备: \(service.name)\n地址: \(service.host):\(service.port)",
+                title: self.localized("log_bonjour_found_title"),
+                detail: self.localized("log_bonjour_found_detail_format", service.name, service.host, "\(service.port)"),
                 category: .connection
             )
             }
@@ -542,13 +573,13 @@ extension ContentViewModel: BonjourBrowserDelegate {
                (service.id.uuidString == deviceId || service.name == deviceName),
                self.connectionState != .connected,
                !self.reconnectNeedsManualAction {
-                self.reconnectStatusMessage = "已发现已配对的 Mac，正在自动重连..."
+                self.reconnectStatusMessage = self.localized("reconnect_found_auto")
                 self.connectionManager.connect(to: service)
             } else if case .paired(let deviceId, let deviceName) = self.pairingState,
                       (service.id.uuidString == deviceId || service.name == deviceName),
                       self.reconnectNeedsManualAction {
                 self.reconnectNeedsManualAction = false
-                self.reconnectStatusMessage = "已重新发现已配对的 Mac，正在恢复连接..."
+                self.reconnectStatusMessage = self.localized("reconnect_found_again")
                 self.connectionManager.connect(to: service)
             }
         }
@@ -558,8 +589,8 @@ extension ContentViewModel: BonjourBrowserDelegate {
         DispatchQueue.main.async {
             self.discoveredServices.removeAll { $0.id == service.id }
             self.appendInboundDataRecord(
-                title: "Bonjour 服务移除",
-                detail: "设备: \(service.name)",
+                title: self.localized("log_bonjour_removed_title"),
+                detail: self.localized("log_bonjour_removed_detail_format", service.name),
                 category: .connection,
                 severity: .warning
             )
@@ -574,11 +605,11 @@ extension ContentViewModel: AudioStreamControllerDelegate {
         print("📤 发送 audioStart 消息")
         DispatchQueue.main.async {
             self.recognitionState = .listening
-            self.pushToTalkStatusMessage = "正在采集语音，松开后发送到 Mac 识别。"
+            self.pushToTalkStatusMessage = self.localized("ptt_capturing")
         }
         appendInboundDataRecord(
-            title: "开始发送语音流",
-            detail: "Session: \(payload.sessionId)\n语言: \(payload.language)\n采样率: \(payload.sampleRate) Hz",
+            title: localized("log_audio_start_title"),
+            detail: localized("log_audio_start_detail_format", payload.sessionId, payload.language, "\(payload.sampleRate)"),
             category: .voice
         )
         guard let payloadData = try? JSONEncoder().encode(payload) else {
@@ -634,11 +665,11 @@ extension ContentViewModel: AudioStreamControllerDelegate {
         DispatchQueue.main.async {
             self.manualSessionId = nil
             self.recognitionState = .idle
-            self.pushToTalkStatusMessage = "语音已发送到 Mac，正在识别并尝试输入到当前光标位置。"
+            self.pushToTalkStatusMessage = self.localized("ptt_sent_mac_processing")
         }
         appendInboundDataRecord(
-            title: "结束语音流",
-            detail: "Session: \(payload.sessionId)",
+            title: localized("log_audio_end_title"),
+            detail: localized("log_audio_end_detail_format", payload.sessionId),
             category: .voice
         )
         guard let payloadData = try? JSONEncoder().encode(payload) else {

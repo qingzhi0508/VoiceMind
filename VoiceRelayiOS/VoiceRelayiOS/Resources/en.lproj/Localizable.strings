@@ -1,0 +1,261 @@
+"app_title" = "VoiceMind";
+
+"ok_button" = "OK";
+"cancel_button" = "Cancel";
+"reconnect_button" = "Reconnect";
+
+"connection_status_unpaired" = "Not Paired";
+"connection_status_connected" = "Connected";
+"connection_status_connecting" = "Connecting...";
+"connection_status_disconnected" = "Disconnected";
+"connection_status_error" = "Connection Error";
+"connection_status_unknown" = "Unknown";
+"paired_device_format" = "Paired: %@";
+
+"pair_with_mac_button" = "Pair with Mac";
+
+"recognition_connect_service" = "Connect Service";
+"recognition_hold_to_talk" = "Hold to Talk";
+"recognition_ready" = "Ready";
+"recognition_listening" = "Listening...";
+"recognition_processing" = "Processing...";
+"recognition_sending" = "Sending...";
+
+"manual_step1_title" = "Step 1: Connect to Mac";
+"manual_ip_label" = "IP Address";
+"manual_ip_placeholder" = "e.g. 192.168.1.100";
+"manual_port_label" = "Port";
+"manual_port_placeholder" = "e.g. 8899";
+"manual_section_instruction" = "Instructions";
+"manual_instruction_connect" = "On your Mac, click \"Start Pairing\", then enter the IP address and port shown.";
+"manual_progress_title" = "Current Progress";
+"manual_step2_title" = "Step 2: Enter Pairing Code";
+"manual_pairing_code_label" = "6-digit pairing code";
+"manual_instruction_pairing" = "Enter the 6-digit pairing code shown on your Mac.";
+"manual_nav_title_connect" = "Manual Connection";
+"manual_nav_title_pair" = "Enter Pairing Code";
+"manual_progress_waiting_input" = "Waiting for Mac address and port.";
+"manual_step_connect_title" = "Establish Connection";
+"manual_step_connect_detail_default" = "Start connection after entering Mac address and port.";
+"manual_step_code_title" = "Submit Pairing Code";
+"manual_step_finish_title" = "Complete Binding";
+"manual_action_connecting" = "Connecting...";
+"manual_action_pairing" = "Pairing...";
+"manual_action_connect" = "Connect";
+"manual_action_pair" = "Pair";
+"manual_error_invalid_port" = "Invalid port number";
+"manual_progress_connection_request_format" = "Connection request sent: %@";
+"manual_progress_waiting_accept" = "Waiting for Mac to accept the connection...";
+"manual_error_timeout" = "Connection timed out. Check the IP/port and ensure the Mac is running.";
+"manual_error_pairing_code_required" = "Please enter the 6-digit pairing code";
+"manual_progress_sent_code" = "6-digit pairing code sent.";
+"manual_progress_waiting_validate" = "Waiting for Mac to validate the pairing code...";
+"manual_error_pairing_timeout" = "Pairing timed out. Verify the code or confirm the Mac is still in pairing mode.";
+"manual_progress_connecting" = "Establishing connection...";
+"manual_progress_connected" = "Connection established. You can enter the pairing code now.";
+"manual_progress_connection_failed_format" = "Mac reported connection failure: %@";
+"manual_error_connection_failed_format" = "Connection failed: %@";
+"manual_progress_disconnected" = "Connection disconnected.";
+"manual_error_disconnected_retry" = "Connection disconnected. Please try again.";
+"manual_progress_pairing_success" = "Pairing succeeded. Device is now bound.";
+"manual_pairing_code_step_detail_connected" = "After connection, enter the 6-digit pairing code and send it to the Mac.";
+"manual_pairing_code_step_detail_waiting" = "Wait for the connection to complete before entering the pairing code.";
+"manual_finish_step_detail_default" = "Waiting for the Mac to return the pairing result and save the binding.";
+
+"pairing_title" = "Pair with Mac";
+"pairing_subtitle" = "Prefer QR code pairing, or continue with LAN discovery.";
+"pairing_scan_button" = "Scan QR Code to Pair";
+"pairing_scan_hint" = "On your Mac, click \"Pair New Device\" and scan the QR code.";
+"pairing_or_manual_title" = "Or select a Mac on your LAN";
+"pairing_searching" = "Searching...";
+"pairing_code_title" = "Pairing Code";
+"pairing_code_placeholder" = "Enter 6 digits";
+"pairing_progress_title" = "Current Progress";
+"pairing_failed_title" = "Pairing Failed";
+"pairing_initial_progress" = "Select a discovered Mac and enter the 6-digit pairing code.";
+"pairing_step_select_title" = "Select Device";
+"pairing_step_connect_title" = "Establish Connection";
+"pairing_step_finish_title" = "Complete Binding";
+"pairing_select_detail_format" = "Selected %@, code length %@/6.";
+"pairing_select_detail_default" = "Select a Mac from the LAN list.";
+"pairing_connection_detail_default" = "A pairing request will be sent after the connection succeeds.";
+"pairing_finish_detail_default" = "Waiting for the Mac to validate the pairing code and complete binding.";
+"pairing_button_pair" = "Pair";
+"pairing_button_pairing" = "Pairing...";
+"pairing_progress_selected_mac_format" = "Selected Mac: %@";
+"pairing_progress_connecting_format" = "Connecting to %@:%@...";
+"pairing_progress_send_after_connect" = "A pairing request will be sent after the connection succeeds.";
+"pairing_timeout_no_response" = "No pairing response from Mac for a long time.";
+"pairing_error_timeout" = "Pairing timed out. Confirm the Mac is in pairing mode and the code is correct.";
+"pairing_progress_connecting_state" = "Establishing connection...";
+"pairing_progress_connected_waiting" = "Connection established. Pairing request sent. Waiting for Mac response.";
+"pairing_progress_connection_failed_format" = "Connection failed: %@";
+"pairing_error_connection_failed_format" = "Connection failed: %@";
+"pairing_progress_disconnected" = "Connection disconnected.";
+"pairing_error_disconnected_retry" = "Connection disconnected. Please try pairing again.";
+"pairing_progress_pairing_success" = "Pairing succeeded. Completing binding.";
+
+"qr_scan_title" = "Scan the QR code on your Mac";
+"qr_camera_starting" = "Starting camera...";
+"qr_connecting" = "Connecting...";
+"qr_progress_title" = "Current Progress";
+"qr_manual_input" = "Enter Connection Info Manually";
+"qr_nav_title" = "QR Pairing";
+"qr_scan_step_title" = "Scan QR Code";
+"qr_scan_step_detail_default" = "Scan the QR code shown on your Mac to read connection info.";
+"qr_connect_step_title" = "Establish Connection";
+"qr_connect_step_detail_default" = "After a successful scan, the app connects to the Mac automatically.";
+"qr_finish_step_title" = "Complete Binding";
+"qr_finish_step_detail_default" = "After connection, enter the pairing code and wait for binding.";
+"qr_progress_waiting_scan" = "Waiting for scan to read Mac connection info.";
+"qr_error_camera_permission" = "Camera permission is required to scan QR codes.";
+"qr_error_invalid_code" = "Invalid QR code format";
+"qr_progress_qr_parse_failed" = "QR parse failed. Please scan again.";
+"qr_progress_qr_parsed_format" = "QR parsed. Device: %@";
+"qr_progress_qr_connecting_format" = "Connecting to %@:%@...";
+"qr_error_timeout" = "Connection timed out. Please rescan or try again.";
+"qr_progress_timeout" = "Connection timed out. Please rescan the QR code.";
+"qr_progress_sent_code" = "6-digit pairing code submitted.";
+"qr_progress_waiting_validate" = "Waiting for the Mac to validate the pairing code...";
+"qr_error_pairing_timeout" = "Pairing timed out. Confirm the Mac is still in pairing mode.";
+"qr_progress_pairing_timeout" = "Pairing timed out. Please re-enter the code.";
+"qr_progress_connecting_state" = "Establishing connection...";
+"qr_progress_connected_enter_code" = "Connection established. Enter the 6-digit code shown on the Mac.";
+"qr_progress_connection_failed_format" = "Connection failed: %@";
+"qr_error_connection_failed_format" = "Connection failed: %@";
+"qr_progress_disconnected" = "Connection disconnected.";
+"qr_progress_pairing_success" = "Pairing succeeded. Device is now bound.";
+"qr_pairing_code_title" = "Enter Pairing Code";
+"qr_connected_to" = "Connected to:";
+"qr_pairing_code_hint" = "Enter the 6 digits shown on your Mac.";
+"qr_pairing_code_placeholder" = "Pairing Code";
+
+"settings_title" = "Settings";
+"settings_language_header" = "Recognition Language";
+"settings_permissions_header" = "Permissions";
+"settings_permission_microphone" = "Microphone";
+"settings_permission_speech" = "Speech Recognition";
+"settings_request_permissions" = "Request Permissions";
+"settings_permissions_footer" = "VoiceMind needs microphone and speech recognition permissions to work properly.";
+"settings_paired_device" = "Paired Device";
+"settings_connection_status" = "Connection Status";
+"settings_reconnect" = "Reconnect";
+"settings_unpair" = "Unpair";
+"settings_pairing_header" = "Pairing";
+"settings_debug_header" = "Debug";
+"settings_view_logs" = "View Data Logs";
+"settings_about_header" = "About";
+"settings_version" = "Version";
+"settings_permission_alert_title" = "Permission Request";
+"settings_permission_alert_message" = "Please grant microphone and speech recognition permissions in Settings.";
+"settings_connection_status_error" = "Error";
+
+"language_zh" = "Chinese (Mandarin)";
+"language_en" = "English (US)";
+
+"logs_title" = "Data Logs";
+"logs_filter_label" = "Filter";
+"logs_filter_all" = "All";
+"logs_filter_voice" = "Voice";
+"logs_filter_connection" = "Connection";
+"logs_clear" = "Clear Logs";
+"logs_empty_title" = "No Logs";
+"logs_empty_description" = "This shows pairing, connection, and voice stream events recorded on iPhone.";
+
+"reconnect_exhausted_format" = "Auto-reconnect stopped after %@ failed attempts. Please reconnect manually.";
+
+"keyword_connection" = "Connect";
+"keyword_pairing_code" = "pairing code";
+"keyword_validation" = "validate";
+"keyword_pairing_mode" = "pairing mode";
+"keyword_success" = "succeeded";
+"keyword_binding" = "binding";
+"keyword_return" = "return";
+"keyword_qr" = "QR";
+"keyword_scan" = "Scan";
+"keyword_connection_info" = "connection info";
+"keyword_failed" = "failed";
+"keyword_incorrect" = "incorrect";
+"keyword_disconnected" = "Disconnected";
+"keyword_not_in_pairing_mode" = "not in pairing mode";
+
+
+"reconnect_trying" = "Trying to reconnect to the paired Mac...";
+"reconnect_searching" = "Searching for the paired Mac...";
+"reconnect_found_format" = "Found %@, establishing connection...";
+"reconnect_no_bonjour" = "No Bonjour service found. Connecting to the last saved address...";
+"reconnect_fallback" = "No Bonjour service found. Falling back to the last saved address.";
+"reconnect_not_found" = "Paired Mac not found. Make sure it is online and on the same network.";
+"reconnect_connecting" = "Establishing connection...";
+"reconnect_success" = "Reconnected successfully.";
+"reconnect_failed_format" = "Reconnect failed: %@";
+"reconnect_waiting" = "Disconnected. Waiting to rediscover the Mac or continue auto-reconnect...";
+"reconnect_found_auto" = "Paired Mac found. Auto-reconnecting...";
+"reconnect_found_again" = "Paired Mac rediscovered. Restoring connection...";
+"reconnect_exhausted_snippet" = "Auto-reconnect stopped";
+
+"pairing_confirmed_binding" = "Mac confirmed pairing. Completing binding.";
+"pairing_confirmed_done" = "Mac confirmed pairing. Binding completed.";
+"pairing_code_incorrect" = "Mac response: pairing code incorrect.";
+"pairing_not_in_pairing_mode" = "Mac response: not in pairing mode.";
+"pairing_save_failed" = "Mac response: failed to save pairing info.";
+"pairing_mac_error_format" = "Mac response: %@";
+
+"ptt_capturing" = "Capturing audio. Release to send to Mac.";
+"ptt_sending_audio" = "Sending audio to Mac...";
+"ptt_connection_lost" = "Disconnected. Unable to send voice results.";
+"ptt_hold_to_reconnect" = "Auto-reconnect stopped. Hold to reconnect.";
+"ptt_hold_to_talk" = "Hold the mic to speak.";
+"ptt_connect_to_talk" = "Connect to Mac to use hold-to-talk.";
+"ptt_listening" = "Listening... Release to send to Mac.";
+"ptt_processing" = "Processing audio...";
+"ptt_sending_result" = "Sending results to Mac...";
+"ptt_sent" = "Voice result sent to Mac.";
+"ptt_sent_mac_processing" = "Audio sent to Mac. Recognizing and attempting input at the cursor.";
+
+"log_title_pairing_start" = "Start Pairing";
+"log_detail_pairing_start_format" = "Service: %@
+Address: %@:%@
+Pairing code: %@";
+"log_title_manual_reconnect" = "Manual Reconnect";
+"log_detail_manual_reconnect" = "User triggered reconnect; searching for paired Mac.";
+"log_title_direct_connect" = "Direct Connect";
+"log_detail_direct_connect_format" = "Address: %@:%@
+Device: %@";
+"log_title_submit_pairing_code" = "Submit Pairing Code";
+"log_detail_submit_pairing_code_format" = "Device: %@
+Pairing code: %@";
+"log_title_paired_device_found" = "Paired Device Found";
+"log_detail_paired_device_found_format" = "Device: %@
+Address: %@:%@";
+"log_title_fallback_direct" = "Fallback to Direct Connect";
+"log_detail_fallback_direct_format" = "Bonjour not found.
+Address: %@:%@";
+"log_title_no_paired_device" = "Paired Device Not Found";
+"log_detail_no_paired_device" = "Neither Bonjour nor the last saved address can be used for reconnect.";
+"log_pairing_success_title" = "Pairing Succeeded";
+"log_pairing_success_detail" = "Mac confirmed pairing. Binding completed.";
+"log_connecting_title" = "Connecting";
+"log_connecting_detail" = "Establishing connection to the Mac.";
+"log_connected_title" = "Connected";
+"log_connected_detail" = "Connection to the Mac is established.";
+"log_connection_failed_title" = "Connection Failed";
+"log_disconnected_title" = "Disconnected";
+"log_disconnected_detail" = "No active connection to the Mac.";
+"log_error_from_mac_title" = "Mac Error";
+"log_speech_result_title" = "Send Recognition Result";
+"log_speech_result_detail_format" = "Session: %@
+Language: %@
+Text: %@";
+"log_speech_error_title" = "Speech Recognition Failed";
+"log_bonjour_found_title" = "Bonjour Service Found";
+"log_bonjour_found_detail_format" = "Device: %@
+Address: %@:%@";
+"log_bonjour_removed_title" = "Bonjour Service Removed";
+"log_bonjour_removed_detail_format" = "Device: %@";
+"log_audio_start_title" = "Start Audio Stream";
+"log_audio_start_detail_format" = "Session: %@
+Language: %@
+Sample rate: %@ Hz";
+"log_audio_end_title" = "End Audio Stream";
+"log_audio_end_detail_format" = "Session: %@";

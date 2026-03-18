@@ -39,7 +39,7 @@ struct ContentView: View {
 
                 // Actions
                 if case .unpaired = viewModel.pairingState {
-                    Button("与 Mac 配对") {
+                    Button(String(localized: "pair_with_mac_button")) {
                         viewModel.showPairingView = true
                     }
                     .buttonStyle(.borderedProminent)
@@ -49,7 +49,7 @@ struct ContentView: View {
 
             }
             .padding()
-            .navigationTitle("VoiceMind")
+            .navigationTitle(String(localized: "app_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -91,7 +91,7 @@ struct ConnectionStatusCard: View {
                     Button(action: onReconnect) {
                         HStack(spacing: 4) {
                             Image(systemName: "arrow.clockwise")
-                            Text("重连")
+                            Text(String(localized: "reconnect_button"))
                         }
                         .font(.caption)
                         .fontWeight(.medium)
@@ -109,7 +109,7 @@ struct ConnectionStatusCard: View {
 
             if case .paired(_, let deviceName) = pairingState {
                 HStack {
-                    Text("已配对: \(deviceName)")
+                    Text(String(format: String(localized: "paired_device_format"), deviceName))
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Spacer()
@@ -168,17 +168,17 @@ struct ConnectionStatusCard: View {
     private var statusText: String {
         switch (pairingState, connectionState) {
         case (.unpaired, _):
-            return "未配对"
+            return String(localized: "connection_status_unpaired")
         case (.paired, .connected):
-            return "已连接"
+            return String(localized: "connection_status_connected")
         case (.paired, .connecting):
-            return "连接中..."
+            return String(localized: "connection_status_connecting")
         case (.paired, .disconnected):
-            return "已断开"
+            return String(localized: "connection_status_disconnected")
         case (.paired, .error):
-            return "连接错误"
+            return String(localized: "connection_status_error")
         default:
-            return "未知"
+            return String(localized: "connection_status_unknown")
         }
     }
 
@@ -306,17 +306,17 @@ struct RecognitionStatusView: View {
 
     private var statusText: String {
         if showsReconnectAction {
-            return "连接服务"
+            return String(localized: "recognition_connect_service")
         }
         switch state {
         case .idle:
-            return isEnabled ? "按住说话" : "准备就绪"
+            return isEnabled ? String(localized: "recognition_hold_to_talk") : String(localized: "recognition_ready")
         case .listening:
-            return "正在聆听..."
+            return String(localized: "recognition_listening")
         case .processing:
-            return "处理中..."
+            return String(localized: "recognition_processing")
         case .sending:
-            return "发送结果..."
+            return String(localized: "recognition_sending")
         }
     }
 

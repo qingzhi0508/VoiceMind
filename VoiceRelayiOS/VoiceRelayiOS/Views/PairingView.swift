@@ -24,11 +24,11 @@ struct PairingView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.blue)
 
-                        Text("与 Mac 配对")
+                        Text(String(localized: "pairing_title"))
                             .font(.title)
                             .fontWeight(.bold)
 
-                        Text("优先使用扫码配对，也可以继续使用局域网自动发现。")
+                        Text(String(localized: "pairing_subtitle"))
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -41,7 +41,7 @@ struct PairingView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "qrcode.viewfinder")
-                                Text("扫描二维码配对")
+                                Text(String(localized: "pairing_scan_button"))
                             }
                             .font(.headline)
                             .frame(maxWidth: .infinity)
@@ -51,7 +51,7 @@ struct PairingView: View {
                             .cornerRadius(12)
                         }
 
-                        Text("在 Mac 上点击\"配对新设备\"按钮，然后扫描弹出的二维码。")
+                        Text(String(localized: "pairing_scan_hint"))
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -59,13 +59,13 @@ struct PairingView: View {
 
                     // Discovered Macs
                     VStack(alignment: .leading, spacing: 15) {
-                        Text("或手动选择局域网中的 Mac")
+                        Text(String(localized: "pairing_or_manual_title"))
                             .font(.headline)
 
                         if viewModel.discoveredServices.isEmpty {
                             HStack {
                                 ProgressView()
-                                Text("搜索中...")
+                                Text(String(localized: "pairing_searching"))
                                     .foregroundColor(.secondary)
                             }
                             .frame(maxWidth: .infinity)
@@ -87,10 +87,10 @@ struct PairingView: View {
 
                     // Pairing Code Input
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("配对码")
+                        Text(String(localized: "pairing_code_title"))
                             .font(.headline)
 
-                        TextField("输入 6 位数字", text: $pairingCode)
+                        TextField(String(localized: "pairing_code_placeholder"), text: $pairingCode)
                             .keyboardType(.numberPad)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
@@ -116,7 +116,7 @@ struct PairingView: View {
                     }
 
                     if !progressMessages.isEmpty {
-                    PairingProgressView(title: "当前进度", steps: progressSteps)
+                        PairingProgressView(title: String(localized: "pairing_progress_title"), steps: progressSteps)
                     }
 
                     // 添加底部间距，为按钮留出空间
@@ -129,7 +129,7 @@ struct PairingView: View {
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
+                    Button(String(localized: "cancel_button")) {
                         dismiss()
                     }
                 }
@@ -137,8 +137,8 @@ struct PairingView: View {
             .safeAreaInset(edge: .bottom) {
                 pairButtonBar
             }
-            .alert("配对失败", isPresented: $showError) {
-                Button("确定", role: .cancel) { }
+            .alert(String(localized: "pairing_failed_title"), isPresented: $showError) {
+                Button(String(localized: "ok_button"), role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }
@@ -147,7 +147,7 @@ struct PairingView: View {
             }
             .onAppear {
                 isPairingCodeFocused = true
-                appendProgress("请选择一台已发现的 Mac，并输入 6 位配对码。")
+                appendProgress(String(localized: "pairing_initial_progress"))
             }
             .onChange(of: viewModel.connectionState) { _, newValue in
                 handleConnectionStateChange(newValue)
@@ -158,7 +158,7 @@ struct PairingView: View {
             .onChange(of: viewModel.latestPairingFeedback) { _, newValue in
                 guard let newValue else { return }
                 appendProgress(newValue)
-                if newValue.contains("不正确") || newValue.contains("不在配对模式") || newValue.contains("失败") {
+                if newValue.contains(keywordIncorrect) || newValue.contains(keywordNotInPairingMode) || newValue.contains(keywordFailed) {
                     isPairing = false
                     errorMessage = newValue
                     showError = true
@@ -171,19 +171,19 @@ struct PairingView: View {
         [
             PairingStepItem(
                 id: "select",
-                title: "选择设备",
+                title: String(localized: "pairing_step_select_title"),
                 detail: selectionStepDetail,
                 state: selectionStepState
             ),
             PairingStepItem(
                 id: "connect",
-                title: "建立连接",
+                title: String(localized: "pairing_step_connect_title"),
                 detail: connectionStepDetail,
                 state: connectionStepState
             ),
             PairingStepItem(
                 id: "finish",
-                title: "完成绑定",
+                title: String(localized: "pairing_step_finish_title"),
                 detail: finishStepDetail,
                 state: finishStepState
             )
@@ -200,7 +200,7 @@ struct PairingView: View {
     private var connectionStepState: PairingStepState {
         // 检查是否有连接失败的反馈
         if let latestPairingFeedback = viewModel.latestPairingFeedback,
-           latestPairingFeedback.contains("失败") || latestPairingFeedback.contains("连接") && latestPairingFeedback.contains("断开") {
+           latestPairingFeedback.contains(keywordFailed) || latestPairingFeedback.contains(keywordConnection) && latestPairingFeedback.contains(keywordDisconnected) {
             return .failed
         }
 
@@ -224,7 +224,7 @@ struct PairingView: View {
 
     private var finishStepState: PairingStepState {
         if let latestPairingFeedback = viewModel.latestPairingFeedback,
-           (latestPairingFeedback.contains("不正确") || latestPairingFeedback.contains("不在配对模式") || latestPairingFeedback.contains("失败")) {
+           (latestPairingFeedback.contains(keywordIncorrect) || latestPairingFeedback.contains(keywordNotInPairingMode) || latestPairingFeedback.contains(keywordFailed)) {
             return .failed
         }
         if case .paired = viewModel.pairingState {
@@ -235,23 +235,23 @@ struct PairingView: View {
 
     private var selectionStepDetail: String {
         if let service = selectedService {
-            return "已选择 \(service.name)，配对码长度 \(pairingCode.count)/6。"
+            return String(format: String(localized: "pairing_select_detail_format"), service.name, "\(pairingCode.count)")
         }
-        return "从局域网列表中选择一台 Mac。"
+        return String(localized: "pairing_select_detail_default")
     }
 
     private var connectionStepDetail: String {
-        if let message = progressMessages.last(where: { $0.contains("连接") }) {
+        if let message = progressMessages.last(where: { $0.contains(keywordConnection) }) {
             return message
         }
-        return "连接成功后会自动发送配对请求。"
+        return String(localized: "pairing_connection_detail_default")
     }
 
     private var finishStepDetail: String {
-        if let message = progressMessages.last(where: { $0.contains("成功") || $0.contains("返回") || $0.contains("配对") }) {
+        if let message = progressMessages.last(where: { $0.contains(keywordSuccess) || $0.contains(keywordReturn) || $0.contains(keywordPairingCode) }) {
             return message
         }
-        return "等待 Mac 校验配对码并完成绑定。"
+        return String(localized: "pairing_finish_detail_default")
     }
 
     private var canPair: Bool {
@@ -267,7 +267,7 @@ struct PairingView: View {
                         ProgressView()
                             .tint(.white)
                     }
-                    Text(isPairing ? "配对中..." : "配对")
+                    Text(isPairing ? String(localized: "pairing_button_pairing") : String(localized: "pairing_button_pair"))
                         .fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)
@@ -296,16 +296,16 @@ struct PairingView: View {
         pairingTimeoutTask?.cancel()
         viewModel.clearPairingFeedback()
         progressMessages.removeAll()
-        appendProgress("已选择 Mac：\(service.name)")
-        appendProgress("正在连接 \(service.host):\(service.port)...")
-        appendProgress("连接成功后会自动发送配对请求。")
+        appendProgress(String(format: String(localized: "pairing_progress_selected_mac_format"), service.name))
+        appendProgress(String(format: String(localized: "pairing_progress_connecting_format"), service.host, "\(service.port)"))
+        appendProgress(String(localized: "pairing_progress_send_after_connect"))
         viewModel.pair(with: service, code: pairingCode)
 
         let timeoutTask = DispatchWorkItem {
             guard isPairing else { return }
-            appendProgress("Mac 长时间未返回配对结果。")
+            appendProgress(String(localized: "pairing_timeout_no_response"))
             isPairing = false
-            errorMessage = "配对超时，请确认 Mac 仍处于配对状态，并检查配对码是否正确。"
+            errorMessage = String(localized: "pairing_error_timeout")
             showError = true
         }
         pairingTimeoutTask = timeoutTask
@@ -318,26 +318,26 @@ struct PairingView: View {
         switch state {
         case .connecting:
             if isPairing {
-                appendProgress("正在建立连接...")
+                appendProgress(String(localized: "pairing_progress_connecting_state"))
             }
         case .connected:
             if isPairing {
-                appendProgress("连接已建立，配对请求已发送，正在等待 Mac 返回结果。")
+                appendProgress(String(localized: "pairing_progress_connected_waiting"))
             }
         case .error(let message):
             if isPairing {
                 pairingTimeoutTask?.cancel()
-                appendProgress("连接失败：\(message)")
+                appendProgress(String(format: String(localized: "pairing_progress_connection_failed_format"), message))
                 isPairing = false
-                errorMessage = "连接失败：\(message)"
+                errorMessage = String(format: String(localized: "pairing_error_connection_failed_format"), message)
                 showError = true
             }
         case .disconnected:
             if isPairing {
-                appendProgress("连接已断开。")
+                appendProgress(String(localized: "pairing_progress_disconnected"))
                 pairingTimeoutTask?.cancel()
                 isPairing = false
-                errorMessage = "连接已断开，请重试配对。"
+                errorMessage = String(localized: "pairing_error_disconnected_retry")
                 showError = true
             }
         }
@@ -348,7 +348,7 @@ struct PairingView: View {
         case .paired:
             if isPairing {
                 pairingTimeoutTask?.cancel()
-                appendProgress("收到 Mac 的配对成功返回，正在完成绑定。")
+                appendProgress(String(localized: "pairing_progress_pairing_success"))
                 isPairing = false
                 dismiss()
             }
@@ -361,6 +361,15 @@ struct PairingView: View {
         guard progressMessages.last != message else { return }
         progressMessages.append(message)
     }
+
+    private var keywordConnection: String { String(localized: "keyword_connection") }
+    private var keywordDisconnected: String { String(localized: "keyword_disconnected") }
+    private var keywordFailed: String { String(localized: "keyword_failed") }
+    private var keywordIncorrect: String { String(localized: "keyword_incorrect") }
+    private var keywordNotInPairingMode: String { String(localized: "keyword_not_in_pairing_mode") }
+    private var keywordSuccess: String { String(localized: "keyword_success") }
+    private var keywordReturn: String { String(localized: "keyword_return") }
+    private var keywordPairingCode: String { String(localized: "keyword_pairing_code") }
 }
 
 struct ServiceRow: View {

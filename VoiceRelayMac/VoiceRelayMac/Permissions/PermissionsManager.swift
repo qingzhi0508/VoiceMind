@@ -54,7 +54,7 @@ class PermissionsManager {
                 let alert = NSAlert()
                 alert.messageText = "需要辅助功能权限"
                 alert.informativeText = """
-                VoiceMind 需要辅助功能权限来：
+                语灵 需要辅助功能权限来：
                 • 监听全局快捷键（Option+Space）
                 • 将语音识别结果注入到当前应用
 
@@ -94,7 +94,7 @@ class PermissionsManager {
                 let alert = NSAlert()
                 alert.messageText = "需要输入监控权限"
                 alert.informativeText = """
-                VoiceMind 需要输入监控权限来检测快捷键按下事件。
+                语灵 需要输入监控权限来检测快捷键按下事件。
 
                 请在打开的系统设置中：
                 1. 找到"输入监控"
