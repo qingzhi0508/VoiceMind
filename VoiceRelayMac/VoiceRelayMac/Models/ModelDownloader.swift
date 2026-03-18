@@ -10,6 +10,7 @@ class ModelDownloader: NSObject {
     typealias CompletionHandler = (Result<URL, Error>) -> Void
 
     private var downloadTask: URLSessionDownloadTask?
+    private var destinationURL: URL?
     private var progressHandler: ProgressHandler?
     private var completionHandler: CompletionHandler?
 
@@ -32,6 +33,7 @@ class ModelDownloader: NSObject {
         progress: @escaping ProgressHandler,
         completion: @escaping CompletionHandler
     ) {
+        self.destinationURL = destinationURL
         self.progressHandler = progress
         self.completionHandler = completion
 
@@ -58,7 +60,7 @@ extension ModelDownloader: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
-        guard let destinationURL = downloadTask.originalRequest?.url else {
+        guard let destinationURL = self.destinationURL else {
             completionHandler?(.failure(ModelError.downloadFailed("无法获取目标 URL")))
             return
         }
