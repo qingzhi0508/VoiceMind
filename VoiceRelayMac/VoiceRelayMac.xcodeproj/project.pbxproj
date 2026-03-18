@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D578E098F8EF3A06274133A /* sherpa-onnx.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E53264D86FBE7F63552EF4D /* sherpa-onnx.xcframework */; };
+		1A2B3C4D5E6F7A8B9C0D1E2F /* onnxruntime.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F7A8B9C0D1E2F3A /* onnxruntime.xcframework */; };
 		B919E34C2F6861B7002A347A /* SharedCore in Frameworks */ = {isa = PBXBuildFile; productRef = B919E34B2F6861B7002A347A /* SharedCore */; };
 /* End PBXBuildFile section */
 
@@ -28,6 +30,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		2B3C4D5E6F7A8B9C0D1E2F3A /* onnxruntime.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; name = "onnxruntime.xcframework"; path = "Frameworks/onnxruntime.xcframework"; sourceTree = SOURCE_ROOT; };
+		7E53264D86FBE7F63552EF4D /* sherpa-onnx.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; name = "sherpa-onnx.xcframework"; path = "Frameworks/sherpa-onnx.xcframework"; sourceTree = SOURCE_ROOT; };
 		B919E25B2F685937002A347A /* VoiceRelayMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoiceRelayMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B919E26D2F685939002A347A /* VoiceRelayMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoiceRelayMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B919E2772F685939002A347A /* VoiceRelayMacUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoiceRelayMacUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -36,16 +40,22 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B919E25D2F685937002A347A /* VoiceRelayMac */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = VoiceRelayMac;
 			sourceTree = "<group>";
 		};
 		B919E2702F685939002A347A /* VoiceRelayMacTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = VoiceRelayMacTests;
 			sourceTree = "<group>";
 		};
 		B919E27A2F685939002A347A /* VoiceRelayMacUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = VoiceRelayMacUITests;
 			sourceTree = "<group>";
 		};
@@ -57,6 +67,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				B919E34C2F6861B7002A347A /* SharedCore in Frameworks */,
+				0D578E098F8EF3A06274133A /* sherpa-onnx.xcframework in Frameworks */,
+				1A2B3C4D5E6F7A8B9C0D1E2F /* onnxruntime.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -101,6 +113,8 @@
 		B919E34A2F6861B7002A347A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				7E53264D86FBE7F63552EF4D /* sherpa-onnx.xcframework */,
+				2B3C4D5E6F7A8B9C0D1E2F3A /* onnxruntime.xcframework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -148,8 +162,6 @@
 				B919E2702F685939002A347A /* VoiceRelayMacTests */,
 			);
 			name = VoiceRelayMacTests;
-			packageProductDependencies = (
-			);
 			productName = VoiceRelayMacTests;
 			productReference = B919E26D2F685939002A347A /* VoiceRelayMacTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -171,8 +183,6 @@
 				B919E27A2F685939002A347A /* VoiceRelayMacUITests */,
 			);
 			name = VoiceRelayMacUITests;
-			packageProductDependencies = (
-			);
 			productName = VoiceRelayMacUITests;
 			productReference = B919E2772F685939002A347A /* VoiceRelayMacUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -209,8 +219,6 @@
 			);
 			mainGroup = B919E2522F685937002A347A;
 			minimizedProjectReferenceProxies = 1;
-			packageReferences = (
-			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = B919E25C2F685937002A347A /* Products */;
 			projectDirPath = "";
@@ -431,6 +439,10 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Frameworks",
+				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = VoiceRelayMac/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -452,6 +464,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/VoiceRelayMac/VoiceRelayMac-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -483,6 +496,10 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Frameworks",
+				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = VoiceRelayMac/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -504,6 +521,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/VoiceRelayMac/VoiceRelayMac-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
