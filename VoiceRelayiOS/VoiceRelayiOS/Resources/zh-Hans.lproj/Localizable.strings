@@ -131,7 +131,10 @@
 "qr_pairing_code_placeholder" = "配对码";
 
 "settings_title" = "设置";
-"settings_language_header" = "识别语言";
+"settings_language_header" = "界面语言";
+"settings_language_restart_title" = "需要重启";
+"settings_language_restart_message" = "请重新启动应用以应用新语言。";
+"settings_language_restart_button" = "知道了";
 "settings_permissions_header" = "权限";
 "settings_permission_microphone" = "麦克风";
 "settings_permission_speech" = "语音识别";

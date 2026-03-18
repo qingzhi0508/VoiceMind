@@ -6,6 +6,8 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var showPermissionAlert = false
+    @State private var showLanguageRestartAlert = false
+    @AppStorage("app_language") private var appLanguage: String = AppLanguageManager.defaultLanguageCode()
 
     private let languages = [
         ("zh-CN", String(localized: "language_zh")),
@@ -18,7 +20,10 @@ struct SettingsView: View {
             Section {
                 ForEach(languages, id: \.0) { code, name in
                     Button(action: {
+                        appLanguage = code
+                        AppLanguageManager.setLanguage(code)
                         viewModel.updateLanguage(code)
+                        showLanguageRestartAlert = true
                     }) {
                         HStack {
                             Text(name)
@@ -26,7 +31,7 @@ struct SettingsView: View {
 
                             Spacer()
 
-                            if viewModel.selectedLanguage == code {
+                            if appLanguage == code {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.blue)
                             }
@@ -157,6 +162,13 @@ struct SettingsView: View {
             Button(String(localized: "ok_button"), role: .cancel) { }
         } message: {
             Text(String(localized: "settings_permission_alert_message"))
+        }
+        .alert(String(localized: "settings_language_restart_title"), isPresented: $showLanguageRestartAlert) {
+            Button(String(localized: "settings_language_restart_button"), role: .cancel) {
+                AppLanguageManager.restartAfterLanguageChange()
+            }
+        } message: {
+            Text(String(localized: "settings_language_restart_message"))
         }
     }
 

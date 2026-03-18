@@ -131,7 +131,10 @@
 "qr_pairing_code_placeholder" = "Pairing Code";
 
 "settings_title" = "Settings";
-"settings_language_header" = "Recognition Language";
+"settings_language_header" = "App Language";
+"settings_language_restart_title" = "Restart Required";
+"settings_language_restart_message" = "Please relaunch the app to apply the new language.";
+"settings_language_restart_button" = "OK";
 "settings_permissions_header" = "Permissions";
 "settings_permission_microphone" = "Microphone";
 "settings_permission_speech" = "Speech Recognition";
