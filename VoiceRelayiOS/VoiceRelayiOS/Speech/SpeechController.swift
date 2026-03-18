@@ -1,6 +1,7 @@
 import Foundation
 import Speech
 import AVFoundation
+import UIKit
 
 protocol SpeechControllerDelegate: AnyObject {
     func speechController(_ controller: SpeechController, didChangeState state: RecognitionState)
@@ -75,6 +76,10 @@ class SpeechController: NSObject {
 
         do {
             try startRecognition()
+            // 触发震动（在主线程执行）
+            DispatchQueue.main.async {
+                UIDevice.current.playHapticFeedback(.medium)
+            }
             state = .listening
         } catch {
             delegate?.speechController(self, didFailWithError: error)
@@ -92,6 +97,10 @@ class SpeechController: NSObject {
 
         do {
             try startRecognition()
+            // 触发震动（在主线程执行）
+            DispatchQueue.main.async {
+                UIDevice.current.playHapticFeedback(.medium)
+            }
             state = .listening
             return sessionId
         } catch {
@@ -202,5 +211,44 @@ class SpeechController: NSObject {
         currentSessionId = nil
         lastRecognizedText = ""
         state = .idle
+    }
+}
+
+extension UIDevice {
+    enum HapticFeedbackStyle {
+        case light
+        case medium
+        case heavy
+        case success
+        case warning
+        case error
+    }
+    
+    func playHapticFeedback(_ style: HapticFeedbackStyle) {
+        let generator: UIFeedbackGenerator
+        
+        switch style {
+        case .light:
+            generator = UIImpactFeedbackGenerator(style: .light)
+        case .medium:
+            generator = UIImpactFeedbackGenerator(style: .medium)
+        case .heavy:
+            generator = UIImpactFeedbackGenerator(style: .heavy)
+        case .success:
+            generator = UINotificationFeedbackGenerator()
+            (generator as? UINotificationFeedbackGenerator)?.notificationOccurred(.success)
+            return
+        case .warning:
+            generator = UINotificationFeedbackGenerator()
+            (generator as? UINotificationFeedbackGenerator)?.notificationOccurred(.warning)
+            return
+        case .error:
+            generator = UINotificationFeedbackGenerator()
+            (generator as? UINotificationFeedbackGenerator)?.notificationOccurred(.error)
+            return
+        }
+        
+        generator.prepare()
+        (generator as? UIImpactFeedbackGenerator)?.impactOccurred()
     }
 }

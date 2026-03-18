@@ -3,6 +3,7 @@ import Speech
 import AVFoundation
 import CoreGraphics
 import SharedCore
+import UIKit
 
 /// iOS 端音频流传输器
 /// 负责捕获音频并发送到 Mac 端进行识别
@@ -79,6 +80,7 @@ class AudioStreamController: NSObject {
             let audioSession = AVAudioSession.sharedInstance()
             try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
             try audioSession.setPreferredSampleRate(sampleRate)
+            try audioSession.setPreferredIOBufferDuration(0.02)
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
 
             guard let format = AVAudioFormat(
@@ -116,14 +118,21 @@ class AudioStreamController: NSObject {
             audioConverter = converter
 
             inputNode.removeTap(onBus: 0)
-            // 使用更大的缓冲区（4096）减少网络传输次数，提高识别响应速度
-            inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
+            // 使用更小的缓冲区减少首包延迟
+            inputNode.installTap(onBus: 0, bufferSize: 512, format: inputFormat) { [weak self] buffer, _ in
                 self?.processAudioBuffer(buffer)
             }
 
             // 启动音频引擎
             audioEngine.prepare()
             try audioEngine.start()
+
+            // 触发震动反馈
+            DispatchQueue.main.async {
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.prepare()
+                generator.impactOccurred()
+            }
 
             print("✅ 音频引擎已启动")
         } catch {

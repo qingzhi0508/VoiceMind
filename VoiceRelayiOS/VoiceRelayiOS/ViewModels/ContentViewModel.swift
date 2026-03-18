@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import Combine
 import SharedCore
+import UIKit
 
 class ContentViewModel: ObservableObject {
     @Published var pairingState: PairingState = .unpaired
@@ -144,7 +145,13 @@ class ContentViewModel: ObservableObject {
             manualSessionId = sessionId
             try audioStreamController.startStreaming(sessionId: sessionId)
             recognitionState = .listening
-            pushToTalkStatusMessage = localized("ptt_capturing")
+            pushToTalkStatusMessage = localized("ptt_warming_up")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                guard let self, self.manualSessionId == sessionId, self.recognitionState == .listening else { return }
+                self.pushToTalkStatusMessage = self.localized("ptt_capturing")
+                self.triggerHaptic()
+                self.triggerNotificationHaptic()
+            }
         } catch {
             recognitionState = .idle
             manualSessionId = nil
@@ -185,6 +192,26 @@ class ContentViewModel: ObservableObject {
             startPushToTalk()
         } else {
             stopPushToTalk()
+        }
+    }
+
+    @MainActor
+    private lazy var impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+
+    @MainActor
+    private lazy var notificationGenerator = UINotificationFeedbackGenerator()
+
+    private func triggerHaptic() {
+        DispatchQueue.main.async {
+            self.impactGenerator.prepare()
+            self.impactGenerator.impactOccurred(intensity: 1.0)
+        }
+    }
+
+    private func triggerNotificationHaptic() {
+        DispatchQueue.main.async {
+            self.notificationGenerator.prepare()
+            self.notificationGenerator.notificationOccurred(.success)
         }
     }
 

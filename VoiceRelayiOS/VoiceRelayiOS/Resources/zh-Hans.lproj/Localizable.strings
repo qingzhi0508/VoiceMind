@@ -204,6 +204,7 @@
 "pairing_save_failed" = "Mac 返回：保存配对信息失败。";
 "pairing_mac_error_format" = "Mac 返回：%@";
 
+"ptt_warming_up" = "正在准备麦克风...";
 "ptt_capturing" = "正在采集语音，松开后发送到 Mac 识别。";
 "ptt_sending_audio" = "正在发送语音到 Mac...";
 "ptt_connection_lost" = "连接已断开，无法继续发送语音结果。";

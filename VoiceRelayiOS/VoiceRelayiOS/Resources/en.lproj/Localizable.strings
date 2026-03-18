@@ -204,6 +204,7 @@
 "pairing_save_failed" = "Mac response: failed to save pairing info.";
 "pairing_mac_error_format" = "Mac response: %@";
 
+"ptt_warming_up" = "Warming up microphone...";
 "ptt_capturing" = "Capturing audio. Release to send to Mac.";
 "ptt_sending_audio" = "Sending audio to Mac...";
 "ptt_connection_lost" = "Disconnected. Unable to send voice results.";
