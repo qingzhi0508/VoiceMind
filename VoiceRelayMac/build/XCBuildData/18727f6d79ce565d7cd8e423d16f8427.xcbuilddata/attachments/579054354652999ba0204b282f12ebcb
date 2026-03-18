@@ -1,0 +1,8 @@
+#!/bin/sh
+# Create symlink for versioned dylib name
+cd "${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}"
+if [ -f "libonnxruntime.dylib" ]; then
+    rm -f libonnxruntime.1.23.0.dylib
+    ln -s libonnxruntime.dylib libonnxruntime.1.23.0.dylib
+fi
+

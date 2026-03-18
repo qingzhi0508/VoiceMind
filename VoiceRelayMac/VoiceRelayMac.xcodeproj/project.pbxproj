@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		0D578E098F8EF3A06274133A /* sherpa-onnx.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E53264D86FBE7F63552EF4D /* sherpa-onnx.xcframework */; };
-		0D578E098F8EF3A06274133B /* sherpa-onnx.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7E53264D86FBE7F63552EF4D /* sherpa-onnx.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		1A2B3C4D5E6F7A8B9C0D1E2F /* onnxruntime.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F7A8B9C0D1E2F3A /* onnxruntime.xcframework */; };
 		1A2B3C4D5E6F7A8B9C0D1E3A /* onnxruntime.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F7A8B9C0D1E2F3A /* onnxruntime.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		B919E34C2F6861B7002A347A /* SharedCore in Frameworks */ = {isa = PBXBuildFile; productRef = B919E34B2F6861B7002A347A /* SharedCore */; };
@@ -46,8 +45,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		2B3C4D5E6F7A8B9C0D1E2F3A /* onnxruntime.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; name = "onnxruntime.xcframework"; path = "Frameworks/onnxruntime.xcframework"; sourceTree = SOURCE_ROOT; };
-		7E53264D86FBE7F63552EF4D /* sherpa-onnx.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; name = "sherpa-onnx.xcframework"; path = "Frameworks/sherpa-onnx.xcframework"; sourceTree = SOURCE_ROOT; };
+		2B3C4D5E6F7A8B9C0D1E2F3A /* onnxruntime.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = onnxruntime.xcframework; path = Frameworks/onnxruntime.xcframework; sourceTree = SOURCE_ROOT; };
+		7E53264D86FBE7F63552EF4D /* sherpa-onnx.xcframework */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = wrapper.xcframework; name = "sherpa-onnx.xcframework"; path = "Frameworks/sherpa-onnx.xcframework"; sourceTree = SOURCE_ROOT; };
 		B919E25B2F685937002A347A /* VoiceRelayMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoiceRelayMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B919E26D2F685939002A347A /* VoiceRelayMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoiceRelayMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B919E2772F685939002A347A /* VoiceRelayMacUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoiceRelayMacUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -56,22 +55,16 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B919E25D2F685937002A347A /* VoiceRelayMac */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = VoiceRelayMac;
 			sourceTree = "<group>";
 		};
 		B919E2702F685939002A347A /* VoiceRelayMacTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = VoiceRelayMacTests;
 			sourceTree = "<group>";
 		};
 		B919E27A2F685939002A347A /* VoiceRelayMacUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = VoiceRelayMacUITests;
 			sourceTree = "<group>";
 		};

@@ -1,0 +1,211 @@
+{
+  "" : {
+    "const-values" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMac-primary.swiftconstvalues",
+    "dependencies" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMac-primary.d",
+    "diagnostics" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMac-primary.dia",
+    "emit-module-dependencies" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMac-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMac-primary-emit-module.dia",
+    "pch" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMac-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMac-primary.swiftdeps"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Extensions/UserDefaults+Speech.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/UserDefaults+Speech.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/UserDefaults+Speech.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/UserDefaults+Speech.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Hotkey/HotkeyConfiguration.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/HotkeyConfiguration.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/HotkeyConfiguration.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/HotkeyConfiguration.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Hotkey/HotkeyMonitor.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/HotkeyMonitor.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/HotkeyMonitor.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/HotkeyMonitor.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/MenuBar/HotkeySettingsWindow.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/HotkeySettingsWindow.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/HotkeySettingsWindow.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/HotkeySettingsWindow.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/MenuBar/MenuBarController+Delegates.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/MenuBarController+Delegates.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/MenuBarController+Delegates.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/MenuBarController+Delegates.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/MenuBar/MenuBarController.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/MenuBarController.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/MenuBarController.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/MenuBarController.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/MenuBar/OnboardingFlow.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/OnboardingFlow.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/OnboardingFlow.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/OnboardingFlow.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/MenuBar/PairingWindow.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PairingWindow.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PairingWindow.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PairingWindow.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/MenuBar/PermissionsWindow.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PermissionsWindow.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PermissionsWindow.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PermissionsWindow.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/MenuBar/StatusWindow.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/StatusWindow.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/StatusWindow.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/StatusWindow.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Models/ModelDownloader.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ModelDownloader.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ModelDownloader.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ModelDownloader.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Models/ModelInfo.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ModelInfo.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ModelInfo.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ModelInfo.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Models/ModelManager.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ModelManager.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ModelManager.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ModelManager.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Network/ConnectionManager.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ConnectionManager.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ConnectionManager.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ConnectionManager.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Network/ConnectionState.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ConnectionState.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ConnectionState.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ConnectionState.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Network/PairingState.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PairingState.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PairingState.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PairingState.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Network/WebSocketServer.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/WebSocketServer.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/WebSocketServer.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/WebSocketServer.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Permissions/PermissionsManager.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PermissionsManager.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PermissionsManager.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PermissionsManager.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Settings/AppSettings.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/AppSettings.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/AppSettings.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/AppSettings.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Speech/Engines/AppleSpeechEngine.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/AppleSpeechEngine.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/AppleSpeechEngine.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/AppleSpeechEngine.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Speech/Engines/SenseVoiceEngine.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SenseVoiceEngine.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SenseVoiceEngine.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SenseVoiceEngine.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Speech/Engines/SpeechRecognitionEngine.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechRecognitionEngine.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechRecognitionEngine.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechRecognitionEngine.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Speech/MacSpeechRecognizer.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/MacSpeechRecognizer.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/MacSpeechRecognizer.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/MacSpeechRecognizer.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Speech/SpeechErrors.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechErrors.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechErrors.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechErrors.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Speech/SpeechRecognitionManager.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechRecognitionManager.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechRecognitionManager.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechRecognitionManager.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Speech/SpeechRecognitionTest.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechRecognitionTest.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechRecognitionTest.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechRecognitionTest.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/TextInjection/CGEventTextInjector.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/CGEventTextInjector.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/CGEventTextInjector.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/CGEventTextInjector.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/TextInjection/ClipboardTextInjector.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ClipboardTextInjector.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ClipboardTextInjector.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/ClipboardTextInjector.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/TextInjection/FocusedInputDetector.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/FocusedInputDetector.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/FocusedInputDetector.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/FocusedInputDetector.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/TextInjection/TextInjectionMethod.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/TextInjectionMethod.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/TextInjectionMethod.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/TextInjectionMethod.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/TextInjection/TextInjectionProtocol.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/TextInjectionProtocol.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/TextInjectionProtocol.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/TextInjectionProtocol.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Views/MainWindow.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/MainWindow.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/MainWindow.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/MainWindow.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Views/PermissionsDebugView.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PermissionsDebugView.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PermissionsDebugView.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/PermissionsDebugView.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Views/QRCodePairingView.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/QRCodePairingView.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/QRCodePairingView.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/QRCodePairingView.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/Views/SpeechRecognitionTab.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechRecognitionTab.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechRecognitionTab.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/SpeechRecognitionTab.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/VoiceRelayMac/VoiceRelayMacApp.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMacApp.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMacApp.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMacApp.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/DerivedSources/CoreDataGenerated/VoiceRelayMac/Item+CoreDataClass.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/Item+CoreDataClass.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/Item+CoreDataClass.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/Item+CoreDataClass.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/DerivedSources/CoreDataGenerated/VoiceRelayMac/Item+CoreDataProperties.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/Item+CoreDataProperties.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/Item+CoreDataProperties.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/Item+CoreDataProperties.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/DerivedSources/CoreDataGenerated/VoiceRelayMac/VoiceRelayMac+CoreDataModel.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMac+CoreDataModel.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMac+CoreDataModel.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/VoiceRelayMac+CoreDataModel.o"
+  },
+  "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/cayden/Data/my-data/voiceMind/VoiceRelayMac/build/VoiceRelayMac.build/Release/VoiceRelayMac.build/Objects-normal/x86_64/GeneratedAssetSymbols.o"
+  }
+}
