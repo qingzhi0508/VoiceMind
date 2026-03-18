@@ -100,28 +100,28 @@ extension MenuBarController: ConnectionManagerDelegate {
         sessionTimer?.invalidate()
         sessionTimer = nil
 
-        print(“🔍 检查是否需要执行回车命令”)
+        print("🔍 检查是否需要执行回车命令")
         if shouldTriggerEnterCommand(for: payload.text) {
-            print(“✅ 检测到执行命令，触发回车”)
+            print("✅ 检测到执行命令，触发回车")
             do {
                 try triggerReturnKey()
                 appendInboundDataRecord(
-                    title: “执行回车命令”,
-                    detail: “识别到命令词”\(Self.executeCommandKeyword)”，已触发一次 Enter。”,
+                    title: "执行回车命令",
+                    detail: "识别到命令词\"\(Self.executeCommandKeyword)\"，已触发一次 Enter。",
                     category: .voice
                 )
             } catch TextInjectionError.accessibilityPermissionDenied {
                 appendInboundDataRecord(
-                    title: “执行回车失败”,
-                    detail: “缺少辅助功能权限，无法发送 Enter 键事件。”,
+                    title: "执行回车失败",
+                    detail: "缺少辅助功能权限，无法发送 Enter 键事件。",
                     category: .connection,
                     severity: .warning
                 )
                 showTextInjectionPermissionError(with: payload.text)
             } catch {
                 appendInboundDataRecord(
-                    title: “执行回车失败”,
-                    detail: “发送 Enter 键事件失败：\(error.localizedDescription)”,
+                    title: "执行回车失败",
+                    detail: "发送 Enter 键事件失败：\(error.localizedDescription)",
                     category: .connection,
                     severity: .warning
                 )
@@ -130,10 +130,10 @@ extension MenuBarController: ConnectionManagerDelegate {
         }
 
         // Inject text
-        print(“💉 开始注入文本: \(payload.text)”)
+        print("💉 开始注入文本: \(payload.text)")
         do {
             try textInjector.inject(payload.text)
-            print(“✅ 文本注入成功”)
+            print("✅ 文本注入成功")
         } catch TextInjectionError.noFocusedInputTarget {
             let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
             appendInboundDataRecord(
