@@ -355,29 +355,56 @@ struct RecognitionStatusView: View {
 
 struct WaveformView: View {
     @State private var phase: CGFloat = 0
+    @State private var amplitude: CGFloat = 0.5
 
     var body: some View {
         GeometryReader { geometry in
-            Path { path in
-                let width = geometry.size.width
-                let height = geometry.size.height
-                let midHeight = height / 2
-
-                path.move(to: CGPoint(x: 0, y: midHeight))
-
-                for x in stride(from: 0, through: width, by: 1) {
-                    let relativeX = x / width
-                    let sine = sin((relativeX + phase) * .pi * 4)
-                    let y = midHeight + sine * (height / 4)
-                    path.addLine(to: CGPoint(x: x, y: y))
-                }
+            ZStack {
+                // 主波形
+                createWaveformPath(geometry: geometry, phase: phase, amplitude: amplitude)
+                .stroke(Color.red, lineWidth: 2)
+                
+                // 次要波形（更细、颜色更浅）
+                createWaveformPath(geometry: geometry, phase: phase + 0.2, amplitude: amplitude * 0.6)
+                .stroke(Color.red.opacity(0.6), lineWidth: 1)
+                
+                // 辅助波形（最细、颜色最浅）
+                createWaveformPath(geometry: geometry, phase: phase + 0.4, amplitude: amplitude * 0.3)
+                .stroke(Color.red.opacity(0.3), lineWidth: 1)
             }
-            .stroke(Color.red, lineWidth: 2)
         }
         .onAppear {
-            withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
+            // 主波形动画
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
                 phase = 1
             }
+            
+            // 振幅变化动画（模拟语音强度）
+            withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
+                amplitude = 0.8
+            }
         }
+    }
+    
+    private func createWaveformPath(geometry: GeometryProxy, phase: CGFloat, amplitude: CGFloat) -> Path {
+        var path = Path()
+        let width = geometry.size.width
+        let height = geometry.size.height
+        let midHeight = height / 2
+        let step = width / 100 // 更密集的点
+        
+        path.move(to: CGPoint(x: 0, y: midHeight))
+        
+        for x in stride(from: 0, through: width, by: step) {
+            let relativeX = x / width
+            // 组合多个正弦波以创建更复杂的波形
+            let sine1 = sin((relativeX + phase) * .pi * 8) * 0.7
+            let sine2 = sin((relativeX + phase) * .pi * 16) * 0.3
+            let combinedSine = (sine1 + sine2) * amplitude
+            let y = midHeight + combinedSine * (height / 2.5)
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        
+        return path
     }
 }
