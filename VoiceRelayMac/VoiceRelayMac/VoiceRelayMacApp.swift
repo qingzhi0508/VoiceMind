@@ -38,6 +38,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func initializeSpeechEngine() async {
+        // 初始化模型管理器（确保目录创建）
+        _ = ModelManager.shared
+        print("✅ 模型管理器已初始化")
+
         let appleSpeech = AppleSpeechEngine()
         do {
             try await appleSpeech.initialize()
