@@ -23,7 +23,11 @@ class AudioStreamController: NSObject {
     // MARK: - Public Methods
 
     func checkPermissions() -> Bool {
-        return AVAudioSession.sharedInstance().recordPermission == .granted
+        if #available(iOS 17.0, *) {
+            return AVAudioApplication.shared.recordPermission == .granted
+        } else {
+            return AVAudioSession.sharedInstance().recordPermission == .granted
+        }
     }
 
     func requestPermissions(completion: @escaping (Bool) -> Void) {

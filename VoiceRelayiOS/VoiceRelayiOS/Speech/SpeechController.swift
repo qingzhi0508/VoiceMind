@@ -55,7 +55,12 @@ class SpeechController: NSObject {
     }
 
     func checkPermissions() -> Bool {
-        let micGranted = AVAudioSession.sharedInstance().recordPermission == .granted
+        let micGranted: Bool
+        if #available(iOS 17.0, *) {
+            micGranted = AVAudioApplication.shared.recordPermission == .granted
+        } else {
+            micGranted = AVAudioSession.sharedInstance().recordPermission == .granted
+        }
         let speechGranted = SFSpeechRecognizer.authorizationStatus() == .authorized
         return micGranted && speechGranted
     }
