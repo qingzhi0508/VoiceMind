@@ -9,10 +9,12 @@ class ModelDownloader: NSObject {
     /// 下载完成回调
     typealias CompletionHandler = (Result<URL, Error>) -> Void
 
+    private let queue = DispatchQueue(label: "com.voicerelay.modeldownloader")
     private var downloadTask: URLSessionDownloadTask?
     private var destinationURL: URL?
     private var progressHandler: ProgressHandler?
     private var completionHandler: CompletionHandler?
+    private var completionCalled = false
 
     private lazy var session: URLSession = {
         let config = URLSessionConfiguration.default
@@ -33,22 +35,51 @@ class ModelDownloader: NSObject {
         progress: @escaping ProgressHandler,
         completion: @escaping CompletionHandler
     ) {
-        self.destinationURL = destinationURL
-        self.progressHandler = progress
-        self.completionHandler = completion
+        queue.async { [weak self] in
+            guard let self = self else { return }
 
-        print("📥 开始下载: \(url.lastPathComponent)")
-        print("   目标路径: \(destinationURL.path)")
+            // 取消现有下载
+            if let existingTask = self.downloadTask {
+                existingTask.cancel()
+                print("⚠️ 取消现有下载任务")
+            }
 
-        downloadTask = session.downloadTask(with: url)
-        downloadTask?.resume()
+            // 重置状态
+            self.destinationURL = destinationURL
+            self.progressHandler = progress
+            self.completionHandler = completion
+            self.completionCalled = false
+
+            print("📥 开始下载: \(url.lastPathComponent)")
+            print("   目标路径: \(destinationURL.path)")
+
+            self.downloadTask = self.session.downloadTask(with: url)
+            self.downloadTask?.resume()
+        }
     }
 
     /// 取消下载
     func cancel() {
-        downloadTask?.cancel()
-        downloadTask = nil
-        print("❌ 下载已取消")
+        queue.async { [weak self] in
+            guard let self = self else { return }
+
+            self.downloadTask?.cancel()
+            self.downloadTask = nil
+
+            print("❌ 下载已取消")
+
+            // 通知调用者下载已取消
+            if !self.completionCalled {
+                self.completionCalled = true
+                let handler = self.completionHandler
+                self.completionHandler = nil
+                self.progressHandler = nil
+
+                DispatchQueue.main.async {
+                    handler?(.failure(ModelError.downloadFailed("下载已取消")))
+                }
+            }
+        }
     }
 }
 
@@ -60,24 +91,52 @@ extension ModelDownloader: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
-        guard let destinationURL = self.destinationURL else {
-            completionHandler?(.failure(ModelError.downloadFailed("无法获取目标 URL")))
-            return
-        }
+        queue.async { [weak self] in
+            guard let self = self else { return }
 
-        do {
-            // 移动文件到目标位置
-            let fileManager = FileManager.default
-            if fileManager.fileExists(atPath: destinationURL.path) {
-                try fileManager.removeItem(at: destinationURL)
+            // 防止重复调用
+            guard !self.completionCalled else { return }
+            self.completionCalled = true
+
+            guard let destinationURL = self.destinationURL else {
+                let handler = self.completionHandler
+                self.completionHandler = nil
+                self.progressHandler = nil
+
+                DispatchQueue.main.async {
+                    handler?(.failure(ModelError.downloadFailed("无法获取目标 URL")))
+                }
+                return
             }
-            try fileManager.moveItem(at: location, to: destinationURL)
 
-            print("✅ 下载完成: \(destinationURL.lastPathComponent)")
-            completionHandler?(.success(destinationURL))
-        } catch {
-            print("❌ 移动文件失败: \(error.localizedDescription)")
-            completionHandler?(.failure(error))
+            do {
+                // 移动文件到目标位置
+                let fileManager = FileManager.default
+                if fileManager.fileExists(atPath: destinationURL.path) {
+                    try fileManager.removeItem(at: destinationURL)
+                }
+                try fileManager.moveItem(at: location, to: destinationURL)
+
+                print("✅ 下载完成: \(destinationURL.lastPathComponent)")
+
+                let handler = self.completionHandler
+                self.completionHandler = nil
+                self.progressHandler = nil
+
+                DispatchQueue.main.async {
+                    handler?(.success(destinationURL))
+                }
+            } catch {
+                print("❌ 移动文件失败: \(error.localizedDescription)")
+
+                let handler = self.completionHandler
+                self.completionHandler = nil
+                self.progressHandler = nil
+
+                DispatchQueue.main.async {
+                    handler?(.failure(error))
+                }
+            }
         }
     }
 
@@ -89,8 +148,14 @@ extension ModelDownloader: URLSessionDownloadDelegate {
         totalBytesExpectedToWrite: Int64
     ) {
         let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
-        DispatchQueue.main.async {
-            self.progressHandler?(progress)
+
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            let handler = self.progressHandler
+
+            DispatchQueue.main.async {
+                handler?(progress)
+            }
         }
     }
 
@@ -100,8 +165,23 @@ extension ModelDownloader: URLSessionDownloadDelegate {
         didCompleteWithError error: Error?
     ) {
         if let error = error {
-            print("❌ 下载失败: \(error.localizedDescription)")
-            completionHandler?(.failure(error))
+            queue.async { [weak self] in
+                guard let self = self else { return }
+
+                // 防止重复调用
+                guard !self.completionCalled else { return }
+                self.completionCalled = true
+
+                print("❌ 下载失败: \(error.localizedDescription)")
+
+                let handler = self.completionHandler
+                self.completionHandler = nil
+                self.progressHandler = nil
+
+                DispatchQueue.main.async {
+                    handler?(.failure(error))
+                }
+            }
         }
     }
 }
