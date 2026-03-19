@@ -53,7 +53,10 @@ class ModelDownloader: NSObject {
             print("📥 开始下载: \(url.lastPathComponent)")
             print("   目标路径: \(destinationURL.path)")
 
-            self.downloadTask = self.session.downloadTask(with: url)
+            var request = URLRequest(url: url)
+            request.setValue("VoiceRelayMac/1.0", forHTTPHeaderField: "User-Agent")
+            request.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
+            self.downloadTask = self.session.downloadTask(with: request)
             self.downloadTask?.resume()
         }
     }

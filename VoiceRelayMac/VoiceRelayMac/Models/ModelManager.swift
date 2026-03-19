@@ -279,10 +279,11 @@ class ModelManager {
             var completedFiles = 0
 
             for fileName in modelInfo.files {
-                let fileURL = modelInfo.downloadURL.appendingPathComponent(fileName)
-                let destinationURL = modelDir.appendingPathComponent(fileName)
+                let fileURL = resolveDownloadURL(fileName, baseURL: modelInfo.downloadURL)
+                let destinationName = resolveDestinationFileName(fileName, fallback: fileURL.lastPathComponent)
+                let destinationURL = modelDir.appendingPathComponent(destinationName)
 
-                print("📥 下载文件: \(fileName)")
+                print("📥 下载文件: \(destinationName)")
 
                 try await downloadFile(
                     from: fileURL,
@@ -318,6 +319,21 @@ class ModelManager {
             try? FileManager.default.removeItem(at: modelDir)
             throw error
         }
+    }
+
+    private func resolveDownloadURL(_ fileName: String, baseURL: URL) -> URL {
+        if let directURL = URL(string: fileName), directURL.scheme != nil {
+            return directURL
+        }
+        return baseURL.appendingPathComponent(fileName)
+    }
+
+    private func resolveDestinationFileName(_ fileName: String, fallback: String) -> String {
+        if let directURL = URL(string: fileName), directURL.scheme != nil {
+            let name = directURL.lastPathComponent
+            return name.isEmpty ? fallback : name
+        }
+        return fileName
     }
 
     /// 下载单个文件

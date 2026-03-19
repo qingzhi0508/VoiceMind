@@ -50,7 +50,9 @@ class SenseVoiceEngine: NSObject, SpeechRecognitionEngine {
             throw SenseVoiceError.modelNotFound
         }
 
-        let modelFile = modelPath.appendingPathComponent("model.onnx")
+        let int8ModelFile = modelPath.appendingPathComponent("model.int8.onnx")
+        let fp32ModelFile = modelPath.appendingPathComponent("model.onnx")
+        let modelFile = FileManager.default.fileExists(atPath: int8ModelFile.path) ? int8ModelFile : fp32ModelFile
         let tokensFile = modelPath.appendingPathComponent("tokens.txt")
 
         // 验证文件存在

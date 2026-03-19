@@ -47,8 +47,8 @@ struct ModelInfo: Codable, Identifiable {
 /// 预定义的模型列表
 extension ModelInfo {
     static let predefinedModels: [ModelInfo] = {
-        // 使用正确的SenseVoice模型下载URL
-        guard let downloadURL = URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/sense-voice-v1.0/") else {
+        // SenseVoice Small 模型（Hugging Face 直链，包含 model.int8.onnx / tokens.txt）
+        guard let downloadURL = URL(string: "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/main/") else {
             print("❌ 无效的模型下载URL，使用空数组")
             return []
         }
@@ -59,11 +59,14 @@ extension ModelInfo {
                 engineType: "sensevoice",
                 version: "1.0",
                 languages: ["zh-CN", "en-US", "ja-JP", "ko-KR", "yue-CN"],
-                size: 85_000_000, // 约 85MB
+                size: 245_000_000, // 约 245MB（int8）
                 downloadURL: downloadURL,
                 localPath: nil,
                 description: "多语言语音识别模型，支持50+语言",
-                files: ["model.onnx", "tokens.txt", "config.json"]
+                files: [
+                    "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/main/model.int8.onnx?download=true",
+                    "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/main/tokens.txt?download=true"
+                ]
             )
         ]
     }()

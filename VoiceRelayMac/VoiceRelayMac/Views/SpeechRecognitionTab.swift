@@ -243,6 +243,7 @@ struct SpeechRecognitionTab: View {
                 
                 DispatchQueue.main.async {
                     self.downloadingModelId = nil
+                    ModelManager.shared.setDefaultModel(engineType: model.engineType, modelId: model.id)
                     self.refreshModels()
                     self.refreshEngines() // 刷新引擎状态
                 }
@@ -307,12 +308,14 @@ struct SpeechRecognitionTab: View {
                 SpeechRecognitionManager.shared.registerEngine(senseVoice)
                 print("✅ SenseVoice 引擎已注册")
                 refreshEngines() // 刷新引擎列表
+                selectSenseVoiceIfAvailable()
             } catch {
                 print("❌ SenseVoice 引擎初始化失败: \(error.localizedDescription)")
             }
         } else {
             print("ℹ️ SenseVoice 引擎已注册，刷新状态")
             refreshEngines() // 刷新引擎状态
+            selectSenseVoiceIfAvailable()
         }
     }
 
@@ -324,6 +327,16 @@ struct SpeechRecognitionTab: View {
         selectedEngineId = SpeechRecognitionManager.shared.currentEngine?.identifier ?? ""
         refreshModels() // 同时刷新模型列表
         isRefreshing = false
+    }
+
+    private func selectSenseVoiceIfAvailable() {
+        guard let senseVoice = SpeechRecognitionManager.shared.getEngine(identifier: "sensevoice"),
+              senseVoice.isAvailable else {
+            return
+        }
+        if selectedEngineId != "sensevoice" {
+            selectEngine("sensevoice")
+        }
     }
 }
 
