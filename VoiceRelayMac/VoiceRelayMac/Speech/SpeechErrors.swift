@@ -33,6 +33,7 @@ enum SenseVoiceError: LocalizedError {
     case modelLoadFailed
     case notInitialized
     case invalidModelPath
+    case invalidTokensFile
     case audioConversionFailed
 
     var errorDescription: String? {
@@ -45,6 +46,8 @@ enum SenseVoiceError: LocalizedError {
             return "SenseVoice 引擎未初始化"
         case .invalidModelPath:
             return "无效的模型路径"
+        case .invalidTokensFile:
+            return "无效的 tokens 文件"
         case .audioConversionFailed:
             return "音频格式转换失败"
         }

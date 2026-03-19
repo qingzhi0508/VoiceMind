@@ -91,51 +91,48 @@ extension ModelDownloader: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
-        queue.async { [weak self] in
-            guard let self = self else { return }
+        // 立即处理临时文件，避免被系统清理
+        var destinationURL: URL?
+        var handler: CompletionHandler?
 
-            // 防止重复调用
-            guard !self.completionCalled else { return }
-            self.completionCalled = true
+        queue.sync {
+            guard !completionCalled else { return }
+            completionCalled = true
+            destinationURL = self.destinationURL
+            handler = self.completionHandler
+            self.completionHandler = nil
+            self.progressHandler = nil
+        }
 
-            guard let destinationURL = self.destinationURL else {
-                let handler = self.completionHandler
-                self.completionHandler = nil
-                self.progressHandler = nil
-
-                DispatchQueue.main.async {
-                    handler?(.failure(ModelError.downloadFailed("无法获取目标 URL")))
-                }
-                return
+        guard let destinationURL else {
+            DispatchQueue.main.async {
+                handler?(.failure(ModelError.downloadFailed("无法获取目标 URL")))
             }
+            return
+        }
 
-            do {
-                // 移动文件到目标位置
-                let fileManager = FileManager.default
-                if fileManager.fileExists(atPath: destinationURL.path) {
-                    try fileManager.removeItem(at: destinationURL)
-                }
-                try fileManager.moveItem(at: location, to: destinationURL)
+        do {
+            // 移动文件到目标位置
+            let fileManager = FileManager.default
+            let destinationDir = destinationURL.deletingLastPathComponent()
+            if !fileManager.fileExists(atPath: destinationDir.path) {
+                try fileManager.createDirectory(at: destinationDir, withIntermediateDirectories: true)
+            }
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                try fileManager.removeItem(at: destinationURL)
+            }
+            try fileManager.moveItem(at: location, to: destinationURL)
 
-                print("✅ 下载完成: \(destinationURL.lastPathComponent)")
+            print("✅ 下载完成: \(destinationURL.lastPathComponent)")
 
-                let handler = self.completionHandler
-                self.completionHandler = nil
-                self.progressHandler = nil
+            DispatchQueue.main.async {
+                handler?(.success(destinationURL))
+            }
+        } catch {
+            print("❌ 移动文件失败: \(error.localizedDescription)")
 
-                DispatchQueue.main.async {
-                    handler?(.success(destinationURL))
-                }
-            } catch {
-                print("❌ 移动文件失败: \(error.localizedDescription)")
-
-                let handler = self.completionHandler
-                self.completionHandler = nil
-                self.progressHandler = nil
-
-                DispatchQueue.main.async {
-                    handler?(.failure(error))
-                }
+            DispatchQueue.main.async {
+                handler?(.failure(error))
             }
         }
     }

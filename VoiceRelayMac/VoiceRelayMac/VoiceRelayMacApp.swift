@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 @main
 struct VoiceRelayMacApp: App {
@@ -20,6 +21,9 @@ struct VoiceRelayMacApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     let controller = MenuBarController()
+    private var didShowModelCorruptedAlert = false
+    private var didScheduleSenseVoiceRetry = false
+    private var didShowModelRetryFailedAlert = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Set activation policy to show in Dock
@@ -57,8 +61,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             print("❌ Apple Speech 引擎初始化失败: \(error.localizedDescription)")
         }
 
-        // 注册 SenseVoice 引擎（如果模型已下载）
-        if modelManager.isModelDownloaded(engineType: "sensevoice") {
+        // 注册 SenseVoice 引擎（如果模型管理器初始化成功且模型已下载）
+        if modelManager.isInitialized && modelManager.isModelDownloaded(engineType: "sensevoice") {
             print("📦 检测到 SenseVoice 模型，正在初始化...")
             let senseVoice = SenseVoiceEngine()
             do {
@@ -67,9 +71,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 print("✅ SenseVoice 引擎已注册")
             } catch {
                 print("❌ SenseVoice 引擎初始化失败: \(error.localizedDescription)")
+                if let senseError = error as? SenseVoiceError {
+                    switch senseError {
+                    case .invalidTokensFile, .invalidModelPath, .modelLoadFailed:
+                        print("🧹 SenseVoice 模型可能损坏，清理本地模型并等待重新下载")
+                        ModelManager.shared.invalidateDownloadedModel(engineType: "sensevoice")
+                        showModelCorruptedAlertIfNeeded()
+                        scheduleSenseVoiceModelRetryDownload()
+                    default:
+                        break
+                    }
+                }
             }
         } else {
-            print("ℹ️ SenseVoice 模型未下载，跳过引擎注册")
+            print("ℹ️ SenseVoice 模型未下载或模型管理器未初始化，跳过引擎注册")
         }
 
         // Restore previously selected engine
@@ -96,5 +111,67 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         // Don't quit when main window closes - keep running in menu bar
         return false
+    }
+
+    private func showModelCorruptedAlertIfNeeded() {
+        guard !didShowModelCorruptedAlert else { return }
+        didShowModelCorruptedAlert = true
+
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = String(localized: "sensevoice_model_corrupted_title")
+            alert.informativeText = String(localized: "sensevoice_model_corrupted_message")
+            alert.addButton(withTitle: String(localized: "sensevoice_model_corrupted_ok"))
+            alert.runModal()
+        }
+    }
+
+    private func scheduleSenseVoiceModelRetryDownload() {
+        guard !didScheduleSenseVoiceRetry else { return }
+        didScheduleSenseVoiceRetry = true
+
+        Task {
+            let models = ModelManager.shared.modelsForEngine("sensevoice")
+            guard let model = models.first else {
+                print("⚠️ 未找到 SenseVoice 模型信息，无法自动重试下载")
+                return
+            }
+
+            do {
+                print("⬇️ 自动重试下载 SenseVoice 模型...")
+                try await ModelManager.shared.downloadModel(model) { _ in }
+                print("✅ SenseVoice 模型自动下载完成，尝试初始化引擎")
+
+                let engines = SpeechRecognitionManager.shared.availableEngines()
+                let isRegistered = engines.contains { $0.identifier == "sensevoice" }
+                if !isRegistered {
+                    let senseVoice = SenseVoiceEngine()
+                    try await senseVoice.initialize()
+                    SpeechRecognitionManager.shared.registerEngine(senseVoice)
+                    print("✅ SenseVoice 引擎已注册（自动重试后）")
+                }
+            } catch {
+                print("❌ SenseVoice 模型自动重试下载失败: \(error.localizedDescription)")
+                showModelRetryFailedAlertIfNeeded(error: error)
+            }
+        }
+    }
+
+    private func showModelRetryFailedAlertIfNeeded(error: Error) {
+        guard !didShowModelRetryFailedAlert else { return }
+        didShowModelRetryFailedAlert = true
+
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.alertStyle = .critical
+            alert.messageText = String(localized: "sensevoice_model_retry_failed_title")
+            alert.informativeText = String(
+                format: String(localized: "sensevoice_model_retry_failed_message"),
+                error.localizedDescription
+            )
+            alert.addButton(withTitle: String(localized: "sensevoice_model_retry_failed_ok"))
+            alert.runModal()
+        }
     }
 }

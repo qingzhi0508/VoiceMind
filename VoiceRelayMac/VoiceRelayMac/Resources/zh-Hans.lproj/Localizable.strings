@@ -139,6 +139,14 @@
 "engine_unavailable" = "不可用";
 "engine_supported_languages_format" = "支持语言: %@";
 
+"sensevoice_model_corrupted_title" = "SenseVoice 模型异常";
+"sensevoice_model_corrupted_message" = "本地 SenseVoice 模型疑似损坏，已自动清理。请在模型管理中重新下载。";
+"sensevoice_model_corrupted_ok" = "好";
+
+"sensevoice_model_retry_failed_title" = "SenseVoice 自动下载失败";
+"sensevoice_model_retry_failed_message" = "自动下载失败：%@\n\n请在模型管理中重新下载。";
+"sensevoice_model_retry_failed_ok" = "好";
+
 "tab_status" = "状态";
 "tab_settings" = "设置";
 "tab_speech" = "语音识别";

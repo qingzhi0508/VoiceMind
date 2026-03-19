@@ -16,6 +16,9 @@ class ModelManager {
     /// 正在下载的模型 ID 集合
     private var downloadingModels: Set<String> = []
 
+    /// 活跃下载器，防止被提前释放
+    private var activeDownloaders: [UUID: ModelDownloader] = [:]
+
     /// 初始化错误
     private var initializationError: Error?
 
@@ -24,8 +27,10 @@ class ModelManager {
 
     /// 串行队列保护并发访问
     private let queue = DispatchQueue(label: "com.voicerelay.modelmanager", qos: .userInitiated)
+    private let queueKey = DispatchSpecificKey<Void>()
 
     private init() {
+        queue.setSpecific(key: queueKey, value: ())
         // 获取 Application Support 目录
         guard let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory,
@@ -35,6 +40,7 @@ class ModelManager {
             modelsDirectory = URL(fileURLWithPath: "/tmp/VoiceRelayMac/Models")
             registryFile = modelsDirectory.appendingPathComponent("models-registry.json")
             print("❌ 无法访问 Application Support 目录，使用临时目录")
+            loadRegistry()
             return
         }
 
@@ -54,6 +60,7 @@ class ModelManager {
         } catch {
             initializationError = error
             print("❌ 创建模型目录失败: \(error.localizedDescription)")
+            loadRegistry()
             return
         }
 
@@ -61,6 +68,14 @@ class ModelManager {
         loadRegistry()
 
         print("📁 模型存储目录: \(modelsDirectory.path)")
+    }
+
+    @discardableResult
+    private func syncOnQueue<T>(_ work: () throws -> T) rethrows -> T {
+        if DispatchQueue.getSpecific(key: queueKey) != nil {
+            return try work()
+        }
+        return try queue.sync(execute: work)
     }
 
     // MARK: - Registry Management
@@ -87,6 +102,8 @@ class ModelManager {
             models = Dictionary(
                 uniqueKeysWithValues: ModelInfo.predefinedModels.map { ($0.id, $0) }
             )
+            // 保存新的注册表以修复损坏的文件
+            saveRegistry()
         }
     }
 
@@ -110,7 +127,7 @@ class ModelManager {
             print("⚠️ ModelManager 未正确初始化")
             return []
         }
-        return queue.sync {
+        return syncOnQueue {
             Array(models.values).sorted { $0.name < $1.name }
         }
     }
@@ -121,7 +138,7 @@ class ModelManager {
             print("⚠️ ModelManager 未正确初始化")
             return []
         }
-        return queue.sync {
+        return syncOnQueue {
             models.values.filter { $0.isDownloaded }
         }
     }
@@ -134,7 +151,7 @@ class ModelManager {
             print("⚠️ ModelManager 未正确初始化")
             return false
         }
-        return queue.sync {
+        return syncOnQueue {
             models.values.first { $0.engineType == engineType }?.isDownloaded ?? false
         }
     }
@@ -147,9 +164,16 @@ class ModelManager {
             print("⚠️ ModelManager 未正确初始化")
             return nil
         }
-        return queue.sync {
-            guard let model = models.values.first(where: { $0.engineType == engineType }),
-                  model.isDownloaded,
+        return syncOnQueue {
+            // 优先使用默认模型
+            if let defaultModel = getDefaultModel(engineType: engineType),
+               defaultModel.isDownloaded,
+               let localPath = defaultModel.localPath {
+                return localPath
+            }
+            
+            // 如果没有默认模型或默认模型未下载，使用第一个已下载的模型
+            guard let model = models.values.first(where: { $0.engineType == engineType && $0.isDownloaded }),
                   let localPath = model.localPath else {
                 return nil
             }
@@ -160,6 +184,53 @@ class ModelManager {
     /// 获取模型存储根目录
     func modelStoragePath() -> URL {
         return modelsDirectory
+    }
+
+    // MARK: - Model Selection
+
+    /// 设置默认模型
+    /// - Parameters:
+    ///   - engineType: 引擎类型
+    ///   - modelId: 模型ID
+    func setDefaultModel(engineType: String, modelId: String) {
+        guard isInitialized else {
+            print("⚠️ ModelManager 未正确初始化")
+            return
+        }
+
+        syncOnQueue {
+            UserDefaults.standard.set(modelId, forKey: "defaultModel.\(engineType)")
+            print("✅ 设置默认模型: \(modelId) 用于引擎: \(engineType)")
+        }
+    }
+
+    /// 获取默认模型
+    /// - Parameter engineType: 引擎类型
+    /// - Returns: 默认模型信息
+    func getDefaultModel(engineType: String) -> ModelInfo? {
+        guard isInitialized else {
+            print("⚠️ ModelManager 未正确初始化")
+            return nil
+        }
+
+        return syncOnQueue {
+            let defaultModelId = UserDefaults.standard.string(forKey: "defaultModel.\(engineType)")
+            return defaultModelId.flatMap { models[$0] }
+        }
+    }
+
+    /// 获取引擎的可用模型
+    /// - Parameter engineType: 引擎类型
+    /// - Returns: 模型列表
+    func modelsForEngine(_ engineType: String) -> [ModelInfo] {
+        guard isInitialized else {
+            print("⚠️ ModelManager 未正确初始化")
+            return []
+        }
+
+        return syncOnQueue {
+            models.values.filter { $0.engineType == engineType }
+        }
     }
 
     // MARK: - Download Methods
@@ -178,7 +249,7 @@ class ModelManager {
         }
 
         // 检查是否已在下载
-        try queue.sync {
+        try syncOnQueue {
             if downloadingModels.contains(modelInfo.id) {
                 throw ModelError.downloadFailed("模型正在下载中")
             }
@@ -187,7 +258,7 @@ class ModelManager {
 
         // 确保下载完成后清理状态
         defer {
-            queue.sync {
+            syncOnQueue {
                 downloadingModels.remove(modelInfo.id)
             }
         }
@@ -235,7 +306,7 @@ class ModelManager {
             try metadataData.write(to: metadataURL)
 
             // 更新注册表
-            queue.sync {
+            syncOnQueue {
                 models[modelInfo.id] = updatedModel
                 saveRegistry()
             }
@@ -255,18 +326,31 @@ class ModelManager {
         to destinationURL: URL,
         fileProgress: @escaping (Double) -> Void
     ) async throws {
-        let (tempURL, response) = try await URLSession.shared.download(from: url)
+        return try await withCheckedThrowingContinuation { continuation in
+            let downloader = ModelDownloader()
+            let downloadId = UUID()
+            syncOnQueue {
+                activeDownloaders[downloadId] = downloader
+            }
 
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw ModelError.downloadFailed("HTTP 错误")
-        }
+            downloader.downloadFile(
+                from: url,
+                to: destinationURL,
+                progress: fileProgress
+            ) { [weak self] result in
+                guard let self else { return }
+                self.syncOnQueue {
+                    self.activeDownloaders.removeValue(forKey: downloadId)
+                }
 
-        // 移动文件到目标位置
-        if FileManager.default.fileExists(atPath: destinationURL.path) {
-            try FileManager.default.removeItem(at: destinationURL)
+                switch result {
+                case .success:
+                    continuation.resume()
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
         }
-        try FileManager.default.moveItem(at: tempURL, to: destinationURL)
     }
 
     // MARK: - Delete Methods
@@ -279,7 +363,7 @@ class ModelManager {
             throw ModelError.storageError
         }
 
-        try queue.sync {
+        try syncOnQueue {
             guard let localPath = modelInfo.localPath else {
                 throw ModelError.modelNotFound
             }
@@ -296,6 +380,43 @@ class ModelManager {
             saveRegistry()
 
             print("✅ 模型已删除: \(modelInfo.name)")
+        }
+    }
+
+    /// 标记模型损坏并清理本地文件
+    /// - Parameter engineType: 引擎类型
+    func invalidateDownloadedModel(engineType: String) {
+        guard isInitialized else {
+            print("⚠️ ModelManager 未正确初始化")
+            return
+        }
+
+        syncOnQueue {
+            guard let model = models.values.first(where: {
+                $0.engineType == engineType && $0.localPath != nil
+            }) else {
+                return
+            }
+
+            if let localPath = model.localPath {
+                do {
+                    try FileManager.default.removeItem(at: localPath)
+                    print("🧹 已清理损坏模型目录: \(localPath.path)")
+                } catch {
+                    print("⚠️ 清理模型目录失败: \(error.localizedDescription)")
+                }
+            }
+
+            var updatedModel = model
+            updatedModel.localPath = nil
+            models[model.id] = updatedModel
+
+            let defaultKey = "defaultModel.\(engineType)"
+            if UserDefaults.standard.string(forKey: defaultKey) == model.id {
+                UserDefaults.standard.removeObject(forKey: defaultKey)
+            }
+
+            saveRegistry()
         }
     }
 }

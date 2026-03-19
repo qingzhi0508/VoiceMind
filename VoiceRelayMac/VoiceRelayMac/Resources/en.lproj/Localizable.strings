@@ -139,6 +139,14 @@ You can also copy the text and paste manually.";
 "engine_unavailable" = "Unavailable";
 "engine_supported_languages_format" = "Supported languages: %@";
 
+"sensevoice_model_corrupted_title" = "SenseVoice Model Issue";
+"sensevoice_model_corrupted_message" = "The local SenseVoice model appears to be corrupted. It has been removed. Please download it again from Model Management.";
+"sensevoice_model_corrupted_ok" = "OK";
+
+"sensevoice_model_retry_failed_title" = "SenseVoice Auto Download Failed";
+"sensevoice_model_retry_failed_message" = "Automatic model download failed: %@\n\nPlease try downloading again from Model Management.";
+"sensevoice_model_retry_failed_ok" = "OK";
+
 "tab_status" = "Status";
 "tab_settings" = "Settings";
 "tab_speech" = "Speech";

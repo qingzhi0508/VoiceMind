@@ -52,9 +52,22 @@
 		B919E2772F685939002A347A /* VoiceRelayMacUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoiceRelayMacUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B90449A92F6B3E3400FDB7DA /* Exceptions for "VoiceRelayMac" folder in "VoiceRelayMac" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = B919E25A2F685937002A347A /* VoiceRelayMac */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B919E25D2F685937002A347A /* VoiceRelayMac */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B90449A92F6B3E3400FDB7DA /* Exceptions for "VoiceRelayMac" folder in "VoiceRelayMac" target */,
+			);
 			path = VoiceRelayMac;
 			sourceTree = "<group>";
 		};

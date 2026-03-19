@@ -15,6 +15,10 @@ class SenseVoiceEngine: NSObject, SpeechRecognitionEngine {
     }
 
     var isAvailable: Bool {
+        // 检查ModelManager是否初始化成功
+        guard ModelManager.shared.isInitialized else {
+            return false
+        }
         return ModelManager.shared.isModelDownloaded(engineType: "sensevoice")
     }
 
@@ -58,6 +62,9 @@ class SenseVoiceEngine: NSObject, SpeechRecognitionEngine {
 
         print("📁 模型路径: \(modelFile.path)")
         print("📁 词表路径: \(tokensFile.path)")
+
+        // 验证 tokens 文件内容，避免 sherpa-onnx 内部崩溃
+        try validateTokensFile(tokensFile)
 
         // 默认使用中文
         let language = "zh"
@@ -172,5 +179,74 @@ class SenseVoiceEngine: NSObject, SpeechRecognitionEngine {
         }
 
         return int16Array.map { Float($0) / Float(Int16.max) }
+    }
+
+    /// 基础校验 tokens 文件，避免加载不完整/错误文件导致崩溃
+    private func validateTokensFile(_ url: URL) throws {
+        let data = try Data(contentsOf: url)
+        guard !data.isEmpty else {
+            print("❌ tokens 文件为空")
+            throw SenseVoiceError.invalidTokensFile
+        }
+
+        guard let content = String(data: data, encoding: .utf8) else {
+            print("❌ tokens 文件不是有效的 UTF-8 文本")
+            throw SenseVoiceError.invalidTokensFile
+        }
+
+        let lowered = content.prefix(256).lowercased()
+        if lowered.contains("<!doctype") || lowered.contains("<html") || lowered.contains("not found") || lowered.contains("accessdenied") {
+            print("❌ tokens 文件疑似下载为 HTML/错误内容")
+            throw SenseVoiceError.invalidTokensFile
+        }
+
+        let lines = content.split(whereSeparator: \.isNewline)
+        guard !lines.isEmpty else {
+            print("❌ tokens 文件没有有效内容")
+            throw SenseVoiceError.invalidTokensFile
+        }
+
+        var ids = Set<Int>()
+        var minId = Int.max
+        var maxId = Int.min
+
+        for lineSub in lines {
+            let line = lineSub.trimmingCharacters(in: .whitespacesAndNewlines)
+            if line.isEmpty {
+                continue
+            }
+
+            let parts = line.split { $0 == " " || $0 == "\t" }
+            guard parts.count >= 2 else {
+                print("❌ tokens 行格式错误: \(line)")
+                throw SenseVoiceError.invalidTokensFile
+            }
+
+            let first = String(parts.first ?? "")
+            let last = String(parts.last ?? "")
+
+            let id: Int?
+            if let lastId = Int(last) {
+                id = lastId
+            } else if let firstId = Int(first) {
+                id = firstId
+            } else {
+                print("❌ tokens 行缺少编号: \(line)")
+                throw SenseVoiceError.invalidTokensFile
+            }
+
+            guard let tokenId = id else {
+                throw SenseVoiceError.invalidTokensFile
+            }
+
+            ids.insert(tokenId)
+            minId = min(minId, tokenId)
+            maxId = max(maxId, tokenId)
+        }
+
+        guard !ids.isEmpty, minId == 0, maxId == ids.count - 1 else {
+            print("❌ tokens 编号不连续或起始不是 0: min=\(minId), max=\(maxId), count=\(ids.count)")
+            throw SenseVoiceError.invalidTokensFile
+        }
     }
 }

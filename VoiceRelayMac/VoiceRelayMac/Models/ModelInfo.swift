@@ -46,18 +46,25 @@ struct ModelInfo: Codable, Identifiable {
 
 /// 预定义的模型列表
 extension ModelInfo {
-    static let predefinedModels: [ModelInfo] = [
-        ModelInfo(
-            id: "sensevoice-small",
-            name: "SenseVoice Small",
-            engineType: "sensevoice",
-            version: "1.0",
-            languages: ["zh-CN", "en-US", "ja-JP", "ko-KR", "yue-CN"],
-            size: 85_000_000, // 约 85MB
-            downloadURL: URL(string: "https://huggingface.co/FunAudioLLM/SenseVoiceSmall/resolve/main/")!,
-            localPath: nil,
-            description: "多语言语音识别模型，支持50+语言",
-            files: ["model.onnx", "tokens.txt", "config.json"]
-        )
-    ]
+    static let predefinedModels: [ModelInfo] = {
+        // 使用正确的SenseVoice模型下载URL
+        guard let downloadURL = URL(string: "https://github.com/k2-fsa/sherpa-onnx/releases/download/sense-voice-v1.0/") else {
+            print("❌ 无效的模型下载URL，使用空数组")
+            return []
+        }
+        return [
+            ModelInfo(
+                id: "sensevoice-small",
+                name: "SenseVoice Small",
+                engineType: "sensevoice",
+                version: "1.0",
+                languages: ["zh-CN", "en-US", "ja-JP", "ko-KR", "yue-CN"],
+                size: 85_000_000, // 约 85MB
+                downloadURL: downloadURL,
+                localPath: nil,
+                description: "多语言语音识别模型，支持50+语言",
+                files: ["model.onnx", "tokens.txt", "config.json"]
+            )
+        ]
+    }()
 }
