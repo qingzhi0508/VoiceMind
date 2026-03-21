@@ -66,11 +66,6 @@ struct SettingsView: View {
             } header: {
                 Text(String(localized: "settings_language_header"))
             }
-            .fullScreenCover(isPresented: $showOnboarding) {
-                OnboardingView(onComplete: {
-                    showOnboarding = false
-                })
-            }
 
             // Permissions Section
             Section {
@@ -199,6 +194,11 @@ struct SettingsView: View {
             }
         } message: {
             Text(String(localized: "settings_language_restart_message"))
+        }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView(onComplete: {
+                showOnboarding = false
+            })
         }
     }
 
