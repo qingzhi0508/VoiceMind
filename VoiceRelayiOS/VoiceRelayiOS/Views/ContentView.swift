@@ -2,6 +2,9 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
+    @Binding var hasLaunchedBefore: Bool
+
+    @State private var showOnboarding = false
 
     var body: some View {
         NavigationView {
@@ -44,15 +47,39 @@ struct ContentView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink {
-                        SettingsView(viewModel: viewModel)
+                    Menu {
+                        Button(action: {
+                            showOnboarding = true
+                        }) {
+                            Label(String(localized: "onboarding_menu_guide"), systemImage: "questionmark.circle")
+                        }
+
+                        Divider()
+
+                        NavigationLink {
+                            SettingsView(viewModel: viewModel)
+                        } label: {
+                            Label(String(localized: "settings_title"), systemImage: "gear")
+                        }
                     } label: {
-                        Image(systemName: "gear")
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
             }
             .sheet(isPresented: $viewModel.showPairingView) {
                 PairingView(viewModel: viewModel)
+            }
+            .fullScreenCover(isPresented: $showOnboarding) {
+                OnboardingView(onComplete: {
+                    showOnboarding = false
+                    hasLaunchedBefore = true
+                })
+            }
+            .onAppear {
+                if !hasLaunchedBefore {
+                    showOnboarding = true
+                    hasLaunchedBefore = true
+                }
             }
         }
     }

@@ -132,6 +132,7 @@
 "qr_pairing_code_placeholder" = "配对码";
 
 "settings_title" = "设置";
+"settings_guide_header" = "帮助";
 "settings_language_header" = "界面语言";
 "settings_language_restart_title" = "需要重启";
 "settings_language_restart_message" = "请重新启动应用以应用新语言。";
@@ -266,3 +267,36 @@
 "log_audio_end_detail_format" = "Session: %@";
 
 "qr_progress_auto_pairing_format" = "二维码包含配对码 %@，正在自动配对...";
+
+// MARK: - Onboarding
+"onboarding_back" = "上一步";
+"onboarding_next" = "下一步";
+"onboarding_skip" = "跳过";
+
+"onboarding_welcome_title" = "欢迎使用语灵";
+"onboarding_welcome_subtitle" = "通过 iPhone 为 Mac 提供强大的语音输入功能";
+
+"onboarding_how_it_works_title" = "工作原理";
+"onboarding_how_it_works_subtitle" = "简单三步，实现语音输入";
+"onboarding_device_iphone" = "iPhone";
+"onboarding_device_mac" = "Mac";
+"onboarding_step1" = "在 iPhone 上按住麦克风说话";
+"onboarding_step2" = "语音实时传输到 Mac";
+"onboarding_step3" = "识别结果自动输入到光标位置";
+
+"onboarding_pairing_title" = "配对教程";
+"onboarding_pairing_subtitle" = "首次使用需要与 Mac 配对";
+"onboarding_pairing_step1_title" = "在 Mac 上打开语灵";
+"onboarding_pairing_step1_desc" = "确保 Mac 已安装并运行语灵应用";
+"onboarding_pairing_step2_title" = "扫描二维码";
+"onboarding_pairing_step2_desc" = "在 Mac 上点击配对新设备，显示二维码后用 iPhone 扫描";
+"onboarding_pairing_step3_title" = "完成配对";
+"onboarding_pairing_step3_desc" = "输入 Mac 上显示的 6 位配对码即可";
+
+"onboarding_ready_title" = "准备就绪";
+"onboarding_ready_subtitle" = "配对完成后，在 iPhone 上按住麦克风开始说话即可";
+"onboarding_tip1" = "确保 iPhone 和 Mac 处于同一网络";
+"onboarding_tip2" = "配对信息会保存在设备中，下次无需重新配对";
+
+"onboarding_start_using" = "开始使用";
+"onboarding_menu_guide" = "使用指南";

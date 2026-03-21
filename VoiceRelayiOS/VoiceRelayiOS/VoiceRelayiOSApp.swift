@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct VoiceRelayiOSApp: App {
+    @AppStorage("hasLaunchedBefore") private var hasLaunchedBefore: Bool = false
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(hasLaunchedBefore: $hasLaunchedBefore)
         }
     }
 }
