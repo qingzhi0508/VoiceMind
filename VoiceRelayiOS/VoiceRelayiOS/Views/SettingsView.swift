@@ -17,30 +17,6 @@ struct SettingsView: View {
 
     var body: some View {
         List {
-            // Guide Section
-            Section {
-                Button(action: {
-                    showOnboarding = true
-                }) {
-                    HStack {
-                        Image(systemName: "questionmark.circle.fill")
-                            .foregroundColor(.blue)
-                            .frame(width: 30)
-
-                        Text(String(localized: "onboarding_menu_guide"))
-                            .foregroundColor(.primary)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.secondary)
-                            .font(.caption)
-                    }
-                }
-            } header: {
-                Text(String(localized: "settings_guide_header"))
-            }
-
             // Language Section
             Section {
                 ForEach(languages, id: \.0) { code, name in
@@ -168,6 +144,30 @@ struct SettingsView: View {
                 }
             } header: {
                 Text(String(localized: "settings_debug_header"))
+            }
+
+            // Guide Section
+            Section {
+                Button(action: {
+                    showOnboarding = true
+                }) {
+                    HStack {
+                        Image(systemName: "questionmark.circle.fill")
+                            .foregroundColor(.blue)
+                            .frame(width: 30)
+
+                        Text(String(localized: "onboarding_menu_guide"))
+                            .foregroundColor(.primary)
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                    }
+                }
+            } header: {
+                Text(String(localized: "settings_guide_header"))
             }
 
             Section {
