@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
-    @StateObject private var colorManager = TimeBasedColorManager.shared
     @Binding var hasLaunchedBefore: Bool
 
     @State private var showOnboarding = false
@@ -10,21 +9,24 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Time-Based Background Gradient
+                // System Theme Background
                 LinearGradient(
-                    colors: colorManager.currentColors.backgroundGradient,
+                    colors: [
+                        Color(UIColor.systemGroupedBackground),
+                        Color(UIColor.secondarySystemGroupedBackground)
+                    ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
 
-                // Decorative Elements with Time-Based Colors
+                // Decorative Elements
                 GeometryReader { geometry in
                     // Top right decorative circle
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [colorManager.currentColors.primaryGradient[0].opacity(0.15), Color.clear],
+                                colors: [Color.accentColor.opacity(0.12), Color.clear],
                                 center: .center,
                                 startRadius: 0,
                                 endRadius: 200
@@ -37,7 +39,7 @@ struct ContentView: View {
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [colorManager.currentColors.primaryGradient[1].opacity(0.12), Color.clear],
+                                colors: [Color.purple.opacity(0.08), Color.clear],
                                 center: .center,
                                 startRadius: 0,
                                 endRadius: 180
@@ -59,8 +61,7 @@ struct ContentView: View {
                             reconnectStatusMessage: viewModel.reconnectStatusMessage,
                             onReconnect: {
                                 viewModel.reconnect()
-                            },
-                            accentColor: colorManager.currentColors.accentColor
+                            }
                         )
                         .padding(.bottom, 20)
                     }
@@ -75,8 +76,6 @@ struct ContentView: View {
                         showsPairingAction: viewModel.canOpenPairingFromPrimaryButton,
                         showsReconnectAction: viewModel.canManuallyReconnectFromPrimaryButton,
                         audioLevel: viewModel.audioLevel,
-                        primaryGradient: colorManager.currentColors.primaryGradient,
-                        accentColor: colorManager.currentColors.accentColor,
                         onPressChanged: { isPressing in
                             viewModel.handlePrimaryButtonPressChanged(isPressing)
                         }
@@ -86,7 +85,7 @@ struct ContentView: View {
                 }
                 .padding()
             }
-            .navigationTitle(colorManager.greeting)
+            .navigationTitle(String(localized: "app_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -94,7 +93,6 @@ struct ContentView: View {
                         SettingsView(viewModel: viewModel)
                     } label: {
                         Image(systemName: "gear")
-                            .foregroundColor(colorManager.currentColors.accentColor)
                     }
                 }
             }
@@ -122,7 +120,6 @@ struct ConnectionStatusCard: View {
     let connectionState: ConnectionState
     let reconnectStatusMessage: String?
     let onReconnect: () -> Void
-    var accentColor: Color = .blue
 
     var body: some View {
         VStack(spacing: 10) {
@@ -267,8 +264,6 @@ struct RecognitionStatusView: View {
     let showsPairingAction: Bool
     let showsReconnectAction: Bool
     let audioLevel: CGFloat
-    var primaryGradient: [Color] = [.blue, .purple]
-    var accentColor: Color = .blue
     let onPressChanged: (Bool) -> Void
 
     @State private var isPressing = false
@@ -355,11 +350,11 @@ struct RecognitionStatusView: View {
         }
         switch state {
         case .idle:
-            return isEnabled ? accentColor : .gray
+            return isEnabled ? .blue : .gray
         case .listening:
             return .white
         case .processing:
-            return accentColor
+            return .blue
         case .sending:
             return .green
         }
@@ -393,11 +388,11 @@ struct RecognitionStatusView: View {
         }
         switch state {
         case .idle:
-            return isEnabled ? accentColor.opacity(0.15) : Color.gray.opacity(0.12)
+            return isEnabled ? Color.blue.opacity(0.15) : Color.gray.opacity(0.12)
         case .listening:
             return .red
         case .processing:
-            return accentColor.opacity(0.15)
+            return Color.blue.opacity(0.15)
         case .sending:
             return Color.green.opacity(0.18)
         }
@@ -412,11 +407,11 @@ struct RecognitionStatusView: View {
         }
         switch state {
         case .idle:
-            return isEnabled ? accentColor.opacity(0.5) : .gray.opacity(0.4)
+            return isEnabled ? .blue.opacity(0.5) : .gray.opacity(0.4)
         case .listening:
             return .red.opacity(0.8)
         case .processing:
-            return accentColor.opacity(0.5)
+            return .blue.opacity(0.5)
         case .sending:
             return .green.opacity(0.6)
         }
