@@ -18,6 +18,12 @@ struct QRCodeScannerView: View {
     @State private var connectionTimeoutTask: DispatchWorkItem?
     @State private var pairingTimeoutTask: DispatchWorkItem?
 
+    private enum ScannerHeroState {
+        case scanning
+        case connecting
+        case pairing
+    }
+
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
@@ -25,33 +31,13 @@ struct QRCodeScannerView: View {
                     .font(.headline)
                     .padding(.top)
 
-                // Camera Preview
                 ZStack {
-                    if scanner.isPreviewReady, let previewLayer = scanner.previewLayer {
-                        CameraPreview(previewLayer: previewLayer)
-                            .frame(height: 300)
-                            .cornerRadius(12)
-                    } else {
-                        Rectangle()
-                            .fill(Color.black)
-                            .frame(height: 300)
-                            .cornerRadius(12)
-                            .overlay(
-                                VStack {
-                                    Image(systemName: "camera.fill")
-                                        .font(.system(size: 60))
-                                        .foregroundColor(.white)
-                                    Text(String(localized: "qr_camera_starting"))
-                                        .foregroundColor(.white)
-                                        .padding(.top)
-                                }
-                            )
+                    switch heroState {
+                    case .scanning:
+                        scanningHeroView
+                    case .connecting, .pairing:
+                        connectionHeroView
                     }
-
-                    // Scanning frame
-                    Rectangle()
-                        .stroke(Color.green, lineWidth: 3)
-                        .frame(width: 250, height: 250)
                 }
                 .padding()
 
@@ -157,6 +143,112 @@ struct QRCodeScannerView: View {
                 state: finishStepState
             )
         ]
+    }
+
+    private var heroState: ScannerHeroState {
+        if connectionInfo != nil {
+            return isPairing || showPairingCodeInput || viewModel.connectionState == .connected ? .pairing : .connecting
+        }
+        return .scanning
+    }
+
+    @ViewBuilder
+    private var scanningHeroView: some View {
+        ZStack {
+            if scanner.isPreviewReady, let previewLayer = scanner.previewLayer {
+                CameraPreview(previewLayer: previewLayer)
+                    .frame(height: 300)
+                    .cornerRadius(12)
+            } else {
+                Rectangle()
+                    .fill(Color.black)
+                    .frame(height: 300)
+                    .cornerRadius(12)
+                    .overlay(
+                        VStack {
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 60))
+                                .foregroundColor(.white)
+                            Text(String(localized: "qr_camera_starting"))
+                                .foregroundColor(.white)
+                                .padding(.top)
+                        }
+                    )
+            }
+
+            Rectangle()
+                .stroke(Color.green, lineWidth: 3)
+                .frame(width: 250, height: 250)
+        }
+    }
+
+    private var connectionHeroView: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 12) {
+                Image(systemName: heroState == .pairing ? "link.circle.fill" : "qrcode.viewfinder")
+                    .font(.system(size: 28))
+                    .foregroundStyle(heroState == .pairing ? Color.green : Color.blue)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(heroState == .pairing ? String(localized: "qr_finish_step_title") : String(localized: "qr_connect_step_title"))
+                        .font(.headline)
+                    Text(heroDetailText)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                if heroState != .scanning {
+                    ProgressView()
+                }
+            }
+
+            if let info = connectionInfo {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(info.deviceName)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                    Label("\(info.ip):\(info.port)", systemImage: "desktopcomputer")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    if !pairingCode.isEmpty {
+                        Label(pairingCode, systemImage: "number")
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+
+            if let latestProgress = progressMessages.last {
+                Label(latestProgress, systemImage: "checklist")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, minHeight: 300, alignment: .topLeading)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(heroState == .pairing ? Color.green.opacity(0.35) : Color.blue.opacity(0.35), lineWidth: 1)
+        )
+    }
+
+    private var heroDetailText: String {
+        switch heroState {
+        case .scanning:
+            return String(localized: "qr_scan_step_detail_default")
+        case .connecting:
+            return connectionStepDetail
+        case .pairing:
+            return finishStepState == .completed ? String(localized: "qr_progress_pairing_success") : finishStepDetail
+        }
     }
 
     private var scanStepState: PairingStepState {

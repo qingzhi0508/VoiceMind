@@ -121,14 +121,19 @@ class WebSocketServer {
         state = .connecting
         print("✅ 接受新连接")
 
-        newConnection.stateUpdateHandler = { [weak self] newState in
+        newConnection.stateUpdateHandler = { [weak self, weak newConnection] newState in
             guard let self = self else { return }
+            guard let newConnection else { return }
+            guard self.connection === newConnection else {
+                print("ℹ️ 忽略旧连接状态回调: \(newState)")
+                return
+            }
             print("🔄 连接状态变化: \(newState)")
             switch newState {
             case .ready:
                 print("✅ 连接就绪，开始接收消息")
                 self.state = .connected
-                self.receiveMessage()
+                self.receiveMessage(on: newConnection)
             case .failed(let error):
                 print("❌ 连接失败: \(error)")
                 // 连接失败后，清除连接并设置为 disconnected
@@ -148,31 +153,32 @@ class WebSocketServer {
         print("🚀 启动连接")
     }
 
-    private func receiveMessage() {
-        guard let connection = connection else {
+    private func receiveMessage(on sourceConnection: NWConnection) {
+        guard connection === sourceConnection else {
             print("⚠️ 无法接收消息: 连接不存在")
             return
         }
 
         // First receive 4 bytes for length
-        connection.receive(minimumIncompleteLength: 4, maximumLength: 4) { [weak self] data, _, isComplete, error in
+        sourceConnection.receive(minimumIncompleteLength: 4, maximumLength: 4) { [weak self, weak sourceConnection] data, _, isComplete, error in
             guard let self = self else { return }
+            guard let sourceConnection, self.connection === sourceConnection else { return }
 
             if let error = error {
                 print("❌ 接收长度失败: \(error)")
-                self.handleConnectionClosed()
+                self.handleConnectionClosed(for: sourceConnection)
                 return
             }
 
             guard let data = data, data.count == 4 else {
                 if isComplete || data?.isEmpty == true {
                     print("ℹ️ 对端已关闭连接")
-                    self.handleConnectionClosed()
+                    self.handleConnectionClosed(for: sourceConnection)
                 } else if let data = data {
                     print("⚠️ 接收到的长度数据不完整: \(data.count) 字节")
                 } else {
                     print("⚠️ 接收到空数据，连接可能已关闭")
-                    self.handleConnectionClosed()
+                    self.handleConnectionClosed(for: sourceConnection)
                 }
                 return
             }
@@ -187,17 +193,20 @@ class WebSocketServer {
             }
 
             // Then receive the actual message
-            connection.receive(minimumIncompleteLength: Int(length), maximumLength: Int(length)) { data, _, isComplete, error in
+            sourceConnection.receive(minimumIncompleteLength: Int(length), maximumLength: Int(length)) { [weak self, weak sourceConnection] data, _, isComplete, error in
+                guard let self = self else { return }
+                guard let sourceConnection, self.connection === sourceConnection else { return }
+
                 if let error = error {
                     print("❌ 接收消息失败: \(error)")
-                    self.handleConnectionClosed()
+                    self.handleConnectionClosed(for: sourceConnection)
                     return
                 }
 
                 guard let data = data else {
                     if isComplete {
                         print("ℹ️ 对端在消息体读取阶段关闭连接")
-                        self.handleConnectionClosed()
+                        self.handleConnectionClosed(for: sourceConnection)
                     } else {
                         print("⚠️ 接收到的消息数据为空")
                     }
@@ -209,12 +218,14 @@ class WebSocketServer {
                     print("📄 消息内容: \(jsonString)")
                 }
 
-                self.handleReceivedData(data)
+                self.handleReceivedData(data, from: sourceConnection)
             }
         }
     }
 
-    private func handleReceivedData(_ data: Data) {
+    private func handleReceivedData(_ data: Data, from sourceConnection: NWConnection) {
+        guard connection === sourceConnection else { return }
+
         do {
             let envelope = try JSONDecoder().decode(MessageEnvelope.self, from: data)
             print("✅ 消息解码成功: type=\(envelope.type)")
@@ -229,10 +240,12 @@ class WebSocketServer {
         }
 
         // Continue receiving next message
-        receiveMessage()
+        receiveMessage(on: sourceConnection)
     }
 
-    private func handleConnectionClosed() {
+    private func handleConnectionClosed(for sourceConnection: NWConnection) {
+        guard connection === sourceConnection else { return }
+
         connection?.cancel()
         connection = nil
         state = .disconnected

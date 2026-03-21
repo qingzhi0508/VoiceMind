@@ -73,8 +73,9 @@ class WebSocketClient {
 
         let connection = NWConnection(to: endpoint, using: parameters)
 
-        connection.stateUpdateHandler = { [weak self] newState in
-            self?.handleConnectionState(newState)
+        connection.stateUpdateHandler = { [weak self, weak connection] newState in
+            guard let connection else { return }
+            self?.handleConnectionState(newState, for: connection)
         }
 
         connection.start(queue: .main)
@@ -121,7 +122,12 @@ class WebSocketClient {
         }
     }
 
-    private func handleConnectionState(_ newState: NWConnection.State) {
+    private func handleConnectionState(_ newState: NWConnection.State, for sourceConnection: NWConnection) {
+        guard connection === sourceConnection else {
+            print("ℹ️ 忽略旧连接状态回调: \(newState)")
+            return
+        }
+
         print("📡 连接状态变化: \(newState)")
 
         switch newState {
@@ -131,7 +137,7 @@ class WebSocketClient {
             state = .connected
             reconnectionManager.reset()
             print("✅ WebSocket 已连接")
-            receiveMessage()
+            receiveMessage(on: sourceConnection)
 
         case .waiting(let error):
             print("⏳ WebSocket 等待中: \(error)")
@@ -157,28 +163,29 @@ class WebSocketClient {
         }
     }
 
-    private func receiveMessage() {
-        guard let connection = connection else { return }
+    private func receiveMessage(on sourceConnection: NWConnection) {
+        guard connection === sourceConnection else { return }
 
         // First receive 4 bytes for length
-        connection.receive(minimumIncompleteLength: 4, maximumLength: 4) { [weak self] data, _, isComplete, error in
+        sourceConnection.receive(minimumIncompleteLength: 4, maximumLength: 4) { [weak self, weak sourceConnection] data, _, isComplete, error in
             guard let self = self else { return }
+            guard let sourceConnection, self.connection === sourceConnection else { return }
 
             if let error = error {
                 print("❌ 接收长度失败: \(error)")
-                self.handleReceiveClosure()
+                self.handleReceiveClosure(for: sourceConnection)
                 return
             }
 
             guard let data = data, data.count == 4 else {
                 if isComplete || data?.isEmpty == true {
                     print("ℹ️ 服务端已关闭连接")
-                    self.handleReceiveClosure()
+                    self.handleReceiveClosure(for: sourceConnection)
                 } else if let data = data {
                     print("⚠️ 接收到的长度数据不完整: \(data.count) 字节")
                 } else {
                     print("⚠️ 接收到空数据，连接可能已关闭")
-                    self.handleReceiveClosure()
+                    self.handleReceiveClosure(for: sourceConnection)
                 }
                 return
             }
@@ -193,17 +200,20 @@ class WebSocketClient {
             }
 
             // Then receive the actual message
-            connection.receive(minimumIncompleteLength: Int(length), maximumLength: Int(length)) { data, _, isComplete, error in
+            sourceConnection.receive(minimumIncompleteLength: Int(length), maximumLength: Int(length)) { [weak self, weak sourceConnection] data, _, isComplete, error in
+                guard let self = self else { return }
+                guard let sourceConnection, self.connection === sourceConnection else { return }
+
                 if let error = error {
                     print("❌ 接收消息失败: \(error)")
-                    self.handleReceiveClosure()
+                    self.handleReceiveClosure(for: sourceConnection)
                     return
                 }
 
                 guard let data = data else {
                     if isComplete {
                         print("ℹ️ 服务端在消息体读取阶段关闭连接")
-                        self.handleReceiveClosure()
+                        self.handleReceiveClosure(for: sourceConnection)
                     } else {
                         print("⚠️ 接收到的消息数据为空")
                     }
@@ -211,12 +221,14 @@ class WebSocketClient {
                 }
 
                 print("📥 收到消息数据: \(data.count) 字节")
-                self.handleReceivedData(data)
+                self.handleReceivedData(data, from: sourceConnection)
             }
         }
     }
 
-    private func handleReceivedData(_ data: Data) {
+    private func handleReceivedData(_ data: Data, from sourceConnection: NWConnection) {
+        guard connection === sourceConnection else { return }
+
         do {
             let envelope = try JSONDecoder().decode(MessageEnvelope.self, from: data)
             print("✅ 消息解码成功: type=\(envelope.type)")
@@ -229,7 +241,7 @@ class WebSocketClient {
         }
 
         // Continue receiving next message
-        receiveMessage()
+        receiveMessage(on: sourceConnection)
     }
 
     private func attemptReconnect() {
@@ -254,7 +266,9 @@ class WebSocketClient {
         )
     }
 
-    private func handleReceiveClosure() {
+    private func handleReceiveClosure(for sourceConnection: NWConnection) {
+        guard connection === sourceConnection else { return }
+
         connectionTimeoutTimer?.invalidate()
         connectionTimeoutTimer = nil
         connection?.cancel()
