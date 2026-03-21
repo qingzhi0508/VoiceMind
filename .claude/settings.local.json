@@ -10,11 +10,11 @@
       "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | tail -30)",
       "Bash(cd /Users/cayden/Data/my-data/voiceMind/VoiceRelayMac && xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | tail -50)",
       "Bash(git show:*)",
-      "Bash(cd /Users/cayden/Data/my-data/voiceMind/VoiceRelayMac && xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | head -50)",
+      "Bash(cd /Users/cayden/Data/my-data/voiceMind/VoiceRelayMac && xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | head -50)",
       "Bash(cd /Users/cayden/Data/my-data/voiceMind && xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | grep -E \"\\(error:|warning:|Build complete|succeeded\\)\")",
       "Bash(cd /Users/cayden/Data/my-data/voiceMind && xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | tail -5)",
       "Bash(git log:*)",
-      "Bash(cd /Users/cayden/Data/my-data/voiceMind/VoiceRelayMac && xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug -list 2>&1 | head -20)",
+      "Bash(cd /Users/cayden/Data/my-data/voiceMind/VoiceRelayMac && xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug -list 2>&1 | head -20)",
       "Bash(cd /Users/cayden/Data/my-data/voiceMind && xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | tail -50)",
       "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | tail -50)",
       "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug -dry-run 2>&1 | head -20)",
@@ -39,7 +39,13 @@
       "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build 2>&1 | grep -E \"\\(error|warning|BUILD SUCCEEDED\\)\" | head -20)",
       "Bash(xcodebuild test:*)",
       "Bash(cd /Users/cayden/Data/my-data/voiceMind/VoiceRelayiOS && xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build)",
-      "Bash(cd /Users/cayden/Data/my-data/voiceMind/VoiceRelayiOS && xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,id=C874C9D1-8A69-44BE-89B9-54360892B6CF' build)"
-    ]
+      "Bash(cd /Users/cayden/Data/my-data/voiceMind/VoiceRelayiOS && xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,id=C874C9D1-8A69-44BE-89B9-54360892B6CF' build)",
+      "Bash(xcrun simctl:*)",
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build 2>&1 | tail -50)",
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS -configuration Debug -destination 'platform=iOS Simulator,id=A1041173-BE1F-43B8-B9EA-BA6CD6818168' build 2>&1 | grep -E \"\\(error:|warning:|BUILD SUCCEEDED|BUILD FAILED\\)\" | head -50)",
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS -configuration Debug -destination 'platform=iOS Simulator,id=A1041173-BE1F-43B8-B9EA-BA6CD6818168' build 2>&1 | grep -E \"\\(error:|warning:|BUILD SUCCEEDED|BUILD FAILED\\)\" | head -20)",
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS -configuration Debug -destination 'platform=iOS Simulator,id=A1041173-BE1F-43B8-B9EA-BA6CD6818168' build 2>&1 | grep -E \"\\(error:|BUILD SUCCEEDED|BUILD FAILED\\)\")"
+    ],
+    "autoApprove": true
   }
 }
