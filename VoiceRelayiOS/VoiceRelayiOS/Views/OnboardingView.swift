@@ -144,14 +144,14 @@ struct HowItWorksPage: View {
             VStack(spacing: 20) {
                 HStack(spacing: 30) {
                     // iPhone
-                    DeviceIcon(systemName: "iphone", color: .blue, label: String(localized: "onboarding_device_iphone"))
+                    DeviceIcon(systemName: "iphone.gen3", color: .blue, label: String(localized: "onboarding_device_iphone"))
                         .modifier(FloatAnimationModifier())
 
                     ArrowIcon()
                         .modifier(BounceAnimationModifier())
 
                     // Mac
-                    DeviceIcon(systemName: "laptopcomputer", color: .gray, label: String(localized: "onboarding_device_mac"))
+                    DeviceIcon(systemName: "desktopcomputer", color: .gray, label: String(localized: "onboarding_device_mac"))
                         .modifier(FloatAnimationModifier(delay: 0.3))
                 }
 
