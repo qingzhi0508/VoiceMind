@@ -83,13 +83,27 @@ struct WelcomePage: View {
             Spacer()
 
             // App Icon with Animation
-            Image("AppIcon")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 160, height: 160)
-                .clipShape(RoundedRectangle(cornerRadius: 30))
-                .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 5)
-            .modifier(PulseAnimationModifier())
+            if let uiImage = UIImage(named: "AppIcon") {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 160, height: 160)
+                    .clipShape(RoundedRectangle(cornerRadius: 30))
+                    .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 5)
+                    .modifier(PulseAnimationModifier())
+            } else {
+                // Fallback
+                Image(systemName: "waveform.circle.fill")
+                    .font(.system(size: 100))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.blue, .purple],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .modifier(PulseAnimationModifier())
+            }
 
             VStack(spacing: 16) {
                 Text(String(localized: "onboarding_welcome_title"))
