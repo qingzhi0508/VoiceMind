@@ -227,5 +227,5 @@
 
 "about_version" = "版本 1.0.0";
 "about_title" = "语音输入助手";
-"about_description" = "通过 iOS 设备进行语音识别，将结果实时注入到 Mac 应用中";
+"about_description" = "通过设备进行语音识别，将结果展示输入到应用中";
 "about_help_link" = "查看帮助文档";

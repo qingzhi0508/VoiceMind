@@ -7,6 +7,7 @@ struct MainWindow: View {
     @ObservedObject var settings = AppSettings.shared
 
     @State private var selectedTab = 0
+    @State private var debugUnlocked = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -40,17 +41,22 @@ struct MainWindow: View {
                 }
                 .tag(4)
 
-            AboutTab()
+            AboutTab {
+                debugUnlocked = true
+                selectedTab = 6
+            }
                 .tabItem {
                     Label(String(localized: "tab_about"), systemImage: "info.circle")
                 }
                 .tag(5)
 
-            PermissionsDebugView()
-                .tabItem {
-                    Label(String(localized: "tab_debug"), systemImage: "ladybug")
-                }
-                .tag(6)
+            if debugUnlocked {
+                PermissionsDebugView()
+                    .tabItem {
+                        Label(String(localized: "tab_debug"), systemImage: "ladybug")
+                    }
+                    .tag(6)
+            }
         }
         .frame(width: 600, height: 600)
     }
@@ -735,33 +741,38 @@ struct PermissionsTab: View {
 // MARK: - About Tab
 
 struct AboutTab: View {
+    let onRevealDebug: () -> Void
+
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "mic.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.accentColor)
-
-            Text(String(localized: "app_title"))
-                .font(.title)
-
-            Text(String(localized: "about_version"))
-                .foregroundColor(.secondary)
-
-            Divider()
-                .padding(.horizontal, 50)
-
-            Text(String(localized: "about_title"))
-                .font(.headline)
-
-            Text(String(localized: "about_description"))
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-                .padding(.horizontal)
-
+        VStack {
             Spacer()
 
-            Link(String(localized: "about_help_link"), destination: URL(string: "https://github.com")!)
-                .buttonStyle(.bordered)
+            VStack(spacing: 20) {
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(.accentColor)
+
+                Text(String(localized: "app_title"))
+                    .font(.title)
+
+                Text(String(localized: "about_version"))
+                    .foregroundColor(.secondary)
+                    .onTapGesture(count: 2, perform: onRevealDebug)
+
+                Divider()
+                    .frame(maxWidth: 260)
+
+                Text(String(localized: "about_title"))
+                    .font(.headline)
+
+                Text(String(localized: "about_description"))
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: 360)
+            }
+            .frame(maxWidth: .infinity)
+
+            Spacer()
         }
         .padding()
     }
