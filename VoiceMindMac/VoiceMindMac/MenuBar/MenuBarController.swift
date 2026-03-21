@@ -27,6 +27,7 @@ class MenuBarController: NSObject, ObservableObject {
     var hotkeySettingsWindow: NSWindow?
     var statusWindow: NSWindow?
     var onboardingWindow: NSWindow?
+    var usageGuideWindow: NSWindow?
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -233,6 +234,36 @@ class MenuBarController: NSObject, ObservableObject {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    func showUsageGuide() {
+        if usageGuideWindow == nil {
+            let contentView = UsageGuideView(
+                onStartPairing: { [weak self] in
+                    self?.showStatus()
+                    self?.startPairing()
+                },
+                onClose: { [weak self] in
+                    self?.usageGuideWindow?.close()
+                }
+            )
+
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 520, height: 560),
+                styleMask: [.titled, .closable],
+                backing: .buffered,
+                defer: false
+            )
+            window.title = AppLocalization.localizedString("window_title_usage_guide")
+            window.contentView = NSHostingView(rootView: contentView)
+            window.center()
+            window.isReleasedWhenClosed = false
+            window.delegate = self
+            usageGuideWindow = window
+        }
+
+        usageGuideWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
     func showHotkeySettings() {
         openHotkeySettings()
     }
@@ -382,32 +413,7 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     private func getLocalIPAddress() -> String? {
-        var address: String?
-        var ifaddr: UnsafeMutablePointer<ifaddrs>?
-
-        if getifaddrs(&ifaddr) == 0 {
-            var ptr = ifaddr
-            while ptr != nil {
-                defer { ptr = ptr?.pointee.ifa_next }
-
-                guard let interface = ptr?.pointee else { continue }
-                let addrFamily = interface.ifa_addr.pointee.sa_family
-
-                if addrFamily == UInt8(AF_INET) {
-                    let name = String(cString: interface.ifa_name)
-                    if name == "en0" {
-                        var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                        getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
-                                    &hostname, socklen_t(hostname.count),
-                                    nil, socklen_t(0), NI_NUMERICHOST)
-                        address = String(cString: hostname)
-                    }
-                }
-            }
-            freeifaddrs(ifaddr)
-        }
-
-        return address
+        LocalNetworkAccessPolicy.preferredLocalIPv4()
     }
 
     func updateStatusIcon() {

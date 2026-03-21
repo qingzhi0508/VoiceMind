@@ -2,6 +2,98 @@ import Foundation
 import Network
 import SharedCore
 
+enum LocalNetworkAccessPolicy {
+    struct InterfaceAddress: Equatable {
+        let name: String
+        let address: String
+    }
+
+    static func isPrivateLANIPv4(_ address: String) -> Bool {
+        let octets = address.split(separator: ".").compactMap { Int($0) }
+        guard octets.count == 4, octets.allSatisfy({ (0...255).contains($0) }) else {
+            return false
+        }
+
+        switch (octets[0], octets[1]) {
+        case (10, _):
+            return true
+        case (172, 16...31):
+            return true
+        case (192, 168):
+            return true
+        default:
+            return false
+        }
+    }
+
+    static func isAllowedPeerEndpoint(_ endpoint: NWEndpoint) -> Bool {
+        guard case .hostPort(let host, _) = endpoint else {
+            return false
+        }
+
+        return isPrivateLANIPv4(String(describing: host))
+    }
+
+    static func preferredLocalIPv4() -> String? {
+        preferredLocalIPv4(from: systemInterfaceAddresses())
+    }
+
+    static func preferredLocalIPv4(from interfaces: [InterfaceAddress]) -> String? {
+        let privateInterfaces = interfaces.filter { isPrivateLANIPv4($0.address) }
+
+        if let preferred = privateInterfaces.first(where: { $0.name.hasPrefix("en") }) {
+            return preferred.address
+        }
+
+        return privateInterfaces.first?.address
+    }
+
+    private static func systemInterfaceAddresses() -> [InterfaceAddress] {
+        var results: [InterfaceAddress] = []
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+
+        guard getifaddrs(&ifaddr) == 0, let ifaddr else {
+            return results
+        }
+        defer { freeifaddrs(ifaddr) }
+
+        var ptr: UnsafeMutablePointer<ifaddrs>? = ifaddr
+        while let current = ptr {
+            defer { ptr = current.pointee.ifa_next }
+
+            guard let addressPointer = current.pointee.ifa_addr else { continue }
+            guard addressPointer.pointee.sa_family == UInt8(AF_INET) else { continue }
+
+            let flags = Int32(current.pointee.ifa_flags)
+            if (flags & IFF_LOOPBACK) != 0 {
+                continue
+            }
+
+            var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            let result = getnameinfo(
+                addressPointer,
+                socklen_t(addressPointer.pointee.sa_len),
+                &hostname,
+                socklen_t(hostname.count),
+                nil,
+                0,
+                NI_NUMERICHOST
+            )
+
+            guard result == 0 else { continue }
+
+            results.append(
+                InterfaceAddress(
+                    name: String(cString: current.pointee.ifa_name),
+                    address: String(cString: hostname)
+                )
+            )
+        }
+
+        return results
+    }
+}
+
 protocol WebSocketServerDelegate: AnyObject {
     func server(_ server: WebSocketServer, didReceiveMessage message: MessageEnvelope)
     func server(_ server: WebSocketServer, didChangeState state: ConnectionState)
@@ -31,7 +123,7 @@ class WebSocketServer {
 
             let parameters = NWParameters(tls: nil, tcp: tcpOptions)
             parameters.allowLocalEndpointReuse = true
-            parameters.includePeerToPeer = true
+            parameters.includePeerToPeer = false
 
             let listener = try NWListener(using: parameters, on: NWEndpoint.Port(integerLiteral: port))
 
@@ -108,6 +200,12 @@ class WebSocketServer {
 
     private func handleNewConnection(_ newConnection: NWConnection) {
         print("🔗 收到新连接请求")
+
+        guard LocalNetworkAccessPolicy.isAllowedPeerEndpoint(newConnection.endpoint) else {
+            print("🚫 已拒绝非局域网连接: \(newConnection.endpoint)")
+            newConnection.cancel()
+            return
+        }
 
         // If already connected, close old connection and accept new one
         if let oldConnection = connection {

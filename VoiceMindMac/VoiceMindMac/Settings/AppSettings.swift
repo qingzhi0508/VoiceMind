@@ -15,6 +15,7 @@ class AppSettings: ObservableObject {
         static let language = "language"
         static let serverPort = "serverPort"
         static let hasLaunchedBefore = "hasLaunchedBefore"
+        static let hasShownUsageGuide = "hasShownUsageGuide"
     }
 
     // MARK: - Published Properties
@@ -52,6 +53,11 @@ class AppSettings: ObservableObject {
     var hasLaunchedBefore: Bool {
         get { defaults.bool(forKey: Keys.hasLaunchedBefore) }
         set { defaults.set(newValue, forKey: Keys.hasLaunchedBefore) }
+    }
+
+    var hasShownUsageGuide: Bool {
+        get { defaults.bool(forKey: Keys.hasShownUsageGuide) }
+        set { defaults.set(newValue, forKey: Keys.hasShownUsageGuide) }
     }
 
     // MARK: - Initialization

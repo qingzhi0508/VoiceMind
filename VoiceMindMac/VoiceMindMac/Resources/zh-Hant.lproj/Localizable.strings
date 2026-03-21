@@ -228,3 +228,16 @@
 "about_title" = "语音输入助手";
 "about_description" = "通过设备进行语音识别，将结果展示输入到应用中";
 "about_help_link" = "查看帮助文档";
+"about_open_guide" = "查看操作指引";
+"window_title_usage_guide" = "操作指引";
+"usage_guide_title" = "语灵操作指引";
+"usage_guide_subtitle" = "首次使用时，你可以先按下面步骤完成配对和开始语音输入。后续也可以在“关于”页再次查看这份指引。";
+"usage_guide_step1" = "确认 Mac 和 iPhone 连接在同一个局域网下。";
+"usage_guide_step3" = "在 Mac 中点击“开始配对”，然后用 iPhone 扫描二维码或输入配对码。";
+"usage_guide_step4" = "如果系统提示权限，请先完成授权，再返回继续使用。";
+"usage_guide_footer" = "默认仅支持局域网内配对与连接，这样更安全，也更符合日常使用场景。";
+"close_button" = "关闭";
+"pairing_progress_connected_ready_format" = "已完成配對，%@ 已連接，可以開始使用。";
+"pairing_progress_connecting_format" = "已完成配對，正在與 %@ 建立連接。";
+"pairing_progress_waiting_reconnect_format" = "已完成配對，等待 %@ 重新連接。";
+"pairing_progress_connection_error_format" = "已完成配對，但與 %@ 的連接出現異常。";

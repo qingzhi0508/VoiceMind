@@ -38,6 +38,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 AppSettings.shared.hasLaunchedBefore = true
                 controller.showOnboarding()
             }
+
+            if !AppSettings.shared.hasShownUsageGuide {
+                AppSettings.shared.hasShownUsageGuide = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [self] in
+                    self.controller.showUsageGuide()
+                }
+            }
         }
     }
 

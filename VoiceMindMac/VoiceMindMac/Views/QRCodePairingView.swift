@@ -92,7 +92,13 @@ struct QRCodePairingView: View {
                         .foregroundColor(progressColor)
                         .font(.title3)
 
-                    Text(controller.pairingProgressMessage ?? String(localized: "qr_progress_waiting"))
+                    Text(
+                        PairingProgressDisplay.message(
+                            pairingState: controller.pairingState,
+                            connectionState: controller.connectionState,
+                            progressMessage: controller.pairingProgressMessage
+                        ) ?? String(localized: "qr_progress_waiting")
+                    )
                         .font(.callout)
                         .foregroundColor(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)

@@ -41,10 +41,15 @@ struct MainWindow: View {
                 }
                 .tag(4)
 
-            AboutTab {
-                debugUnlocked = true
-                selectedTab = 6
-            }
+            AboutTab(
+                onOpenGuide: {
+                    controller.showUsageGuide()
+                },
+                onRevealDebug: {
+                    debugUnlocked = true
+                    selectedTab = 6
+                }
+            )
                 .tabItem {
                     Label(String(localized: "tab_about"), systemImage: "info.circle")
                 }
@@ -91,7 +96,7 @@ struct StatusTab: View {
                         }
                     }
 
-                    if let progressMessage = controller.pairingProgressMessage {
+                    if let progressMessage = effectivePairingProgressMessage {
                         Divider()
                         HStack(alignment: .top) {
                             Text(String(localized: "status_pairing_progress_label"))
@@ -216,33 +221,16 @@ struct StatusTab: View {
         return .orange
     }
 
+    private var effectivePairingProgressMessage: String? {
+        PairingProgressDisplay.message(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState,
+            progressMessage: controller.pairingProgressMessage
+        )
+    }
+
     private func getLocalIPAddress() -> String? {
-        var address: String?
-        var ifaddr: UnsafeMutablePointer<ifaddrs>?
-
-        if getifaddrs(&ifaddr) == 0 {
-            var ptr = ifaddr
-            while ptr != nil {
-                defer { ptr = ptr?.pointee.ifa_next }
-
-                guard let interface = ptr?.pointee else { continue }
-                let addrFamily = interface.ifa_addr.pointee.sa_family
-
-                if addrFamily == UInt8(AF_INET) {
-                    let name = String(cString: interface.ifa_name)
-                    if name == "en0" {
-                        var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                        getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
-                                    &hostname, socklen_t(hostname.count),
-                                    nil, socklen_t(0), NI_NUMERICHOST)
-                        address = String(cString: hostname)
-                    }
-                }
-            }
-            freeifaddrs(ifaddr)
-        }
-
-        return address
+        LocalNetworkAccessPolicy.preferredLocalIPv4()
     }
 }
 
@@ -741,6 +729,7 @@ struct PermissionsTab: View {
 // MARK: - About Tab
 
 struct AboutTab: View {
+    let onOpenGuide: () -> Void
     let onRevealDebug: () -> Void
 
     var body: some View {
@@ -769,6 +758,11 @@ struct AboutTab: View {
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: 360)
+
+                Button(String(localized: "about_open_guide")) {
+                    onOpenGuide()
+                }
+                .buttonStyle(.borderedProminent)
             }
             .frame(maxWidth: .infinity)
 
