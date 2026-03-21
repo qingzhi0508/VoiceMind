@@ -12,6 +12,8 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundleDisplayName</key>
+	<string>VoiceMind</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
@@ -21,19 +23,19 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2026 语灵. All rights reserved.</string>
+	<string>Copyright © 2026 VoiceMind. All rights reserved.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>LSUIElement</key>
 	<false/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>语灵 需要 Apple Events 权限来控制其他应用程序并注入文本。</string>
+	<string>VoiceMind 需要 Apple Events 权限来控制其他应用程序并注入文本。</string>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>语灵 需要使用系统语音识别将来自 iPhone 的语音转换为文字并输入到当前光标位置。</string>
+	<string>VoiceMind 需要使用系统语音识别将来自 iPhone 的语音转换为文字并输入到当前光标位置。</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>语灵 需要访问本地网络来与 iPhone 建立连接并提供语音输入服务。</string>
+	<string>VoiceMind 需要访问本地网络来与 iPhone 建立连接并提供语音输入服务。</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_voicerelay._tcp</string>
