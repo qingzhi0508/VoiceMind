@@ -44,7 +44,11 @@
       "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build 2>&1 | tail -50)",
       "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS -configuration Debug -destination 'platform=iOS Simulator,id=A1041173-BE1F-43B8-B9EA-BA6CD6818168' build 2>&1 | grep -E \"\\(error:|warning:|BUILD SUCCEEDED|BUILD FAILED\\)\" | head -50)",
       "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS -configuration Debug -destination 'platform=iOS Simulator,id=A1041173-BE1F-43B8-B9EA-BA6CD6818168' build 2>&1 | grep -E \"\\(error:|warning:|BUILD SUCCEEDED|BUILD FAILED\\)\" | head -20)",
-      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS -configuration Debug -destination 'platform=iOS Simulator,id=A1041173-BE1F-43B8-B9EA-BA6CD6818168' build 2>&1 | grep -E \"\\(error:|BUILD SUCCEEDED|BUILD FAILED\\)\")"
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS -configuration Debug -destination 'platform=iOS Simulator,id=A1041173-BE1F-43B8-B9EA-BA6CD6818168' build 2>&1 | grep -E \"\\(error:|BUILD SUCCEEDED|BUILD FAILED\\)\")",
+      "WebFetch(domain:minimax-algeng-chat-tts.oss-cn-wulanchabu.aliyuncs.com)",
+      "Bash(python3 -c \"from PIL import Image; print\\('PIL available'\\)\" 2>/dev/null || pip3 install Pillow -q)",
+      "Bash(cp \"/Users/cayden/.claude/projects/-Users-cayden-Data-my-data-voiceMind/a629eb20-dbbf-446c-b2c5-e9ea7481b72b/tool-results/webfetch-1774084206721-mdvtwq-cleaned.png\" VoiceRelayiOS/VoiceRelayiOS/Assets.xcassets/AppIcon.appiconset/AppIcon.png && cp \"/Users/cayden/.claude/projects/-Users-cayden-Data-my-data-voiceMind/a629eb20-dbbf-446c-b2c5-e9ea7481b72b/tool-results/webfetch-1774084206721-mdvtwq-cleaned.png\" VoiceRelayMac/VoiceRelayMac/Assets.xcassets/AppIcon.appiconset/AppIcon.png)",
+      "Bash(xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS -configuration Debug -destination 'platform=iOS Simulator,id=A1041173-BE1F-43B8-B9EA-BA6CD6818168' build 2>&1 | grep -E \"\\(error:|warning:|BUILD SUCCEEDED|BUILD FAILED\\)\")"
     ],
     "autoApprove": true
   }
