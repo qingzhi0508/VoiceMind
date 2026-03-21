@@ -37,7 +37,7 @@
 "window_title_qr_pairing" = "QR Pairing";
 
 "unpair_alert_title" = "Unpair?";
-"unpair_alert_message" = "This will remove the pairing with your iPhone. You will need to pair again to use VoiceRelay.";
+"unpair_alert_message" = "This will remove the pairing with your iPhone. You will need to pair again to use VoiceMind.";
 "unpair_alert_button" = "Unpair";
 
 "error_title" = "Error";
@@ -58,7 +58,7 @@ You can copy the text manually.";
 "hotkey_permission_error" = "Unable to start hotkey monitoring. Please check system permissions and try again.";
 
 "text_injection_permission_title" = "Accessibility Permission Required";
-"text_injection_permission_message" = "VoiceRelay needs Accessibility permission to type results into the current app.
+"text_injection_permission_message" = "VoiceMind needs Accessibility permission to type results into the current app.
 
 You can also copy the text and paste manually.";
 "open_system_settings_button" = "Open System Settings";

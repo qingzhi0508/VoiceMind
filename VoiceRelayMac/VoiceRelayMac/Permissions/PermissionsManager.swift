@@ -60,7 +60,7 @@ class PermissionsManager {
 
                 请在打开的系统设置中：
                 1. 找到"辅助功能"
-                2. 找到并勾选"VoiceRelayMac"
+                2. 找到并勾选"VoiceMind"
                 3. 如果看不到应用，请点击"+"手动添加
                 """
                 alert.addButton(withTitle: "打开系统设置")
@@ -98,7 +98,7 @@ class PermissionsManager {
 
                 请在打开的系统设置中：
                 1. 找到"输入监控"
-                2. 找到并勾选"VoiceRelayMac"
+                2. 找到并勾选"VoiceMind"
                 3. 如果看不到应用，请点击"+"手动添加
 
                 注意：授予权限后需要重启应用才能生效。
@@ -131,9 +131,9 @@ class PermissionsManager {
 
         switch permission {
         case .accessibility:
-            alert.informativeText = "VoiceRelay needs Accessibility permission to monitor hotkeys and inject text. Please grant permission in System Settings."
+            alert.informativeText = "VoiceMind needs Accessibility permission to monitor hotkeys and inject text. Please grant permission in System Settings."
         case .inputMonitoring:
-            alert.informativeText = "VoiceRelay needs Input Monitoring permission to detect global keyboard events. macOS requires enabling this manually in System Settings."
+            alert.informativeText = "VoiceMind needs Input Monitoring permission to detect global keyboard events. macOS requires enabling this manually in System Settings."
         }
 
         alert.addButton(withTitle: "Open System Settings")
