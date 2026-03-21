@@ -31,7 +31,7 @@ struct PermissionsWindow: View {
             }
             .padding()
 
-            Button(String(localized: "refresh_button")) {
+            Button(AppLocalization.localizedString("refresh_button")) {
                 checkPermissions()
             }
         }
@@ -71,7 +71,7 @@ struct PermissionRow: View {
                     .foregroundColor(.green)
                     .font(.title2)
             } else {
-                Button(String(localized: "grant_permission_button")) {
+                Button(AppLocalization.localizedString("grant_permission_button")) {
                     onRequest()
                 }
             }

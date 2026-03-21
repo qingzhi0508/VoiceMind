@@ -370,7 +370,7 @@ struct PermissionRequestRow: View {
 
             Spacer()
 
-            Button(String(localized: "authorize_button")) {
+            Button(AppLocalization.localizedString("authorize_button")) {
                 onRequest()
             }
             .buttonStyle(.borderedProminent)

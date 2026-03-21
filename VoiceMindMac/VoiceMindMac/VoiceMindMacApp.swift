@@ -137,7 +137,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             alert.alertStyle = .warning
             alert.messageText = String(localized: "sensevoice_model_corrupted_title")
             alert.informativeText = String(localized: "sensevoice_model_corrupted_message")
-            alert.addButton(withTitle: String(localized: "sensevoice_model_corrupted_ok"))
+            alert.addButton(withTitle: AppLocalization.localizedString("sensevoice_model_corrupted_ok"))
             alert.runModal()
         }
     }
@@ -185,7 +185,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 format: String(localized: "sensevoice_model_retry_failed_message"),
                 error.localizedDescription
             )
-            alert.addButton(withTitle: String(localized: "sensevoice_model_retry_failed_ok"))
+            alert.addButton(withTitle: AppLocalization.localizedString("sensevoice_model_retry_failed_ok"))
             alert.runModal()
         }
     }

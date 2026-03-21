@@ -104,7 +104,7 @@ struct QRCodePairingView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            Button(String(localized: "cancel_button")) {
+            Button(AppLocalization.localizedString("cancel_button")) {
                 pairingTimer.stop()
                 onCancel()
             }

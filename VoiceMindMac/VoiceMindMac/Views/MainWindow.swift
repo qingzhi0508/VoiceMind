@@ -170,7 +170,7 @@ struct StatusTab: View {
                         Text(String(format: String(localized: "status_paired_device_format"), deviceName))
                             .foregroundColor(.secondary)
                         Spacer()
-                        Button(String(localized: "status_action_unpair")) {
+                        Button(AppLocalization.localizedString("status_action_unpair")) {
                             controller.unpairDeviceFromUI()
                         }
                         .buttonStyle(.bordered)
@@ -368,7 +368,7 @@ struct DataRecordsTab: View {
 
                 Spacer(minLength: 0)
 
-                Button(String(localized: "data_action_clear")) {
+                Button(AppLocalization.localizedString("data_action_clear")) {
                     controller.clearInboundDataRecords()
                 }
                 .buttonStyle(.bordered)
@@ -699,17 +699,17 @@ struct PermissionsTab: View {
             }
 
             HStack(spacing: 15) {
-                Button(String(localized: "permissions_tab_check")) {
+                Button(AppLocalization.localizedString("permissions_tab_check")) {
                     checkPermissions()
                 }
                 .buttonStyle(.bordered)
 
-                Button(String(localized: "permissions_tab_request")) {
+                Button(AppLocalization.localizedString("permissions_tab_request")) {
                     requestPermissions()
                 }
                 .buttonStyle(.borderedProminent)
 
-                Button(String(localized: "permissions_tab_open_settings")) {
+                Button(AppLocalization.localizedString("permissions_tab_open_settings")) {
                     PermissionsManager.openSystemPreferences(for: .accessibility)
                 }
                 .buttonStyle(.bordered)

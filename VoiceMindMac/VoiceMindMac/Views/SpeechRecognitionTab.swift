@@ -131,7 +131,7 @@ struct SpeechRecognitionTab: View {
                         .controlSize(.small)
                     }
                 } else {
-                    Button(String(localized: "model_download_button")) {
+                    Button(AppLocalization.localizedString("model_download_button")) {
                         downloadModel(model)
                     }
                     .buttonStyle(.bordered)

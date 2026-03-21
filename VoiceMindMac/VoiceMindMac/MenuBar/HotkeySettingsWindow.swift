@@ -50,11 +50,11 @@ struct HotkeySettingsWindow: View {
                 .foregroundColor(.secondary)
 
             HStack {
-                Button(String(localized: "cancel_button")) {
+                Button(AppLocalization.localizedString("cancel_button")) {
                     // Close window
                 }
 
-                Button(String(localized: "save_button")) {
+                Button(AppLocalization.localizedString("save_button")) {
                     saveHotkey()
                 }
                 .buttonStyle(.borderedProminent)

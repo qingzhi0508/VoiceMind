@@ -87,22 +87,22 @@ class MenuBarController: NSObject, ObservableObject {
     private func setupMenu() {
         let menu = NSMenu()
 
-        let statusItem = NSMenuItem(title: String(localized: "menu_status_unpaired"), action: nil, keyEquivalent: "")
+        let statusItem = NSMenuItem(title: AppLocalization.localizedString("menu_status_unpaired"), action: nil, keyEquivalent: "")
         statusItem.tag = 100 // For updating later
         menu.addItem(statusItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        menu.addItem(NSMenuItem(title: String(localized: "menu_show_status"), action: #selector(showStatus), keyEquivalent: "s"))
-        menu.addItem(NSMenuItem(title: String(localized: "menu_start_pairing"), action: #selector(startPairing), keyEquivalent: "p"))
-        menu.addItem(NSMenuItem(title: String(localized: "menu_permissions"), action: #selector(openPermissions), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: AppLocalization.localizedString("menu_show_status"), action: #selector(showStatus), keyEquivalent: "s"))
+        menu.addItem(NSMenuItem(title: AppLocalization.localizedString("menu_start_pairing"), action: #selector(startPairing), keyEquivalent: "p"))
+        menu.addItem(NSMenuItem(title: AppLocalization.localizedString("menu_permissions"), action: #selector(openPermissions), keyEquivalent: ""))
 
-        let unpairItem = NSMenuItem(title: String(localized: "menu_unpair"), action: #selector(unpairDevice), keyEquivalent: "")
+        let unpairItem = NSMenuItem(title: AppLocalization.localizedString("menu_unpair"), action: #selector(unpairDevice), keyEquivalent: "")
         unpairItem.tag = 101 // For showing/hiding
         menu.addItem(unpairItem)
 
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: String(localized: "menu_quit"), action: #selector(quit), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: AppLocalization.localizedString("menu_quit"), action: #selector(quit), keyEquivalent: "q"))
 
         self.statusItem.menu = menu
         updateMenu()
@@ -194,7 +194,7 @@ class MenuBarController: NSObject, ObservableObject {
                 backing: .buffered,
                 defer: false
             )
-            window.title = String(localized: "window_title_main")
+            window.title = AppLocalization.localizedString("window_title_main")
             window.setContentSize(NSSize(width: 500, height: 600))
             window.contentView = NSHostingView(rootView: MainWindow(controller: self))
             window.center()
@@ -221,7 +221,7 @@ class MenuBarController: NSObject, ObservableObject {
                 backing: .buffered,
                 defer: false
             )
-            window.title = String(localized: "window_title_onboarding")
+            window.title = AppLocalization.localizedString("window_title_onboarding")
             window.contentView = NSHostingView(rootView: contentView)
             window.center()
             window.isReleasedWhenClosed = false
@@ -283,7 +283,7 @@ class MenuBarController: NSObject, ObservableObject {
                 backing: .buffered,
                 defer: false
             )
-            window.title = String(localized: "window_title_hotkey")
+            window.title = AppLocalization.localizedString("window_title_hotkey")
             window.contentView = NSHostingView(rootView: contentView)
             window.center()
             window.delegate = self
@@ -304,7 +304,7 @@ class MenuBarController: NSObject, ObservableObject {
                 backing: .buffered,
                 defer: false
             )
-            window.title = String(localized: "window_title_permissions")
+            window.title = AppLocalization.localizedString("window_title_permissions")
             window.contentView = NSHostingView(rootView: contentView)
             window.center()
             window.delegate = self
@@ -319,8 +319,8 @@ class MenuBarController: NSObject, ObservableObject {
         let alert = NSAlert()
         alert.messageText = String(localized: "unpair_alert_title")
         alert.informativeText = String(localized: "unpair_alert_message")
-        alert.addButton(withTitle: String(localized: "unpair_alert_button"))
-        alert.addButton(withTitle: String(localized: "cancel_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("unpair_alert_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("cancel_button"))
         alert.alertStyle = .warning
 
         if alert.runModal() == .alertFirstButtonReturn {
@@ -370,7 +370,7 @@ class MenuBarController: NSObject, ObservableObject {
             backing: .buffered,
             defer: false
         )
-        window.title = String(localized: "window_title_qr_pairing")
+        window.title = AppLocalization.localizedString("window_title_qr_pairing")
         window.contentView = NSHostingView(rootView: contentView)
         window.center()
         window.isReleasedWhenClosed = false
@@ -430,9 +430,9 @@ class MenuBarController: NSObject, ObservableObject {
         if let statusItem = menu.item(withTag: 100) {
             switch connectionManager.pairingState {
             case .unpaired:
-                statusItem.title = String(localized: "menu_status_unpaired")
+                statusItem.title = AppLocalization.localizedString("menu_status_unpaired")
             case .pairing:
-                statusItem.title = String(localized: "status_menu_pairing")
+                statusItem.title = AppLocalization.localizedString("status_menu_pairing")
             case .paired(_, let deviceName):
                 statusItem.title = String(format: String(localized: "status_menu_connected_format"), deviceName)
             }
@@ -461,8 +461,8 @@ class MenuBarController: NSObject, ObservableObject {
         let alert = NSAlert()
         alert.messageText = String(localized: "text_copy_alert_title")
         alert.informativeText = String(format: String(localized: "text_copy_alert_message_format"), error)
-        alert.addButton(withTitle: String(localized: "copy_text_button"))
-        alert.addButton(withTitle: String(localized: "cancel_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("copy_text_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("cancel_button"))
         alert.alertStyle = .warning
 
         if alert.runModal() == .alertFirstButtonReturn {
@@ -489,9 +489,9 @@ class MenuBarController: NSObject, ObservableObject {
         let alert = NSAlert()
         alert.messageText = String(localized: "text_injection_permission_title")
         alert.informativeText = String(localized: "text_injection_permission_message")
-        alert.addButton(withTitle: String(localized: "open_system_settings_button"))
-        alert.addButton(withTitle: String(localized: "copy_text_button"))
-        alert.addButton(withTitle: String(localized: "cancel_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("open_system_settings_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("copy_text_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("cancel_button"))
         alert.alertStyle = .warning
 
         switch alert.runModal() {
