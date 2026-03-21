@@ -29,23 +29,51 @@ class LocalSpeechRecognizer: NSObject {
 
     // MARK: - Public Methods
 
-    /// 请求权限
-    func requestPermission(completion: @escaping (Bool) -> Void) {
-        AVAudioApplication.requestRecordPermission { granted in
-            DispatchQueue.main.async {
-                completion(granted)
+    /// 请求麦克风和语音识别权限
+    func requestPermissions(completion: @escaping (Bool, Bool) -> Void) {
+        // 请求麦克风权限
+        AVAudioApplication.requestRecordPermission { micGranted in
+            guard micGranted else {
+                DispatchQueue.main.async {
+                    completion(false, false)
+                }
+                return
+            }
+
+            // 请求语音识别权限
+            SFSpeechRecognizer.requestAuthorization { status in
+                DispatchQueue.main.async {
+                    completion(micGranted, status == .authorized)
+                }
             }
         }
     }
 
-    /// 检查权限状态
-    func checkPermission() -> Bool {
+    /// 检查麦克风权限状态
+    func checkMicrophonePermission() -> Bool {
         return AVAudioApplication.shared.recordPermission == .granted
+    }
+
+    /// 检查语音识别权限状态
+    func checkSpeechRecognitionPermission() -> Bool {
+        return SFSpeechRecognizer.authorizationStatus() == .authorized
     }
 
     /// 开始本地录音识别
     func startRecording(languageCode: String? = nil) throws {
         print("🎤 开始本地录音识别")
+
+        // 检查麦克风权限
+        guard checkMicrophonePermission() else {
+            print("❌ 麦克风权限未授予")
+            throw SpeechRecognitionError.permissionDenied
+        }
+
+        // 检查语音识别权限
+        guard checkSpeechRecognitionPermission() else {
+            print("❌ 语音识别权限未授予")
+            throw SpeechRecognitionError.permissionDenied
+        }
 
         // 停止之前的识别
         stopRecording()

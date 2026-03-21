@@ -587,19 +587,28 @@ extension MenuBarController {
     func startLocalRecording() {
         guard !isLocalRecording else { return }
 
-        // 检查权限
-        guard localSpeechRecognizer.checkPermission() else {
-            print("❌ 本地录音需要麦克风权限")
-            return
-        }
+        // 请求权限
+        localSpeechRecognizer.requestPermissions { [weak self] micGranted, speechGranted in
+            guard let self = self else { return }
 
-        do {
-            try localSpeechRecognizer.startRecording()
-            isLocalRecording = true
-            noteText = ""  // 清空笔记
-            print("✅ 本地录音已开始")
-        } catch {
-            print("❌ 开始本地录音失败: \(error.localizedDescription)")
+            guard micGranted else {
+                print("❌ 本地录音需要麦克风权限")
+                return
+            }
+
+            guard speechGranted else {
+                print("❌ 本地录音需要语音识别权限，请在系统设置中授权")
+                return
+            }
+
+            do {
+                try self.localSpeechRecognizer.startRecording()
+                self.isLocalRecording = true
+                self.noteText = ""  // 清空笔记
+                print("✅ 本地录音已开始")
+            } catch {
+                print("❌ 开始本地录音失败: \(error.localizedDescription)")
+            }
         }
     }
 
