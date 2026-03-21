@@ -27,7 +27,7 @@ struct QRCodeScannerView: View {
 
                 // Camera Preview
                 ZStack {
-                    if let previewLayer = scanner.previewLayer {
+                    if scanner.isPreviewReady, let previewLayer = scanner.previewLayer {
                         CameraPreview(previewLayer: previewLayer)
                             .frame(height: 300)
                             .cornerRadius(12)

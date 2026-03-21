@@ -7,6 +7,7 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
     @Published var scannedCode: String?
     @Published var error: String?
     @Published var isScanning = false
+    @Published var isPreviewReady = false  // 相机预览是否真正启动
 
     private var captureSession: AVCaptureSession?
     private(set) var previewLayer: AVCaptureVideoPreviewLayer?
@@ -43,6 +44,7 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
         error = nil
         scannedCode = nil
         isStarting = true
+        isPreviewReady = false
 
         let captureSession = AVCaptureSession()
         captureSession.beginConfiguration()
@@ -101,13 +103,20 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
         self.captureSession = captureSession
         self.previewLayer = previewLayer
 
+        // 使用信号量等待相机真正启动
+        let semaphore = DispatchSemaphore(value: 0)
         sessionQueue.async { [weak self] in
             captureSession.startRunning()
             DispatchQueue.main.async {
                 self?.isStarting = false
                 self?.isScanning = true
+                self?.isPreviewReady = true
+                semaphore.signal()
             }
         }
+
+        // 等待最多1秒让相机启动
+        _ = semaphore.wait(timeout: .now() + 1.0)
 
         return previewLayer
         #endif
@@ -126,6 +135,7 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
         previewLayer = nil
         isScanning = false
         isStarting = false
+        isPreviewReady = false
     }
 
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
