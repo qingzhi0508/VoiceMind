@@ -122,23 +122,23 @@ class WebSocketServer {
         print("✅ 接受新连接")
 
         newConnection.stateUpdateHandler = { [weak self] newState in
+            guard let self = self else { return }
             print("🔄 连接状态变化: \(newState)")
             switch newState {
             case .ready:
                 print("✅ 连接就绪，开始接收消息")
-                self?.state = .connected
-                self?.receiveMessage()
+                self.state = .connected
+                self.receiveMessage()
             case .failed(let error):
                 print("❌ 连接失败: \(error)")
-                // 连接失败后，清除连接并恢复到 connecting 状态（等待新连接）
-                self?.connection = nil
-                // 不设置为 error，而是恢复到 connecting，这样 UI 不会显示错误
-                self?.state = .connecting
+                // 连接失败后，清除连接并设置为 disconnected
+                self.connection = nil
+                self.state = .disconnected
             case .cancelled:
                 print("🔌 连接已取消")
-                self?.connection = nil
-                // 连接取消后，恢复到 connecting 状态（等待新连接）
-                self?.state = .connecting
+                self.connection = nil
+                // 连接取消后，设置为 disconnected（不再等待）
+                self.state = .disconnected
             default:
                 break
             }
@@ -235,6 +235,6 @@ class WebSocketServer {
     private func handleConnectionClosed() {
         connection?.cancel()
         connection = nil
-        state = .connecting
+        state = .disconnected
     }
 }

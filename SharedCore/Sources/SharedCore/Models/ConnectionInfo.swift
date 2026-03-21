@@ -5,12 +5,14 @@ public struct ConnectionInfo: Codable {
     public let port: UInt16
     public let deviceId: String
     public let deviceName: String
+    public let pairingCode: String?
 
-    public init(ip: String, port: UInt16, deviceId: String, deviceName: String) {
+    public init(ip: String, port: UInt16, deviceId: String, deviceName: String, pairingCode: String? = nil) {
         self.ip = ip
         self.port = port
         self.deviceId = deviceId
         self.deviceName = deviceName
+        self.pairingCode = pairingCode
     }
 
     public func toQRCodeString() -> String? {

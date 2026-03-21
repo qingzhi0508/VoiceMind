@@ -253,6 +253,15 @@ struct QRCodeScannerView: View {
         // Connect to Mac
         viewModel.connectToMac(ip: info.ip, port: info.port, deviceName: info.deviceName)
 
+        // Check if QR code contains pairing code
+        if let pairingCode = info.pairingCode, !pairingCode.isEmpty {
+            print("🔐 QR码包含配对码: \(pairingCode)，自动发起配对")
+            appendProgress(String(format: String(localized: "qr_progress_auto_pairing_format"), pairingCode))
+            
+            // Store the pairing code for later use after connection is established
+            self.pairingCode = pairingCode
+        }
+
         let timeoutTask = DispatchWorkItem {
             guard isConnecting else { return }
             isConnecting = false
@@ -297,7 +306,15 @@ struct QRCodeScannerView: View {
             connectionTimeoutTask?.cancel()
             isConnecting = false
             appendProgress(String(localized: "qr_progress_connected_enter_code"))
-            if connectionInfo != nil, !showPairingCodeInput, !isPairing {
+            
+            // Check if we have a pairing code from QR code
+            if !pairingCode.isEmpty {
+                print("🔐 连接成功，使用二维码中的配对码自动配对: \(pairingCode)")
+                // Auto-pair with the code from QR code
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    pairWithCode(self.pairingCode)
+                }
+            } else if connectionInfo != nil, !showPairingCodeInput, !isPairing {
                 print("✅ 连接成功，显示配对码输入")
                 showPairingCodeInput = true
             }
@@ -308,6 +325,7 @@ struct QRCodeScannerView: View {
             errorMessage = String(format: String(localized: "qr_error_connection_failed_format"), message)
             scanner.scannedCode = nil
             connectionInfo = nil
+            pairingCode = ""
         case .disconnected:
             if isConnecting || isPairing {
                 appendProgress(String(localized: "qr_progress_disconnected"))

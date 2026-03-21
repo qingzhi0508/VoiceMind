@@ -264,3 +264,4 @@ Language: %@
 Sample rate: %@ Hz";
 "log_audio_end_title" = "End Audio Stream";
 "log_audio_end_detail_format" = "Session: %@";
+"qr_progress_auto_pairing_format" = "QR code contains pairing code %@, auto pairing...";

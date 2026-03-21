@@ -264,3 +264,5 @@
 采样率: %@ Hz";
 "log_audio_end_title" = "结束语音流";
 "log_audio_end_detail_format" = "Session: %@";
+
+"qr_progress_auto_pairing_format" = "二维码包含配对码 %@，正在自动配对...";

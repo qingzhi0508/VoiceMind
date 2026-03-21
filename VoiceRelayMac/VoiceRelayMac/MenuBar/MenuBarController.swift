@@ -345,12 +345,13 @@ class MenuBarController: NSObject, ObservableObject {
             return
         }
 
-        // Create connection info
+        // Create connection info with pairing code for QR code
         let connectionInfo = ConnectionInfo(
             ip: ipAddress,
             port: connectionManager.server.port,
             deviceId: connectionManager.deviceId,
-            deviceName: Host.current().localizedName ?? "Mac"
+            deviceName: Host.current().localizedName ?? "Mac",
+            pairingCode: code
         )
 
         let contentView = QRCodePairingView(
