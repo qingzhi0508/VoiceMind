@@ -171,7 +171,7 @@ You can also copy the text and paste manually.";
 "status_paired_device_format" = "Paired Device: %@";
 "status_action_unpair" = "Unpair";
 "status_connection_disconnected" = "Disconnected";
-"status_connection_connecting" = "Connecting...";
+"status_connection_connecting" = "Waiting for Connection...";
 "status_connection_connected" = "Connected";
 "status_connection_error" = "Error";
 
