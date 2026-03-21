@@ -235,12 +235,13 @@
 				};
 			};
 			buildConfigurationList = B919E2562F685937002A347A /* Build configuration list for PBXProject "VoiceMindMac" */;
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 				"zh-Hans",
+				"zh-Hant",
 			);
 			mainGroup = B919E2522F685937002A347A;
 			minimizedProjectReferenceProxies = 1;
@@ -294,6 +295,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/libonnxruntime.1.23.0.dylib",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -590,7 +592,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceMindMac.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceMindMac";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceMind.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceMind";
 			};
 			name = Debug;
 		};
@@ -611,7 +613,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceMindMac.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceMindMac";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceMind.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceMind";
 			};
 			name = Release;
 		};
@@ -694,9 +696,17 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		B919E34D2F6861B7002A347A /* XCRemoteSwiftPackageReference "SharedCore" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "file://../SharedCore";
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		B919E34B2F6861B7002A347A /* SharedCore */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = B919E34D2F6861B7002A347A /* XCRemoteSwiftPackageReference "SharedCore" */;
 			productName = SharedCore;
 		};
 /* End XCSwiftPackageProductDependency section */

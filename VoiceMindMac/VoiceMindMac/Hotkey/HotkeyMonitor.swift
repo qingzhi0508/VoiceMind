@@ -24,13 +24,15 @@ class HotkeyMonitor {
     }
 
     func start() -> Bool {
-        guard checkAccessibilityPermission() else {
-            print("Accessibility permission not granted")
-            return false
-        }
+        let missingPermissions = Self.missingPermissionsForMonitoring(
+            accessibility: PermissionsManager.checkAccessibility(),
+            inputMonitoring: PermissionsManager.checkInputMonitoring()
+        )
 
-        guard PermissionsManager.checkInputMonitoring() == .granted else {
-            print("Input Monitoring permission not granted")
+        guard missingPermissions.isEmpty else {
+            if missingPermissions.contains(.inputMonitoring) {
+                print("Input Monitoring permission not granted")
+            }
             return false
         }
 
@@ -60,6 +62,19 @@ class HotkeyMonitor {
 
         print("Hotkey monitor started")
         return true
+    }
+
+    static func missingPermissionsForMonitoring(
+        accessibility: PermissionStatus,
+        inputMonitoring: PermissionStatus
+    ) -> [PermissionType] {
+        var missingPermissions: [PermissionType] = []
+
+        if inputMonitoring != .granted {
+            missingPermissions.append(.inputMonitoring)
+        }
+
+        return missingPermissions
     }
 
     func stop() {
@@ -133,15 +148,5 @@ class HotkeyMonitor {
 
         isHotkeyPressed = false
         delegate?.hotkeyMonitor(self, didReleaseHotkey: sessionId)
-    }
-
-    private func checkAccessibilityPermission() -> Bool {
-        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false]
-        return AXIsProcessTrustedWithOptions(options)
-    }
-
-    static func requestAccessibilityPermission() {
-        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-        _ = AXIsProcessTrustedWithOptions(options)
     }
 }

@@ -1,4 +1,11 @@
 /build
+/SharedCore/build/
+/VoiceMindMac/VoiceMind.dmg
+/VoiceMindMac.xcworkspace/
+/SharedCore/VoiceMindMac.xcworkspace/
+/VoiceRelay.xcworkspace/
+/.claude/settings.local.json
+.DS_Store
 
 # Xcode user state
 *.xcuserstate

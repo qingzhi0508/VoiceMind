@@ -2,7 +2,7 @@ import Foundation
 import Cocoa
 import IOKit.hidsystem
 
-enum PermissionType {
+enum PermissionType: Equatable {
     case accessibility
     case inputMonitoring
 }
@@ -55,8 +55,8 @@ class PermissionsManager {
                 alert.messageText = "需要辅助功能权限"
                 alert.informativeText = """
                 语灵 需要辅助功能权限来：
-                • 监听全局快捷键（Option+Space）
-                • 将语音识别结果注入到当前应用
+                • 识别当前聚焦的输入位置
+                • 将语音识别结果输入到当前应用
 
                 请在打开的系统设置中：
                 1. 找到"辅助功能"
@@ -131,7 +131,7 @@ class PermissionsManager {
 
         switch permission {
         case .accessibility:
-            alert.informativeText = "VoiceMind needs Accessibility permission to monitor hotkeys and inject text. Please grant permission in System Settings."
+            alert.informativeText = "VoiceMind needs Accessibility permission to detect the focused input area and insert transcribed text into the current app. Please grant permission in System Settings."
         case .inputMonitoring:
             alert.informativeText = "VoiceMind needs Input Monitoring permission to detect global keyboard events. macOS requires enabling this manually in System Settings."
         }

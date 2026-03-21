@@ -18,7 +18,7 @@
 
 "permissions_title" = "Permissions";
 "permission_accessibility_title" = "Accessibility";
-"permission_accessibility_desc" = "Required for hotkeys and text injection";
+"permission_accessibility_desc" = "Required to detect the focused input area and insert transcribed text";
 "permission_input_monitor_title" = "Input Monitoring";
 "permission_input_monitor_desc" = "Required for global hotkeys";
 
@@ -55,7 +55,7 @@
 You can copy the text manually.";
 "copy_text_button" = "Copy Text";
 
-"hotkey_permission_error" = "Unable to start hotkey monitoring. Please check system permissions and try again.";
+"hotkey_permission_error" = "Unable to start hotkey monitoring. Please grant Input Monitoring permission and try again.";
 
 "text_injection_permission_title" = "Accessibility Permission Required";
 "text_injection_permission_message" = "VoiceMind needs Accessibility permission to type results into the current app.
@@ -218,7 +218,7 @@ You can also copy the text and paste manually.";
 "permissions_tab_accessibility_title" = "Accessibility";
 "permissions_tab_granted" = "Granted";
 "permissions_tab_denied" = "Denied";
-"permissions_tab_accessibility_desc" = "VoiceMind needs Accessibility permission to monitor global hotkeys and inject text.";
+"permissions_tab_accessibility_desc" = "VoiceMind needs Accessibility permission to detect the focused input area and insert transcribed text.";
 "permissions_tab_input_title" = "Input Monitoring";
 "permissions_tab_input_desc" = "VoiceMind needs Input Monitoring permission to detect hotkey presses.";
 "permissions_tab_check" = "Check Permissions";

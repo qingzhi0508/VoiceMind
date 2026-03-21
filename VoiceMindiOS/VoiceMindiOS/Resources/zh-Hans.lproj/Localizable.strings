@@ -1,5 +1,7 @@
-"app_title" = "VoiceMind";
+"app_title" = "语灵";
 
+"CFBundleDisplayName" = "语灵";
+"CFBundleName" = "语灵";
 "ok_button" = "确定";
 "cancel_button" = "取消";
 "reconnect_button" = "重连";

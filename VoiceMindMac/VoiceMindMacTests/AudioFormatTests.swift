@@ -1,6 +1,6 @@
 import XCTest
 import AVFoundation
-@testable import VoiceMindMac
+@testable import VoiceMind
 
 final class AudioFormatTests: XCTestCase {
 

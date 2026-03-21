@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B919E25A2F685937002A347A"
-               BuildableName = "VoiceMindMac.app"
+               BuildableName = "VoiceMind.app"
                BlueprintName = "VoiceMindMac"
                ReferencedContainer = "container:VoiceMindMac.xcodeproj">
             </BuildableReference>
@@ -69,7 +69,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B919E25A2F685937002A347A"
-            BuildableName = "VoiceMindMac.app"
+            BuildableName = "VoiceMind.app"
             BlueprintName = "VoiceMindMac"
             ReferencedContainer = "container:VoiceMindMac.xcodeproj">
          </BuildableReference>
@@ -86,7 +86,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B919E25A2F685937002A347A"
-            BuildableName = "VoiceMindMac.app"
+            BuildableName = "VoiceMind.app"
             BlueprintName = "VoiceMindMac"
             ReferencedContainer = "container:VoiceMindMac.xcodeproj">
          </BuildableReference>

@@ -255,7 +255,7 @@ SherpaOnnxCreateOnlineRecognizer(
 
 /// Free a pointer returned by SherpaOnnxCreateOnlineRecognizer()
 ///
-/// @param p A pointer returned by SherpaOnnxCreateOnlineRecognizer()
+/// @param recognizer A pointer returned by SherpaOnnxCreateOnlineRecognizer()
 SHERPA_ONNX_API void SherpaOnnxDestroyOnlineRecognizer(
     const SherpaOnnxOnlineRecognizer *recognizer);
 

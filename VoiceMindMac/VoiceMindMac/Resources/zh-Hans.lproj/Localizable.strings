@@ -1,5 +1,6 @@
 "app_title" = "语灵";
-
+"CFBundleDisplayName" = "语灵";
+"CFBundleName" = "语灵";
 "cancel_button" = "取消";
 "save_button" = "保存";
 "refresh_button" = "刷新";
@@ -18,7 +19,7 @@
 
 "permissions_title" = "权限设置";
 "permission_accessibility_title" = "辅助功能";
-"permission_accessibility_desc" = "监听热键和注入文本所需";
+"permission_accessibility_desc" = "识别当前焦点输入位置并输入转写结果所需";
 "permission_input_monitor_title" = "输入监控";
 "permission_input_monitor_desc" = "全局监听热键所需";
 
@@ -55,10 +56,10 @@
 你可以手动复制文本。";
 "copy_text_button" = "复制文本";
 
-"hotkey_permission_error" = "无法启动热键监听。请检查系统权限设置后重试。";
+"hotkey_permission_error" = "无法启动热键监听。请授予输入监控权限后重试。";
 
 "text_injection_permission_title" = "缺少辅助功能权限";
-“text_injection_permission_message” = “语灵 需要”辅助功能”权限才能把识别结果输入到当前应用。你也可以先复制文本再手动粘贴。”;
+"text_injection_permission_message” = “语灵 需要”辅助功能”权限才能把识别结果输入到当前应用。你也可以先复制文本再手动粘贴。";
 "open_system_settings_button" = "打开系统设置";
 
 "log_server_port_updated_title" = "监听端口已更新";
@@ -216,7 +217,7 @@
 "permissions_tab_accessibility_title" = "辅助功能";
 "permissions_tab_granted" = "已授予";
 "permissions_tab_denied" = "未授予";
-"permissions_tab_accessibility_desc" = "语灵 需要辅助功能权限来监听全局快捷键和注入文本";
+"permissions_tab_accessibility_desc" = "语灵 需要辅助功能权限来识别当前焦点输入位置并输入转写结果";
 "permissions_tab_input_title" = "输入监控";
 "permissions_tab_input_desc" = "语灵 需要输入监控权限来检测快捷键按下事件";
 "permissions_tab_check" = "检查权限";

@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "absolute:/Users/cayden/Documents/projects/VoiceMind/VoiceMind.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:VoiceMindMac/VoiceMindMac.xcodeproj">
    </FileRef>
    <FileRef

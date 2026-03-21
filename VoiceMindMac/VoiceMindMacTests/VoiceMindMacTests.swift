@@ -6,7 +6,7 @@
 //
 
 import Testing
-@testable import VoiceMindMac
+@testable import VoiceMind
 
 struct VoiceMindMacTests {
 

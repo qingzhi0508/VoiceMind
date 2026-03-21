@@ -1,5 +1,5 @@
 import XCTest
-@testable import VoiceMindMac
+@testable import VoiceMind
 
 final class AppLocalizationTests: XCTestCase {
     func testSimplifiedChineseMapsToZhHansFirst() {

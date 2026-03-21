@@ -472,12 +472,12 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func showHotkeyPermissionError() {
-        if PermissionsManager.checkAccessibility() != .granted {
-            PermissionsManager.showPermissionAlert(for: .accessibility)
-            return
-        }
+        let missingPermissions = HotkeyMonitor.missingPermissionsForMonitoring(
+            accessibility: PermissionsManager.checkAccessibility(),
+            inputMonitoring: PermissionsManager.checkInputMonitoring()
+        )
 
-        if PermissionsManager.checkInputMonitoring() != .granted {
+        if missingPermissions.contains(.inputMonitoring) {
             PermissionsManager.showPermissionAlert(for: .inputMonitoring)
             return
         }
