@@ -4,7 +4,7 @@
 
 ### A. 增大音频缓冲区（减少网络传输次数）
 
-**修改文件**: `VoiceRelayiOS/VoiceRelayiOS/Speech/AudioStreamController.swift`
+**修改文件**: `VoiceMindiOS/VoiceMindiOS/Speech/AudioStreamController.swift`
 
 - 将 `bufferSize` 从 `1024` 增加到 `4096`
 - **效果**:
@@ -18,8 +18,8 @@
 **修改文件**:
 1. `SharedCore/Sources/SharedCore/Protocol/MessageType.swift` - 添加 `partialResult` 消息类型
 2. `SharedCore/Sources/SharedCore/Protocol/MessagePayloads.swift` - 添加 `PartialResultPayload`
-3. `VoiceRelayMac/VoiceRelayMac/Network/ConnectionManager.swift` - 实现部分结果处理
-4. `VoiceRelayMac/VoiceRelayMac/Speech/Engines/AppleSpeechEngine.swift` - 优化识别配置
+3. `VoiceMindMac/VoiceMindMac/Network/ConnectionManager.swift` - 实现部分结果处理
+4. `VoiceMindMac/VoiceMindMac/Speech/Engines/AppleSpeechEngine.swift` - 优化识别配置
 
 **效果**:
 - 实时反馈识别进度（部分结果）
@@ -54,7 +54,7 @@ SpeechRecognitionEngine (协议)
 
 #### 1. 创建新的引擎类
 
-在 `VoiceRelayMac/VoiceRelayMac/Speech/Engines/` 目录下创建新文件，例如 `YourModelEngine.swift`：
+在 `VoiceMindMac/VoiceMindMac/Speech/Engines/` 目录下创建新文件，例如 `YourModelEngine.swift`：
 
 ```swift
 import Foundation
@@ -147,7 +147,7 @@ class YourModelEngine: NSObject, SpeechRecognitionEngine {
 
 #### 2. 注册新引擎
 
-在 `VoiceRelayMacApp.swift` 或相应的初始化位置注册你的引擎：
+在 `VoiceMindMacApp.swift` 或相应的初始化位置注册你的引擎：
 
 ```swift
 // 注册语音识别引擎

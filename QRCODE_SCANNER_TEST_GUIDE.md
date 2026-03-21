@@ -23,10 +23,10 @@
 
 ### 1. 添加 iOS 扫描器文件
 
-在 VoiceRelayiOS 项目中：
+在 VoiceMindiOS 项目中：
 
 1. 创建 `Scanner` 文件夹：
-   - 右键点击 `VoiceRelayiOS` → New Group
+   - 右键点击 `VoiceMindiOS` → New Group
    - 命名为 `Scanner`
 
 2. 添加文件到 Scanner 文件夹：
@@ -35,7 +35,7 @@
 
 3. 确认 `QRCodeScannerView.swift` 在 `Views` 文件夹中
 
-4. 确保所有文件都勾选了 VoiceRelayiOS target
+4. 确保所有文件都勾选了 VoiceMindiOS target
 
 ### 2. 验证 Info.plist
 
@@ -50,7 +50,7 @@
 ### 准备工作
 
 1. **macOS 端**：
-   - 构建并运行 VoiceRelayMac
+   - 构建并运行 VoiceMindMac
    - 在「状态」标签页点击「启动服务」
    - 点击「开始配对」
    - 记录显示的信息：
@@ -60,7 +60,7 @@
      - 配对码：`_______________`
 
 2. **iOS 端**：
-   - 构建并运行 VoiceRelayiOS
+   - 构建并运行 VoiceMindiOS
    - 确保 iOS 设备和 Mac 在同一 WiFi 网络
 
 ### 测试方式 1：二维码扫描（推荐）
@@ -183,8 +183,8 @@
 
 ### 构建测试
 - [ ] SharedCore 构建成功
-- [ ] VoiceRelayMac 构建成功
-- [ ] VoiceRelayiOS 构建成功
+- [ ] VoiceMindMac 构建成功
+- [ ] VoiceMindiOS 构建成功
 
 ### macOS 功能测试
 - [ ] 启动服务成功

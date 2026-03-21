@@ -20,34 +20,34 @@ VoiceMind 是一个 macOS + iOS 语音输入系统，通过 Mac 快捷键触发 
 
 ### 1. 构建项目
 
-使用 Xcode 打开 `VoiceRelay.xcworkspace`：
+使用 Xcode 打开 `VoiceMind.xcworkspace`：
 
 ```bash
-open VoiceRelay.xcworkspace
+open VoiceMind.xcworkspace
 ```
 
 ### 2. 配置签名
 
 在 Xcode 中为两个 target 配置开发者账号：
-- VoiceRelayMac
-- VoiceRelayiOS
+- VoiceMindMac
+- VoiceMindiOS
 
 ### 3. 构建和运行
 
-1. 选择 VoiceRelayMac scheme，运行到 Mac
-2. 选择 VoiceRelayiOS scheme，运行到 iPhone
+1. 选择 VoiceMindMac scheme，运行到 Mac
+2. 选择 VoiceMindiOS scheme，运行到 iPhone
 
 ## 使用说明
 
 ### 首次配对
 
 1. **在 Mac 上**：
-   - 启动 VoiceRelayMac，菜单栏会出现麦克风图标
+   - 启动 VoiceMindMac，菜单栏会出现麦克风图标
    - 点击菜单栏图标，选择"配对新设备"
    - 会显示一个 6 位数字的配对码（2 分钟有效）
 
 2. **在 iPhone 上**：
-   - 启动 VoiceRelayiOS
+   - 启动 VoiceMindiOS
    - 点击"与 Mac 配对"
    - 从列表中选择你的 Mac
    - 输入 Mac 上显示的 6 位配对码
@@ -60,8 +60,8 @@ open VoiceRelay.xcworkspace
 ### 日常使用
 
 1. 确保 Mac 和 iPhone 都在同一个 Wi-Fi 网络
-2. 在 Mac 上启动 VoiceRelayMac（菜单栏图标显示为绿色表示已连接）
-3. 在 iPhone 上启动 VoiceRelayiOS（显示"已连接"状态）
+2. 在 Mac 上启动 VoiceMindMac（菜单栏图标显示为绿色表示已连接）
+3. 在 iPhone 上启动 VoiceMindiOS（显示"已连接"状态）
 4. 在 Mac 的任意应用中：
    - 按住 Option+Space 开始语音输入
    - 对着 iPhone 说话
@@ -78,7 +78,7 @@ open VoiceRelay.xcworkspace
 ### 切换语言
 
 在 iPhone 上：
-1. 打开 VoiceRelayiOS
+1. 打开 VoiceMindiOS
 2. 点击"设置"
 3. 在"识别语言"中选择中文或英文
 
@@ -119,7 +119,7 @@ open VoiceRelay.xcworkspace
 
 ### Mac 菜单栏图标显示为灰色
 
-- 检查 iPhone 是否已启动 VoiceRelayiOS
+- 检查 iPhone 是否已启动 VoiceMindiOS
 - 检查两台设备是否在同一个 Wi-Fi 网络
 - 尝试在 iPhone 上重启应用
 
@@ -127,7 +127,7 @@ open VoiceRelay.xcworkspace
 
 - 检查是否已授予辅助功能权限：
   - 系统设置 → 隐私与安全性 → 辅助功能
-  - 确保 VoiceRelayMac 已勾选
+  - 确保 VoiceMindMac 已勾选
 
 ### 识别结果无法注入
 
@@ -149,19 +149,19 @@ open VoiceRelay.xcworkspace
 ## 项目结构
 
 ```
-VoiceRelay/
+VoiceMind/
 ├── SharedCore/                 # 共享代码包
 │   └── Sources/SharedCore/
 │       ├── Protocol/          # 消息协议定义
 │       ├── Security/          # HMAC 和 Keychain
 │       └── Models/            # 数据模型
-├── VoiceRelayMac/             # macOS 应用
+├── VoiceMindMac/             # macOS 应用
 │   ├── Network/               # 网络层（服务器、Bonjour）
 │   ├── Hotkey/                # 快捷键监听
 │   ├── TextInjection/         # 文本注入
 │   ├── Permissions/           # 权限管理
 │   └── MenuBar/               # 菜单栏 UI
-└── VoiceRelayiOS/             # iOS 应用
+└── VoiceMindiOS/             # iOS 应用
     ├── Network/               # 网络层（客户端、Bonjour）
     ├── Speech/                # 语音识别
     ├── Views/                 # SwiftUI 视图

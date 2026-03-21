@@ -1,4 +1,4 @@
-# VoiceRelayMac 重写完成指南
+# VoiceMindMac 重写完成指南
 
 ## 已完成的工作
 
@@ -11,10 +11,10 @@
 - ✅ 删除旧的 `TextInjector.swift`
 
 ### Phase 2: 应用入口点 ✅
-- ✅ 创建 `VoiceRelayMacApp.swift` - SwiftUI 应用入口
+- ✅ 创建 `VoiceMindMacApp.swift` - SwiftUI 应用入口
 - ✅ 创建 `MainWindow.swift` - 主窗口（状态、设置、权限、关于）
 - ✅ 更新 `MenuBarController.swift` - 集成设置和文本注入器
-- ✅ 删除旧文件（VoiceRelayMacApp_Minimal.swift, ContentView.swift, Persistence.swift）
+- ✅ 删除旧文件（VoiceMindMacApp_Minimal.swift, ContentView.swift, Persistence.swift）
 
 ### Phase 3 & 4: 待完成
 - ⏳ 网络层增强（WebSocketServer 重连和心跳）
@@ -32,13 +32,13 @@ sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
 
 ### 2. 在 Xcode 中更新项目
 
-1. 打开 `/Users/cayden/Data/my-data/voiceMind/VoiceRelay.xcworkspace`
+1. 打开 `/Users/cayden/Data/my-data/voiceMind/VoiceMind.xcworkspace`
 
-2. 选择 **VoiceRelayMac** target
+2. 选择 **VoiceMindMac** target
 
 3. **添加新文件到项目**：
-   - 在左侧导航器中，右键点击 `VoiceRelayMac` 文件夹
-   - 选择 "Add Files to VoiceRelayMac..."
+   - 在左侧导航器中，右键点击 `VoiceMindMac` 文件夹
+   - 选择 "Add Files to VoiceMindMac..."
    - 添加以下新文件：
      - `Settings/AppSettings.swift`
      - `TextInjection/TextInjectionProtocol.swift`
@@ -46,12 +46,12 @@ sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
      - `TextInjection/CGEventTextInjector.swift`
      - `TextInjection/ClipboardTextInjector.swift`
      - `Views/MainWindow.swift`
-     - `VoiceRelayMacApp.swift`
+     - `VoiceMindMacApp.swift`
 
 4. **移除旧文件引用**（如果还存在）：
    - 在项目导航器中找到以下文件并删除引用：
      - `TextInjection/TextInjector.swift`（已删除）
-     - `VoiceRelayMacApp_Minimal.swift`（已删除）
+     - `VoiceMindMacApp_Minimal.swift`（已删除）
      - `ContentView.swift`（已删除）
      - `Persistence.swift`（已删除）
 
@@ -65,7 +65,7 @@ sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
 
 ### 3. 运行应用
 
-1. 选择 VoiceRelayMac scheme
+1. 选择 VoiceMindMac scheme
 2. 点击 Run (Cmd+R)
 3. 应用应该：
    - 在 Dock 中显示
@@ -104,7 +104,7 @@ sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
 
 检查以下几点：
 1. 确认 Info.plist 中 `LSUIElement` 为 `false`
-2. 确认 `VoiceRelayMacApp.swift` 中设置了 `.regular` 激活策略
+2. 确认 `VoiceMindMacApp.swift` 中设置了 `.regular` 激活策略
 3. 查看控制台日志是否有错误
 4. 尝试从 Dock 点击应用图标
 
@@ -129,8 +129,8 @@ sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
 ## 文件结构
 
 ```
-VoiceRelayMac/VoiceRelayMac/
-├── VoiceRelayMacApp.swift ✨ 新建
+VoiceMindMac/VoiceMindMac/
+├── VoiceMindMacApp.swift ✨ 新建
 ├── Settings/
 │   └── AppSettings.swift ✨ 新建
 ├── Views/

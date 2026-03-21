@@ -17,16 +17,16 @@ VoiceMind is a macOS + iOS companion system that enables voice-to-text input on 
 
 ## Project Structure
 
-### Xcode Workspace: VoiceRelay.xcworkspace
+### Xcode Workspace: VoiceMind.xcworkspace
 
 Three targets:
 
-1. **VoiceRelayMac** - macOS menu bar application
+1. **VoiceMindMac** - macOS menu bar application
    - Platform: macOS 13.0+
    - UI: AppKit (menu bar) + SwiftUI (settings/pairing windows)
    - Capabilities: Network, Keychain
 
-2. **VoiceRelayiOS** - iOS application
+2. **VoiceMindiOS** - iOS application
    - Platform: iOS 18.0+
    - UI: SwiftUI
    - Capabilities: Microphone, Speech Recognition, Local Network, Keychain
@@ -45,9 +45,9 @@ Three targets:
 ### Directory Structure
 
 ```
-VoiceRelay/
-├── VoiceRelay.xcworkspace
-├── VoiceRelayMac/
+VoiceMind/
+├── VoiceMind.xcworkspace
+├── VoiceMindMac/
 │   ├── App/                    # AppDelegate, main entry
 │   ├── MenuBar/                # NSStatusItem, menu management
 │   ├── Hotkey/                 # CGEventTap hotkey monitoring
@@ -55,7 +55,7 @@ VoiceRelay/
 │   ├── Network/                # WebSocket server, Bonjour publisher
 │   ├── Pairing/                # Pairing UI and logic
 │   └── Permissions/            # Accessibility permission checks
-├── VoiceRelayiOS/
+├── VoiceMindiOS/
 │   ├── App/                    # App entry, lifecycle
 │   ├── Views/                  # SwiftUI views
 │   ├── Speech/                 # SFSpeechRecognizer integration
@@ -556,7 +556,7 @@ From original requirements:
 
 ## Deliverables
 
-1. **Xcode Workspace**: VoiceRelay.xcworkspace with all three targets
+1. **Xcode Workspace**: VoiceMind.xcworkspace with all three targets
 2. **Source Code**: Organized by module as per directory structure
 3. **README.md**: Setup instructions, pairing guide, permissions requirements
 4. **Manual Testing Guide**: Step-by-step verification of acceptance criteria

@@ -7,9 +7,9 @@
 由于我们创建了新文件，需要在 Xcode 中将它们添加到项目：
 
 **iOS 项目需要添加的文件：**
-1. 打开 `VoiceRelay.xcworkspace`
-2. 选择 VoiceRelayiOS 项目
-3. 右键点击 VoiceRelayiOS 文件夹 → Add Files to "VoiceRelayiOS"
+1. 打开 `VoiceMind.xcworkspace`
+2. 选择 VoiceMindiOS 项目
+3. 右键点击 VoiceMindiOS 文件夹 → Add Files to "VoiceMindiOS"
 4. 添加以下文件夹和文件：
    - `ViewModels/ContentViewModel.swift`
    - `Views/PairingView.swift`
@@ -19,14 +19,14 @@
 6. 删除 `Persistence.swift`（不再需要）
 
 **检查 SharedCore 依赖：**
-1. 选择 VoiceRelayiOS target
+1. 选择 VoiceMindiOS target
 2. Build Phases → Link Binary With Libraries
 3. 确保 SharedCore 已添加
 4. 如果没有，点击 + 号添加 SharedCore.framework
 
 ### 2. 配置 Info.plist
 
-1. 选择 VoiceRelayiOS target
+1. 选择 VoiceMindiOS target
 2. Info 标签页
 3. 确认以下权限描述已添加：
    - Privacy - Microphone Usage Description
@@ -37,13 +37,13 @@
 ### 3. 配置签名
 
 **macOS 应用：**
-1. 选择 VoiceRelayMac target
+1. 选择 VoiceMindMac target
 2. Signing & Capabilities
 3. 选择你的开发团队
 4. 确保 "Automatically manage signing" 已勾选
 
 **iOS 应用：**
-1. 选择 VoiceRelayiOS target
+1. 选择 VoiceMindiOS target
 2. Signing & Capabilities
 3. 选择你的开发团队
 4. 确保 "Automatically manage signing" 已勾选
@@ -61,7 +61,7 @@
 
 #### 1.2 构建 macOS 应用
 ```
-1. 选择 VoiceRelayMac scheme
+1. 选择 VoiceMindMac scheme
 2. 选择 "My Mac" 作为目标设备
 3. Product → Build (⌘B)
 4. 确认构建成功
@@ -69,7 +69,7 @@
 
 #### 1.3 构建 iOS 应用
 ```
-1. 选择 VoiceRelayiOS scheme
+1. 选择 VoiceMindiOS scheme
 2. 选择你的 iPhone 作为目标设备（或模拟器用于初步测试）
 3. Product → Build (⌘B)
 4. 确认构建成功
@@ -90,7 +90,7 @@
 
 #### 2.1 启动 macOS 应用
 ```
-1. 选择 VoiceRelayMac scheme
+1. 选择 VoiceMindMac scheme
 2. Product → Run (⌘R)
 3. 应用启动后，菜单栏应该出现麦克风图标（灰色）
 ```
@@ -101,7 +101,7 @@
 2. 点击"打开系统设置"
 3. 在系统设置中：
    - 隐私与安全性 → 辅助功能
-   - 勾选 VoiceRelayMac
+   - 勾选 VoiceMindMac
 4. 返回应用，确认权限状态显示为"已授予"
 ```
 
@@ -120,7 +120,7 @@
 #### 3.1 启动 iOS 应用
 ```
 1. 确保 iPhone 和 Mac 连接到同一个 Wi-Fi 网络
-2. 选择 VoiceRelayiOS scheme
+2. 选择 VoiceMindiOS scheme
 3. 选择你的 iPhone 作为目标设备
 4. Product → Run (⌘R)
 5. 应用启动后应该显示主界面
@@ -282,7 +282,7 @@
 
 **macOS 控制台：**
 ```
-在 Xcode 中运行 VoiceRelayMac，查看控制台输出：
+在 Xcode 中运行 VoiceMindMac，查看控制台输出：
 - Bonjour 发布状态
 - WebSocket 连接状态
 - 接收到的消息
@@ -291,7 +291,7 @@
 
 **iOS 控制台：**
 ```
-在 Xcode 中运行 VoiceRelayiOS，查看控制台输出：
+在 Xcode 中运行 VoiceMindiOS，查看控制台输出：
 - Bonjour 发现的服务
 - WebSocket 连接状态
 - 语音识别状态

@@ -65,7 +65,7 @@
 
 #### 第一阶段：Mac 端语音识别器（已完成 ✅）
 
-文件：`VoiceRelayMac/VoiceRelayMac/Speech/MacSpeechRecognizer.swift`
+文件：`VoiceMindMac/VoiceMindMac/Speech/MacSpeechRecognizer.swift`
 
 核心功能：
 - ✅ 初始化 Speech 识别器

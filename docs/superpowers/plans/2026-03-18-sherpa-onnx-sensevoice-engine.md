@@ -34,12 +34,12 @@
 ### 新增文件
 
 ```
-VoiceRelayMac/
+VoiceMindMac/
 ├── Frameworks/
 │   └── sherpa-onnx.xcframework/          # sherpa-onnx 预编译库
 │       ├── macos-arm64/
 │       └── macos-x86_64/
-├── VoiceRelayMac/
+├── VoiceMindMac/
 │   ├── Speech/
 │   │   ├── SherpaOnnx/
 │   │   │   ├── SherpaOnnxBridge.h        # C 桥接头文件
@@ -47,14 +47,14 @@ VoiceRelayMac/
 │   │   │   └── SherpaOnnxWrapper.swift   # Swift 封装
 │   │   └── Engines/
 │   │       └── SenseVoiceEngine.swift    # SenseVoice 引擎实现
-│   └── VoiceRelayMac-Bridging-Header.h   # Objective-C 桥接头文件
+│   └── VoiceMindMac-Bridging-Header.h   # Objective-C 桥接头文件
 ```
 
 ### 修改文件
 
 ```
-VoiceRelayMac/VoiceRelayMac.xcodeproj/project.pbxproj  # 添加 xcframework 和桥接头文件
-VoiceRelayMac/VoiceRelayMac/VoiceRelayMacApp.swift     # 注册 SenseVoice 引擎
+VoiceMindMac/VoiceMindMac.xcodeproj/project.pbxproj  # 添加 xcframework 和桥接头文件
+VoiceMindMac/VoiceMindMac/VoiceMindMacApp.swift     # 注册 SenseVoice 引擎
 ```
 
 ---
@@ -64,15 +64,15 @@ VoiceRelayMac/VoiceRelayMac/VoiceRelayMacApp.swift     # 注册 SenseVoice 引�
 ### Task 1: 下载和集成 sherpa-onnx xcframework
 
 **Files:**
-- Create: `VoiceRelayMac/Frameworks/sherpa-onnx.xcframework/`
-- Modify: `VoiceRelayMac/VoiceRelayMac.xcodeproj/project.pbxproj`
+- Create: `VoiceMindMac/Frameworks/sherpa-onnx.xcframework/`
+- Modify: `VoiceMindMac/VoiceMindMac.xcodeproj/project.pbxproj`
 
 **目标**: 下载 sherpa-onnx 预编译库并集成到 Xcode 项目
 
 - [ ] **Step 1: 创建 Frameworks 目录**
 
 ```bash
-mkdir -p VoiceRelayMac/Frameworks
+mkdir -p VoiceMindMac/Frameworks
 ```
 
 - [ ] **Step 2: 下载 sherpa-onnx xcframework**
@@ -85,24 +85,24 @@ mkdir -p VoiceRelayMac/Frameworks
 - https://k2-fsa.github.io/sherpa/onnx/ios/build-sherpa-onnx-swift.html
 - https://github.com/k2-fsa/sherpa-onnx/releases
 
-下载后将 `sherpa-onnx.xcframework` 放置到 `VoiceRelayMac/Frameworks/` 目录。
+下载后将 `sherpa-onnx.xcframework` 放置到 `VoiceMindMac/Frameworks/` 目录。
 
 - [ ] **Step 3: 在 Xcode 中添加 xcframework**
 
 打开 Xcode 项目：
-1. 选择 VoiceRelayMac target
+1. 选择 VoiceMindMac target
 2. 进入 "General" 标签
 3. 在 "Frameworks, Libraries, and Embedded Content" 部分
 4. 点击 "+" 按钮
 5. 选择 "Add Other..." → "Add Files..."
-6. 选择 `VoiceRelayMac/Frameworks/sherpa-onnx.xcframework`
+6. 选择 `VoiceMindMac/Frameworks/sherpa-onnx.xcframework`
 7. 确保 "Embed & Sign" 选项被选中
 
 - [ ] **Step 4: 验证 xcframework 已添加**
 
 ```bash
-xcodebuild -workspace VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+xcodebuild -workspace VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     -showBuildSettings | grep FRAMEWORK_SEARCH_PATHS
 ```
@@ -112,8 +112,8 @@ Expected: 输出包含 Frameworks 目录路径
 - [ ] **Step 5: 提交**
 
 ```bash
-git add VoiceRelayMac/Frameworks/
-git add VoiceRelayMac/VoiceRelayMac.xcodeproj/project.pbxproj
+git add VoiceMindMac/Frameworks/
+git add VoiceMindMac/VoiceMindMac.xcodeproj/project.pbxproj
 git commit -m "feat: add sherpa-onnx xcframework
 
 Integrate sherpa-onnx precompiled library for macOS.
@@ -129,14 +129,14 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 2: 创建 Objective-C 桥接头文件
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMac/Speech/SherpaOnnx/SherpaOnnxBridge.h`
+- Create: `VoiceMindMac/VoiceMindMac/Speech/SherpaOnnx/SherpaOnnxBridge.h`
 
 **目标**: 定义 Objective-C 桥接接口
 
 - [ ] **Step 1: 创建 SherpaOnnx 目录**
 
 ```bash
-mkdir -p VoiceRelayMac/VoiceRelayMac/Speech/SherpaOnnx
+mkdir -p VoiceMindMac/VoiceMindMac/Speech/SherpaOnnx
 ```
 
 - [ ] **Step 2: 创建 SherpaOnnxBridge.h**
@@ -144,7 +144,7 @@ mkdir -p VoiceRelayMac/VoiceRelayMac/Speech/SherpaOnnx
 ```objc
 //
 //  SherpaOnnxBridge.h
-//  VoiceRelayMac
+//  VoiceMindMac
 //
 
 #import <Foundation/Foundation.h>
@@ -191,7 +191,7 @@ NS_ASSUME_NONNULL_END
 - [ ] **Step 4: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Speech/SherpaOnnx/SherpaOnnxBridge.h
+git add VoiceMindMac/VoiceMindMac/Speech/SherpaOnnx/SherpaOnnxBridge.h
 git commit -m "feat: add SherpaOnnxBridge header file
 
 Define Objective-C bridge interface for sherpa-onnx C++ library.
@@ -204,7 +204,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 3: 实现 Objective-C 桥接
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMac/Speech/SherpaOnnx/SherpaOnnxBridge.mm`
+- Create: `VoiceMindMac/VoiceMindMac/Speech/SherpaOnnx/SherpaOnnxBridge.mm`
 
 **目标**: 实现 C++ 到 Objective-C 的桥接
 
@@ -213,7 +213,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ```objc
 //
 //  SherpaOnnxBridge.mm
-//  VoiceRelayMac
+//  VoiceMindMac
 //
 
 #import "SherpaOnnxBridge.h"
@@ -327,27 +327,27 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
 - [ ] **Step 3: 创建或更新 Bridging Header**
 
-创建 `VoiceRelayMac/VoiceRelayMac/VoiceRelayMac-Bridging-Header.h`:
+创建 `VoiceMindMac/VoiceMindMac/VoiceMindMac-Bridging-Header.h`:
 
 ```objc
 //
-//  VoiceRelayMac-Bridging-Header.h
-//  VoiceRelayMac
+//  VoiceMindMac-Bridging-Header.h
+//  VoiceMindMac
 //
 
 #import "Speech/SherpaOnnx/SherpaOnnxBridge.h"
 ```
 
 在 Xcode 项目设置中：
-1. 选择 VoiceRelayMac target
+1. 选择 VoiceMindMac target
 2. Build Settings → Swift Compiler - General
-3. 设置 "Objective-C Bridging Header" 为 `VoiceRelayMac/VoiceRelayMac-Bridging-Header.h`
+3. 设置 "Objective-C Bridging Header" 为 `VoiceMindMac/VoiceMindMac-Bridging-Header.h`
 
 - [ ] **Step 4: 验证编译**
 
 ```bash
-xcodebuild -workspace VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+xcodebuild -workspace VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     build
 ```
@@ -357,9 +357,9 @@ Expected: 编译成功
 - [ ] **Step 5: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Speech/SherpaOnnx/SherpaOnnxBridge.mm
-git add VoiceRelayMac/VoiceRelayMac/VoiceRelayMac-Bridging-Header.h
-git add VoiceRelayMac/VoiceRelayMac.xcodeproj/project.pbxproj
+git add VoiceMindMac/VoiceMindMac/Speech/SherpaOnnx/SherpaOnnxBridge.mm
+git add VoiceMindMac/VoiceMindMac/VoiceMindMac-Bridging-Header.h
+git add VoiceMindMac/VoiceMindMac.xcodeproj/project.pbxproj
 git commit -m "feat: implement SherpaOnnxBridge C++ to Objective-C bridge
 
 Implement bridge layer between sherpa-onnx C++ API and Objective-C.
@@ -375,7 +375,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 4: 创建 SenseVoiceEngine
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMac/Speech/Engines/SenseVoiceEngine.swift`
+- Create: `VoiceMindMac/VoiceMindMac/Speech/Engines/SenseVoiceEngine.swift`
 
 **目标**: 实现 SenseVoice 语音识别引擎
 
@@ -561,8 +561,8 @@ class SenseVoiceEngine: NSObject, SpeechRecognitionEngine {
 - [ ] **Step 3: 验证编译**
 
 ```bash
-xcodebuild -workspace VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+xcodebuild -workspace VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     build
 ```
@@ -572,7 +572,7 @@ Expected: 编译成功
 - [ ] **Step 4: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Speech/Engines/SenseVoiceEngine.swift
+git add VoiceMindMac/VoiceMindMac/Speech/Engines/SenseVoiceEngine.swift
 git commit -m "feat: implement SenseVoiceEngine
 
 Implement SenseVoice speech recognition engine using sherpa-onnx.
@@ -586,11 +586,11 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 5: 集成 SenseVoice 到应用启动
 
 **Files:**
-- Modify: `VoiceRelayMac/VoiceRelayMac/VoiceRelayMacApp.swift`
+- Modify: `VoiceMindMac/VoiceMindMac/VoiceMindMacApp.swift`
 
 **目标**: 在应用启动时注册 SenseVoice 引擎
 
-- [ ] **Step 1: 读取 VoiceRelayMacApp.swift**
+- [ ] **Step 1: 读取 VoiceMindMacApp.swift**
 
 - [ ] **Step 2: 修改 initializeSpeechEngine() 方法**
 
@@ -649,8 +649,8 @@ private func initializeSpeechEngine() async {
 - [ ] **Step 3: 验证编译**
 
 ```bash
-xcodebuild -workspace VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+xcodebuild -workspace VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     build
 ```
@@ -660,7 +660,7 @@ Expected: 编译成功
 - [ ] **Step 4: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/VoiceRelayMacApp.swift
+git add VoiceMindMac/VoiceMindMac/VoiceMindMacApp.swift
 git commit -m "feat: register SenseVoice engine at app startup
 
 Automatically register SenseVoice engine if model is downloaded.
@@ -689,8 +689,8 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ✅ Apple Speech 引擎已注册
 📦 检测到 SenseVoice 模型，正在初始化...
 🎤 初始化 SenseVoice 引擎
-📁 模型路径: ~/Library/Application Support/VoiceRelayMac/Models/sensevoice-small/model.onnx
-📁 词表路径: ~/Library/Application Support/VoiceRelayMac/Models/sensevoice-small/tokens.txt
+📁 模型路径: ~/Library/Application Support/VoiceMindMac/Models/sensevoice-small/model.onnx
+📁 词表路径: ~/Library/Application Support/VoiceMindMac/Models/sensevoice-small/tokens.txt
 ✅ SenseVoice 引擎初始化成功
 ✅ SenseVoice 引擎已注册
 ✅ 已选择引擎: sensevoice

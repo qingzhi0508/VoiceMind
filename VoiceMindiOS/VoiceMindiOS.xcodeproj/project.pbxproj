@@ -1,0 +1,628 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B919E34F2F6861CF002A347A /* SharedCore in Frameworks */ = {isa = PBXBuildFile; productRef = B919E34E2F6861CF002A347A /* SharedCore */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B919E2A62F685991002A347A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B919E28B2F68598F002A347A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B919E2922F68598F002A347A;
+			remoteInfo = VoiceMindiOS;
+		};
+		B919E2B02F685991002A347A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B919E28B2F68598F002A347A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B919E2922F68598F002A347A;
+			remoteInfo = VoiceMindiOS;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		B919E2932F68598F002A347A /* VoiceMind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoiceMind.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B919E2A52F685991002A347A /* VoiceMindiOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoiceMindiOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B919E2AF2F685991002A347A /* VoiceMindiOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoiceMindiOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B977435C2F687F840076F7A4 /* Exceptions for "VoiceMindiOS" folder in "VoiceMindiOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = B919E2922F68598F002A347A /* VoiceMindiOS */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		B919E2952F68598F002A347A /* VoiceMindiOS */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B977435C2F687F840076F7A4 /* Exceptions for "VoiceMindiOS" folder in "VoiceMindiOS" target */,
+			);
+			path = VoiceMindiOS;
+			sourceTree = "<group>";
+		};
+		B919E2A82F685991002A347A /* VoiceMindiOSTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = VoiceMindiOSTests;
+			sourceTree = "<group>";
+		};
+		B919E2B22F685991002A347A /* VoiceMindiOSUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = VoiceMindiOSUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B919E2902F68598F002A347A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B919E34F2F6861CF002A347A /* SharedCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B919E2A22F685991002A347A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B919E2AC2F685991002A347A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		B919E28A2F68598F002A347A = {
+			isa = PBXGroup;
+			children = (
+				B919E2952F68598F002A347A /* VoiceMindiOS */,
+				B919E2A82F685991002A347A /* VoiceMindiOSTests */,
+				B919E2B22F685991002A347A /* VoiceMindiOSUITests */,
+				B919E34D2F6861CF002A347A /* Frameworks */,
+				B919E2942F68598F002A347A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B919E2942F68598F002A347A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B919E2932F68598F002A347A /* VoiceMind.app */,
+				B919E2A52F685991002A347A /* VoiceMindiOSTests.xctest */,
+				B919E2AF2F685991002A347A /* VoiceMindiOSUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B919E34D2F6861CF002A347A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B919E2922F68598F002A347A /* VoiceMindiOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B919E2B92F685991002A347A /* Build configuration list for PBXNativeTarget "VoiceMindiOS" */;
+			buildPhases = (
+				B919E28F2F68598F002A347A /* Sources */,
+				B919E2902F68598F002A347A /* Frameworks */,
+				B919E2912F68598F002A347A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B919E2952F68598F002A347A /* VoiceMindiOS */,
+			);
+			name = VoiceMindiOS;
+			packageProductDependencies = (
+				B919E34E2F6861CF002A347A /* SharedCore */,
+			);
+			productName = VoiceMindiOS;
+			productReference = B919E2932F68598F002A347A /* VoiceMind.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B919E2A42F685991002A347A /* VoiceMindiOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B919E2BC2F685991002A347A /* Build configuration list for PBXNativeTarget "VoiceMindiOSTests" */;
+			buildPhases = (
+				B919E2A12F685991002A347A /* Sources */,
+				B919E2A22F685991002A347A /* Frameworks */,
+				B919E2A32F685991002A347A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B919E2A72F685991002A347A /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B919E2A82F685991002A347A /* VoiceMindiOSTests */,
+			);
+			name = VoiceMindiOSTests;
+			packageProductDependencies = (
+			);
+			productName = VoiceMindiOSTests;
+			productReference = B919E2A52F685991002A347A /* VoiceMindiOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B919E2AE2F685991002A347A /* VoiceMindiOSUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B919E2BF2F685991002A347A /* Build configuration list for PBXNativeTarget "VoiceMindiOSUITests" */;
+			buildPhases = (
+				B919E2AB2F685991002A347A /* Sources */,
+				B919E2AC2F685991002A347A /* Frameworks */,
+				B919E2AD2F685991002A347A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B919E2B12F685991002A347A /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B919E2B22F685991002A347A /* VoiceMindiOSUITests */,
+			);
+			name = VoiceMindiOSUITests;
+			packageProductDependencies = (
+			);
+			productName = VoiceMindiOSUITests;
+			productReference = B919E2AF2F685991002A347A /* VoiceMindiOSUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B919E28B2F68598F002A347A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2630;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					B919E2922F68598F002A347A = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					B919E2A42F685991002A347A = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = B919E2922F68598F002A347A;
+					};
+					B919E2AE2F685991002A347A = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = B919E2922F68598F002A347A;
+					};
+				};
+			};
+			buildConfigurationList = B919E28E2F68598F002A347A /* Build configuration list for PBXProject "VoiceMindiOS" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				"zh-Hans",
+			);
+			mainGroup = B919E28A2F68598F002A347A;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B919E2942F68598F002A347A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B919E2922F68598F002A347A /* VoiceMindiOS */,
+				B919E2A42F685991002A347A /* VoiceMindiOSTests */,
+				B919E2AE2F685991002A347A /* VoiceMindiOSUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B919E2912F68598F002A347A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B919E2A32F685991002A347A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B919E2AD2F685991002A347A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B919E28F2F68598F002A347A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B919E2A12F685991002A347A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B919E2AB2F685991002A347A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B919E2A72F685991002A347A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B919E2922F68598F002A347A /* VoiceMindiOS */;
+			targetProxy = B919E2A62F685991002A347A /* PBXContainerItemProxy */;
+		};
+		B919E2B12F685991002A347A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B919E2922F68598F002A347A /* VoiceMindiOS */;
+			targetProxy = B919E2B02F685991002A347A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		B919E2B72F685991002A347A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 7C7627YUTV;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B919E2B82F685991002A347A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 7C7627YUTV;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		B919E2BA2F685991002A347A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7C7627YUTV;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VoiceMindiOS/Info.plist;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "需要访问本地网络以连接到您的服务";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要使用麦克风进行语音识别";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "要使用语音识别功能将您的语音转换为文字";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cayden.VoiceMind;
+				PRODUCT_NAME = VoiceMind;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B919E2BB2F685991002A347A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7C7627YUTV;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VoiceMindiOS/Info.plist;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "需要访问本地网络以连接到您的服务";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要使用麦克风进行语音识别";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "要使用语音识别功能将您的语音转换为文字";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cayden.VoiceMind;
+				PRODUCT_NAME = VoiceMind;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B919E2BD2F685991002A347A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7C7627YUTV;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cayden.VoiceMindiOSTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceMindiOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceMindiOS";
+			};
+			name = Debug;
+		};
+		B919E2BE2F685991002A347A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7C7627YUTV;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cayden.VoiceMindiOSTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceMindiOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceMindiOS";
+			};
+			name = Release;
+		};
+		B919E2C02F685991002A347A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7C7627YUTV;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cayden.VoiceMindiOSUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = VoiceMindiOS;
+			};
+			name = Debug;
+		};
+		B919E2C12F685991002A347A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7C7627YUTV;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cayden.VoiceMindiOSUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = VoiceMindiOS;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B919E28E2F68598F002A347A /* Build configuration list for PBXProject "VoiceMindiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B919E2B72F685991002A347A /* Debug */,
+				B919E2B82F685991002A347A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B919E2B92F685991002A347A /* Build configuration list for PBXNativeTarget "VoiceMindiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B919E2BA2F685991002A347A /* Debug */,
+				B919E2BB2F685991002A347A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B919E2BC2F685991002A347A /* Build configuration list for PBXNativeTarget "VoiceMindiOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B919E2BD2F685991002A347A /* Debug */,
+				B919E2BE2F685991002A347A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B919E2BF2F685991002A347A /* Build configuration list for PBXNativeTarget "VoiceMindiOSUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B919E2C02F685991002A347A /* Debug */,
+				B919E2C12F685991002A347A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B919E34E2F6861CF002A347A /* SharedCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SharedCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = B919E28B2F68598F002A347A /* Project object */;
+}

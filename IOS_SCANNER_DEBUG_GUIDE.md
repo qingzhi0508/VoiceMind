@@ -15,13 +15,13 @@
 
 1. 打开 Xcode
 2. 在左侧项目导航器中查找：
-   - `VoiceRelayiOS/Scanner/QRCodeScannerController.swift`
-   - `VoiceRelayiOS/Scanner/CameraPreview.swift`
-   - `VoiceRelayiOS/Views/QRCodeScannerView.swift`
+   - `VoiceMindiOS/Scanner/QRCodeScannerController.swift`
+   - `VoiceMindiOS/Scanner/CameraPreview.swift`
+   - `VoiceMindiOS/Views/QRCodeScannerView.swift`
 
 3. 如果看不到这些文件：
-   - 右键点击 `VoiceRelayiOS` 文件夹
-   - 选择 "Add Files to VoiceRelayiOS..."
+   - 右键点击 `VoiceMindiOS` 文件夹
+   - 选择 "Add Files to VoiceMindiOS..."
    - 导航到文件位置并添加
 
 ### 步骤 2：检查 Target Membership
@@ -30,11 +30,11 @@
 
 1. 在项目导航器中选择文件
 2. 在右侧 File Inspector 中查看 "Target Membership"
-3. 确保 **VoiceRelayiOS** 被勾选
+3. 确保 **VoiceMindiOS** 被勾选
 
 如果没有勾选：
-- 勾选 VoiceRelayiOS target
-- 不要勾选 VoiceRelayiOSTests 或 VoiceRelayiOSUITests
+- 勾选 VoiceMindiOS target
+- 不要勾选 VoiceMindiOSTests 或 VoiceMindiOSUITests
 
 ### 步骤 3：清理并重新构建
 
@@ -89,7 +89,7 @@
 运行以下命令检查文件内容：
 
 ```bash
-grep -n "扫码连接 Mac" /Users/cayden/Data/my-data/voiceMind/VoiceRelayiOS/Views/ContentView.swift
+grep -n "扫码连接 Mac" /Users/cayden/Data/my-data/voiceMind/VoiceMindiOS/Views/ContentView.swift
 ```
 
 应该输出：
@@ -100,7 +100,7 @@ grep -n "扫码连接 Mac" /Users/cayden/Data/my-data/voiceMind/VoiceRelayiOS/Vi
 ### 检查 QRCodeScannerView.swift
 
 ```bash
-head -20 /Users/cayden/Data/my-data/voiceMind/VoiceRelayiOS/VoiceRelayiOS/Views/QRCodeScannerView.swift
+head -20 /Users/cayden/Data/my-data/voiceMind/VoiceMindiOS/VoiceMindiOS/Views/QRCodeScannerView.swift
 ```
 
 应该看到：
@@ -151,13 +151,13 @@ Button("扫码连接 Mac") {
 **解决**：
 1. 在 Xcode 中找到 QRCodeScannerController.swift
 2. 选中文件，查看右侧 Target Membership
-3. 勾选 VoiceRelayiOS
+3. 勾选 VoiceMindiOS
 
 ### Q4: 相机权限请求不显示
 
 **检查 Info.plist**：
 ```bash
-grep -A1 "NSCameraUsageDescription" /Users/cayden/Data/my-data/voiceMind/VoiceRelayiOS/VoiceRelayiOS/Info.plist
+grep -A1 "NSCameraUsageDescription" /Users/cayden/Data/my-data/voiceMind/VoiceMindiOS/VoiceMindiOS/Info.plist
 ```
 
 应该输出：
@@ -178,9 +178,9 @@ grep -A1 "NSCameraUsageDescription" /Users/cayden/Data/my-data/voiceMind/VoiceRe
 echo "🔍 检查 iOS 扫码功能文件..."
 
 FILES=(
-    "/Users/cayden/Data/my-data/voiceMind/VoiceRelayiOS/VoiceRelayiOS/Scanner/QRCodeScannerController.swift"
-    "/Users/cayden/Data/my-data/voiceMind/VoiceRelayiOS/VoiceRelayiOS/Scanner/CameraPreview.swift"
-    "/Users/cayden/Data/my-data/voiceMind/VoiceRelayiOS/VoiceRelayiOS/Views/QRCodeScannerView.swift"
+    "/Users/cayden/Data/my-data/voiceMind/VoiceMindiOS/VoiceMindiOS/Scanner/QRCodeScannerController.swift"
+    "/Users/cayden/Data/my-data/voiceMind/VoiceMindiOS/VoiceMindiOS/Scanner/CameraPreview.swift"
+    "/Users/cayden/Data/my-data/voiceMind/VoiceMindiOS/VoiceMindiOS/Views/QRCodeScannerView.swift"
 )
 
 for file in "${FILES[@]}"; do
@@ -193,7 +193,7 @@ done
 
 echo ""
 echo "🔍 检查 ContentView 是否包含扫码按钮..."
-if grep -q "扫码连接 Mac" "/Users/cayden/Data/my-data/voiceMind/VoiceRelayiOS/Views/ContentView.swift"; then
+if grep -q "扫码连接 Mac" "/Users/cayden/Data/my-data/voiceMind/VoiceMindiOS/Views/ContentView.swift"; then
     echo "✅ ContentView 包含扫码按钮"
 else
     echo "❌ ContentView 不包含扫码按钮"
@@ -201,7 +201,7 @@ fi
 
 echo ""
 echo "🔍 检查 Info.plist 相机权限..."
-if grep -q "NSCameraUsageDescription" "/Users/cayden/Data/my-data/voiceMind/VoiceRelayiOS/VoiceRelayiOS/Info.plist"; then
+if grep -q "NSCameraUsageDescription" "/Users/cayden/Data/my-data/voiceMind/VoiceMindiOS/VoiceMindiOS/Info.plist"; then
     echo "✅ Info.plist 包含相机权限描述"
 else
     echo "❌ Info.plist 缺少相机权限描述"

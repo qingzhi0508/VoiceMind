@@ -8,15 +8,15 @@ macOS 的辅助功能（Accessibility）和输入监控（Input Monitoring）权
 
 ### 1. 在 Xcode 中配置 Info.plist
 
-1. 选择 **VoiceRelayMac** target
+1. 选择 **VoiceMindMac** target
 2. 点击 **Info** 标签页
 3. 添加 Info.plist 文件：
    - 在 **Build Settings** 中搜索 "Info.plist File"
-   - 设置为：`VoiceRelayMac/Info.plist`
+   - 设置为：`VoiceMindMac/Info.plist`
 
 ### 2. 配置 Signing & Capabilities
 
-1. 选择 **VoiceRelayMac** target
+1. 选择 **VoiceMindMac** target
 2. 点击 **Signing & Capabilities** 标签页
 3. 确保勾选 **Automatically manage signing**
 4. 选择你的 **Team**
@@ -38,13 +38,13 @@ macOS 的辅助功能（Accessibility）和输入监控（Input Monitoring）权
 1. 应用会弹出系统对话框
 2. 点击"打开系统设置"
 3. 在 **隐私与安全性 → 辅助功能** 中
-4. 找到 **VoiceRelayMac**
+4. 找到 **VoiceMindMac**
 5. 勾选启用
 
 #### 输入监控权限
 1. 应用会自动打开系统设置
 2. 在 **隐私与安全性 → 输入监控** 中
-3. 找到 **VoiceRelayMac**
+3. 找到 **VoiceMindMac**
 4. 勾选启用
 
 ### 5. 如果应用不在权限列表中
@@ -70,7 +70,7 @@ macOS 的辅助功能（Accessibility）和输入监控（Input Monitoring）权
 4. 点击 **+** 按钮
 5. 导航到应用位置：
    ```
-   ~/Library/Developer/Xcode/DerivedData/VoiceRelay-xxx/Build/Products/Debug/VoiceRelayMac.app
+   ~/Library/Developer/Xcode/DerivedData/VoiceMind-xxx/Build/Products/Debug/VoiceMindMac.app
    ```
 6. 选择应用并添加
 7. 勾选启用
@@ -95,16 +95,16 @@ macOS 的辅助功能（Accessibility）和输入监控（Input Monitoring）权
 
 ### 查看应用签名
 ```bash
-codesign -dv --verbose=4 /path/to/VoiceRelayMac.app
+codesign -dv --verbose=4 /path/to/VoiceMindMac.app
 ```
 
 ### 查看权限数据库
 ```bash
 # 辅助功能
-tccutil reset Accessibility com.yourcompany.VoiceRelayMac
+tccutil reset Accessibility com.yourcompany.VoiceMindMac
 
 # 输入监控
-tccutil reset ListenEvent com.yourcompany.VoiceRelayMac
+tccutil reset ListenEvent com.yourcompany.VoiceMindMac
 ```
 
 ### 重置所有权限（慎用）

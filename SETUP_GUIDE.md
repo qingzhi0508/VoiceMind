@@ -3,7 +3,7 @@
 ## 当前状态
 
 ✅ **已完成**：
-- 应用入口点（VoiceRelayMacApp.swift）
+- 应用入口点（VoiceMindMacApp.swift）
 - 主窗口界面（状态、设置、权限、关于、调试）
 - 设置管理系统（AppSettings）
 - 两种文本注入方式（剪贴板 + CGEvent）
@@ -48,10 +48,10 @@ xcodebuild -version
 
 ### 2.1 添加新文件
 
-在 Xcode 项目导航器中，确保以下文件已添加到 VoiceRelayMac target：
+在 Xcode 项目导航器中，确保以下文件已添加到 VoiceMindMac target：
 
 **必需文件**：
-- ✅ `VoiceRelayMacApp.swift`
+- ✅ `VoiceMindMacApp.swift`
 - ✅ `Settings/AppSettings.swift`
 - ✅ `Views/MainWindow.swift`
 - ✅ `Views/PermissionsDebugView.swift`
@@ -63,7 +63,7 @@ xcodebuild -version
 **需要移除的文件**：
 - ❌ `TextInjection/TextInjector.swift`（已删除）
 - ❌ `Network/BonjourPublisher.swift`（已删除，功能集成到 WebSocketServer）
-- ❌ `VoiceRelayMacApp_Minimal.swift`（已删除）
+- ❌ `VoiceMindMacApp_Minimal.swift`（已删除）
 - ❌ `ContentView.swift`（已删除）
 - ❌ `Persistence.swift`（已删除）
 
@@ -75,7 +75,7 @@ xcodebuild -version
 
 ### 2.3 配置签名
 
-1. 选择 VoiceRelayMac target
+1. 选择 VoiceMindMac target
 2. 点击 "Signing & Capabilities"
 3. 勾选 "Automatically manage signing"
 4. 选择你的 Team
@@ -97,7 +97,7 @@ xcodebuild -version
 3. 点击「2️⃣ 请求辅助功能权限」
 4. 系统设置应该会自动打开
 5. 在「隐私与安全性」→「辅助功能」中：
-   - 如果看到 VoiceRelayMac，勾选启用
+   - 如果看到 VoiceMindMac，勾选启用
    - 如果看不到，点击「+」手动添加应用路径
 
 ### 手动配置
@@ -108,7 +108,7 @@ xcodebuild -version
 2. 点击左下角「🔒」解锁（需要密码）
 3. 点击「+」按钮
 4. 导航到应用路径（在调试标签页可以看到完整路径）
-5. 选择 VoiceRelayMac.app 并添加
+5. 选择 VoiceMindMac.app 并添加
 6. 勾选启用
 
 ## 步骤 5：测试功能
@@ -194,7 +194,7 @@ let parameters = NWParameters.tcp
 parameters.includePeerToPeer = true // 启用 Bonjour
 
 listener.service = NWListener.Service(
-    name: Host.current().localizedName ?? "VoiceRelay Mac",
+    name: Host.current().localizedName ?? "VoiceMind Mac",
     type: "_voicerelay._tcp"
 )
 ```

@@ -42,54 +42,54 @@ check_file "SharedCore/Sources/SharedCore/Models/PairingData.swift" || ((missing
 
 echo ""
 echo "检查 macOS 应用..."
-check_file "VoiceRelayMac/VoiceRelayMac/VoiceRelayMacApp.swift" || ((missing++))
-check_file "VoiceRelayMac/VoiceRelayMac/Network/WebSocketServer.swift" || ((missing++))
-check_file "VoiceRelayMac/VoiceRelayMac/Network/BonjourPublisher.swift" || ((missing++))
-check_file "VoiceRelayMac/VoiceRelayMac/Network/ConnectionManager.swift" || ((missing++))
-check_file "VoiceRelayMac/VoiceRelayMac/Hotkey/HotkeyMonitor.swift" || ((missing++))
-check_file "VoiceRelayMac/VoiceRelayMac/Hotkey/HotkeyConfiguration.swift" || ((missing++))
-check_file "VoiceRelayMac/VoiceRelayMac/TextInjection/TextInjector.swift" || ((missing++))
-check_file "VoiceRelayMac/VoiceRelayMac/Permissions/PermissionsManager.swift" || ((missing++))
-check_file "VoiceRelayMac/VoiceRelayMac/MenuBar/MenuBarController.swift" || ((missing++))
-check_file "VoiceRelayMac/VoiceRelayMac/MenuBar/MenuBarController+Delegates.swift" || ((missing++))
-check_file "VoiceRelayMac/VoiceRelayMac/MenuBar/PairingWindow.swift" || ((missing++))
-check_file "VoiceRelayMac/VoiceRelayMac/MenuBar/HotkeySettingsWindow.swift" || ((missing++))
-check_file "VoiceRelayMac/VoiceRelayMac/MenuBar/PermissionsWindow.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/VoiceMindMacApp.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/Network/WebSocketServer.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/Network/BonjourPublisher.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/Network/ConnectionManager.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/Hotkey/HotkeyMonitor.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/Hotkey/HotkeyConfiguration.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/TextInjection/TextInjector.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/Permissions/PermissionsManager.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/MenuBar/MenuBarController.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/MenuBar/MenuBarController+Delegates.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/MenuBar/PairingWindow.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/MenuBar/HotkeySettingsWindow.swift" || ((missing++))
+check_file "VoiceMindMac/VoiceMindMac/MenuBar/PermissionsWindow.swift" || ((missing++))
 
 echo ""
 echo "检查 iOS 应用..."
-check_file "VoiceRelayiOS/VoiceRelayiOS/VoiceRelayiOSApp.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/Network/BonjourBrowser.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/Network/WebSocketClient.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/Network/ReconnectionManager.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/Network/ConnectionManager.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/Network/DiscoveredService.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/Network/PairingState.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/Speech/SpeechController.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/Speech/RecognitionState.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/ViewModels/ContentViewModel.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/Views/ContentView.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/Views/PairingView.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/Views/SettingsView.swift" || ((missing++))
-check_file "VoiceRelayiOS/VoiceRelayiOS/Info.plist" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/VoiceMindiOSApp.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/Network/BonjourBrowser.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/Network/WebSocketClient.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/Network/ReconnectionManager.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/Network/ConnectionManager.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/Network/DiscoveredService.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/Network/PairingState.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/Speech/SpeechController.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/Speech/RecognitionState.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/ViewModels/ContentViewModel.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/Views/ContentView.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/Views/PairingView.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/Views/SettingsView.swift" || ((missing++))
+check_file "VoiceMindiOS/VoiceMindiOS/Info.plist" || ((missing++))
 
 echo ""
 echo "检查工作区和文档..."
-check_file "VoiceRelay.xcworkspace/contents.xcworkspacedata" || ((missing++))
+check_file "VoiceMind.xcworkspace/contents.xcworkspacedata" || ((missing++))
 check_file "README.md" || ((missing++))
 check_file "TESTING_GUIDE.md" || ((missing++))
 
 echo ""
 echo "检查不应该存在的旧文件..."
-if [ -f "VoiceRelayiOS/VoiceRelayiOS/ContentView.swift" ]; then
-    echo -e "${RED}✗${NC} VoiceRelayiOS/VoiceRelayiOS/ContentView.swift (应该删除，使用 Views/ContentView.swift)"
+if [ -f "VoiceMindiOS/VoiceMindiOS/ContentView.swift" ]; then
+    echo -e "${RED}✗${NC} VoiceMindiOS/VoiceMindiOS/ContentView.swift (应该删除，使用 Views/ContentView.swift)"
     ((missing++))
 else
     echo -e "${GREEN}✓${NC} 旧的 ContentView.swift 已删除"
 fi
 
-if [ -f "VoiceRelayiOS/VoiceRelayiOS/Persistence.swift" ]; then
-    echo -e "${RED}✗${NC} VoiceRelayiOS/VoiceRelayiOS/Persistence.swift (应该删除)"
+if [ -f "VoiceMindiOS/VoiceMindiOS/Persistence.swift" ]; then
+    echo -e "${RED}✗${NC} VoiceMindiOS/VoiceMindiOS/Persistence.swift (应该删除)"
     ((missing++))
 else
     echo -e "${GREEN}✓${NC} Persistence.swift 已删除"
@@ -101,7 +101,7 @@ if [ $missing -eq 0 ]; then
     echo -e "${GREEN}✓ 所有文件检查通过！${NC}"
     echo ""
     echo "下一步："
-    echo "1. 在 Xcode 中打开 VoiceRelay.xcworkspace"
+    echo "1. 在 Xcode 中打开 VoiceMind.xcworkspace"
     echo "2. 将新文件添加到对应的 target"
     echo "3. 按照 TESTING_GUIDE.md 进行测试"
     exit 0

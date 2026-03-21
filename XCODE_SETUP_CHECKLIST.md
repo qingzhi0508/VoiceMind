@@ -12,24 +12,24 @@
 
 ## 第二步：添加 macOS 文件
 
-1. 在左侧导航器中找到 **VoiceRelayMac** 项目
-2. 展开 `VoiceRelayMac/Views/`
-3. 右键点击 `Views` 文件夹 → "Add Files to VoiceRelayMac..."
+1. 在左侧导航器中找到 **VoiceMindMac** 项目
+2. 展开 `VoiceMindMac/Views/`
+3. 右键点击 `Views` 文件夹 → "Add Files to VoiceMindMac..."
 4. 选择以下文件：
    - `QRCodePairingView.swift`
    - `PermissionsDebugView.swift`（如果还没添加）
-5. 确保勾选 VoiceRelayMac target
+5. 确保勾选 VoiceMindMac target
 6. 点击 "Add"
 
 ## 第三步：添加 iOS 文件
 
-1. 在左侧导航器中找到 **VoiceRelayiOS** 项目
-2. 展开 `VoiceRelayiOS/Views/`
-3. 右键点击 `Views` 文件夹 → "Add Files to VoiceRelayiOS..."
+1. 在左侧导航器中找到 **VoiceMindiOS** 项目
+2. 展开 `VoiceMindiOS/Views/`
+3. 右键点击 `Views` 文件夹 → "Add Files to VoiceMindiOS..."
 4. 选择以下文件：
    - `ManualConnectionView.swift`
    - `QRCodeScannerView.swift`
-5. 确保勾选 VoiceRelayiOS target
+5. 确保勾选 VoiceMindiOS target
 6. 点击 "Add"
 
 ## 第四步：清理并构建
@@ -40,21 +40,21 @@
 3. Product → Build (Cmd+B)
 4. 确认构建成功
 
-### VoiceRelayMac
-1. 选择 VoiceRelayMac scheme
+### VoiceMindMac
+1. 选择 VoiceMindMac scheme
 2. Product → Clean Build Folder (Shift+Cmd+K)
 3. Product → Build (Cmd+B)
 4. 查看是否有编译错误
 
-### VoiceRelayiOS
-1. 选择 VoiceRelayiOS scheme
+### VoiceMindiOS
+1. 选择 VoiceMindiOS scheme
 2. Product → Clean Build Folder (Shift+Cmd+K)
 3. Product → Build (Cmd+B)
 4. 查看是否有编译错误
 
 ## 第五步：测试 macOS 端
 
-1. 运行 VoiceRelayMac
+1. 运行 VoiceMindMac
 2. 在「状态」标签页点击「启动服务」
 3. 点击「开始配对」
 4. 应该看到：
@@ -68,7 +68,7 @@
 
 ## 第六步：测试 iOS 端（手动连接）
 
-1. 运行 VoiceRelayiOS（模拟器或真机）
+1. 运行 VoiceMindiOS（模拟器或真机）
 2. 点击「手动输入连接」
 3. 输入 macOS 显示的 IP 和端口
 4. 点击「连接」

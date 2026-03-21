@@ -45,7 +45,7 @@ VoiceMind Mac 端提供了完整的模型管理功能，允许用户从网上下
 模型默认存储在以下位置：
 
 ```
-~/Library/Application Support/VoiceRelayMac/Models/
+~/Library/Application Support/VoiceMindMac/Models/
 ```
 
 每个模型会存储在以模型ID命名的子目录中。

@@ -67,7 +67,7 @@
 
 ### 修改文件
 - `MenuBarController.swift` - 添加服务控制方法
-- `VoiceRelayMacApp.swift` - 启动时显示主窗口
+- `VoiceMindMacApp.swift` - 启动时显示主窗口
 
 ### 核心功能
 - `startNetworkServices()` - 启动网络服务

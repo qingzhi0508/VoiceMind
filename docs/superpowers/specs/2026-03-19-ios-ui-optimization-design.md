@@ -8,7 +8,7 @@
 
 ### 1.1 目标
 
-优化 VoiceRelayiOS 应用的用户界面，提升视觉美观度和用户体验：
+优化 VoiceMindiOS 应用的用户界面，提升视觉美观度和用户体验：
 - 将设置功能移至右上角
 - 缩小 "VoiceMind" 标题字体
 - 连接成功后完全隐藏连接状态卡片
@@ -92,7 +92,7 @@ if !connectionManager.isConnected {
 
 ### 3.1 ContentView.swift
 
-**修改位置:** `VoiceRelayiOS/VoiceRelayiOS/Views/ContentView.swift`
+**修改位置:** `VoiceMindiOS/VoiceMindiOS/Views/ContentView.swift`
 
 **变更内容:**
 1. 移除顶部独立的 "VoiceMind" Text 视图（约第 47 行）

@@ -13,7 +13,7 @@
 ## File Structure
 
 **Files to Modify:**
-- `VoiceRelayiOS/VoiceRelayiOS/Views/ContentView.swift` - Main view with navigation bar and status card
+- `VoiceMindiOS/VoiceMindiOS/Views/ContentView.swift` - Main view with navigation bar and status card
 
 **No new files needed** - all changes are contained in ContentView.swift
 
@@ -22,7 +22,7 @@
 ## Task 1: Add Navigation Bar with Inline Title
 
 **Files:**
-- Modify: `VoiceRelayiOS/VoiceRelayiOS/Views/ContentView.swift:47`
+- Modify: `VoiceMindiOS/VoiceMindiOS/Views/ContentView.swift:47`
 
 - [ ] **Step 1: Change navigationTitle display mode to inline**
 
@@ -43,8 +43,8 @@ With:
 
 Run:
 ```bash
-cd VoiceRelayiOS
-xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build
+cd VoiceMindiOS
+xcodebuild -workspace ../VoiceMind.xcworkspace -scheme VoiceMindiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build
 ```
 
 Expected: Build succeeds
@@ -52,7 +52,7 @@ Expected: Build succeeds
 - [ ] **Step 3: Commit navigation title change**
 
 ```bash
-git add VoiceRelayiOS/VoiceRelayiOS/Views/ContentView.swift
+git add VoiceMindiOS/VoiceMindiOS/Views/ContentView.swift
 git commit -m "feat(ios): change VoiceMind title to inline display mode"
 ```
 
@@ -61,7 +61,7 @@ git commit -m "feat(ios): change VoiceMind title to inline display mode"
 ## Task 2: Add Settings Button to Toolbar
 
 **Files:**
-- Modify: `VoiceRelayiOS/VoiceRelayiOS/Views/ContentView.swift:41-44,48`
+- Modify: `VoiceMindiOS/VoiceMindiOS/Views/ContentView.swift:41-44,48`
 
 - [ ] **Step 1: Remove bottom settings NavigationLink**
 
@@ -94,8 +94,8 @@ After line 48 (after `.navigationBarTitleDisplayMode(.inline)`), add:
 
 Run:
 ```bash
-cd VoiceRelayiOS
-xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build
+cd VoiceMindiOS
+xcodebuild -workspace ../VoiceMind.xcworkspace -scheme VoiceMindiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build
 ```
 
 Expected: Build succeeds
@@ -103,7 +103,7 @@ Expected: Build succeeds
 - [ ] **Step 4: Commit toolbar addition**
 
 ```bash
-git add VoiceRelayiOS/VoiceRelayiOS/Views/ContentView.swift
+git add VoiceMindiOS/VoiceMindiOS/Views/ContentView.swift
 git commit -m "feat(ios): move settings to top-right toolbar button"
 ```
 
@@ -112,7 +112,7 @@ git commit -m "feat(ios): move settings to top-right toolbar button"
 ## Task 3: Add Conditional Rendering for Connection Status Card
 
 **Files:**
-- Modify: `VoiceRelayiOS/VoiceRelayiOS/Views/ContentView.swift:9-17`
+- Modify: `VoiceMindiOS/VoiceMindiOS/Views/ContentView.swift:9-17`
 
 - [ ] **Step 1: Determine connection state logic**
 
@@ -157,8 +157,8 @@ if viewModel.connectionState != .connected {
 
 Run:
 ```bash
-cd VoiceRelayiOS
-xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build
+cd VoiceMindiOS
+xcodebuild -workspace ../VoiceMind.xcworkspace -scheme VoiceMindiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build
 ```
 
 Expected: Build succeeds
@@ -166,7 +166,7 @@ Expected: Build succeeds
 - [ ] **Step 4: Commit conditional rendering**
 
 ```bash
-git add VoiceRelayiOS/VoiceRelayiOS/Views/ContentView.swift
+git add VoiceMindiOS/VoiceMindiOS/Views/ContentView.swift
 git commit -m "feat(ios): hide connection status card when connected"
 ```
 
@@ -175,16 +175,16 @@ git commit -m "feat(ios): hide connection status card when connected"
 ## Task 4: Manual Testing
 
 **Files:**
-- Test: `VoiceRelayiOS/VoiceRelayiOS/Views/ContentView.swift`
+- Test: `VoiceMindiOS/VoiceMindiOS/Views/ContentView.swift`
 
 - [ ] **Step 1: Launch app in simulator**
 
 Run:
 ```bash
-cd VoiceRelayiOS
-xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build
+cd VoiceMindiOS
+xcodebuild -workspace ../VoiceMind.xcworkspace -scheme VoiceMindiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build
 open -a Simulator
-# Then manually launch VoiceRelayiOS from simulator
+# Then manually launch VoiceMindiOS from simulator
 ```
 
 - [ ] **Step 2: Verify UI in disconnected state**
@@ -241,14 +241,14 @@ cat /tmp/ios-ui-test-results.txt
 ## Task 5: Final Build Verification
 
 **Files:**
-- Build: `VoiceRelayiOS/VoiceRelayiOS/Views/ContentView.swift`
+- Build: `VoiceMindiOS/VoiceMindiOS/Views/ContentView.swift`
 
 - [ ] **Step 1: Clean build**
 
 Run:
 ```bash
-cd VoiceRelayiOS
-xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayiOS -sdk iphonesimulator clean
+cd VoiceMindiOS
+xcodebuild -workspace ../VoiceMind.xcworkspace -scheme VoiceMindiOS -sdk iphonesimulator clean
 ```
 
 Expected: Clean succeeds
@@ -257,7 +257,7 @@ Expected: Clean succeeds
 
 Run:
 ```bash
-xcodebuild -workspace ../VoiceRelay.xcworkspace -scheme VoiceRelayiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build
+xcodebuild -workspace ../VoiceMind.xcworkspace -scheme VoiceMindiOS -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build
 ```
 
 Expected: Build succeeds with no warnings related to ContentView

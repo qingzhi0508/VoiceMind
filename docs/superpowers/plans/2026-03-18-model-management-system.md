@@ -15,7 +15,7 @@
 ### 新增文件
 
 ```
-VoiceRelayMac/VoiceRelayMac/
+VoiceMindMac/VoiceMindMac/
 ├── Models/
 │   ├── ModelInfo.swift                  # 模型信息结构体
 │   ├── ModelManager.swift               # 模型管理器（下载、存储、查询）
@@ -27,7 +27,7 @@ VoiceRelayMac/VoiceRelayMac/
 ### 模型存储位置
 
 ```
-~/Library/Application Support/VoiceRelayMac/Models/
+~/Library/Application Support/VoiceMindMac/Models/
 ├── sensevoice-small/
 │   ├── model.onnx
 │   ├── tokens.txt
@@ -43,14 +43,14 @@ VoiceRelayMac/VoiceRelayMac/
 ### Task 1: 创建 ModelInfo 结构体
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMac/Models/ModelInfo.swift`
+- Create: `VoiceMindMac/VoiceMindMac/Models/ModelInfo.swift`
 
 **目标**: 定义模型元数据结构
 
 - [ ] **Step 1: 创建 Models 目录**
 
 ```bash
-mkdir -p VoiceRelayMac/VoiceRelayMac/Models
+mkdir -p VoiceMindMac/VoiceMindMac/Models
 ```
 
 - [ ] **Step 2: 创建 ModelInfo.swift**
@@ -123,14 +123,14 @@ extension ModelInfo {
 
 - [ ] **Step 3: 在 Xcode 中添加文件到项目**
 
-打开 Xcode，右键点击 VoiceRelayMac 组，选择 "Add Files to VoiceRelayMac"，添加 Models 文件夹。
+打开 Xcode，右键点击 VoiceMindMac 组，选择 "Add Files to VoiceMindMac"，添加 Models 文件夹。
 
 - [ ] **Step 4: 验证编译**
 
 ```bash
-cd VoiceRelayMac
-xcodebuild -workspace ../VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+cd VoiceMindMac
+xcodebuild -workspace ../VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     build
 ```
@@ -140,7 +140,7 @@ Expected: 编译成功
 - [ ] **Step 5: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Models/ModelInfo.swift
+git add VoiceMindMac/VoiceMindMac/Models/ModelInfo.swift
 git commit -m "feat: add ModelInfo structure for model metadata
 
 Define model information structure with Codable support.
@@ -154,7 +154,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 2: 创建 ModelDownloader
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMac/Models/ModelDownloader.swift`
+- Create: `VoiceMindMac/VoiceMindMac/Models/ModelDownloader.swift`
 
 **目标**: 实现模型文件下载功能
 
@@ -273,8 +273,8 @@ extension ModelDownloader: URLSessionDownloadDelegate {
 - [ ] **Step 3: 验证编译**
 
 ```bash
-xcodebuild -workspace ../VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+xcodebuild -workspace ../VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     build
 ```
@@ -284,7 +284,7 @@ Expected: 编译成功
 - [ ] **Step 4: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Models/ModelDownloader.swift
+git add VoiceMindMac/VoiceMindMac/Models/ModelDownloader.swift
 git commit -m "feat: add ModelDownloader for HTTP file downloads
 
 Implement URLSession-based downloader with progress tracking.
@@ -298,7 +298,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 3: 创建 ModelManager
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMac/Models/ModelManager.swift`
+- Create: `VoiceMindMac/VoiceMindMac/Models/ModelManager.swift`
 
 **目标**: 实现模型管理核心功能
 
@@ -332,7 +332,7 @@ class ModelManager {
 
         // 创建模型存储目录
         modelsDirectory = appSupport
-            .appendingPathComponent("VoiceRelayMac")
+            .appendingPathComponent("VoiceMindMac")
             .appendingPathComponent("Models")
 
         registryFile = modelsDirectory.appendingPathComponent("models-registry.json")
@@ -561,8 +561,8 @@ class ModelManager {
 - [ ] **Step 6: 验证编译**
 
 ```bash
-xcodebuild -workspace ../VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+xcodebuild -workspace ../VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     build
 ```
@@ -572,7 +572,7 @@ Expected: 编译成功
 - [ ] **Step 7: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Models/ModelManager.swift
+git add VoiceMindMac/VoiceMindMac/Models/ModelManager.swift
 git commit -m "feat: add ModelManager for model lifecycle management
 
 Implement model registry, download, query, and deletion.
@@ -589,14 +589,14 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 4: 创建 UserDefaults 扩展
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMac/Extensions/UserDefaults+Speech.swift`
+- Create: `VoiceMindMac/VoiceMindMac/Extensions/UserDefaults+Speech.swift`
 
 **目标**: 实现语音识别设置的持久化
 
 - [ ] **Step 1: 创建 Extensions 目录**
 
 ```bash
-mkdir -p VoiceRelayMac/VoiceRelayMac/Extensions
+mkdir -p VoiceMindMac/VoiceMindMac/Extensions
 ```
 
 - [ ] **Step 2: 创建 UserDefaults+Speech.swift**
@@ -630,8 +630,8 @@ extension UserDefaults {
 - [ ] **Step 4: 验证编译**
 
 ```bash
-xcodebuild -workspace ../VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+xcodebuild -workspace ../VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     build
 ```
@@ -641,7 +641,7 @@ Expected: 编译成功
 - [ ] **Step 5: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Extensions/UserDefaults+Speech.swift
+git add VoiceMindMac/VoiceMindMac/Extensions/UserDefaults+Speech.swift
 git commit -m "feat: add UserDefaults extension for speech settings
 
 Add persistent storage for selected engine and model preferences.
@@ -654,11 +654,11 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 5: 集成 ModelManager 到应用启动
 
 **Files:**
-- Modify: `VoiceRelayMac/VoiceRelayMac/VoiceRelayMacApp.swift`
+- Modify: `VoiceMindMac/VoiceMindMac/VoiceMindMacApp.swift`
 
 **目标**: 在应用启动时初始化 ModelManager
 
-- [ ] **Step 1: 读取 VoiceRelayMacApp.swift**
+- [ ] **Step 1: 读取 VoiceMindMacApp.swift**
 
 - [ ] **Step 2: 在 initializeSpeechEngine() 中添加 ModelManager 初始化**
 
@@ -679,8 +679,8 @@ private func initializeSpeechEngine() async {
 - [ ] **Step 3: 验证编译**
 
 ```bash
-xcodebuild -workspace ../VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+xcodebuild -workspace ../VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     build
 ```
@@ -690,7 +690,7 @@ Expected: 编译成功
 - [ ] **Step 4: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/VoiceRelayMacApp.swift
+git add VoiceMindMac/VoiceMindMac/VoiceMindMacApp.swift
 git commit -m "feat: initialize ModelManager at app startup
 
 Ensure model storage directory is created on first launch.
@@ -704,7 +704,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
 运行应用后应该看到：
 - 启动日志显示 "✅ 模型管理器已初始化"
-- 启动日志显示 "📁 模型存储目录: ~/Library/Application Support/VoiceRelayMac/Models"
+- 启动日志显示 "📁 模型存储目录: ~/Library/Application Support/VoiceMindMac/Models"
 - 启动日志显示 "✅ 加载模型注册表: 1 个模型"
 - 模型目录已创建
 - models-registry.json 文件已创建
@@ -712,8 +712,8 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 可以通过以下命令验证：
 
 ```bash
-ls -la ~/Library/Application\ Support/VoiceRelayMac/Models/
-cat ~/Library/Application\ Support/VoiceRelayMac/Models/models-registry.json
+ls -la ~/Library/Application\ Support/VoiceMindMac/Models/
+cat ~/Library/Application\ Support/VoiceMindMac/Models/models-registry.json
 ```
 
 ## 注意事项

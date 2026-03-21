@@ -36,17 +36,17 @@ public struct AudioEndPayload: Codable
 ### ✅ 任务 2：Mac 端集成语音识别器（已完成）
 
 **新增文件：**
-1. `VoiceRelayMac/VoiceRelayMac/Speech/MacSpeechRecognizer.swift` (220 行)
+1. `VoiceMindMac/VoiceMindMac/Speech/MacSpeechRecognizer.swift` (220 行)
    - 使用 macOS Speech 框架
    - 支持离线识别
    - 接收远程音频流
    - Data → AVAudioPCMBuffer 转换
 
-2. `VoiceRelayMac/VoiceRelayMac/Speech/SpeechRecognitionTest.swift`
+2. `VoiceMindMac/VoiceMindMac/Speech/SpeechRecognitionTest.swift`
    - 测试工具类
 
 **修改文件：**
-- `VoiceRelayMac/VoiceRelayMac/Network/ConnectionManager.swift`
+- `VoiceMindMac/VoiceMindMac/Network/ConnectionManager.swift`
   - 集成 MacSpeechRecognizer
   - 处理 audioStart/audioData/audioEnd 消息
   - 实现 MacSpeechRecognizerDelegate
@@ -70,14 +70,14 @@ private func dataToAudioBuffer(_ data: Data, format: AVAudioFormat)
 ### ✅ 任务 3：iOS 端实现音频流传输（已完成）
 
 **新增文件：**
-- `VoiceRelayiOS/VoiceRelayiOS/Speech/AudioStreamController.swift` (200+ 行)
+- `VoiceMindiOS/VoiceMindiOS/Speech/AudioStreamController.swift` (200+ 行)
   - 捕获麦克风音频
   - 配置音频格式（16kHz, 单声道, PCM16）
   - AVAudioPCMBuffer → Data 转换
   - 通过 WebSocket 发送
 
 **修改文件：**
-- `VoiceRelayiOS/VoiceRelayiOS/ViewModels/ContentViewModel.swift`
+- `VoiceMindiOS/VoiceMindiOS/ViewModels/ContentViewModel.swift`
   - 集成 AudioStreamController
   - 实现 AudioStreamControllerDelegate
   - 修改 handleStartListen 使用音频流模式
@@ -278,18 +278,18 @@ recognitionRequest?.append(audioBuffer)
 
 ### 新增文件 (4 个)
 
-1. `VoiceRelayMac/VoiceRelayMac/Speech/MacSpeechRecognizer.swift`
-2. `VoiceRelayMac/VoiceRelayMac/Speech/SpeechRecognitionTest.swift`
-3. `VoiceRelayiOS/VoiceRelayiOS/Speech/AudioStreamController.swift`
+1. `VoiceMindMac/VoiceMindMac/Speech/MacSpeechRecognizer.swift`
+2. `VoiceMindMac/VoiceMindMac/Speech/SpeechRecognitionTest.swift`
+3. `VoiceMindiOS/VoiceMindiOS/Speech/AudioStreamController.swift`
 4. `IMPLEMENTATION_REPORT.md`
 
 ### 修改文件 (5 个)
 
 1. `SharedCore/Sources/SharedCore/Protocol/MessageType.swift`
 2. `SharedCore/Sources/SharedCore/Protocol/MessagePayloads.swift`
-3. `VoiceRelayMac/VoiceRelayMac/Network/ConnectionManager.swift`
-4. `VoiceRelayiOS/VoiceRelayiOS/ViewModels/ContentViewModel.swift`
-5. `VoiceRelayiOS/VoiceRelayiOS/Network/ConnectionManager.swift` (添加 audioStart/Data/End 支持)
+3. `VoiceMindMac/VoiceMindMac/Network/ConnectionManager.swift`
+4. `VoiceMindiOS/VoiceMindiOS/ViewModels/ContentViewModel.swift`
+5. `VoiceMindiOS/VoiceMindiOS/Network/ConnectionManager.swift` (添加 audioStart/Data/End 支持)
 
 ### 文档文件 (4 个)
 

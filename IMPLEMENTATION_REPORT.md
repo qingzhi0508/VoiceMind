@@ -29,11 +29,11 @@ struct AudioEndPayload
 ### ✅ 任务 2：Mac 端集成语音识别器
 
 **新增文件：**
-- `VoiceRelayMac/VoiceRelayMac/Speech/MacSpeechRecognizer.swift` - Mac 端语音识别器
-- `VoiceRelayMac/VoiceRelayMac/Speech/SpeechRecognitionTest.swift` - 测试工具
+- `VoiceMindMac/VoiceMindMac/Speech/MacSpeechRecognizer.swift` - Mac 端语音识别器
+- `VoiceMindMac/VoiceMindMac/Speech/SpeechRecognitionTest.swift` - 测试工具
 
 **修改文件：**
-- `VoiceRelayMac/VoiceRelayMac/Network/ConnectionManager.swift`
+- `VoiceMindMac/VoiceMindMac/Network/ConnectionManager.swift`
 
 **新增功能：**
 - 集成 `MacSpeechRecognizer`
@@ -45,10 +45,10 @@ struct AudioEndPayload
 ### ✅ 任务 3：iOS 端实现音频流传输
 
 **新增文件：**
-- `VoiceRelayiOS/VoiceRelayiOS/Speech/AudioStreamController.swift` - 音频流传输控制器
+- `VoiceMindiOS/VoiceMindiOS/Speech/AudioStreamController.swift` - 音频流传输控制器
 
 **修改文件：**
-- `VoiceRelayiOS/VoiceRelayiOS/ViewModels/ContentViewModel.swift`
+- `VoiceMindiOS/VoiceMindiOS/ViewModels/ContentViewModel.swift`
 
 **新增功能：**
 - 创建 `AudioStreamController` 类

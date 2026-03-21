@@ -26,7 +26,7 @@
 
 ### 1. 打开项目
 ```bash
-open VoiceRelay.xcworkspace
+open VoiceMind.xcworkspace
 ```
 
 ### 2. 构建 SharedCore
@@ -41,15 +41,15 @@ open VoiceRelay.xcworkspace
 
 ### 4. 添加 SharedCore 到 App（如果还没添加）
 
-**对于 VoiceRelayMac：**
-1. 选择 VoiceRelayMac 项目
-2. 选择 VoiceRelayMac target
+**对于 VoiceMindMac：**
+1. 选择 VoiceMindMac 项目
+2. 选择 VoiceMindMac target
 3. General → Frameworks, Libraries, and Embedded Content
 4. 点击 + → 选择 SharedCore → Add
 
-**对于 VoiceRelayiOS：**
-1. 选择 VoiceRelayiOS 项目
-2. 选择 VoiceRelayiOS target
+**对于 VoiceMindiOS：**
+1. 选择 VoiceMindiOS 项目
+2. 选择 VoiceMindiOS target
 3. General → Frameworks, Libraries, and Embedded Content
 4. 点击 + → 选择 SharedCore → Add
 
@@ -158,7 +158,7 @@ SharedCore/
     ├── HMACValidatorTests.swift
     └── KeychainManagerTests.swift
 
-VoiceRelayMac/VoiceRelayMac/
+VoiceMindMac/VoiceMindMac/
 ├── Network/
 │   ├── ConnectionState.swift
 │   ├── PairingState.swift
@@ -178,7 +178,7 @@ VoiceRelayMac/VoiceRelayMac/
 │   ├── PairingWindow.swift
 │   ├── HotkeySettingsWindow.swift
 │   └── PermissionsWindow.swift
-└── VoiceRelayMacApp.swift (AppDelegate)
+└── VoiceMindMacApp.swift (AppDelegate)
 ```
 
 ## 技术细节

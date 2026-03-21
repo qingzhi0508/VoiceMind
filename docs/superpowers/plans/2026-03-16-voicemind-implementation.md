@@ -4,7 +4,7 @@
 
 **Goal:** Build macOS + iOS voice input system with push-to-talk hotkey triggering iPhone speech recognition
 
-**Architecture:** Three-target Xcode workspace with SharedCore Swift package for protocol/security, VoiceRelayMac for menu bar app with CGEventTap hotkey monitoring and text injection, VoiceRelayiOS for SwiftUI app with SFSpeechRecognizer. WebSocket transport with Bonjour discovery, HMAC authentication after pairing.
+**Architecture:** Three-target Xcode workspace with SharedCore Swift package for protocol/security, VoiceMindMac for menu bar app with CGEventTap hotkey monitoring and text injection, VoiceMindiOS for SwiftUI app with SFSpeechRecognizer. WebSocket transport with Bonjour discovery, HMAC authentication after pairing.
 
 **Tech Stack:** Swift 5.9+, SwiftUI, AppKit, Starscream WebSocket, CryptoKit, Network.framework, SFSpeechRecognizer, CGEventTap
 
@@ -15,17 +15,17 @@
 ### Task 1: Create Xcode Workspace Structure
 
 **Files:**
-- Create: `VoiceRelay.xcworkspace/contents.xcworkspacedata`
-- Create: `VoiceRelayMac/VoiceRelayMac.xcodeproj/project.pbxproj`
-- Create: `VoiceRelayiOS/VoiceRelayiOS.xcodeproj/project.pbxproj`
+- Create: `VoiceMind.xcworkspace/contents.xcworkspacedata`
+- Create: `VoiceMindMac/VoiceMindMac.xcodeproj/project.pbxproj`
+- Create: `VoiceMindiOS/VoiceMindiOS.xcodeproj/project.pbxproj`
 - Create: `SharedCore/Package.swift`
 
 - [ ] **Step 1: Create workspace directory structure**
 
 ```bash
-mkdir -p VoiceRelay.xcworkspace
-mkdir -p VoiceRelayMac
-mkdir -p VoiceRelayiOS
+mkdir -p VoiceMind.xcworkspace
+mkdir -p VoiceMindMac
+mkdir -p VoiceMindiOS
 mkdir -p SharedCore/Sources/SharedCore/{Protocol,Security,Models}
 mkdir -p SharedCore/Tests/SharedCoreTests
 ```
@@ -33,20 +33,20 @@ mkdir -p SharedCore/Tests/SharedCoreTests
 - [ ] **Step 2: Create macOS app project**
 
 Open Xcode, create new macOS App:
-- Product Name: VoiceRelayMac
+- Product Name: VoiceMindMac
 - Interface: AppKit
 - Language: Swift
 - Deployment Target: macOS 13.0
-- Save to: `VoiceRelayMac/`
+- Save to: `VoiceMindMac/`
 
 - [ ] **Step 3: Create iOS app project**
 
 Open Xcode, create new iOS App:
-- Product Name: VoiceRelayiOS
+- Product Name: VoiceMindiOS
 - Interface: SwiftUI
 - Language: Swift
 - Deployment Target: iOS 18.0
-- Save to: `VoiceRelayiOS/`
+- Save to: `VoiceMindiOS/`
 
 - [ ] **Step 4: Create Swift Package for SharedCore**
 
@@ -59,9 +59,9 @@ swift package init --type library --name SharedCore
 
 In Xcode:
 - File → New → Workspace
-- Save as: VoiceRelay.xcworkspace
-- Add VoiceRelayMac.xcodeproj
-- Add VoiceRelayiOS.xcodeproj
+- Save as: VoiceMind.xcworkspace
+- Add VoiceMindMac.xcodeproj
+- Add VoiceMindiOS.xcodeproj
 - Add SharedCore package
 
 - [ ] **Step 6: Configure SharedCore Package.swift**
@@ -97,7 +97,7 @@ let package = Package(
 
 - [ ] **Step 7: Add SharedCore dependency to both apps**
 
-In Xcode, for both VoiceRelayMac and VoiceRelayiOS:
+In Xcode, for both VoiceMindMac and VoiceMindiOS:
 - Target → General → Frameworks, Libraries, and Embedded Content
 - Add SharedCore library
 
@@ -107,8 +107,8 @@ In Xcode, for both VoiceRelayMac and VoiceRelayiOS:
 git add .
 git commit -m "feat: create Xcode workspace with macOS, iOS, and SharedCore targets
 
-- VoiceRelayMac: macOS 13.0+ menu bar app
-- VoiceRelayiOS: iOS 18.0+ SwiftUI app
+- VoiceMindMac: macOS 13.0+ menu bar app
+- VoiceMindiOS: iOS 18.0+ SwiftUI app
 - SharedCore: Swift package for shared protocol and security
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
@@ -724,12 +724,12 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 4: macOS WebSocket Server
 
 **Files:**
-- Create: `VoiceRelayMac/Network/WebSocketServer.swift`
-- Create: `VoiceRelayMac/Network/ConnectionState.swift`
+- Create: `VoiceMindMac/Network/WebSocketServer.swift`
+- Create: `VoiceMindMac/Network/ConnectionState.swift`
 
 - [ ] **Step 1: Add Starscream to macOS project**
 
-In Xcode, VoiceRelayMac target:
+In Xcode, VoiceMindMac target:
 - File → Add Package Dependencies
 - Add: https://github.com/daltoniam/Starscream.git
 - Version: 4.0.0+
@@ -737,7 +737,7 @@ In Xcode, VoiceRelayMac target:
 - [ ] **Step 2: Create ConnectionState enum**
 
 ```swift
-// VoiceRelayMac/Network/ConnectionState.swift
+// VoiceMindMac/Network/ConnectionState.swift
 import Foundation
 
 enum ConnectionState {
@@ -751,7 +751,7 @@ enum ConnectionState {
 - [ ] **Step 3: Implement WebSocketServer**
 
 ```swift
-// VoiceRelayMac/Network/WebSocketServer.swift
+// VoiceMindMac/Network/WebSocketServer.swift
 import Foundation
 import Starscream
 import SharedCore
@@ -864,7 +864,7 @@ class WebSocketServer: NSObject {
 - [ ] **Step 4: Commit WebSocket server**
 
 ```bash
-git add VoiceRelayMac/Network/
+git add VoiceMindMac/Network/
 git commit -m "feat(macOS): add WebSocket server with Starscream
 
 - WebSocketServer class for single-client connections
@@ -877,12 +877,12 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 5: macOS Bonjour Publisher
 
 **Files:**
-- Create: `VoiceRelayMac/Network/BonjourPublisher.swift`
+- Create: `VoiceMindMac/Network/BonjourPublisher.swift`
 
 - [ ] **Step 1: Implement BonjourPublisher**
 
 ```swift
-// VoiceRelayMac/Network/BonjourPublisher.swift
+// VoiceMindMac/Network/BonjourPublisher.swift
 import Foundation
 import Network
 
@@ -902,7 +902,7 @@ class BonjourPublisher {
         let listener = try NWListener(using: parameters, on: NWEndpoint.Port(integerLiteral: port))
 
         listener.service = NWListener.Service(
-            name: Host.current().localizedName ?? "VoiceRelay Mac",
+            name: Host.current().localizedName ?? "VoiceMind Mac",
             type: serviceType
         )
 
@@ -933,7 +933,7 @@ class BonjourPublisher {
 - [ ] **Step 2: Commit Bonjour publisher**
 
 ```bash
-git add VoiceRelayMac/Network/BonjourPublisher.swift
+git add VoiceMindMac/Network/BonjourPublisher.swift
 git commit -m "feat(macOS): add Bonjour service publisher
 
 - BonjourPublisher for advertising WebSocket server
@@ -946,13 +946,13 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 6: macOS Connection Manager
 
 **Files:**
-- Create: `VoiceRelayMac/Network/ConnectionManager.swift`
-- Create: `VoiceRelayMac/Network/PairingState.swift`
+- Create: `VoiceMindMac/Network/ConnectionManager.swift`
+- Create: `VoiceMindMac/Network/PairingState.swift`
 
 - [ ] **Step 1: Create PairingState enum**
 
 ```swift
-// VoiceRelayMac/Network/PairingState.swift
+// VoiceMindMac/Network/PairingState.swift
 import Foundation
 
 enum PairingState {
@@ -965,7 +965,7 @@ enum PairingState {
 - [ ] **Step 2: Implement ConnectionManager**
 
 ```swift
-// VoiceRelayMac/Network/ConnectionManager.swift
+// VoiceMindMac/Network/ConnectionManager.swift
 import Foundation
 import SharedCore
 import CryptoKit
@@ -1157,7 +1157,7 @@ extension ConnectionManager: WebSocketServerDelegate {
 - [ ] **Step 3: Commit connection manager**
 
 ```bash
-git add VoiceRelayMac/Network/
+git add VoiceMindMac/Network/
 git commit -m "feat(macOS): add connection manager with pairing logic
 
 - ConnectionManager orchestrates WebSocket and Bonjour
@@ -1175,13 +1175,13 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 7: macOS Hotkey Monitor
 
 **Files:**
-- Create: `VoiceRelayMac/Hotkey/HotkeyMonitor.swift`
-- Create: `VoiceRelayMac/Hotkey/HotkeyConfiguration.swift`
+- Create: `VoiceMindMac/Hotkey/HotkeyMonitor.swift`
+- Create: `VoiceMindMac/Hotkey/HotkeyConfiguration.swift`
 
 - [ ] **Step 1: Create HotkeyConfiguration struct**
 
 ```swift
-// VoiceRelayMac/Hotkey/HotkeyConfiguration.swift
+// VoiceMindMac/Hotkey/HotkeyConfiguration.swift
 import Foundation
 import Carbon
 
@@ -1233,7 +1233,7 @@ struct HotkeyConfiguration: Codable {
 - [ ] **Step 2: Implement HotkeyMonitor**
 
 ```swift
-// VoiceRelayMac/Hotkey/HotkeyMonitor.swift
+// VoiceMindMac/Hotkey/HotkeyMonitor.swift
 import Foundation
 import Carbon
 import Cocoa
@@ -1381,7 +1381,7 @@ class HotkeyMonitor {
 - [ ] **Step 3: Commit hotkey monitor**
 
 ```bash
-git add VoiceRelayMac/Hotkey/
+git add VoiceMindMac/Hotkey/
 git commit -m "feat(macOS): add hotkey monitor with CGEventTap
 
 - HotkeyMonitor for global hotkey detection
@@ -1395,12 +1395,12 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 8: macOS Text Injector
 
 **Files:**
-- Create: `VoiceRelayMac/TextInjection/TextInjector.swift`
+- Create: `VoiceMindMac/TextInjection/TextInjector.swift`
 
 - [ ] **Step 1: Implement TextInjector**
 
 ```swift
-// VoiceRelayMac/TextInjection/TextInjector.swift
+// VoiceMindMac/TextInjection/TextInjector.swift
 import Foundation
 import Carbon
 import Cocoa
@@ -1489,7 +1489,7 @@ extension String {
 - [ ] **Step 2: Commit text injector**
 
 ```bash
-git add VoiceRelayMac/TextInjection/
+git add VoiceMindMac/TextInjection/
 git commit -m "feat(macOS): add text injector with CGEvent
 
 - TextInjector for keyboard simulation
@@ -1507,13 +1507,13 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 9: macOS Permissions Manager
 
 **Files:**
-- Create: `VoiceRelayMac/Permissions/PermissionsManager.swift`
-- Create: `VoiceRelayMac/Permissions/PermissionsWindow.swift`
+- Create: `VoiceMindMac/Permissions/PermissionsManager.swift`
+- Create: `VoiceMindMac/Permissions/PermissionsWindow.swift`
 
 - [ ] **Step 1: Implement PermissionsManager**
 
 ```swift
-// VoiceRelayMac/Permissions/PermissionsManager.swift
+// VoiceMindMac/Permissions/PermissionsManager.swift
 import Foundation
 import Cocoa
 
@@ -1557,9 +1557,9 @@ class PermissionsManager {
 
         switch permission {
         case .accessibility:
-            alert.informativeText = "VoiceRelay needs Accessibility permission to monitor hotkeys and inject text. Please grant permission in System Settings."
+            alert.informativeText = "VoiceMind needs Accessibility permission to monitor hotkeys and inject text. Please grant permission in System Settings."
         case .inputMonitoring:
-            alert.informativeText = "VoiceRelay needs Input Monitoring permission to detect keyboard events. Please grant permission in System Settings."
+            alert.informativeText = "VoiceMind needs Input Monitoring permission to detect keyboard events. Please grant permission in System Settings."
         }
 
         alert.addButton(withTitle: "Open System Settings")
@@ -1576,7 +1576,7 @@ class PermissionsManager {
 - [ ] **Step 2: Create PermissionsWindow SwiftUI view**
 
 ```swift
-// VoiceRelayMac/Permissions/PermissionsWindow.swift
+// VoiceMindMac/Permissions/PermissionsWindow.swift
 import SwiftUI
 
 struct PermissionsWindow: View {
@@ -1654,7 +1654,7 @@ struct PermissionRow: View {
 - [ ] **Step 3: Commit permissions manager**
 
 ```bash
-git add VoiceRelayMac/Permissions/
+git add VoiceMindMac/Permissions/
 git commit -m "feat(macOS): add permissions manager and UI
 
 - PermissionsManager for checking and requesting permissions
@@ -1667,14 +1667,14 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 10: macOS Menu Bar UI
 
 **Files:**
-- Create: `VoiceRelayMac/MenuBar/MenuBarController.swift`
-- Create: `VoiceRelayMac/MenuBar/PairingWindow.swift`
-- Create: `VoiceRelayMac/MenuBar/HotkeySettingsWindow.swift`
+- Create: `VoiceMindMac/MenuBar/MenuBarController.swift`
+- Create: `VoiceMindMac/MenuBar/PairingWindow.swift`
+- Create: `VoiceMindMac/MenuBar/HotkeySettingsWindow.swift`
 
 - [ ] **Step 1: Implement MenuBarController**
 
 ```swift
-// VoiceRelayMac/MenuBar/MenuBarController.swift
+// VoiceMindMac/MenuBar/MenuBarController.swift
 import Cocoa
 import SwiftUI
 import SharedCore
@@ -1706,7 +1706,7 @@ class MenuBarController: NSObject {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "mic.circle", accessibilityDescription: "VoiceRelay")
+            button.image = NSImage(systemSymbolName: "mic.circle", accessibilityDescription: "VoiceMind")
             updateStatusIcon()
         }
 
@@ -1811,7 +1811,7 @@ class MenuBarController: NSObject {
     @objc private func unpairDevice() {
         let alert = NSAlert()
         alert.messageText = "Unpair Device?"
-        alert.informativeText = "This will remove the pairing with your iPhone. You'll need to pair again to use VoiceRelay."
+        alert.informativeText = "This will remove the pairing with your iPhone. You'll need to pair again to use VoiceMind."
         alert.addButton(withTitle: "Unpair")
         alert.addButton(withTitle: "Cancel")
         alert.alertStyle = .warning
@@ -2066,7 +2066,7 @@ extension MenuBarController: HotkeyMonitorDelegate {
 - [ ] **Step 2: Create PairingWindow SwiftUI view**
 
 ```swift
-// VoiceRelayMac/MenuBar/PairingWindow.swift
+// VoiceMindMac/MenuBar/PairingWindow.swift
 import SwiftUI
 
 struct PairingWindow: View {
@@ -2124,7 +2124,7 @@ struct PairingWindow: View {
 - [ ] **Step 3: Create HotkeySettingsWindow SwiftUI view**
 
 ```swift
-// VoiceRelayMac/MenuBar/HotkeySettingsWindow.swift
+// VoiceMindMac/MenuBar/HotkeySettingsWindow.swift
 import SwiftUI
 
 struct HotkeySettingsWindow: View {
@@ -2250,7 +2250,7 @@ struct HotkeySettingsWindow: View {
 - [ ] **Step 4: Update AppDelegate to use MenuBarController**
 
 ```swift
-// VoiceRelayMac/App/AppDelegate.swift
+// VoiceMindMac/App/AppDelegate.swift
 import Cocoa
 
 @main
@@ -2279,7 +2279,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 - [ ] **Step 5: Commit macOS UI**
 
 ```bash
-git add VoiceRelayMac/
+git add VoiceMindMac/
 git commit -m "feat(macOS): add menu bar UI and pairing windows
 
 - MenuBarController orchestrates all macOS components
@@ -2299,13 +2299,13 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 11: iOS Bonjour Browser
 
 **Files:**
-- Create: `VoiceRelayiOS/Network/BonjourBrowser.swift`
-- Create: `VoiceRelayiOS/Network/DiscoveredService.swift`
+- Create: `VoiceMindiOS/Network/BonjourBrowser.swift`
+- Create: `VoiceMindiOS/Network/DiscoveredService.swift`
 
 - [ ] **Step 1: Create DiscoveredService model**
 
 ```swift
-// VoiceRelayiOS/Network/DiscoveredService.swift
+// VoiceMindiOS/Network/DiscoveredService.swift
 import Foundation
 
 struct DiscoveredService: Identifiable {
@@ -2319,7 +2319,7 @@ struct DiscoveredService: Identifiable {
 - [ ] **Step 2: Implement BonjourBrowser**
 
 ```swift
-// VoiceRelayiOS/Network/BonjourBrowser.swift
+// VoiceMindiOS/Network/BonjourBrowser.swift
 import Foundation
 import Network
 
@@ -2415,7 +2415,7 @@ class BonjourBrowser {
 - [ ] **Step 3: Commit Bonjour browser**
 
 ```bash
-git add VoiceRelayiOS/Network/
+git add VoiceMindiOS/Network/
 git commit -m "feat(iOS): add Bonjour browser for service discovery
 
 - BonjourBrowser for discovering Mac services
@@ -2428,12 +2428,12 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 12: iOS WebSocket Client
 
 **Files:**
-- Create: `VoiceRelayiOS/Network/WebSocketClient.swift`
-- Create: `VoiceRelayiOS/Network/ReconnectionManager.swift`
+- Create: `VoiceMindiOS/Network/WebSocketClient.swift`
+- Create: `VoiceMindiOS/Network/ReconnectionManager.swift`
 
 - [ ] **Step 1: Add Starscream to iOS project**
 
-In Xcode, VoiceRelayiOS target:
+In Xcode, VoiceMindiOS target:
 - File → Add Package Dependencies
 - Add: https://github.com/daltoniam/Starscream.git
 - Version: 4.0.0+
@@ -2441,7 +2441,7 @@ In Xcode, VoiceRelayiOS target:
 - [ ] **Step 2: Implement ReconnectionManager**
 
 ```swift
-// VoiceRelayiOS/Network/ReconnectionManager.swift
+// VoiceMindiOS/Network/ReconnectionManager.swift
 import Foundation
 
 class ReconnectionManager {
@@ -2479,7 +2479,7 @@ class ReconnectionManager {
 - [ ] **Step 3: Implement WebSocketClient**
 
 ```swift
-// VoiceRelayiOS/Network/WebSocketClient.swift
+// VoiceMindiOS/Network/WebSocketClient.swift
 import Foundation
 import Starscream
 import SharedCore
@@ -2594,7 +2594,7 @@ extension WebSocketClient: WebSocketDelegate {
 - [ ] **Step 4: Commit WebSocket client**
 
 ```bash
-git add VoiceRelayiOS/Network/
+git add VoiceMindiOS/Network/
 git commit -m "feat(iOS): add WebSocket client with reconnection
 
 - WebSocketClient with Starscream
@@ -2607,12 +2607,12 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 13: iOS Connection Manager
 
 **Files:**
-- Create: `VoiceRelayiOS/Network/ConnectionManager.swift`
+- Create: `VoiceMindiOS/Network/ConnectionManager.swift`
 
 - [ ] **Step 1: Implement iOS ConnectionManager**
 
 ```swift
-// VoiceRelayiOS/Network/ConnectionManager.swift
+// VoiceMindiOS/Network/ConnectionManager.swift
 import Foundation
 import SharedCore
 import CryptoKit
@@ -2845,7 +2845,7 @@ extension ConnectionManager: WebSocketClientDelegate {
 - [ ] **Step 2: Commit iOS connection manager**
 
 ```bash
-git add VoiceRelayiOS/Network/
+git add VoiceMindiOS/Network/
 git commit -m "feat(iOS): add connection manager with pairing and heartbeat
 
 - ConnectionManager for iOS
@@ -2863,13 +2863,13 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 14: iOS Speech Controller
 
 **Files:**
-- Create: `VoiceRelayiOS/Speech/SpeechController.swift`
-- Create: `VoiceRelayiOS/Speech/RecognitionState.swift`
+- Create: `VoiceMindiOS/Speech/SpeechController.swift`
+- Create: `VoiceMindiOS/Speech/RecognitionState.swift`
 
 - [ ] **Step 1: Create RecognitionState enum**
 
 ```swift
-// VoiceRelayiOS/Speech/RecognitionState.swift
+// VoiceMindiOS/Speech/RecognitionState.swift
 import Foundation
 
 enum RecognitionState {
@@ -2883,7 +2883,7 @@ enum RecognitionState {
 - [ ] **Step 2: Implement SpeechController**
 
 ```swift
-// VoiceRelayiOS/Speech/SpeechController.swift
+// VoiceMindiOS/Speech/SpeechController.swift
 import Foundation
 import Speech
 import AVFoundation
@@ -3055,7 +3055,7 @@ class SpeechController: NSObject {
 - [ ] **Step 3: Commit speech controller**
 
 ```bash
-git add VoiceRelayiOS/Speech/
+git add VoiceMindiOS/Speech/
 git commit -m "feat(iOS): add speech recognition controller
 
 - SpeechController with SFSpeechRecognizer
@@ -3074,14 +3074,14 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 15: iOS Main View
 
 **Files:**
-- Create: `VoiceRelayiOS/Views/ContentView.swift`
-- Create: `VoiceRelayiOS/Views/PairingView.swift`
-- Create: `VoiceRelayiOS/Views/SettingsView.swift`
+- Create: `VoiceMindiOS/Views/ContentView.swift`
+- Create: `VoiceMindiOS/Views/PairingView.swift`
+- Create: `VoiceMindiOS/Views/SettingsView.swift`
 
 - [ ] **Step 1: Implement ContentView**
 
 ```swift
-// VoiceRelayiOS/Views/ContentView.swift
+// VoiceMindiOS/Views/ContentView.swift
 import SwiftUI
 
 struct ContentView: View {
@@ -3279,7 +3279,7 @@ struct WaveformView: View {
 - [ ] **Step 2: Implement PairingView**
 
 ```swift
-// VoiceRelayiOS/Views/PairingView.swift
+// VoiceMindiOS/Views/PairingView.swift
 import SwiftUI
 
 struct PairingView: View {
@@ -3367,7 +3367,7 @@ struct PairingView: View {
 - [ ] **Step 3: Implement SettingsView**
 
 ```swift
-// VoiceRelayiOS/Views/SettingsView.swift
+// VoiceMindiOS/Views/SettingsView.swift
 import SwiftUI
 
 struct SettingsView: View {
@@ -3457,7 +3457,7 @@ struct PermissionRow: View {
 - [ ] **Step 4: Implement ContentViewModel**
 
 ```swift
-// VoiceRelayiOS/Views/ContentViewModel.swift
+// VoiceMindiOS/Views/ContentViewModel.swift
 import Foundation
 import Combine
 import SharedCore
@@ -3647,11 +3647,11 @@ extension ContentViewModel: BonjourBrowserDelegate {
 - [ ] **Step 5: Update iOS App entry point**
 
 ```swift
-// VoiceRelayiOS/App/VoiceRelayiOSApp.swift
+// VoiceMindiOS/App/VoiceMindiOSApp.swift
 import SwiftUI
 
 @main
-struct VoiceRelayiOSApp: App {
+struct VoiceMindiOSApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -3662,14 +3662,14 @@ struct VoiceRelayiOSApp: App {
 
 - [ ] **Step 6: Add required Info.plist entries**
 
-Add to VoiceRelayiOS/Info.plist:
+Add to VoiceMindiOS/Info.plist:
 ```xml
 <key>NSMicrophoneUsageDescription</key>
-<string>VoiceRelay needs microphone access for voice recognition.</string>
+<string>VoiceMind needs microphone access for voice recognition.</string>
 <key>NSSpeechRecognitionUsageDescription</key>
-<string>VoiceRelay needs speech recognition to convert your voice to text.</string>
+<string>VoiceMind needs speech recognition to convert your voice to text.</string>
 <key>NSLocalNetworkUsageDescription</key>
-<string>VoiceRelay needs local network access to connect to your Mac.</string>
+<string>VoiceMind needs local network access to connect to your Mac.</string>
 <key>NSBonjourServices</key>
 <array>
     <string>_voicerelay._tcp</string>
@@ -3679,7 +3679,7 @@ Add to VoiceRelayiOS/Info.plist:
 - [ ] **Step 7: Commit iOS UI**
 
 ```bash
-git add VoiceRelayiOS/
+git add VoiceMindiOS/
 git commit -m "feat(iOS): add complete UI and integration
 
 - ContentView with connection and recognition status
@@ -3726,16 +3726,16 @@ Voice-to-text input system for macOS using iPhone speech recognition.
 
 ### macOS App
 
-1. Open `VoiceRelay.xcworkspace` in Xcode
-2. Select `VoiceRelayMac` scheme
+1. Open `VoiceMind.xcworkspace` in Xcode
+2. Select `VoiceMindMac` scheme
 3. Build and run
 4. Grant Accessibility permission when prompted:
    - System Settings → Privacy & Security → Accessibility
-   - Enable VoiceRelayMac
+   - Enable VoiceMindMac
 
 ### iOS App
 
-1. Select `VoiceRelayiOS` scheme
+1. Select `VoiceMindiOS` scheme
 2. Build and run on your iPhone
 3. Grant permissions when prompted:
    - Microphone
@@ -3800,8 +3800,8 @@ Voice-to-text input system for macOS using iPhone speech recognition.
 ## Architecture
 
 - **SharedCore**: Swift package with protocol, security, models
-- **VoiceRelayMac**: macOS menu bar app with hotkey monitoring and text injection
-- **VoiceRelayiOS**: iOS app with speech recognition
+- **VoiceMindMac**: macOS menu bar app with hotkey monitoring and text injection
+- **VoiceMindiOS**: iOS app with speech recognition
 
 ### Network Protocol
 
@@ -3823,11 +3823,11 @@ Voice-to-text input system for macOS using iPhone speech recognition.
 
 ```bash
 # Open workspace
-open VoiceRelay.xcworkspace
+open VoiceMind.xcworkspace
 
 # Build all targets
-xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac
-xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS
+xcodebuild -workspace VoiceMind.xcworkspace -scheme VoiceMindMac
+xcodebuild -workspace VoiceMind.xcworkspace -scheme VoiceMindiOS
 ```
 
 ### Testing
@@ -3861,15 +3861,15 @@ Built with:
 - Mac running macOS 13.0+
 - iPhone running iOS 18.0+
 - Both devices on same WiFi network
-- VoiceRelayMac and VoiceRelayiOS apps built and installed
+- VoiceMindMac and VoiceMindiOS apps built and installed
 
 ## Test 1: Pairing Flow
 
 **Steps:**
-1. Launch VoiceRelayMac
+1. Launch VoiceMindMac
 2. Click menu bar icon → "Start Pairing..."
 3. Note the 6-digit code displayed
-4. Launch VoiceRelayiOS on iPhone
+4. Launch VoiceMindiOS on iPhone
 5. Tap "Pair with Mac"
 6. Select Mac from discovered devices list
 7. Enter 6-digit code
@@ -3940,7 +3940,7 @@ Built with:
 
 **Steps:**
 1. On Mac: System Settings → Privacy & Security → Accessibility
-2. Disable VoiceRelayMac
+2. Disable VoiceMindMac
 3. Press Option+Space hotkey
 4. Speak into iPhone
 
@@ -4069,8 +4069,8 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 - [ ] **Step 1: Clean build macOS app**
 
 ```bash
-xcodebuild clean -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac
-xcodebuild build -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac
+xcodebuild clean -workspace VoiceMind.xcworkspace -scheme VoiceMindMac
+xcodebuild build -workspace VoiceMind.xcworkspace -scheme VoiceMindMac
 ```
 
 Expected: BUILD SUCCEEDED
@@ -4078,8 +4078,8 @@ Expected: BUILD SUCCEEDED
 - [ ] **Step 2: Clean build iOS app**
 
 ```bash
-xcodebuild clean -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS
-xcodebuild build -workspace VoiceRelay.xcworkspace -scheme VoiceRelayiOS -destination 'platform=iOS Simulator,name=iPhone 15'
+xcodebuild clean -workspace VoiceMind.xcworkspace -scheme VoiceMindiOS
+xcodebuild build -workspace VoiceMind.xcworkspace -scheme VoiceMindiOS -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
 Expected: BUILD SUCCEEDED

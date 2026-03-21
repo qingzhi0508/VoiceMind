@@ -8,11 +8,11 @@
 
 ### 1.1 目标
 
-在 VoiceRelayMac 项目中集成 SenseVoiceSmall 语音识别模型，作为 Apple Speech 框架的可选替代方案，并建立可扩展的多引擎架构，支持未来添加更多语音识别模型。
+在 VoiceMindMac 项目中集成 SenseVoiceSmall 语音识别模型，作为 Apple Speech 框架的可选替代方案，并建立可扩展的多引擎架构，支持未来添加更多语音识别模型。
 
 ### 1.2 背景
 
-当前 VoiceRelayMac 使用 Apple 的 Speech 框架进行语音识别。为了提供更多选择和更好的多语言支持，需要集成第三方语音识别模型。SenseVoiceSmall 是一个多任务语音理解模型，支持 50+ 语言，性能优秀且适合本地部署。
+当前 VoiceMindMac 使用 Apple 的 Speech 框架进行语音识别。为了提供更多选择和更好的多语言支持，需要集成第三方语音识别模型。SenseVoiceSmall 是一个多任务语音理解模型，支持 50+ 语言，性能优秀且适合本地部署。
 
 ### 1.3 关键决策
 
@@ -28,7 +28,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    VoiceRelayMac App                     │
+│                    VoiceMindMac App                     │
 ├─────────────────────────────────────────────────────────┤
 │  UI Layer (MenuBar, Settings)                           │
 ├─────────────────────────────────────────────────────────┤
@@ -225,7 +225,7 @@ class ModelManager {
 
 **目录结构：**
 ```
-VoiceRelayMac/
+VoiceMindMac/
 ├── Frameworks/
 │   └── sherpa-onnx.xcframework/
 │       ├── macos-arm64/
@@ -387,7 +387,7 @@ class SenseVoiceEngine: SpeechRecognitionEngine {
 ### 5.1 模型存储结构
 
 ```
-~/Library/Application Support/VoiceRelayMac/Models/
+~/Library/Application Support/VoiceMindMac/Models/
 ├── sensevoice-small/
 │   ├── model.onnx           (主模型文件)
 │   ├── tokens.txt           (词表文件)

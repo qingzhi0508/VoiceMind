@@ -13,16 +13,16 @@
 ## File Structure
 
 ### New Files
-- `VoiceRelayMac/VoiceRelayMac/Views/SpeechRecognitionTab.swift` - UI for engine selection and model management
-- `VoiceRelayMac/VoiceRelayMacTests/SpeechRecognitionManagerTests.swift` - Unit tests for manager
-- `VoiceRelayMac/VoiceRelayMacTests/AppleSpeechEngineTests.swift` - Unit tests for Apple Speech engine
-- `VoiceRelayMac/VoiceRelayMacTests/ModelManagerTests.swift` - Unit tests for model manager
-- `VoiceRelayMac/VoiceRelayMacTests/AudioFormatTests.swift` - Audio format conversion tests
+- `VoiceMindMac/VoiceMindMac/Views/SpeechRecognitionTab.swift` - UI for engine selection and model management
+- `VoiceMindMac/VoiceMindMacTests/SpeechRecognitionManagerTests.swift` - Unit tests for manager
+- `VoiceMindMac/VoiceMindMacTests/AppleSpeechEngineTests.swift` - Unit tests for Apple Speech engine
+- `VoiceMindMac/VoiceMindMacTests/ModelManagerTests.swift` - Unit tests for model manager
+- `VoiceMindMac/VoiceMindMacTests/AudioFormatTests.swift` - Audio format conversion tests
 
 ### Modified Files
-- `VoiceRelayMac/VoiceRelayMac/Views/MainWindow.swift` - Add Speech Recognition tab
-- `VoiceRelayMac/VoiceRelayMac/VoiceRelayMacApp.swift` - Load persisted engine selection on launch
-- `VoiceRelayMac/VoiceRelayMac/Speech/SpeechRecognitionManager.swift` - Add notification for engine changes
+- `VoiceMindMac/VoiceMindMac/Views/MainWindow.swift` - Add Speech Recognition tab
+- `VoiceMindMac/VoiceMindMac/VoiceMindMacApp.swift` - Load persisted engine selection on launch
+- `VoiceMindMac/VoiceMindMac/Speech/SpeechRecognitionManager.swift` - Add notification for engine changes
 
 ---
 
@@ -31,7 +31,7 @@
 ### Task 1: Create SpeechRecognitionTab View
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMac/Views/SpeechRecognitionTab.swift`
+- Create: `VoiceMindMac/VoiceMindMac/Views/SpeechRecognitionTab.swift`
 
 - [ ] **Step 1: Create basic tab structure**
 
@@ -160,13 +160,13 @@ extension Notification.Name {
 
 - [ ] **Step 2: Build the project to verify syntax**
 
-Run: `xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build | grep -E "(error|warning)" | head -20`
+Run: `xcodebuild -workspace VoiceMind.xcworkspace -scheme VoiceMindMac -configuration Debug build | grep -E "(error|warning)" | head -20`
 Expected: No errors related to SpeechRecognitionTab.swift
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Views/SpeechRecognitionTab.swift
+git add VoiceMindMac/VoiceMindMac/Views/SpeechRecognitionTab.swift
 git commit -m "feat: add speech recognition engine selection UI
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
@@ -175,7 +175,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 2: Integrate Tab into MainWindow
 
 **Files:**
-- Modify: `VoiceRelayMac/VoiceRelayMac/Views/MainWindow.swift:12-51`
+- Modify: `VoiceMindMac/VoiceMindMac/Views/MainWindow.swift:12-51`
 
 - [ ] **Step 1: Add Speech Recognition tab**
 
@@ -228,13 +228,13 @@ TabView(selection: $selectedTab) {
 
 - [ ] **Step 2: Build to verify integration**
 
-Run: `xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build | grep -E "(error|warning)" | head -20`
+Run: `xcodebuild -workspace VoiceMind.xcworkspace -scheme VoiceMindMac -configuration Debug build | grep -E "(error|warning)" | head -20`
 Expected: No errors
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Views/MainWindow.swift
+git add VoiceMindMac/VoiceMindMac/Views/MainWindow.swift
 git commit -m "feat: integrate speech recognition tab into main window
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
@@ -247,7 +247,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 3: Load Persisted Engine Selection
 
 **Files:**
-- Modify: `VoiceRelayMac/VoiceRelayMac/VoiceRelayMacApp.swift`
+- Modify: `VoiceMindMac/VoiceMindMac/VoiceMindMacApp.swift`
 
 - [ ] **Step 1: Add engine selection restoration in app launch**
 
@@ -277,13 +277,13 @@ connectionManager.setupSpeechRecognition()
 
 - [ ] **Step 2: Build to verify**
 
-Run: `xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build | grep -E "(error|warning)" | head -20`
+Run: `xcodebuild -workspace VoiceMind.xcworkspace -scheme VoiceMindMac -configuration Debug build | grep -E "(error|warning)" | head -20`
 Expected: No errors
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/VoiceRelayMacApp.swift
+git add VoiceMindMac/VoiceMindMac/VoiceMindMacApp.swift
 git commit -m "feat: persist and restore engine selection on app launch
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
@@ -296,13 +296,13 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 4: Create SpeechRecognitionManager Tests
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMacTests/SpeechRecognitionManagerTests.swift`
+- Create: `VoiceMindMac/VoiceMindMacTests/SpeechRecognitionManagerTests.swift`
 
 - [ ] **Step 1: Write test file structure**
 
 ```swift
 import XCTest
-@testable import VoiceRelayMac
+@testable import VoiceMindMac
 
 final class SpeechRecognitionManagerTests: XCTestCase {
     var manager: SpeechRecognitionManager!
@@ -405,13 +405,13 @@ class MockSpeechEngine: NSObject, SpeechRecognitionEngine {
 
 - [ ] **Step 2: Run tests**
 
-Run: `xcodebuild test -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -destination 'platform=macOS' | grep -E "(Test|PASS|FAIL)"`
+Run: `xcodebuild test -workspace VoiceMind.xcworkspace -scheme VoiceMindMac -destination 'platform=macOS' | grep -E "(Test|PASS|FAIL)"`
 Expected: All tests pass
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMacTests/SpeechRecognitionManagerTests.swift
+git add VoiceMindMac/VoiceMindMacTests/SpeechRecognitionManagerTests.swift
 git commit -m "test: add unit tests for SpeechRecognitionManager
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
@@ -424,14 +424,14 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 5: Create Audio Format Tests
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMacTests/AudioFormatTests.swift`
+- Create: `VoiceMindMac/VoiceMindMacTests/AudioFormatTests.swift`
 
 - [ ] **Step 1: Write audio format conversion tests**
 
 ```swift
 import XCTest
 import AVFoundation
-@testable import VoiceRelayMac
+@testable import VoiceMindMac
 
 final class AudioFormatTests: XCTestCase {
 
@@ -509,13 +509,13 @@ final class AudioFormatTests: XCTestCase {
 
 - [ ] **Step 2: Run tests**
 
-Run: `xcodebuild test -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -destination 'platform=macOS' -only-testing:VoiceRelayMacTests/AudioFormatTests | grep -E "(Test|PASS|FAIL)"`
+Run: `xcodebuild test -workspace VoiceMind.xcworkspace -scheme VoiceMindMac -destination 'platform=macOS' -only-testing:VoiceMindMacTests/AudioFormatTests | grep -E "(Test|PASS|FAIL)"`
 Expected: All tests pass
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMacTests/AudioFormatTests.swift
+git add VoiceMindMac/VoiceMindMacTests/AudioFormatTests.swift
 git commit -m "test: add audio format conversion tests
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
@@ -528,13 +528,13 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 6: Create Integration Tests
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMacTests/SpeechRecognitionIntegrationTests.swift`
+- Create: `VoiceMindMac/VoiceMindMacTests/SpeechRecognitionIntegrationTests.swift`
 
 - [ ] **Step 1: Write integration tests**
 
 ```swift
 import XCTest
-@testable import VoiceRelayMac
+@testable import VoiceMindMac
 
 final class SpeechRecognitionIntegrationTests: XCTestCase {
     var manager: SpeechRecognitionManager!
@@ -644,13 +644,13 @@ class MockEngineDelegate: SpeechRecognitionEngineDelegate {
 
 - [ ] **Step 2: Run integration tests**
 
-Run: `xcodebuild test -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -destination 'platform=macOS' -only-testing:VoiceRelayMacTests/SpeechRecognitionIntegrationTests | grep -E "(Test|PASS|FAIL)"`
+Run: `xcodebuild test -workspace VoiceMind.xcworkspace -scheme VoiceMindMac -destination 'platform=macOS' -only-testing:VoiceMindMacTests/SpeechRecognitionIntegrationTests | grep -E "(Test|PASS|FAIL)"`
 Expected: All tests pass
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMacTests/SpeechRecognitionIntegrationTests.swift
+git add VoiceMindMac/VoiceMindMacTests/SpeechRecognitionIntegrationTests.swift
 git commit -m "test: add integration tests for speech recognition flow
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
@@ -663,7 +663,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 7: Add Model Management Section
 
 **Files:**
-- Modify: `VoiceRelayMac/VoiceRelayMac/Views/SpeechRecognitionTab.swift`
+- Modify: `VoiceMindMac/VoiceMindMac/Views/SpeechRecognitionTab.swift`
 
 - [ ] **Step 1: Add model management section**
 
@@ -722,13 +722,13 @@ private var modelManagementSection: some View {
 
 - [ ] **Step 2: Build to verify**
 
-Run: `xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build | grep -E "(error|warning)" | head -20`
+Run: `xcodebuild -workspace VoiceMind.xcworkspace -scheme VoiceMindMac -configuration Debug build | grep -E "(error|warning)" | head -20`
 Expected: No errors
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Views/SpeechRecognitionTab.swift
+git add VoiceMindMac/VoiceMindMac/Views/SpeechRecognitionTab.swift
 git commit -m "feat: add model management section to speech recognition tab
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
@@ -742,12 +742,12 @@ After completing all tasks:
 
 1. **Build the project**
    ```bash
-   xcodebuild -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -configuration Debug build
+   xcodebuild -workspace VoiceMind.xcworkspace -scheme VoiceMindMac -configuration Debug build
    ```
 
 2. **Run all tests**
    ```bash
-   xcodebuild test -workspace VoiceRelay.xcworkspace -scheme VoiceRelayMac -destination 'platform=macOS'
+   xcodebuild test -workspace VoiceMind.xcworkspace -scheme VoiceMindMac -destination 'platform=macOS'
    ```
 
 3. **Manual testing**

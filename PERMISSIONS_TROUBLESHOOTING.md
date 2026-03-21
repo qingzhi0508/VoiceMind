@@ -20,17 +20,17 @@
 3. 点击「+」按钮
 4. 导航到应用位置：
    ```
-   ~/Library/Developer/Xcode/DerivedData/VoiceRelay-xxx/Build/Products/Debug/VoiceRelayMac.app
+   ~/Library/Developer/Xcode/DerivedData/VoiceMind-xxx/Build/Products/Debug/VoiceMindMac.app
    ```
    提示：在调试标签页可以看到完整的应用路径
-5. 选择 VoiceRelayMac.app 并添加
+5. 选择 VoiceMindMac.app 并添加
 6. 勾选启用
 
 ### 方法 3：使用终端命令
 
 ```bash
 # 查看当前权限状态
-tccutil reset Accessibility com.yourcompany.VoiceRelayMac
+tccutil reset Accessibility com.yourcompany.VoiceMindMac
 
 # 注意：Bundle ID 可能不同，在调试标签页查看实际的 Bundle ID
 ```

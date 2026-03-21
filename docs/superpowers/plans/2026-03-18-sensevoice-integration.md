@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 在 VoiceRelayMac 中集成 SenseVoiceSmall 语音识别模型，建立可扩展的多引擎架构
+**Goal:** 在 VoiceMindMac 中集成 SenseVoiceSmall 语音识别模型，建立可扩展的多引擎架构
 
 **Architecture:** 基于协议的引擎抽象层，支持多个语音识别引擎（Apple Speech、SenseVoice）。使用 sherpa-onnx 通过 C 桥接集成 ONNX 模型。模型管理系统负责下载和存储。
 
@@ -15,7 +15,7 @@
 ### 新增文件
 
 ```
-VoiceRelayMac/VoiceRelayMac/
+VoiceMindMac/VoiceMindMac/
 ├── Speech/
 │   ├── Engines/
 │   │   ├── SpeechRecognitionEngine.swift          # 引擎协议定义
@@ -37,7 +37,7 @@ VoiceRelayMac/VoiceRelayMac/
 └── Extensions/
     └── UserDefaults+Speech.swift                  # 设置持久化
 
-VoiceRelayMacTests/
+VoiceMindMacTests/
 ├── SpeechRecognitionManagerTests.swift
 ├── ModelManagerTests.swift
 └── AudioFormatConversionTests.swift
@@ -46,9 +46,9 @@ VoiceRelayMacTests/
 ### 修改文件
 
 ```
-VoiceRelayMac/VoiceRelayMac/
+VoiceMindMac/VoiceMindMac/
 ├── Network/ConnectionManager.swift                # 集成 SpeechRecognitionManager
-├── VoiceRelayMacApp.swift                         # 初始化引擎
+├── VoiceMindMacApp.swift                         # 初始化引擎
 └── Speech/MacSpeechRecognizer.swift               # 重构为 AppleSpeechEngine
 ```
 
@@ -59,12 +59,12 @@ VoiceRelayMac/VoiceRelayMac/
 ### Task 1: 创建语音识别引擎协议
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMac/Speech/Engines/SpeechRecognitionEngine.swift`
+- Create: `VoiceMindMac/VoiceMindMac/Speech/Engines/SpeechRecognitionEngine.swift`
 
 - [ ] **Step 1: 创建 Speech/Engines 目录**
 
 ```bash
-mkdir -p VoiceRelayMac/VoiceRelayMac/Speech/Engines
+mkdir -p VoiceMindMac/VoiceMindMac/Speech/Engines
 ```
 
 - [ ] **Step 2: 创建 SpeechRecognitionEngine.swift 文件**
@@ -151,14 +151,14 @@ protocol SpeechRecognitionEngineDelegate: AnyObject {
 
 - [ ] **Step 3: 在 Xcode 中添加文件到项目**
 
-打开 Xcode，右键点击 `Speech` 文件夹，选择 "Add Files to VoiceRelayMac"，添加 `Engines` 文件夹。
+打开 Xcode，右键点击 `Speech` 文件夹，选择 "Add Files to VoiceMindMac"，添加 `Engines` 文件夹。
 
 - [ ] **Step 4: 验证编译**
 
 ```bash
-cd VoiceRelayMac
-xcodebuild -workspace ../VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+cd VoiceMindMac
+xcodebuild -workspace ../VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     build
 ```
@@ -168,7 +168,7 @@ Expected: 编译成功
 - [ ] **Step 5: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Speech/Engines/SpeechRecognitionEngine.swift
+git add VoiceMindMac/VoiceMindMac/Speech/Engines/SpeechRecognitionEngine.swift
 git commit -m "feat: add SpeechRecognitionEngine protocol
 
 Define unified interface for speech recognition engines.
@@ -182,7 +182,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 2: 创建错误定义
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMac/Speech/SpeechErrors.swift`
+- Create: `VoiceMindMac/VoiceMindMac/Speech/SpeechErrors.swift`
 
 - [ ] **Step 1: 创建 SpeechErrors.swift 文件**
 
@@ -270,8 +270,8 @@ enum ModelError: LocalizedError {
 - [ ] **Step 3: 验证编译**
 
 ```bash
-xcodebuild -workspace ../VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+xcodebuild -workspace ../VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     build
 ```
@@ -281,7 +281,7 @@ Expected: 编译成功
 - [ ] **Step 4: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Speech/SpeechErrors.swift
+git add VoiceMindMac/VoiceMindMac/Speech/SpeechErrors.swift
 git commit -m "feat: add speech recognition error definitions
 
 Define error types for speech engines and model management
@@ -294,7 +294,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 3: 创建 SpeechRecognitionManager
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMac/Speech/SpeechRecognitionManager.swift`
+- Create: `VoiceMindMac/VoiceMindMac/Speech/SpeechRecognitionManager.swift`
 
 - [ ] **Step 1: 创建 SpeechRecognitionManager.swift 文件**
 
@@ -428,8 +428,8 @@ class SpeechRecognitionManager {
 - [ ] **Step 3: 验证编译**
 
 ```bash
-xcodebuild -workspace ../VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+xcodebuild -workspace ../VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     build
 ```
@@ -439,7 +439,7 @@ Expected: 编译成功
 - [ ] **Step 4: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Speech/SpeechRecognitionManager.swift
+git add VoiceMindMac/VoiceMindMac/Speech/SpeechRecognitionManager.swift
 git commit -m "feat: add SpeechRecognitionManager
 
 Manage multiple speech recognition engines.
@@ -456,8 +456,8 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ### Task 4: 重构 MacSpeechRecognizer 为 AppleSpeechEngine
 
 **Files:**
-- Create: `VoiceRelayMac/VoiceRelayMac/Speech/Engines/AppleSpeechEngine.swift`
-- Modify: `VoiceRelayMac/VoiceRelayMac/Speech/MacSpeechRecognizer.swift` (保留作为参考)
+- Create: `VoiceMindMac/VoiceMindMac/Speech/Engines/AppleSpeechEngine.swift`
+- Modify: `VoiceMindMac/VoiceMindMac/Speech/MacSpeechRecognizer.swift` (保留作为参考)
 
 - [ ] **Step 1: 创建 AppleSpeechEngine.swift 文件**
 
@@ -709,8 +709,8 @@ class AppleSpeechEngine: NSObject, SpeechRecognitionEngine {
 - [ ] **Step 3: 验证编译**
 
 ```bash
-xcodebuild -workspace ../VoiceRelay.xcworkspace \
-    -scheme VoiceRelayMac \
+xcodebuild -workspace ../VoiceMind.xcworkspace \
+    -scheme VoiceMindMac \
     -configuration Debug \
     build
 ```
@@ -720,7 +720,7 @@ Expected: 编译成功
 - [ ] **Step 4: 提交**
 
 ```bash
-git add VoiceRelayMac/VoiceRelayMac/Speech/Engines/AppleSpeechEngine.swift
+git add VoiceMindMac/VoiceMindMac/Speech/Engines/AppleSpeechEngine.swift
 git commit -m "feat: add AppleSpeechEngine adapter
 
 Adapt existing MacSpeechRecognizer to SpeechRecognitionEngine protocol.
