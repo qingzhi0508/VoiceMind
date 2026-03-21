@@ -78,7 +78,7 @@ class MenuBarController: NSObject, ObservableObject {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "mic.circle", accessibilityDescription: String(localized: "app_title"))
+            button.imagePosition = .imageLeading
             updateStatusIcon()
         }
 
@@ -90,20 +90,24 @@ class MenuBarController: NSObject, ObservableObject {
 
         let statusItem = NSMenuItem(title: AppLocalization.localizedString("menu_status_unpaired"), action: nil, keyEquivalent: "")
         statusItem.tag = 100 // For updating later
+        statusItem.isEnabled = false
         menu.addItem(statusItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        menu.addItem(NSMenuItem(title: AppLocalization.localizedString("menu_show_status"), action: #selector(showStatus), keyEquivalent: "s"))
-        menu.addItem(NSMenuItem(title: AppLocalization.localizedString("menu_start_pairing"), action: #selector(startPairing), keyEquivalent: "p"))
-        menu.addItem(NSMenuItem(title: AppLocalization.localizedString("menu_permissions"), action: #selector(openPermissions), keyEquivalent: ""))
+        let returnItem = NSMenuItem(title: AppLocalization.localizedString("menu_return_main"), action: #selector(showStatus), keyEquivalent: "s")
+        returnItem.target = self
+        menu.addItem(returnItem)
 
-        let unpairItem = NSMenuItem(title: AppLocalization.localizedString("menu_unpair"), action: #selector(unpairDevice), keyEquivalent: "")
-        unpairItem.tag = 101 // For showing/hiding
-        menu.addItem(unpairItem)
+        let permissionsItem = NSMenuItem(title: AppLocalization.localizedString("menu_permissions"), action: #selector(openPermissions), keyEquivalent: "")
+        permissionsItem.target = self
+        menu.addItem(permissionsItem)
 
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: AppLocalization.localizedString("menu_quit"), action: #selector(quit), keyEquivalent: "q"))
+
+        let quitItem = NSMenuItem(title: AppLocalization.localizedString("menu_quit"), action: #selector(quit), keyEquivalent: "q")
+        quitItem.target = self
+        menu.addItem(quitItem)
 
         self.statusItem.menu = menu
         updateMenu()
@@ -151,7 +155,7 @@ class MenuBarController: NSObject, ObservableObject {
             return
         }
 
-        app.activate(options: [.activateIgnoringOtherApps])
+        app.activate(options: [])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             completion()
         }
@@ -360,7 +364,29 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     @objc private func quit() {
+        prepareForQuit()
         NSApplication.shared.terminate(nil)
+    }
+
+    func prepareForQuit() {
+        sessionTimer?.invalidate()
+        sessionTimer = nil
+        pendingInjectionTargetAppPID = nil
+
+        stopNetworkServices()
+        hotkeyMonitor.stop()
+
+        [pairingWindow, permissionsWindow, hotkeySettingsWindow, statusWindow, onboardingWindow, usageGuideWindow]
+            .forEach { $0?.close() }
+
+        pairingWindow = nil
+        permissionsWindow = nil
+        hotkeySettingsWindow = nil
+        statusWindow = nil
+        onboardingWindow = nil
+        usageGuideWindow = nil
+
+        statusItem?.menu = nil
     }
 
     func showPairingWindow(code: String) {
@@ -418,40 +444,27 @@ class MenuBarController: NSObject, ObservableObject {
 
     func updateStatusIcon() {
         guard let button = statusItem.button else { return }
-
-        switch connectionManager.pairingState {
-        case .unpaired:
-            button.image = NSImage(systemSymbolName: "mic.circle", accessibilityDescription: String(localized: "status_access_unpaired"))
-        case .pairing:
-            button.image = NSImage(systemSymbolName: "mic.circle.fill", accessibilityDescription: String(localized: "status_access_pairing"))
-        case .paired:
-            button.image = NSImage(systemSymbolName: "mic.circle.fill", accessibilityDescription: String(localized: "status_access_connected"))
-        }
+        let presentation = MenuBarStatusPresentation(
+            pairingState: connectionManager.pairingState,
+            connectionState: connectionManager.connectionState
+        )
+        button.image = NSImage(
+            systemSymbolName: presentation.iconName,
+            accessibilityDescription: presentation.accessibilityDescription
+        )
+        button.title = presentation.buttonTitle
     }
 
     func updateMenu() {
         guard let menu = statusItem.menu else { return }
+        let presentation = MenuBarStatusPresentation(
+            pairingState: connectionManager.pairingState,
+            connectionState: connectionManager.connectionState
+        )
 
         // Update status text
         if let statusItem = menu.item(withTag: 100) {
-            switch connectionManager.pairingState {
-            case .unpaired:
-                statusItem.title = AppLocalization.localizedString("menu_status_unpaired")
-            case .pairing:
-                statusItem.title = AppLocalization.localizedString("status_menu_pairing")
-            case .paired(_, let deviceName):
-                statusItem.title = String(format: String(localized: "status_menu_connected_format"), deviceName)
-            }
-        }
-
-        // Show/hide unpair button
-        if let unpairItem = menu.item(withTag: 101) {
-            unpairItem.isHidden = {
-                if case .paired = connectionManager.pairingState {
-                    return false
-                }
-                return true
-            }()
+            statusItem.title = presentation.menuStatusTitle
         }
     }
 
@@ -571,6 +584,8 @@ extension MenuBarController: NSWindowDelegate {
                 statusWindow = nil
             } else if window === onboardingWindow {
                 onboardingWindow = nil
+            } else if window === usageGuideWindow {
+                usageGuideWindow = nil
             }
         }
     }

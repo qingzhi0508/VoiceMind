@@ -26,6 +26,7 @@
 
 "menu_status_unpaired" = "未配对";
 "menu_show_status" = "显示状态...";
+"menu_return_main" = "返回主页面";
 "menu_start_pairing" = "开始配对...";
 "menu_permissions" = "权限设置...";
 "menu_unpair" = "解除配对";

@@ -25,6 +25,7 @@
 
 "menu_status_unpaired" = "Not Paired";
 "menu_show_status" = "Show Status...";
+"menu_return_main" = "Return to Main Window";
 "menu_start_pairing" = "Start Pairing...";
 "menu_permissions" = "Permissions...";
 "menu_unpair" = "Unpair";
