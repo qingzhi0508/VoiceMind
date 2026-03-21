@@ -19,14 +19,7 @@ struct SpeechRecognitionTab: View {
                 .font(.title2)
                 .fontWeight(.semibold)
 
-            // Engine selection section
             engineSelectionSection
-
-            Divider()
-                .padding(.vertical)
-
-            // Model management section
-            modelManagementSection
 
             Spacer()
         }
@@ -325,7 +318,6 @@ struct SpeechRecognitionTab: View {
         isRefreshing = true
         availableEngines = SpeechRecognitionManager.shared.availableEngines()
         selectedEngineId = SpeechRecognitionManager.shared.currentEngine?.identifier ?? ""
-        refreshModels() // 同时刷新模型列表
         isRefreshing = false
     }
 

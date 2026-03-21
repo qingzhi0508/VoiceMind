@@ -193,8 +193,6 @@
 "data_title" = "iOS 数据记录";
 "data_subtitle" = "展示 iPhone 发来的数据，以及语音在 Mac 端转写后的最终文字。";
 "data_filter_picker" = "筛选";
-"data_action_copy" = "复制日志";
-"data_action_export" = "导出日志";
 "data_action_clear" = "清空记录";
 "data_search_placeholder" = "搜索标题、内容、Session ID";
 "data_group_by_session" = "按会话分组";
@@ -208,7 +206,6 @@
 "data_empty_all_desc" = "当 iPhone 发来配对请求、语音流或识别文本后，这里会按时间顺序记录。";
 "data_empty_voice_desc" = "当前还没有语音流或语音转写结果。";
 "data_empty_pairing_desc" = "当前还没有配对或连接相关记录。";
-"data_export_title" = "导出数据日志";
 "data_severity_info" = "信息";
 "data_severity_warning" = "警告";
 "data_severity_error" = "错误";

@@ -1,7 +1,6 @@
 import AppKit
 import SharedCore
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct MainWindow: View {
     @ObservedObject var controller: MenuBarController
@@ -337,18 +336,21 @@ struct DataRecordsTab: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "data_title"))
-                        .font(.title2)
-                        .fontWeight(.semibold)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(String(localized: "data_title"))
+                    .font(.title2)
+                    .fontWeight(.semibold)
 
-                    Text(String(localized: "data_subtitle"))
-                        .font(.callout)
-                        .foregroundColor(.secondary)
-                }
+                Text(String(localized: "data_subtitle"))
+                    .font(.callout)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
-                Spacer()
+            HStack(alignment: .center, spacing: 12) {
+                Text(String(localized: "data_filter_picker"))
+                    .font(.headline)
+                    .foregroundColor(.secondary)
 
                 Picker(String(localized: "data_filter_picker"), selection: $selectedFilter) {
                     ForEach(DataRecordFilter.allCases) { filter in
@@ -356,19 +358,9 @@ struct DataRecordsTab: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 220)
+                .frame(width: 260)
 
-                Button(String(localized: "data_action_copy")) {
-                    copyFilteredRecords()
-                }
-                .buttonStyle(.bordered)
-                .disabled(filteredRecords.isEmpty)
-
-                Button(String(localized: "data_action_export")) {
-                    exportFilteredRecords()
-                }
-                .buttonStyle(.bordered)
-                .disabled(filteredRecords.isEmpty)
+                Spacer(minLength: 0)
 
                 Button(String(localized: "data_action_clear")) {
                     controller.clearInboundDataRecords()
@@ -484,50 +476,6 @@ struct DataRecordsTab: View {
         case .pairing:
             return String(localized: "data_empty_pairing_desc")
         }
-    }
-
-    private func copyFilteredRecords() {
-        let logText = buildLogText()
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(logText, forType: .string)
-    }
-
-    private func exportFilteredRecords() {
-        let panel = NSSavePanel()
-        panel.title = String(localized: "data_export_title")
-        panel.nameFieldStringValue = suggestedFileName
-        panel.allowedContentTypes = [.plainText]
-
-        guard panel.runModal() == .OK, let url = panel.url else {
-            return
-        }
-
-        do {
-            try buildLogText().write(to: url, atomically: true, encoding: .utf8)
-        } catch {
-            NSSound.beep()
-        }
-    }
-
-    private var suggestedFileName: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyyMMdd-HHmmss"
-        return "\(String(localized: "app_title"))-\(selectedFilter.title)-\(formatter.string(from: Date())).txt"
-    }
-
-    private func buildLogText() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-
-        return filteredRecords.map { record in
-            let category = categoryTitle(for: record.category)
-            let severity = severityTitle(for: record.severity)
-            return """
-            [\(formatter.string(from: record.timestamp))] \(category) | \(severity) | \(record.title)
-            \(record.detail)
-            """
-        }
-        .joined(separator: "\n\n")
     }
 
     private func searchedRecords(_ records: [InboundDataRecord]) -> [InboundDataRecord] {

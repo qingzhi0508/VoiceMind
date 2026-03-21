@@ -8,7 +8,7 @@ class AppleSpeechEngine: NSObject, SpeechRecognitionEngine {
     // MARK: - SpeechRecognitionEngine Protocol
 
     let identifier = "apple-speech"
-    let displayName = "Apple Speech"
+    let displayName = "Local Speech"
     let supportsStreaming = true
 
     var supportedLanguages: [String] {

@@ -87,22 +87,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             print("ℹ️ SenseVoice 模型未下载或模型管理器未初始化，跳过引擎注册")
         }
 
-        // Restore previously selected engine
-        let savedEngineId = UserDefaults.standard.selectedSpeechEngine
-        if !savedEngineId.isEmpty {
-            do {
-                try SpeechRecognitionManager.shared.selectEngine(identifier: savedEngineId)
-                print("✅ 恢复上次选择的引擎: \(savedEngineId)")
-            } catch {
-                print("⚠️ 无法恢复引擎 \(savedEngineId)，使用默认引擎")
-                // Fallback to apple-speech
-                try? SpeechRecognitionManager.shared.selectEngine(identifier: "apple-speech")
-            }
-        } else {
-            // First launch, select apple-speech as default
-            try? SpeechRecognitionManager.shared.selectEngine(identifier: "apple-speech")
-            UserDefaults.standard.selectedSpeechEngine = "apple-speech"
-        }
+        restorePreferredSpeechEngine()
 
         // Setup speech recognition delegate
         controller.connectionManager.setupSpeechRecognition()
@@ -111,6 +96,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         // Don't quit when main window closes - keep running in menu bar
         return false
+    }
+
+    private func restorePreferredSpeechEngine() {
+        let fallbackEngineId = "apple-speech"
+        let savedEngineId = UserDefaults.standard.selectedSpeechEngine.trimmingCharacters(in: .whitespacesAndNewlines)
+        let availableEngineIds = Set(SpeechRecognitionManager.shared.availableEngines().map(\.identifier))
+
+        guard !savedEngineId.isEmpty else {
+            selectFallbackSpeechEngine(fallbackEngineId)
+            return
+        }
+
+        guard availableEngineIds.contains(savedEngineId) else {
+            print("ℹ️ 已忽略不存在的历史引擎: \(savedEngineId)，切换到默认引擎")
+            selectFallbackSpeechEngine(fallbackEngineId)
+            return
+        }
+
+        do {
+            try SpeechRecognitionManager.shared.selectEngine(identifier: savedEngineId)
+            print("✅ 恢复上次选择的引擎: \(savedEngineId)")
+        } catch {
+            print("⚠️ 恢复引擎失败: \(savedEngineId)，切换到默认引擎")
+            selectFallbackSpeechEngine(fallbackEngineId)
+        }
+    }
+
+    private func selectFallbackSpeechEngine(_ identifier: String) {
+        try? SpeechRecognitionManager.shared.selectEngine(identifier: identifier)
+        UserDefaults.standard.selectedSpeechEngine = identifier
     }
 
     private func showModelCorruptedAlertIfNeeded() {
