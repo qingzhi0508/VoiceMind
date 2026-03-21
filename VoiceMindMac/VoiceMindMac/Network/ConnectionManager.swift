@@ -17,12 +17,25 @@ protocol ConnectionManagerDelegate: AnyObject {
 }
 
 class ConnectionManager: NSObject {
+    static let keychainServiceName = "com.voicemind.mac"
+
+    // MARK: - Rate Limiting Constants
+    private struct RateLimitConfig {
+        static let maxAttempts = 5              // 最大失败尝试次数
+        static let windowSeconds: TimeInterval = 60      // 时间窗口（秒）
+        static let cooldownSeconds: TimeInterval = 300    // 被锁定后的冷却时间（5分钟）
+    }
+
+    // MARK: - Rate Limiting State
+    private var failedPairingAttempts: [String: [Date]] = [:]  // clientId -> 失败时间列表
+    private var rateLimitedClients: [String: Date] = [:]        // clientId -> 锁定到期时间
+
     weak var delegate: ConnectionManagerDelegate?
 
     let server = WebSocketServer()
     var hmacValidator: HMACValidator?
 
-    private let keychainService = "com.voicerelay.mac"
+    private let keychainService = ConnectionManager.keychainServiceName
     private let keychainAccount = "pairing"
     let deviceId = UUID().uuidString
 
@@ -78,6 +91,62 @@ class ConnectionManager: NSObject {
     func stop() {
         server.stop()
         print("🛑 Connection manager stopped")
+    }
+
+    // MARK: - Rate Limiting Methods
+
+    /// 检查客户端是否被锁定
+    private func isClientRateLimited(_ clientId: String) -> Bool {
+        if let cooldownEnd = rateLimitedClients[clientId] {
+            if Date() < cooldownEnd {
+                print("🚫 客户端 \(clientId) 处于锁定状态，剩余 \(Int(cooldownEnd.timeIntervalSinceNow)) 秒")
+                return true
+            } else {
+                // 冷却已结束，清除锁定状态
+                rateLimitedClients.removeValue(forKey: clientId)
+                failedPairingAttempts.removeValue(forKey: clientId)
+                print("✅ 客户端 \(clientId) 锁定已解除")
+            }
+        }
+        return false
+    }
+
+    /// 记录一次失败的配对尝试
+    private func recordFailedAttempt(_ clientId: String) {
+        let now = Date()
+
+        // 获取该客户端的失败尝试记录
+        var attempts = failedPairingAttempts[clientId] ?? []
+
+        // 清除时间窗口外的旧记录
+        attempts = attempts.filter { now.timeIntervalSince($0) < RateLimitConfig.windowSeconds }
+
+        // 添加新的失败记录
+        attempts.append(now)
+        failedPairingAttempts[clientId] = attempts
+
+        let attemptCount = attempts.count
+        print("⚠️ 客户端 \(clientId) 失败尝试次数: \(attemptCount)/\(RateLimitConfig.maxAttempts)")
+
+        // 检查是否达到限制
+        if attemptCount >= RateLimitConfig.maxAttempts {
+            rateLimitedClients[clientId] = now.addingTimeInterval(RateLimitConfig.cooldownSeconds)
+            print("🔒 客户端 \(clientId) 因多次失败尝试已被锁定 \(RateLimitConfig.cooldownSeconds) 秒")
+
+            recordInboundEvent(
+                title: "配对被锁定",
+                detail: "客户端 \(clientId) 因 \(attemptCount) 次失败尝试被锁定 \(Int(RateLimitConfig.cooldownSeconds)) 秒",
+                category: .pairing,
+                severity: .warning
+            )
+        }
+    }
+
+    /// 获取剩余锁定时间
+    private func remainingCooldown(_ clientId: String) -> TimeInterval? {
+        guard let cooldownEnd = rateLimitedClients[clientId] else { return nil }
+        let remaining = cooldownEnd.timeIntervalSinceNow
+        return remaining > 0 ? remaining : nil
     }
 
     func setupSpeechRecognition() {
@@ -142,6 +211,18 @@ class ConnectionManager: NSObject {
     }
 
     private func handlePairConfirm(_ payload: PairConfirmPayload) {
+        let clientId = payload.iosId
+
+        // 检查客户端是否被速率限制锁定
+        if isClientRateLimited(clientId) {
+            if let remaining = remainingCooldown(clientId) {
+                print("🚫 配对被拒绝: 客户端 \(clientId) 已被临时锁定，剩余 \(Int(remaining)) 秒")
+                updatePairingProgress("配对被拒绝：检测到异常行为，请 \(Int(remaining)) 秒后重试。")
+                sendError(code: "rate_limited", message: "Too many failed attempts, please try again later")
+            }
+            return
+        }
+
         print("📱 收到配对确认")
         print("   iOS 设备: \(payload.iosName)")
         print("   iOS ID: \(payload.iosId)")
@@ -170,14 +251,26 @@ class ConnectionManager: NSObject {
             print("❌ 配对失败: 配对码不匹配")
             print("   期望: \(code)")
             print("   收到: \(payload.shortCode)")
-            updatePairingProgress("配对码校验失败，已拒绝此次请求。")
+
+            // 记录失败尝试，用于暴力破解检测
+            recordFailedAttempt(clientId)
+
+            // 检查是否因失败次数过多而被锁定
+            if isClientRateLimited(clientId) {
+                if let remaining = remainingCooldown(clientId) {
+                    updatePairingProgress("配对被拒绝：失败次数过多，请 \(Int(remaining)) 秒后重试。")
+                    sendError(code: "rate_limited", message: "Too many failed attempts")
+                }
+            } else {
+                updatePairingProgress("配对码校验失败，已拒绝此次请求。")
+                sendError(code: "invalid_code", message: "Invalid pairing code")
+            }
             recordInboundEvent(
                 title: "配对失败",
                 detail: "配对码校验失败。\n期望: \(code)\n收到: \(payload.shortCode)",
                 category: .pairing,
                 severity: .error
             )
-            sendError(code: "invalid_code", message: "Invalid pairing code")
             return
         }
 
@@ -203,6 +296,10 @@ class ConnectionManager: NSObject {
             try KeychainManager.savePairing(pairing, service: keychainService, account: keychainAccount)
             hmacValidator = HMACValidator(sharedSecret: sharedSecret)
             pairingState = .paired(deviceId: payload.iosId, deviceName: payload.iosName)
+
+            // 配对成功，清除该客户端的失败尝试记录
+            failedPairingAttempts.removeValue(forKey: clientId)
+            rateLimitedClients.removeValue(forKey: clientId)
 
             print("💾 配对信息已保存到 Keychain")
             updatePairingProgress("配对信息已保存，正在向 iPhone 返回成功结果。")
@@ -557,4 +654,3 @@ extension ConnectionManager: SpeechRecognitionEngineDelegate {
         server.send(envelope)
     }
 }
-
