@@ -37,7 +37,7 @@
 "window_title_qr_pairing" = "扫码配对";
 
 "unpair_alert_title" = "解除配对？";
-"unpair_alert_message" = "这将移除与 iPhone 的配对。你需要重新配对才能使用 VoiceMind。";
+"unpair_alert_message" = "这将移除与 iPhone 的配对。你需要重新配对才能使用语灵。";
 "unpair_alert_button" = "解除配对";
 
 "error_title" = "错误";
@@ -58,7 +58,7 @@
 "hotkey_permission_error" = "无法启动热键监听。请检查系统权限设置后重试。";
 
 "text_injection_permission_title" = "缺少辅助功能权限";
-"text_injection_permission_message” = “VoiceMind 需要”辅助功能”权限才能把识别结果输入到当前应用。你也可以先复制文本再手动粘贴。";
+“text_injection_permission_message” = “语灵 需要”辅助功能”权限才能把识别结果输入到当前应用。你也可以先复制文本再手动粘贴。”;
 "open_system_settings_button" = "打开系统设置";
 
 "log_server_port_updated_title" = "监听端口已更新";
