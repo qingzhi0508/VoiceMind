@@ -133,6 +133,10 @@
 
 "settings_title" = "Settings";
 "settings_guide_header" = "Help";
+"settings_theme_header" = "Appearance";
+"settings_theme_system" = "System";
+"settings_theme_light" = "Light";
+"settings_theme_dark" = "Dark";
 "settings_language_header" = "App Language";
 "settings_language_restart_title" = "Restart Required";
 "settings_language_restart_message" = "Please relaunch the app to apply the new language.";

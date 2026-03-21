@@ -9,14 +9,31 @@ struct SettingsView: View {
     @State private var showLanguageRestartAlert = false
     @State private var showOnboarding = false
     @AppStorage("app_language") private var appLanguage: String = AppLanguageManager.defaultLanguageCode()
+    @AppStorage("app_theme") private var appTheme: String = "system"
 
     private let languages = [
         ("zh-CN", String(localized: "language_zh")),
         ("en-US", String(localized: "language_en"))
     ]
 
+    private let themes = [
+        ("system", String(localized: "settings_theme_system")),
+        ("light", String(localized: "settings_theme_light")),
+        ("dark", String(localized: "settings_theme_dark"))
+    ]
+
     var body: some View {
         List {
+            // Theme Section
+            Section {
+                Picker(String(localized: "settings_theme_header"), selection: $appTheme) {
+                    ForEach(themes, id: \.0) { theme in
+                        Text(theme.1).tag(theme.0)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
             // Language Section
             Section {
                 ForEach(languages, id: \.0) { code, name in
