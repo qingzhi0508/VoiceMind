@@ -8,41 +8,83 @@ struct ContentView: View {
 
     var body: some View {
         NavigationView {
-            VStack {
-                // Connection Status Card - 只在非成功连接状态显示
-                if case .paired = viewModel.pairingState,
-                   case .connected = viewModel.connectionState {
-                    EmptyView()
-                } else {
-                    ConnectionStatusCard(
-                        pairingState: viewModel.pairingState,
-                        connectionState: viewModel.connectionState,
-                        reconnectStatusMessage: viewModel.reconnectStatusMessage,
-                        onReconnect: {
-                            viewModel.reconnect()
-                        }
-                    )
-                    .padding(.bottom, 20)
+            ZStack {
+                // Background Gradient
+                LinearGradient(
+                    colors: [
+                        Color(UIColor.systemGroupedBackground),
+                        Color(UIColor.secondarySystemGroupedBackground)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+
+                // Decorative Elements
+                GeometryReader { geometry in
+                    // Top right decorative circle
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [Color.blue.opacity(0.08), Color.clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 200
+                            )
+                        )
+                        .frame(width: 300, height: 300)
+                        .offset(x: geometry.size.width - 100, y: -50)
+
+                    // Bottom left decorative circle
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [Color.purple.opacity(0.06), Color.clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 180
+                            )
+                        )
+                        .frame(width: 250, height: 250)
+                        .offset(x: -80, y: geometry.size.height - 150)
                 }
 
-                Spacer()
-
-                // Recognition Status
-                RecognitionStatusView(
-                    state: viewModel.recognitionState,
-                    statusMessage: viewModel.pushToTalkStatusMessage,
-                    isEnabled: viewModel.canStartPushToTalk || viewModel.canManuallyReconnectFromPrimaryButton || viewModel.canOpenPairingFromPrimaryButton || viewModel.recognitionState != .idle,
-                    showsPairingAction: viewModel.canOpenPairingFromPrimaryButton,
-                    showsReconnectAction: viewModel.canManuallyReconnectFromPrimaryButton,
-                    audioLevel: viewModel.audioLevel,
-                    onPressChanged: { isPressing in
-                        viewModel.handlePrimaryButtonPressChanged(isPressing)
+                VStack {
+                    // Connection Status Card - 只在非成功连接状态显示
+                    if case .paired = viewModel.pairingState,
+                       case .connected = viewModel.connectionState {
+                        EmptyView()
+                    } else {
+                        ConnectionStatusCard(
+                            pairingState: viewModel.pairingState,
+                            connectionState: viewModel.connectionState,
+                            reconnectStatusMessage: viewModel.reconnectStatusMessage,
+                            onReconnect: {
+                                viewModel.reconnect()
+                            }
+                        )
+                        .padding(.bottom, 20)
                     }
-                )
 
-                Spacer()
+                    Spacer()
+
+                    // Recognition Status
+                    RecognitionStatusView(
+                        state: viewModel.recognitionState,
+                        statusMessage: viewModel.pushToTalkStatusMessage,
+                        isEnabled: viewModel.canStartPushToTalk || viewModel.canManuallyReconnectFromPrimaryButton || viewModel.canOpenPairingFromPrimaryButton || viewModel.recognitionState != .idle,
+                        showsPairingAction: viewModel.canOpenPairingFromPrimaryButton,
+                        showsReconnectAction: viewModel.canManuallyReconnectFromPrimaryButton,
+                        audioLevel: viewModel.audioLevel,
+                        onPressChanged: { isPressing in
+                            viewModel.handlePrimaryButtonPressChanged(isPressing)
+                        }
+                    )
+
+                    Spacer()
+                }
+                .padding()
             }
-            .padding()
             .navigationTitle(String(localized: "app_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
