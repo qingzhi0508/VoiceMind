@@ -175,6 +175,11 @@
 "status_connection_connected" = "已连接";
 "status_connection_error" = "错误";
 
+"note_title" = "笔记";
+"note_placeholder" = "在此说话或接收 iOS 传输的识别结果...";
+"note_recording" = "录音中...";
+"note_clear" = "清空";
+
 "settings_text_injection_title" = "文本注入方式";
 "settings_text_injection_clipboard_title" = "剪贴板粘贴";
 "settings_text_injection_clipboard_desc" = "已固定为剪贴板粘贴，以获得最稳定的光标输入兼容性。";

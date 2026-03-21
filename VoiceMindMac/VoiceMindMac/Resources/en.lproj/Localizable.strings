@@ -176,6 +176,11 @@ You can also copy the text and paste manually.";
 "status_connection_connected" = "Connected";
 "status_connection_error" = "Error";
 
+"note_title" = "Notes";
+"note_placeholder" = "Speak or receive iOS transcription results here...";
+"note_recording" = "Recording...";
+"note_clear" = "Clear";
+
 "settings_text_injection_title" = "Text Injection";
 "settings_text_injection_clipboard_title" = "Clipboard Paste";
 "settings_text_injection_clipboard_desc" = "Fixed to clipboard paste for the most reliable cursor input compatibility.";

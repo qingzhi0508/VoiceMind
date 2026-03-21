@@ -135,6 +135,41 @@ struct StatusTab: View {
                 .padding()
             }
 
+            // Notes Section with Local Recording
+            GroupBox(label: Label(String(localized: "note_title"), systemImage: "note.text")) {
+                VStack(alignment: .leading, spacing: 12) {
+                    // Note text display
+                    Text(controller.noteText.isEmpty ? String(localized: "note_placeholder") : controller.noteText)
+                        .font(.body)
+                        .foregroundColor(controller.noteText.isEmpty ? .secondary : .primary)
+                        .frame(maxWidth: .infinity, minHeight: 80, alignment: .topLeading)
+                        .padding(10)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .cornerRadius(8)
+
+                    // Recording button
+                    HStack {
+                        Spacer()
+
+                        RecordButton(
+                            isRecording: controller.isLocalRecording,
+                            action: {
+                                controller.toggleLocalRecording()
+                            }
+                        )
+
+                        Button(action: {
+                            controller.clearNote()
+                        }) {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(controller.noteText.isEmpty)
+                    }
+                }
+                .padding()
+            }
+
             Spacer()
 
             // Control Buttons
@@ -769,5 +804,59 @@ struct AboutTab: View {
             Spacer()
         }
         .padding()
+    }
+}
+
+// MARK: - Record Button
+
+struct RecordButton: View {
+    let isRecording: Bool
+    let action: () -> Void
+
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: {
+            if isRecording {
+                action()
+            } else {
+                action()
+            }
+        }) {
+            ZStack {
+                Circle()
+                    .fill(isRecording ? Color.red : Color.accentColor)
+                    .frame(width: 60, height: 60)
+                    .shadow(color: isRecording ? .red.opacity(0.5) : .accentColor.opacity(0.3), radius: isRecording ? 10 : 5)
+
+                if isRecording {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.white)
+                        .frame(width: 20, height: 20)
+                } else {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.white)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if !isPressed {
+                        isPressed = true
+                        if !isRecording {
+                            action()
+                        }
+                    }
+                }
+                .onEnded { _ in
+                    isPressed = false
+                    if isRecording {
+                        action()
+                    }
+                }
+        )
     }
 }

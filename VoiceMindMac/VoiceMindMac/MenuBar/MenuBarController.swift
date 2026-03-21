@@ -10,6 +10,9 @@ class MenuBarController: NSObject, ObservableObject {
     var textInjector: TextInjectionProtocol!
     let settings = AppSettings.shared
 
+    // 本地语音识别
+    private let localSpeechRecognizer = LocalSpeechRecognizer()
+
     @Published var pairingState: PairingState
     @Published var connectionState: ConnectionState
     @Published var pairingProgressMessage: String?
@@ -17,6 +20,10 @@ class MenuBarController: NSObject, ObservableObject {
     @Published var accessibilityStatus: PermissionStatus
     @Published var inputMonitoringStatus: PermissionStatus
     @Published var isServiceRunning = false
+
+    // 笔记相关状态
+    @Published var noteText: String = ""
+    @Published var isLocalRecording: Bool = false
 
     var currentSessionId: String?
     var sessionTimer: Timer?
@@ -40,6 +47,9 @@ class MenuBarController: NSObject, ObservableObject {
         self.accessibilityStatus = PermissionsManager.checkAccessibility()
         self.inputMonitoringStatus = PermissionsManager.checkInputMonitoring()
         super.init()
+
+        // 设置本地语音识别代理
+        localSpeechRecognizer.delegate = self
 
         // Initialize text injector based on settings
         updateTextInjector()
@@ -567,6 +577,74 @@ class MenuBarController: NSObject, ObservableObject {
         connectionState = connectionManager.connectionState
         pairingProgressMessage = connectionManager.pairingProgressMessage
         refreshPermissionState()
+    }
+}
+
+// MARK: - Local Speech Recognition
+
+extension MenuBarController {
+    /// 开始本地录音识别
+    func startLocalRecording() {
+        guard !isLocalRecording else { return }
+
+        // 检查权限
+        guard localSpeechRecognizer.checkPermission() else {
+            print("❌ 本地录音需要麦克风权限")
+            return
+        }
+
+        do {
+            try localSpeechRecognizer.startRecording()
+            isLocalRecording = true
+            noteText = ""  // 清空笔记
+            print("✅ 本地录音已开始")
+        } catch {
+            print("❌ 开始本地录音失败: \(error.localizedDescription)")
+        }
+    }
+
+    /// 停止本地录音识别
+    func stopLocalRecording() {
+        guard isLocalRecording else { return }
+
+        localSpeechRecognizer.stopRecording()
+        isLocalRecording = false
+        print("✅ 本地录音已停止")
+    }
+
+    /// 切换本地录音状态
+    func toggleLocalRecording() {
+        if isLocalRecording {
+            stopLocalRecording()
+        } else {
+            startLocalRecording()
+        }
+    }
+
+    /// 清除笔记
+    func clearNote() {
+        noteText = ""
+    }
+}
+
+// MARK: - LocalSpeechRecognizerDelegate
+
+extension MenuBarController: LocalSpeechRecognizerDelegate {
+    func localSpeechRecognizer(_ recognizer: LocalSpeechRecognizer, didRecognizeText text: String, isFinal: Bool) {
+        DispatchQueue.main.async {
+            self.noteText = text
+
+            if isFinal {
+                self.isLocalRecording = false
+            }
+        }
+    }
+
+    func localSpeechRecognizer(_ recognizer: LocalSpeechRecognizer, didFailWithError error: Error) {
+        DispatchQueue.main.async {
+            self.isLocalRecording = false
+            print("❌ 本地语音识别失败: \(error.localizedDescription)")
+        }
     }
 }
 

@@ -162,6 +162,9 @@ extension MenuBarController: ConnectionManagerDelegate {
                 )
                 self.showTextCopyAlert(payload.text, error: error.localizedDescription)
             }
+
+            // 更新笔记显示最新识别结果
+            self.noteText = payload.text
         }
     }
 
