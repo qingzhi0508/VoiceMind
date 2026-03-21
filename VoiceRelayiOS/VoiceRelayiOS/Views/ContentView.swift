@@ -47,18 +47,10 @@ struct ContentView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 16) {
-                        Button(action: {
-                            showOnboarding = true
-                        }) {
-                            Image(systemName: "questionmark.circle")
-                        }
-
-                        NavigationLink {
-                            SettingsView(viewModel: viewModel)
-                        } label: {
-                            Image(systemName: "gear")
-                        }
+                    NavigationLink {
+                        SettingsView(viewModel: viewModel)
+                    } label: {
+                        Image(systemName: "gear")
                     }
                 }
             }
