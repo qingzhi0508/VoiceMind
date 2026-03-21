@@ -11,6 +11,7 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
     private var captureSession: AVCaptureSession?
     private(set) var previewLayer: AVCaptureVideoPreviewLayer?
     private let sessionQueue = DispatchQueue(label: "VoiceMind.QRCodeScanner.session")
+    private var isStarting = false  // 防止重复启动
 
     func requestCameraPermission(completion: @escaping (Bool) -> Void) {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -33,7 +34,7 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
     }
 
     func startScanning() -> AVCaptureVideoPreviewLayer? {
-        guard !isScanning else { return previewLayer }
+        guard !isScanning, !isStarting else { return previewLayer }
 
         #if targetEnvironment(simulator)
         error = "模拟器不支持相机扫码，请使用真机或改用手动输入连接信息。"
@@ -41,6 +42,7 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
         #else
         error = nil
         scannedCode = nil
+        isStarting = true
 
         let captureSession = AVCaptureSession()
         captureSession.beginConfiguration()
@@ -52,6 +54,7 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
 
         guard let videoCaptureDevice else {
             captureSession.commitConfiguration()
+            isStarting = false
             error = "无法访问相机"
             return nil
         }
@@ -62,6 +65,7 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
             videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
         } catch {
             captureSession.commitConfiguration()
+            isStarting = false
             self.error = "无法初始化相机输入"
             return nil
         }
@@ -70,6 +74,7 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
             captureSession.addInput(videoInput)
         } else {
             captureSession.commitConfiguration()
+            isStarting = false
             error = "无法添加相机输入"
             return nil
         }
@@ -83,6 +88,7 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
             metadataOutput.metadataObjectTypes = [.qr]
         } else {
             captureSession.commitConfiguration()
+            isStarting = false
             error = "无法添加元数据输出"
             return nil
         }
@@ -95,10 +101,11 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
         self.captureSession = captureSession
         self.previewLayer = previewLayer
 
-        sessionQueue.async {
+        sessionQueue.async { [weak self] in
             captureSession.startRunning()
             DispatchQueue.main.async {
-                self.isScanning = true
+                self?.isStarting = false
+                self?.isScanning = true
             }
         }
 
@@ -118,6 +125,7 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
         captureSession = nil
         previewLayer = nil
         isScanning = false
+        isStarting = false
     }
 
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
