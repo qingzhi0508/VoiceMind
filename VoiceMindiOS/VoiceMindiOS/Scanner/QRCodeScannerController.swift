@@ -13,6 +13,7 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
     private(set) var previewLayer: AVCaptureVideoPreviewLayer?
     private let sessionQueue = DispatchQueue(label: "VoiceMind.QRCodeScanner.session")
     private var isStarting = false  // 防止重复启动
+    private var pendingStop = false  // 是否需要停止（用于配置过程中收到停止请求）
 
     func requestCameraPermission(completion: @escaping (Bool) -> Void) {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -95,6 +96,14 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
             return nil
         }
 
+        // 检查是否需要停止
+        if pendingStop {
+            captureSession.commitConfiguration()
+            pendingStop = false
+            isStarting = false
+            return nil
+        }
+
         captureSession.commitConfiguration()
 
         let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
@@ -103,39 +112,57 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
         self.captureSession = captureSession
         self.previewLayer = previewLayer
 
-        // 使用信号量等待相机真正启动
-        let semaphore = DispatchSemaphore(value: 0)
         sessionQueue.async { [weak self] in
+            guard let self = self, !self.pendingStop else { return }
+
             captureSession.startRunning()
+
             DispatchQueue.main.async {
-                self?.isStarting = false
-                self?.isScanning = true
-                self?.isPreviewReady = true
-                semaphore.signal()
+                if self.pendingStop {
+                    self.pendingStop = false
+                    self.stopScanning()
+                    return
+                }
+                self.isStarting = false
+                self.isScanning = true
+                self.isPreviewReady = true
             }
         }
-
-        // 等待最多1秒让相机启动
-        _ = semaphore.wait(timeout: .now() + 1.0)
 
         return previewLayer
         #endif
     }
 
     func stopScanning() {
-        let session = captureSession
-
-        sessionQueue.async {
-            if session?.isRunning == true {
-                session?.stopRunning()
-            }
+        // 如果正在启动中，标记为需要停止，让启动流程处理
+        if isStarting {
+            pendingStop = true
+            return
         }
 
-        captureSession = nil
-        previewLayer = nil
-        isScanning = false
-        isStarting = false
-        isPreviewReady = false
+        sessionQueue.async { [weak self] in
+            guard let self = self else { return }
+
+            // 如果正在启动但还没设置 isStarting（极少数情况），直接返回
+            if self.isStarting {
+                self.pendingStop = true
+                return
+            }
+
+            let session = self.captureSession
+            self.captureSession = nil
+            self.previewLayer = nil
+            self.isScanning = false
+            self.isStarting = false
+            self.isPreviewReady = false
+            self.pendingStop = false
+
+            sessionQueue.async {
+                if session?.isRunning == true {
+                    session?.stopRunning()
+                }
+            }
+        }
     }
 
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
