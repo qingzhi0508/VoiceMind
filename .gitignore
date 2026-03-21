@@ -4,6 +4,7 @@
 /VoiceMindMac.xcworkspace/
 /SharedCore/VoiceMindMac.xcworkspace/
 /VoiceRelay.xcworkspace/
+/Frameworks/llama.cpp/
 /.claude/settings.local.json
 .DS_Store
 
