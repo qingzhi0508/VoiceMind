@@ -20,6 +20,7 @@ class MenuBarController: NSObject, ObservableObject {
 
     var currentSessionId: String?
     var sessionTimer: Timer?
+    var pendingInjectionTargetAppPID: pid_t?
 
     var pairingWindow: NSWindow?
     var permissionsWindow: NSWindow?
@@ -66,6 +67,8 @@ class MenuBarController: NSObject, ObservableObject {
             textInjector = ClipboardTextInjector()
         case .cgEvent:
             textInjector = CGEventTextInjector()
+        case .accessibility:
+            textInjector = AccessibilityTextInjector()
         }
         print("📝 文本注入方式已切换到: \(settings.textInjectionMethod.displayName)")
     }
@@ -114,6 +117,42 @@ class MenuBarController: NSObject, ObservableObject {
 
         if hotkeyMonitor.start() == false {
             showHotkeyPermissionError()
+        }
+    }
+
+    func captureInjectionTargetApplication() {
+        guard let app = NSWorkspace.shared.frontmostApplication else {
+            pendingInjectionTargetAppPID = nil
+            return
+        }
+
+        if app.bundleIdentifier == Bundle.main.bundleIdentifier {
+            pendingInjectionTargetAppPID = nil
+            return
+        }
+
+        pendingInjectionTargetAppPID = app.processIdentifier
+    }
+
+    func restoreInjectionTargetApplicationIfNeeded(completion: @escaping () -> Void) {
+        guard let pid = pendingInjectionTargetAppPID,
+              let app = NSRunningApplication(processIdentifier: pid) else {
+            pendingInjectionTargetAppPID = nil
+            completion()
+            return
+        }
+
+        let isAlreadyFrontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier == pid
+        pendingInjectionTargetAppPID = nil
+
+        guard !isAlreadyFrontmost else {
+            completion()
+            return
+        }
+
+        app.activate(options: [.activateIgnoringOtherApps])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            completion()
         }
     }
 

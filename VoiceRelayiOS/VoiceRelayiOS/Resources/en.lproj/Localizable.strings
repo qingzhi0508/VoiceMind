@@ -15,6 +15,7 @@
 "pair_with_mac_button" = "Pair with Mac";
 
 "recognition_connect_service" = "Connect Service";
+"recognition_pair_now" = "Pair Now";
 "recognition_hold_to_talk" = "Hold to Talk";
 "recognition_ready" = "Ready";
 "recognition_listening" = "Listening...";

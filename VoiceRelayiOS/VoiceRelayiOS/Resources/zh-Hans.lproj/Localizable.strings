@@ -15,6 +15,7 @@
 "pair_with_mac_button" = "与 Mac 配对";
 
 "recognition_connect_service" = "连接服务";
+"recognition_pair_now" = "进行配对";
 "recognition_hold_to_talk" = "按住说话";
 "recognition_ready" = "准备就绪";
 "recognition_listening" = "正在聆听...";

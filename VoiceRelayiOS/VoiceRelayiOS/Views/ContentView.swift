@@ -28,7 +28,8 @@ struct ContentView: View {
                 RecognitionStatusView(
                     state: viewModel.recognitionState,
                     statusMessage: viewModel.pushToTalkStatusMessage,
-                    isEnabled: viewModel.canStartPushToTalk || viewModel.canManuallyReconnectFromPrimaryButton || viewModel.recognitionState != .idle,
+                    isEnabled: viewModel.canStartPushToTalk || viewModel.canManuallyReconnectFromPrimaryButton || viewModel.canOpenPairingFromPrimaryButton || viewModel.recognitionState != .idle,
+                    showsPairingAction: viewModel.canOpenPairingFromPrimaryButton,
                     showsReconnectAction: viewModel.canManuallyReconnectFromPrimaryButton,
                     audioLevel: viewModel.audioLevel,
                     onPressChanged: { isPressing in
@@ -37,17 +38,6 @@ struct ContentView: View {
                 )
 
                 Spacer()
-
-                // Actions
-                if case .unpaired = viewModel.pairingState {
-                    Button(String(localized: "pair_with_mac_button")) {
-                        viewModel.showPairingView = true
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .padding(.bottom, 20)
-                }
-
             }
             .padding()
             .navigationTitle(String(localized: "app_title"))
@@ -214,6 +204,7 @@ struct RecognitionStatusView: View {
     let state: RecognitionState
     let statusMessage: String?
     let isEnabled: Bool
+    let showsPairingAction: Bool
     let showsReconnectAction: Bool
     let audioLevel: CGFloat
     let onPressChanged: (Bool) -> Void
@@ -275,6 +266,9 @@ struct RecognitionStatusView: View {
     }
 
     private var iconName: String {
+        if showsPairingAction {
+            return "speaker.wave.2.fill"
+        }
         if showsReconnectAction {
             return "antenna.radiowaves.left.and.right"
         }
@@ -291,6 +285,9 @@ struct RecognitionStatusView: View {
     }
 
     private var iconColor: Color {
+        if showsPairingAction {
+            return isEnabled ? .orange : .gray
+        }
         if showsReconnectAction {
             return isEnabled ? .orange : .gray
         }
@@ -307,6 +304,9 @@ struct RecognitionStatusView: View {
     }
 
     private var statusText: String {
+        if showsPairingAction {
+            return String(localized: "recognition_pair_now")
+        }
         if showsReconnectAction {
             return String(localized: "recognition_connect_service")
         }
@@ -323,6 +323,9 @@ struct RecognitionStatusView: View {
     }
 
     private var buttonBackgroundColor: Color {
+        if showsPairingAction {
+            return isEnabled ? Color.orange.opacity(0.18) : Color.gray.opacity(0.12)
+        }
         if showsReconnectAction {
             return isEnabled ? Color.orange.opacity(0.15) : Color.gray.opacity(0.12)
         }
@@ -339,6 +342,9 @@ struct RecognitionStatusView: View {
     }
 
     private var buttonBorderColor: Color {
+        if showsPairingAction {
+            return isEnabled ? .orange.opacity(0.6) : .gray.opacity(0.4)
+        }
         if showsReconnectAction {
             return isEnabled ? .orange.opacity(0.5) : .gray.opacity(0.4)
         }

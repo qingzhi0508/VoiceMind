@@ -76,10 +76,14 @@ class ContentViewModel: ObservableObject {
     }
 
     func unpair() {
+        connectionManager.disconnect()
+        manualSessionId = nil
         connectionManager.unpair()
         pairingState = .unpaired
         connectionState = .disconnected
+        recognitionState = .idle
         reconnectStatusMessage = nil
+        pushToTalkStatusMessage = nil
         reconnectNeedsManualAction = false
     }
 
@@ -180,7 +184,21 @@ class ContentViewModel: ObservableObject {
         return false
     }
 
+    var canOpenPairingFromPrimaryButton: Bool {
+        if case .unpaired = pairingState {
+            return recognitionState == .idle
+        }
+        return false
+    }
+
     func handlePrimaryButtonPressChanged(_ isPressing: Bool) {
+        if canOpenPairingFromPrimaryButton {
+            if isPressing {
+                showPairingView = true
+            }
+            return
+        }
+
         if canManuallyReconnectFromPrimaryButton {
             if isPressing {
                 reconnect()

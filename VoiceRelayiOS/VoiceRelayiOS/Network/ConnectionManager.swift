@@ -148,6 +148,9 @@ class ConnectionManager: NSObject {
             pendingPairingDeviceName = nil
 
             print("💾 配对信息已保存到 Keychain")
+            if case .connected = client.state {
+                validateConnection()
+            }
             print("❤️ 启动心跳")
             startHeartbeat()
         } catch {
@@ -324,6 +327,7 @@ extension ConnectionManager: WebSocketClientDelegate {
 
     func client(_ client: WebSocketClient, didChangeState state: WebSocketConnectionState) {
         let connectionState: ConnectionState
+        var stateToNotify: ConnectionState?
 
         switch state {
         case .disconnected:
@@ -332,28 +336,29 @@ extension ConnectionManager: WebSocketClientDelegate {
             isConnectionValidated = false
             stopConnectionValidation()
             connectionState = .disconnected
+            stateToNotify = connectionState
         case .connecting:
             print("🔄 正在连接...")
             isConnectionValidated = false
             stopConnectionValidation()
             connectionState = .connecting
+            stateToNotify = connectionState
         case .connected:
             print("✅ 连接已建立")
-            connectionState = .connecting // 暂时保持连接中状态，直到验证完成
+            connectionState = .connected
             if let pendingPairConfirmEnvelope {
                 print("📤 发送待发送的配对确认消息")
                 client.send(pendingPairConfirmEnvelope)
                 self.pendingPairConfirmEnvelope = nil
             }
             
-            // 开始连接验证
             if case .paired = pairingState {
+                stateToNotify = .connected
                 startConnectionValidation()
             } else {
-                // 未配对状态，直接认为连接成功
                 isConnectionValidated = true
                 let validatedState: ConnectionState = .connected
-                delegate?.connectionManager(self, didChangeConnectionState: validatedState)
+                stateToNotify = validatedState
                 stopHeartbeat() // 未配对状态不启动心跳
             }
         case .error(let error):
@@ -362,17 +367,15 @@ extension ConnectionManager: WebSocketClientDelegate {
             isConnectionValidated = false
             stopConnectionValidation()
             connectionState = .error(error.localizedDescription)
+            stateToNotify = connectionState
         }
 
-        // 只有在非连接状态下才通知代理
-        if case .connected = state {
-            if case .paired = pairingState {
-                // 已配对状态在验证时避免重复通知
-            } else {
-                delegate?.connectionManager(self, didChangeConnectionState: connectionState)
-            }
-        } else {
-            delegate?.connectionManager(self, didChangeConnectionState: connectionState)
+        if stateToNotify == nil {
+            stateToNotify = connectionState
+        }
+
+        if let stateToNotify {
+            delegate?.connectionManager(self, didChangeConnectionState: stateToNotify)
         }
 
         if isConnectionValidated, case .paired = pairingState {

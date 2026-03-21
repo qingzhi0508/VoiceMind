@@ -100,65 +100,68 @@ extension MenuBarController: ConnectionManagerDelegate {
         sessionTimer?.invalidate()
         sessionTimer = nil
 
-        print("🔍 检查是否需要执行回车命令")
-        if shouldTriggerEnterCommand(for: payload.text) {
-            print("✅ 检测到执行命令，触发回车")
+        restoreInjectionTargetApplicationIfNeeded { [weak self] in
+            guard let self else { return }
+
+            print("🔍 检查是否需要执行回车命令")
+            if self.shouldTriggerEnterCommand(for: payload.text) {
+                print("✅ 检测到执行命令，触发回车")
+                do {
+                    try self.triggerReturnKey()
+                    self.appendInboundDataRecord(
+                        title: "执行回车命令",
+                        detail: "识别到命令词\"\(Self.executeCommandKeyword)\"，已触发一次 Enter。",
+                        category: .voice
+                    )
+                } catch TextInjectionError.accessibilityPermissionDenied {
+                    self.appendInboundDataRecord(
+                        title: "执行回车失败",
+                        detail: "缺少辅助功能权限，无法发送 Enter 键事件。",
+                        category: .connection,
+                        severity: .warning
+                    )
+                    self.showTextInjectionPermissionError(with: payload.text)
+                } catch {
+                    self.appendInboundDataRecord(
+                        title: "执行回车失败",
+                        detail: "发送 Enter 键事件失败：\(error.localizedDescription)",
+                        category: .connection,
+                        severity: .warning
+                    )
+                }
+                return
+            }
+
+            print("💉 开始注入文本: \(payload.text)")
             do {
-                try triggerReturnKey()
-                appendInboundDataRecord(
-                    title: "执行回车命令",
-                    detail: "识别到命令词\"\(Self.executeCommandKeyword)\"，已触发一次 Enter。",
-                    category: .voice
+                try self.textInjector.inject(payload.text)
+                print("✅ 文本注入成功")
+            } catch TextInjectionError.noFocusedInputTarget {
+                let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
+                self.appendInboundDataRecord(
+                    title: "未找到可输入控件",
+                    detail: "当前没有检测到可写输入框，本次识别结果未自动输入。\n内容: \(payload.text)\n\n\(focusedElementSummary)",
+                    category: .connection,
+                    severity: .warning
                 )
             } catch TextInjectionError.accessibilityPermissionDenied {
-                appendInboundDataRecord(
-                    title: "执行回车失败",
-                    detail: "缺少辅助功能权限，无法发送 Enter 键事件。",
+                self.appendInboundDataRecord(
+                    title: "文本注入权限不足",
+                    detail: "缺少辅助功能权限，无法直接注入文本。\n已提示用户授权或复制文本。\n内容: \(payload.text)",
                     category: .connection,
                     severity: .warning
                 )
-                showTextInjectionPermissionError(with: payload.text)
+                self.showTextInjectionPermissionError(with: payload.text)
             } catch {
-                appendInboundDataRecord(
-                    title: "执行回车失败",
-                    detail: "发送 Enter 键事件失败：\(error.localizedDescription)",
+                let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
+                self.appendInboundDataRecord(
+                    title: "文本注入失败，已降级为复制",
+                    detail: "注入错误: \(error.localizedDescription)\n内容: \(payload.text)\n\n\(focusedElementSummary)",
                     category: .connection,
                     severity: .warning
                 )
+                self.showTextCopyAlert(payload.text, error: error.localizedDescription)
             }
-            return
-        }
-
-        // Inject text
-        print("💉 开始注入文本: \(payload.text)")
-        do {
-            try textInjector.inject(payload.text)
-            print("✅ 文本注入成功")
-        } catch TextInjectionError.noFocusedInputTarget {
-            let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
-            appendInboundDataRecord(
-                title: "未找到可输入控件",
-                detail: "当前没有检测到可写输入框，本次识别结果未自动输入。\n内容: \(payload.text)\n\n\(focusedElementSummary)",
-                category: .connection,
-                severity: .warning
-            )
-        } catch TextInjectionError.accessibilityPermissionDenied {
-            appendInboundDataRecord(
-                title: "文本注入权限不足",
-                detail: "缺少辅助功能权限，无法直接注入文本。\n已提示用户授权或复制文本。\n内容: \(payload.text)",
-                category: .connection,
-                severity: .warning
-            )
-            showTextInjectionPermissionError(with: payload.text)
-        } catch {
-            let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
-            appendInboundDataRecord(
-                title: "文本注入失败，已降级为复制",
-                detail: "注入错误: \(error.localizedDescription)\n内容: \(payload.text)\n\n\(focusedElementSummary)",
-                category: .connection,
-                severity: .warning
-            )
-            showTextCopyAlert(payload.text, error: error.localizedDescription)
         }
     }
 
@@ -220,6 +223,7 @@ extension MenuBarController: HotkeyMonitorDelegate {
             return
         }
 
+        captureInjectionTargetApplication()
         currentSessionId = sessionId
 
         // Start 30-second timeout
