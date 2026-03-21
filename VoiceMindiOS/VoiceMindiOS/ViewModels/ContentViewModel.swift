@@ -17,10 +17,31 @@ class ContentViewModel: ObservableObject {
     @Published var inboundDataRecords: [InboundDataRecord] = []
     @Published var reconnectNeedsManualAction = false
     @Published var audioLevel: CGFloat = 0
+    @Published var localTranscriptText: String = ""
+    @Published var localTranscriptHistory: [LocalTranscriptRecord] = []
+    @Published var sendResultsToMacEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(sendResultsToMacEnabled, forKey: sendResultsToMacEnabledKey)
+            if !sendResultsToMacEnabled {
+                connectionManager.disconnect()
+                reconnectStatusMessage = nil
+                connectionState = .disconnected
+                if recognitionState == .idle {
+                    refreshIdleStatusMessage()
+                }
+            } else if case .paired = pairingState, connectionState == .disconnected {
+                reconnectToPairedDevice()
+            } else if recognitionState == .idle {
+                refreshIdleStatusMessage()
+            }
+        }
+    }
 
     private let lastKnownHostKey = "voicerelay.lastKnownHost"
     private let lastKnownPortKey = "voicerelay.lastKnownPort"
     private let lastKnownDeviceNameKey = "voicerelay.lastKnownDeviceName"
+    private let sendResultsToMacEnabledKey = "voicemind.sendResultsToMacEnabled"
+    private let localTranscriptHistoryKey = "voicemind.localTranscriptHistory"
 
     private let connectionManager = ConnectionManager()
     private let speechController = SpeechController()
@@ -29,6 +50,12 @@ class ContentViewModel: ObservableObject {
 
     private var currentSessionId: String?
     private var manualSessionId: String?
+    private var activeInputMode: ActiveInputMode?
+
+    private enum ActiveInputMode {
+        case localRecognition
+        case streamingToMac
+    }
 
     private func localized(_ key: String, _ args: CVarArg...) -> String {
         if args.isEmpty {
@@ -38,6 +65,8 @@ class ContentViewModel: ObservableObject {
     }
 
     init() {
+        self.sendResultsToMacEnabled = UserDefaults.standard.bool(forKey: sendResultsToMacEnabledKey)
+        self.localTranscriptHistory = Self.loadLocalTranscriptHistory(forKey: localTranscriptHistoryKey)
         connectionManager.delegate = self
         speechController.delegate = self
         audioStreamController.delegate = self
@@ -50,8 +79,18 @@ class ContentViewModel: ObservableObject {
         bonjourBrowser.start()
 
         // Auto-reconnect if paired
-        if case .paired = pairingState {
+        if sendResultsToMacEnabled, case .paired = pairingState {
             reconnectToPairedDevice()
+        }
+
+        refreshIdleStatusMessage()
+    }
+
+    func preparePrimaryExperience() {
+        refreshIdleStatusMessage()
+        guard !checkPermissions() else { return }
+        requestPermissions { [weak self] _ in
+            self?.refreshIdleStatusMessage()
         }
     }
 
@@ -101,6 +140,10 @@ class ContentViewModel: ObservableObject {
         reconnectToPairedDevice()
     }
 
+    func openPairing() {
+        showPairingView = true
+    }
+
     func connectToMac(ip: String, port: UInt16, deviceName: String? = nil) {
         latestPairingFeedback = nil
         appendInboundDataRecord(
@@ -144,37 +187,62 @@ class ContentViewModel: ObservableObject {
     func startPushToTalk() {
         guard canStartPushToTalk else { return }
 
-        do {
-            let sessionId = UUID().uuidString
-            manualSessionId = sessionId
-            try audioStreamController.startStreaming(sessionId: sessionId)
-            recognitionState = .listening
-            pushToTalkStatusMessage = localized("ptt_warming_up")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
-                guard let self, self.manualSessionId == sessionId, self.recognitionState == .listening else { return }
-                self.pushToTalkStatusMessage = self.localized("ptt_capturing")
-                self.triggerHaptic()
-                self.triggerNotificationHaptic()
+        localTranscriptText = ""
+
+        if shouldForwardResultToMac {
+            do {
+                let sessionId = UUID().uuidString
+                manualSessionId = sessionId
+                activeInputMode = .streamingToMac
+                try audioStreamController.startStreaming(sessionId: sessionId)
+                recognitionState = .listening
+                pushToTalkStatusMessage = localized("ptt_warming_up")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                    guard let self, self.manualSessionId == sessionId, self.recognitionState == .listening else { return }
+                    self.pushToTalkStatusMessage = self.localized("ptt_capturing")
+                    self.triggerHaptic()
+                    self.triggerNotificationHaptic()
+                }
+            } catch {
+                recognitionState = .idle
+                manualSessionId = nil
+                activeInputMode = nil
+                pushToTalkStatusMessage = error.localizedDescription
             }
+            return
+        }
+
+        do {
+            manualSessionId = try speechController.startManualListening()
+            activeInputMode = .localRecognition
+            pushToTalkStatusMessage = localized("ptt_local_recording")
         } catch {
             recognitionState = .idle
             manualSessionId = nil
+            activeInputMode = nil
             pushToTalkStatusMessage = error.localizedDescription
         }
     }
 
     func stopPushToTalk() {
         guard recognitionState == .listening else { return }
-        recognitionState = .sending
-        pushToTalkStatusMessage = localized("ptt_sending_audio")
-        audioStreamController.stopStreaming()
+        switch activeInputMode {
+        case .streamingToMac:
+            recognitionState = .sending
+            pushToTalkStatusMessage = localized("ptt_sending_audio")
+            audioStreamController.stopStreaming()
+        case .localRecognition:
+            speechController.stopListening()
+        case nil:
+            break
+        }
     }
 
     var canStartPushToTalk: Bool {
-        if case .paired = pairingState, case .connected = connectionState {
-            return recognitionState == .idle && checkPermissions()
-        }
-        return false
+        LocalTranscriptionPolicy.canStartLocalRecognition(
+            recognitionState: recognitionState,
+            hasPermissions: checkPermissions()
+        )
     }
 
     var canManuallyReconnectFromPrimaryButton: Bool {
@@ -185,27 +253,10 @@ class ContentViewModel: ObservableObject {
     }
 
     var canOpenPairingFromPrimaryButton: Bool {
-        if case .unpaired = pairingState {
-            return recognitionState == .idle
-        }
         return false
     }
 
     func handlePrimaryButtonPressChanged(_ isPressing: Bool) {
-        if canOpenPairingFromPrimaryButton {
-            if isPressing {
-                showPairingView = true
-            }
-            return
-        }
-
-        if canManuallyReconnectFromPrimaryButton {
-            if isPressing {
-                reconnect()
-            }
-            return
-        }
-
         if isPressing {
             startPushToTalk()
         } else {
@@ -234,11 +285,37 @@ class ContentViewModel: ObservableObject {
     }
 
     func requestPermissions(completion: @escaping (Bool) -> Void) {
-        audioStreamController.requestPermissions(completion: completion)
+        speechController.requestPermissions { [weak self] granted in
+            self?.refreshIdleStatusMessage()
+            completion(granted)
+        }
     }
 
     func checkPermissions() -> Bool {
-        return audioStreamController.checkPermissions()
+        return speechController.checkPermissions()
+    }
+
+    var shouldShowMacConnectionCard: Bool {
+        LocalTranscriptionPolicy.shouldShowMacPairingOptions(sendToMacEnabled: sendResultsToMacEnabled)
+    }
+
+    private var isPaired: Bool {
+        if case .paired = pairingState {
+            return true
+        }
+        return false
+    }
+
+    private var shouldForwardResultToMac: Bool {
+        LocalTranscriptionPolicy.shouldForwardResultToMac(
+            sendToMacEnabled: sendResultsToMacEnabled,
+            pairingState: pairingState,
+            connectionState: connectionState
+        )
+    }
+
+    var shouldShowMacPairingOptions: Bool {
+        LocalTranscriptionPolicy.shouldShowMacPairingOptions(sendToMacEnabled: sendResultsToMacEnabled)
     }
 
     private func reconnectToPairedDevice() {
@@ -319,6 +396,11 @@ class ContentViewModel: ObservableObject {
         inboundDataRecords.removeAll()
     }
 
+    func clearLocalTranscriptHistory() {
+        localTranscriptHistory.removeAll()
+        UserDefaults.standard.removeObject(forKey: localTranscriptHistoryKey)
+    }
+
     private func appendInboundDataRecord(
         title: String,
         detail: String,
@@ -337,6 +419,38 @@ class ContentViewModel: ObservableObject {
         if inboundDataRecords.count > 200 {
             inboundDataRecords = Array(inboundDataRecords.prefix(200))
         }
+    }
+
+    private func refreshIdleStatusMessage() {
+        guard recognitionState == .idle else { return }
+        let key = LocalTranscriptionPolicy.idleStatusMessageKey(
+            hasPermissions: checkPermissions(),
+            sendToMacEnabled: sendResultsToMacEnabled,
+            connectionState: connectionState
+        )
+        pushToTalkStatusMessage = localized(key)
+    }
+
+    private func appendLocalTranscriptRecord(text: String, language: String) {
+        localTranscriptHistory = LocalTranscriptHistory.appending(
+            text: text,
+            language: language,
+            to: localTranscriptHistory
+        )
+        Self.saveLocalTranscriptHistory(localTranscriptHistory, forKey: localTranscriptHistoryKey)
+    }
+
+    private static func loadLocalTranscriptHistory(forKey key: String) -> [LocalTranscriptRecord] {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let history = try? JSONDecoder().decode([LocalTranscriptRecord].self, from: data) else {
+            return []
+        }
+        return history
+    }
+
+    private static func saveLocalTranscriptHistory(_ history: [LocalTranscriptRecord], forKey key: String) {
+        guard let data = try? JSONEncoder().encode(history) else { return }
+        UserDefaults.standard.set(data, forKey: key)
     }
 }
 
@@ -389,6 +503,9 @@ extension ContentViewModel: ConnectionManagerDelegate {
                     category: .connection
                 )
                 self.reconnectStatusMessage = self.localized("reconnect_success")
+                if self.recognitionState == .idle {
+                    self.refreshIdleStatusMessage()
+                }
             case .error(let message):
                 if message.contains(self.localized("reconnect_exhausted_snippet")) {
                     self.reconnectNeedsManualAction = true
@@ -412,13 +529,16 @@ extension ContentViewModel: ConnectionManagerDelegate {
                     category: .connection,
                     severity: .warning
                 )
-                if self.recognitionState == .listening {
+                if self.recognitionState == .listening, self.activeInputMode == .streamingToMac {
                     self.pushToTalkStatusMessage = self.localized("ptt_connection_lost")
                     self.recognitionState = .idle
                     self.manualSessionId = nil
+                    self.activeInputMode = nil
                     self.audioStreamController.stopStreaming()
-                } else if self.reconnectNeedsManualAction {
+                } else if self.reconnectNeedsManualAction, self.sendResultsToMacEnabled {
                     self.pushToTalkStatusMessage = self.localized("ptt_hold_to_reconnect")
+                } else if self.recognitionState == .idle {
+                    self.refreshIdleStatusMessage()
                 }
                 break
             }
@@ -504,60 +624,73 @@ extension ContentViewModel: SpeechControllerDelegate {
 
             switch state {
             case .idle:
-                if self.canManuallyReconnectFromPrimaryButton {
-                    self.pushToTalkStatusMessage = self.localized("ptt_hold_to_reconnect")
-                } else if self.connectionState == .connected {
-                    self.pushToTalkStatusMessage = self.localized("ptt_hold_to_talk")
-                } else {
-                    self.pushToTalkStatusMessage = self.localized("ptt_connect_to_talk")
-                }
+                self.refreshIdleStatusMessage()
             case .listening:
-                self.pushToTalkStatusMessage = self.localized("ptt_listening")
+                self.pushToTalkStatusMessage = self.localized("ptt_local_recording")
             case .processing:
-                self.pushToTalkStatusMessage = self.localized("ptt_processing")
+                self.pushToTalkStatusMessage = self.localized("ptt_local_processing")
             case .sending:
-                self.pushToTalkStatusMessage = self.localized("ptt_sending_result")
+                self.pushToTalkStatusMessage = self.shouldForwardResultToMac
+                ? self.localized("ptt_sending_result")
+                : self.localized("ptt_local_processing")
             }
         }
     }
 
+    func speechController(_ controller: SpeechController, didUpdateTranscript text: String, language: String, isFinal: Bool) {
+        DispatchQueue.main.async {
+            self.localTranscriptText = text
+        }
+    }
+
     func speechController(_ controller: SpeechController, didRecognizeText text: String, language: String) {
-        guard let sessionId = currentSessionId ?? manualSessionId else { return }
+        DispatchQueue.main.async {
+            self.localTranscriptText = text
+            self.appendLocalTranscriptRecord(text: text, language: language)
 
-        // Send result back to Mac
-        let payload = ResultPayload(
-            sessionId: sessionId,
-            text: text,
-            language: language
-        )
+            let shouldForward = self.shouldForwardResultToMac
+            let sessionId = self.currentSessionId ?? self.manualSessionId
 
-        guard let payloadData = try? JSONEncoder().encode(payload) else { return }
+            if shouldForward, let sessionId {
+                let payload = ResultPayload(
+                    sessionId: sessionId,
+                    text: text,
+                    language: language
+                )
 
-        let timestamp = Date()
-        let hmac = connectionManager.hmacValidator?.generateHMACForEnvelope(
-            type: .result,
-            payload: payloadData,
-            timestamp: timestamp,
-            deviceId: connectionManager.deviceId
-        )
+                guard let payloadData = try? JSONEncoder().encode(payload) else { return }
 
-        let envelope = MessageEnvelope(
-            type: .result,
-            payload: payloadData,
-            timestamp: timestamp,
-            deviceId: connectionManager.deviceId,
-            hmac: hmac
-        )
+                let timestamp = Date()
+                let hmac = self.connectionManager.hmacValidator?.generateHMACForEnvelope(
+                    type: .result,
+                    payload: payloadData,
+                    timestamp: timestamp,
+                    deviceId: self.connectionManager.deviceId
+                )
 
-        connectionManager.send(envelope)
-        currentSessionId = nil
-        manualSessionId = nil
-        pushToTalkStatusMessage = localized("ptt_sent")
-        appendInboundDataRecord(
-            title: localized("log_speech_result_title"),
-            detail: localized("log_speech_result_detail_format", sessionId, language, text),
-            category: .voice
-        )
+                let envelope = MessageEnvelope(
+                    type: .result,
+                    payload: payloadData,
+                    timestamp: timestamp,
+                    deviceId: self.connectionManager.deviceId,
+                    hmac: hmac
+                )
+
+                self.connectionManager.send(envelope)
+                self.pushToTalkStatusMessage = self.localized("ptt_local_saved_and_sent")
+            } else {
+                self.pushToTalkStatusMessage = self.localized("ptt_local_saved")
+            }
+
+            self.currentSessionId = nil
+            self.manualSessionId = nil
+            self.activeInputMode = nil
+            self.appendInboundDataRecord(
+                title: self.localized("log_speech_result_title"),
+                detail: self.localized("log_speech_result_detail_format", sessionId ?? "-", language, text),
+                category: .voice
+            )
+        }
     }
 
     func speechController(_ controller: SpeechController, didFailWithError error: Error) {
@@ -570,8 +703,8 @@ extension ContentViewModel: SpeechControllerDelegate {
             severity: .error
         )
 
-        // Send error to Mac if we have a session
-        if currentSessionId != nil || manualSessionId != nil {
+        // Send error to Mac only when the current session is actively forwarding.
+        if activeInputMode == .streamingToMac, currentSessionId != nil || manualSessionId != nil {
             let payload = ErrorPayload(
                 code: "SPEECH_ERROR",
                 message: error.localizedDescription
@@ -599,6 +732,7 @@ extension ContentViewModel: SpeechControllerDelegate {
             currentSessionId = nil
             manualSessionId = nil
         }
+        activeInputMode = nil
     }
 }
 
@@ -714,6 +848,7 @@ extension ContentViewModel: AudioStreamControllerDelegate {
             self.recognitionState = .idle
             self.pushToTalkStatusMessage = self.localized("ptt_sent_mac_processing")
             self.audioLevel = 0
+            self.activeInputMode = nil
         }
         appendInboundDataRecord(
             title: localized("log_audio_end_title"),

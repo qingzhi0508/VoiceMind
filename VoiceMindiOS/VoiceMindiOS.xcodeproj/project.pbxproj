@@ -423,6 +423,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7C7627YUTV;
@@ -495,13 +496,19 @@
 		B919E2BD2F685991002A347A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7C7627YUTV;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-Xlinker",
+					"-bundle_loader",
+					"-Xlinker",
+					"$(BUILT_PRODUCTS_DIR)/VoiceMind.app/VoiceMind.debug.dylib",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = cayden.VoiceMindiOSTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -510,7 +517,8 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceMindiOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceMindiOS";
+				TEST_TARGET_NAME = VoiceMindiOS;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceMind.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceMind";
 			};
 			name = Debug;
 		};
@@ -524,6 +532,13 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-Xlinker",
+					"-bundle_loader",
+					"-Xlinker",
+					"$(BUILT_PRODUCTS_DIR)/VoiceMind.app/VoiceMind.debug.dylib",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = cayden.VoiceMindiOSTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -532,7 +547,8 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceMindiOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceMindiOS";
+				TEST_TARGET_NAME = VoiceMindiOS;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceMind.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceMind";
 			};
 			name = Release;
 		};

@@ -91,60 +91,87 @@ struct SettingsView: View {
             }
 
             // Pairing Section
-            if case .paired(_, let deviceName) = viewModel.pairingState {
+            Section {
+                Toggle(
+                    String(localized: "settings_send_to_mac_title"),
+                    isOn: Binding(
+                        get: { viewModel.sendResultsToMacEnabled },
+                        set: { viewModel.sendResultsToMacEnabled = $0 }
+                    )
+                )
+            } header: {
+                Text(String(localized: "settings_send_to_mac_header"))
+            } footer: {
+                Text(String(localized: "settings_send_to_mac_footer"))
+            }
+
+            if viewModel.shouldShowMacPairingOptions {
                 Section {
-                    HStack {
-                        Text(String(localized: "settings_paired_device"))
-                        Spacer()
-                        Text(deviceName)
-                            .foregroundColor(.secondary)
-                    }
+                    if case .paired(_, let deviceName) = viewModel.pairingState {
+                        HStack {
+                            Text(String(localized: "settings_paired_device"))
+                            Spacer()
+                            Text(deviceName)
+                                .foregroundColor(.secondary)
+                        }
 
-                    // 显示连接状态和重连按钮
-                    HStack {
-                        Text(String(localized: "settings_connection_status"))
-                        Spacer()
-                        connectionStatusBadge
-                    }
+                        HStack {
+                            Text(String(localized: "settings_connection_status"))
+                            Spacer()
+                            connectionStatusBadge
+                        }
 
-                    if case .disconnected = viewModel.connectionState {
-                        Button(action: {
-                            viewModel.reconnect()
-                        }) {
-                            HStack {
-                                Spacer()
-                                Image(systemName: "arrow.clockwise")
-                                Text(String(localized: "settings_reconnect"))
+                        if case .disconnected = viewModel.connectionState {
+                            Button(action: {
+                                viewModel.reconnect()
+                            }) {
+                                HStack {
+                                    Spacer()
+                                    Image(systemName: "arrow.clockwise")
+                                    Text(String(localized: "settings_reconnect"))
+                                    Spacer()
+                                }
+                            }
+                        }
+
+                        if let reconnectStatusMessage = viewModel.reconnectStatusMessage {
+                            HStack(alignment: .top) {
+                                Image(systemName: reconnectStatusIcon)
+                                    .foregroundColor(reconnectStatusColor)
+                                    .font(.caption)
+                                    .padding(.top, 2)
+                                Text(reconnectStatusMessage)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                                 Spacer()
                             }
                         }
-                    }
 
-                    if let reconnectStatusMessage = viewModel.reconnectStatusMessage {
-                        HStack(alignment: .top) {
-                            Image(systemName: reconnectStatusIcon)
-                                .foregroundColor(reconnectStatusColor)
-                                .font(.caption)
-                                .padding(.top, 2)
-                            Text(reconnectStatusMessage)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Spacer()
+                        Button(role: .destructive, action: {
+                            viewModel.unpair()
+                            dismiss()
+                        }) {
+                            HStack {
+                                Spacer()
+                                Text(String(localized: "settings_unpair"))
+                                Spacer()
+                            }
                         }
-                    }
-
-                    Button(role: .destructive, action: {
-                        viewModel.unpair()
-                        dismiss()
-                    }) {
-                        HStack {
-                            Spacer()
-                            Text(String(localized: "settings_unpair"))
-                            Spacer()
+                    } else {
+                        Button(action: {
+                            viewModel.openPairing()
+                        }) {
+                            HStack {
+                                Image(systemName: "link.badge.plus")
+                                    .foregroundColor(.blue)
+                                Text(String(localized: "settings_open_pairing"))
+                            }
                         }
                     }
                 } header: {
                     Text(String(localized: "settings_pairing_header"))
+                } footer: {
+                    Text(String(localized: "settings_pairing_footer"))
                 }
             }
 

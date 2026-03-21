@@ -18,7 +18,7 @@
 
 "recognition_connect_service" = "连接服务";
 "recognition_pair_now" = "进行配对";
-"recognition_hold_to_talk" = "按住说话";
+"recognition_hold_to_talk" = "按住录音";
 "recognition_ready" = "准备就绪";
 "recognition_listening" = "正在聆听...";
 "recognition_processing" = "处理中...";
@@ -148,11 +148,16 @@
 "settings_permission_speech" = "语音识别";
 "settings_request_permissions" = "请求权限";
 "settings_permissions_footer" = "语灵 需要麦克风和语音识别权限才能正常工作";
+"settings_send_to_mac_header" = "Mac 协同";
+"settings_send_to_mac_title" = "将转写结果同步到 Mac";
+"settings_send_to_mac_footer" = "默认只在本机录音转文字。打开后，如果已连接到 Mac，会额外把转写结果同步过去。";
 "settings_paired_device" = "已配对设备";
 "settings_connection_status" = "连接状态";
 "settings_reconnect" = "重新连接";
 "settings_unpair" = "取消配对";
 "settings_pairing_header" = "配对";
+"settings_pairing_footer" = "连接 Mac 是可选增强功能，不影响本机录音转文字。";
+"settings_open_pairing" = "连接或配对 Mac";
 "settings_debug_header" = "调试";
 "settings_view_logs" = "查看数据日志";
 "settings_about_header" = "关于";
@@ -224,6 +229,17 @@
 "ptt_sending_result" = "正在发送结果到 Mac...";
 "ptt_sent" = "语音结果已发送到 Mac。";
 "ptt_sent_mac_processing" = "语音已发送到 Mac，正在识别并尝试输入到当前光标位置。";
+"ptt_local_ready" = "按住麦克风开始本机录音转文字。";
+"ptt_local_ready_and_sync" = "按住麦克风开始录音，结果会同步到已连接的 Mac。";
+"ptt_local_permissions_required" = "需要先授予麦克风和语音识别权限，才能开始本机录音转文字。";
+"ptt_local_recording" = "正在录音，松开后转成文字。";
+"ptt_local_processing" = "正在将语音转换成文字...";
+"ptt_local_saved" = "转写结果已显示在上方。";
+"ptt_local_saved_and_sent" = "转写结果已显示在上方，并同步到 Mac。";
+"transcript_card_title" = "转写结果";
+"transcript_card_placeholder" = "按住下方按钮开始录音。";
+"transcript_card_hint" = "语音会优先在本机转成文字，并显示在这里。";
+"transcript_history_title" = "最近 10 条记录";
 
 "log_title_pairing_start" = "发起配对";
 "log_detail_pairing_start_format" = "服务: %@

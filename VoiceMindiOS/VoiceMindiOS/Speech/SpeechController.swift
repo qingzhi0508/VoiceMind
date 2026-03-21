@@ -5,6 +5,7 @@ import UIKit
 
 protocol SpeechControllerDelegate: AnyObject {
     func speechController(_ controller: SpeechController, didChangeState state: RecognitionState)
+    func speechController(_ controller: SpeechController, didUpdateTranscript text: String, language: String, isFinal: Bool)
     func speechController(_ controller: SpeechController, didRecognizeText text: String, language: String)
     func speechController(_ controller: SpeechController, didFailWithError error: Error)
 }
@@ -143,6 +144,12 @@ class SpeechController: NSObject {
             if let result = result {
                 // Store latest result
                 self.lastRecognizedText = result.bestTranscription.formattedString
+                self.delegate?.speechController(
+                    self,
+                    didUpdateTranscript: self.lastRecognizedText,
+                    language: self.selectedLanguage,
+                    isFinal: result.isFinal
+                )
                 if result.isFinal {
                     self.handleFinalResult(result.bestTranscription.formattedString)
                 }

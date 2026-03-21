@@ -50,11 +50,13 @@ struct ContentView: View {
                 }
 
                 VStack {
-                    // Connection Status Card - 只在非成功连接状态显示
-                    if case .paired = viewModel.pairingState,
-                       case .connected = viewModel.connectionState {
-                        EmptyView()
-                    } else {
+                    TranscriptCard(
+                        transcriptText: viewModel.localTranscriptText,
+                        history: viewModel.localTranscriptHistory
+                    )
+                        .padding(.bottom, 16)
+
+                    if viewModel.shouldShowMacConnectionCard {
                         ConnectionStatusCard(
                             pairingState: viewModel.pairingState,
                             connectionState: viewModel.connectionState,
@@ -72,9 +74,9 @@ struct ContentView: View {
                     RecognitionStatusView(
                         state: viewModel.recognitionState,
                         statusMessage: viewModel.pushToTalkStatusMessage,
-                        isEnabled: viewModel.canStartPushToTalk || viewModel.canManuallyReconnectFromPrimaryButton || viewModel.canOpenPairingFromPrimaryButton || viewModel.recognitionState != .idle,
-                        showsPairingAction: viewModel.canOpenPairingFromPrimaryButton,
-                        showsReconnectAction: viewModel.canManuallyReconnectFromPrimaryButton,
+                        isEnabled: viewModel.canStartPushToTalk || viewModel.recognitionState != .idle,
+                        showsPairingAction: false,
+                        showsReconnectAction: false,
                         audioLevel: viewModel.audioLevel,
                         onPressChanged: { isPressing in
                             viewModel.handlePrimaryButtonPressChanged(isPressing)
@@ -106,12 +108,73 @@ struct ContentView: View {
                 })
             }
             .onAppear {
+                viewModel.preparePrimaryExperience()
                 if !hasLaunchedBefore {
                     showOnboarding = true
                     hasLaunchedBefore = true
                 }
             }
         }
+    }
+}
+
+struct TranscriptCard: View {
+    let transcriptText: String
+    let history: [LocalTranscriptRecord]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(String(localized: "transcript_card_title"))
+                .font(.headline)
+
+            Group {
+                if transcriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(String(localized: "transcript_card_placeholder"))
+                            .font(.body)
+                            .foregroundColor(.primary)
+                        Text(String(localized: "transcript_card_hint"))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                } else {
+                    Text(transcriptText)
+                        .font(.body)
+                        .foregroundColor(.primary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
+            .padding()
+            .background(Color(uiColor: .secondarySystemBackground))
+            .cornerRadius(16)
+
+            if !history.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(String(localized: "transcript_history_title"))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+
+                    ForEach(history) { record in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(record.text)
+                                .font(.body)
+                                .foregroundColor(.primary)
+                                .lineLimit(3)
+                            Text(record.createdAt.formatted(date: .omitted, time: .shortened))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(Color(uiColor: .secondarySystemBackground))
+                        .cornerRadius(12)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
