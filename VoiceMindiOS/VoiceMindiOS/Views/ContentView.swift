@@ -38,14 +38,46 @@ private enum AppPageLayout {
 }
 
 private struct AppCardSurface: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
     func body(content: Content) -> some View {
-        content
-            .background(Color(uiColor: .secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.primary.opacity(0.04), lineWidth: 1)
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+
+        return content
+            .background(
+                shape
+                    .fill(cardBackground)
             )
+            .overlay(
+                shape
+                    .stroke(cardBorder, lineWidth: 1)
+            )
+            .shadow(color: cardShadow, radius: 18, x: 0, y: 10)
+    }
+
+    private var cardBackground: AnyShapeStyle {
+        if colorScheme == .dark {
+            return AnyShapeStyle(Color(uiColor: .secondarySystemBackground))
+        }
+
+        return AnyShapeStyle(
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.88),
+                    Color(red: 0.95, green: 0.96, blue: 0.98).opacity(0.94)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+    }
+
+    private var cardBorder: Color {
+        colorScheme == .dark ? Color.white.opacity(0.06) : Color.white.opacity(0.72)
+    }
+
+    private var cardShadow: Color {
+        colorScheme == .dark ? Color.black.opacity(0.18) : Color.black.opacity(0.08)
     }
 }
 
@@ -70,6 +102,18 @@ enum HomeModeTogglePlacementPolicy {
             return "iphone"
         }
     }
+}
+
+enum AppBackgroundStylePolicy {
+    static func usesMutedMistBackground(forDarkMode: Bool) -> Bool {
+        !forDarkMode
+    }
+
+    static func showsRainbowBubbles(forDarkMode: Bool) -> Bool {
+        !forDarkMode
+    }
+
+    static let usesModernGlassSurfaces = true
 }
 
 enum ContentInteractionPolicy {
@@ -115,46 +159,76 @@ struct ContentView: View {
     @State private var showOnboarding = false
     @State private var selectedTab = ContentTab.defaultTab
     @FocusState private var focusedField: FocusField?
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         ZStack {
-            // System Theme Background
-            LinearGradient(
-                colors: [
-                    Color(UIColor.systemGroupedBackground),
-                    Color(UIColor.secondarySystemGroupedBackground)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            backgroundLayer
 
             // Decorative Elements
             GeometryReader { geometry in
                 ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [Color.accentColor.opacity(0.12), Color.clear],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 200
+                    if AppBackgroundStylePolicy.showsRainbowBubbles(forDarkMode: colorScheme == .dark) {
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [
+                                        Color(red: 1.00, green: 0.64, blue: 0.72).opacity(0.28),
+                                        Color.clear
+                                    ],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: 240
+                                )
                             )
-                        )
-                        .frame(width: 300, height: 300)
-                        .offset(x: geometry.size.width - 100, y: -50)
+                            .frame(width: 360, height: 360)
+                            .offset(x: geometry.size.width - 130, y: -40)
 
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [Color.purple.opacity(0.08), Color.clear],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 180
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [
+                                        Color(red: 0.48, green: 0.78, blue: 1.00).opacity(0.24),
+                                        Color.clear
+                                    ],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: 230
+                                )
                             )
-                        )
-                        .frame(width: 250, height: 250)
-                        .offset(x: -80, y: geometry.size.height - 150)
+                            .frame(width: 330, height: 330)
+                            .offset(x: -90, y: geometry.size.height - 210)
+
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [
+                                        Color(red: 0.93, green: 0.82, blue: 1.00).opacity(0.21),
+                                        Color.clear
+                                    ],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: 200
+                                )
+                            )
+                            .frame(width: 290, height: 290)
+                            .offset(x: geometry.size.width * 0.14, y: geometry.size.height * 0.30)
+
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [
+                                        Color(red: 1.00, green: 0.88, blue: 0.45).opacity(0.16),
+                                        Color.clear
+                                    ],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: 180
+                                )
+                            )
+                            .frame(width: 240, height: 240)
+                            .offset(x: geometry.size.width * 0.62, y: geometry.size.height * 0.46)
+                    }
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -291,6 +365,61 @@ struct ContentView: View {
             .onChange(of: selectedTab) { _, _ in
                 dismissKeyboard()
             }
+        }
+    }
+
+    @ViewBuilder
+    private var backgroundLayer: some View {
+        if AppBackgroundStylePolicy.usesMutedMistBackground(forDarkMode: colorScheme == .dark) {
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.93, green: 0.94, blue: 0.96),
+                        Color(red: 0.88, green: 0.91, blue: 0.95),
+                        Color(red: 0.92, green: 0.93, blue: 0.96)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.56),
+                        Color.clear,
+                        Color(red: 0.86, green: 0.89, blue: 0.94).opacity(0.24)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                Rectangle()
+                    .fill(Color.white.opacity(0.24))
+                    .blur(radius: 90)
+
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.18),
+                                Color.clear
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .blendMode(.screen)
+            }
+            .ignoresSafeArea()
+        } else {
+            LinearGradient(
+                colors: [
+                    Color(UIColor.systemGroupedBackground),
+                    Color(UIColor.secondarySystemGroupedBackground)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
         }
     }
 
