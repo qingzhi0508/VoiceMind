@@ -1484,6 +1484,12 @@ private struct GroupedDataRecords {
     var records: [InboundDataRecord]
 }
 
+enum NotesTextSelectionPolicy {
+    static func allowsSelection(for text: String) -> Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
+
 // MARK: - Permissions Tab
 
 struct PermissionsTab: View {
@@ -1636,17 +1642,25 @@ struct NotesTab: View {
             }
 
             // Note text display
-            Text(controller.noteText.isEmpty ? String(localized: "note_placeholder") : controller.noteText)
-                .font(.body)
-                .foregroundColor(controller.noteText.isEmpty ? MainWindowColors.secondaryText : MainWindowColors.title)
-                .frame(maxWidth: .infinity, minHeight: 200, alignment: .topLeading)
-                .padding()
-                .background(MainWindowColors.cardSurface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(MainWindowColors.cardBorder, lineWidth: 1)
-                )
-                .cornerRadius(12)
+            Group {
+                if NotesTextSelectionPolicy.allowsSelection(for: controller.noteText) {
+                    Text(controller.noteText)
+                        .textSelection(.enabled)
+                } else {
+                    Text(String(localized: "note_placeholder"))
+                        .textSelection(.disabled)
+                }
+            }
+            .font(.body)
+            .foregroundColor(controller.noteText.isEmpty ? MainWindowColors.secondaryText : MainWindowColors.title)
+            .frame(maxWidth: .infinity, minHeight: 200, alignment: .topLeading)
+            .padding()
+            .background(MainWindowColors.cardSurface)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+            )
+            .cornerRadius(12)
 
             Spacer()
 
