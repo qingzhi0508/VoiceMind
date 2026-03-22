@@ -22,6 +22,8 @@
 "recognition_pair_now" = "Pair Now";
 "recognition_hold_to_talk" = "Hold to Record";
 "recognition_ready" = "Ready";
+"recognition_drag_up_to_send" = "Drag up to send to Mac";
+"recognition_release_to_send" = "Release to send to Mac";
 "recognition_listening" = "Listening...";
 "recognition_processing" = "Processing...";
 "recognition_sending" = "Sending...";
@@ -238,10 +240,22 @@
 "ptt_local_processing" = "Converting speech to text...";
 "ptt_local_saved" = "The transcription is now shown above.";
 "ptt_local_saved_and_sent" = "The transcription is shown above and also sent to your Mac.";
+"ptt_manual_send_success" = "The current text was sent to your Mac.";
+"ptt_manual_send_requires_mac" = "Turn on Mac collaboration and connect to your Mac before sending the current text.";
 "transcript_card_title" = "Transcript";
 "transcript_card_placeholder" = "Hold the button below to start recording.";
-"transcript_card_hint" = "Speech is transcribed on this iPhone first and displayed here.";
+"transcript_card_hint" = "You can edit or type here manually. Hold the button and drag up to send the current text to Mac.";
 "transcript_history_title" = "Recent 10 records";
+"transcript_history_page_title" = "Recent 10 records";
+"transcript_history_empty_title" = "There are no local transcripts yet.";
+"transcript_history_empty_hint" = "Hold the talk button on the main page and your latest 10 transcripts will appear here.";
+"transcript_history_swipe_hint" = "Swipe right on a record to open delete confirmation, or long-press to copy.";
+"copy_button" = "Copy";
+"delete_button" = "Delete";
+"transcript_history_delete_title" = "Delete this record?";
+"transcript_history_delete_message" = "This action cannot be undone:\n%@";
+"log_manual_send_title" = "Send text to Mac manually";
+"log_manual_send_detail_format" = "Session: %@\nLanguage: %@\nContent: %@";
 
 "log_title_pairing_start" = "Start Pairing";
 "log_detail_pairing_start_format" = "Service: %@

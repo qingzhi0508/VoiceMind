@@ -1,10 +1,16 @@
 import SwiftUI
 
 struct ContentView: View {
+    enum FocusField: Hashable {
+        case transcriptEditor
+    }
+
     @StateObject private var viewModel = ContentViewModel()
     @Binding var hasLaunchedBefore: Bool
 
     @State private var showOnboarding = false
+    @State private var selectedPage = 1
+    @FocusState private var focusedField: FocusField?
 
     var body: some View {
         NavigationView {
@@ -49,43 +55,30 @@ struct ContentView: View {
                         .offset(x: -80, y: geometry.size.height - 150)
                 }
 
-                VStack {
-                    TranscriptCard(
-                        transcriptText: viewModel.localTranscriptText,
-                        history: viewModel.localTranscriptHistory
+                TabView(selection: $selectedPage) {
+                    TranscriptHistoryPage(
+                        history: viewModel.localTranscriptHistory,
+                        onDelete: { id in
+                            viewModel.removeLocalTranscriptRecord(id: id)
+                        },
+                        onDismissKeyboard: dismissKeyboard
                     )
-                        .padding(.bottom, 16)
+                    .padding()
+                    .tag(0)
 
-                    if viewModel.shouldShowMacConnectionCard {
-                        ConnectionStatusCard(
-                            pairingState: viewModel.pairingState,
-                            connectionState: viewModel.connectionState,
-                            reconnectStatusMessage: viewModel.reconnectStatusMessage,
-                            onReconnect: {
-                                viewModel.reconnect()
-                            }
-                        )
-                        .padding(.bottom, 20)
-                    }
-
-                    Spacer()
-
-                    // Recognition Status
-                    RecognitionStatusView(
-                        state: viewModel.recognitionState,
-                        statusMessage: viewModel.pushToTalkStatusMessage,
-                        isEnabled: viewModel.canStartPushToTalk || viewModel.recognitionState != .idle,
-                        showsPairingAction: false,
-                        showsReconnectAction: false,
-                        audioLevel: viewModel.audioLevel,
-                        onPressChanged: { isPressing in
-                            viewModel.handlePrimaryButtonPressChanged(isPressing)
-                        }
+                    PrimaryRecognitionPage(
+                        viewModel: viewModel,
+                        focusedField: $focusedField,
+                        onDismissKeyboard: dismissKeyboard
                     )
-
-                    Spacer()
+                        .padding()
+                        .tag(1)
                 }
-                .padding()
+                .tabViewStyle(.page(indexDisplayMode: .never))
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                dismissKeyboard()
             }
             .navigationTitle(String(localized: "app_title"))
             .navigationBarTitleDisplayMode(.inline)
@@ -114,20 +107,34 @@ struct ContentView: View {
                     hasLaunchedBefore = true
                 }
             }
+            .onChange(of: selectedPage) { _, _ in
+                dismissKeyboard()
+            }
         }
+    }
+
+    private func dismissKeyboard() {
+        focusedField = nil
     }
 }
 
 struct TranscriptCard: View {
-    let transcriptText: String
-    let history: [LocalTranscriptRecord]
+    @Binding var transcriptText: String
+    let focusedField: FocusState<ContentView.FocusField?>.Binding
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(String(localized: "transcript_card_title"))
                 .font(.headline)
 
-            Group {
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $transcriptText)
+                    .font(.body)
+                    .foregroundColor(.primary)
+                    .scrollContentBackground(.hidden)
+                    .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+                    .focused(focusedField, equals: .transcriptEditor)
+
                 if transcriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(String(localized: "transcript_card_placeholder"))
@@ -137,44 +144,172 @@ struct TranscriptCard: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                } else {
-                    Text(transcriptText)
-                        .font(.body)
-                        .foregroundColor(.primary)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
+                    .padding(.leading, 5)
+                    .allowsHitTesting(false)
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
             .padding()
             .background(Color(uiColor: .secondarySystemBackground))
             .cornerRadius(16)
-
-            if !history.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(String(localized: "transcript_history_title"))
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-
-                    ForEach(history) { record in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(record.text)
-                                .font(.body)
-                                .foregroundColor(.primary)
-                                .lineLimit(3)
-                            Text(record.createdAt.formatted(date: .omitted, time: .shortened))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(12)
-                        .background(Color(uiColor: .secondarySystemBackground))
-                        .cornerRadius(12)
-                    }
-                }
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct PrimaryRecognitionPage: View {
+    @ObservedObject var viewModel: ContentViewModel
+    let focusedField: FocusState<ContentView.FocusField?>.Binding
+    let onDismissKeyboard: () -> Void
+
+    var body: some View {
+        VStack {
+            TranscriptCard(
+                transcriptText: Binding(
+                    get: { viewModel.localTranscriptText },
+                    set: { viewModel.updateLocalTranscriptText($0) }
+                ),
+                focusedField: focusedField
+            )
+                .padding(.bottom, 16)
+
+            if viewModel.shouldShowMacConnectionCard {
+                ConnectionStatusCard(
+                    pairingState: viewModel.pairingState,
+                    connectionState: viewModel.connectionState,
+                    reconnectStatusMessage: viewModel.reconnectStatusMessage,
+                    onReconnect: {
+                        viewModel.reconnect()
+                    }
+                )
+                .padding(.bottom, 20)
+            }
+
+            Spacer()
+
+            RecognitionStatusView(
+                state: viewModel.recognitionState,
+                statusMessage: viewModel.pushToTalkStatusMessage,
+                isEnabled: viewModel.canStartPushToTalk || viewModel.recognitionState != .idle,
+                canManuallySendTextToMac: viewModel.canManuallyForwardCurrentTextToMac,
+                showsPairingAction: false,
+                showsReconnectAction: false,
+                audioLevel: viewModel.audioLevel,
+                onPressChanged: { isPressing in
+                    if isPressing {
+                        onDismissKeyboard()
+                    }
+                    viewModel.handlePrimaryButtonPressChanged(isPressing)
+                },
+                onManualSend: {
+                    onDismissKeyboard()
+                    viewModel.sendCurrentTranscriptToMac()
+                }
+            )
+
+            Spacer()
+        }
+    }
+}
+
+struct TranscriptHistoryPage: View {
+    let history: [LocalTranscriptRecord]
+    let onDelete: (UUID) -> Void
+    let onDismissKeyboard: () -> Void
+    @State private var pendingDeleteRecord: LocalTranscriptRecord?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "transcript_history_page_title"))
+                .font(.headline)
+
+            if history.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(String(localized: "transcript_history_empty_title"))
+                        .font(.body)
+                        .foregroundColor(.primary)
+                    Text(String(localized: "transcript_history_empty_hint"))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding()
+                .background(Color(uiColor: .secondarySystemBackground))
+                .cornerRadius(16)
+            } else {
+                List {
+                    ForEach(history) { record in
+                        TranscriptHistoryRow(record: record)
+                            .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
+                            .listRowBackground(Color(uiColor: .secondarySystemBackground))
+                            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                Button {
+                                    pendingDeleteRecord = record
+                                } label: {
+                                    Text(String(localized: "delete_button"))
+                                }
+                                .tint(.orange)
+                            }
+                    }
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
+                .simultaneousGesture(
+                    TapGesture().onEnded {
+                        onDismissKeyboard()
+                    }
+                )
+            }
+
+            Text(String(localized: "transcript_history_swipe_hint"))
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .alert(
+            String(localized: "transcript_history_delete_title"),
+            isPresented: Binding(
+                get: { pendingDeleteRecord != nil },
+                set: { if !$0 { pendingDeleteRecord = nil } }
+            ),
+            presenting: pendingDeleteRecord
+        ) { record in
+            Button(String(localized: "delete_button"), role: .destructive) {
+                onDelete(record.id)
+                pendingDeleteRecord = nil
+            }
+            Button(String(localized: "cancel_button"), role: .cancel) {
+                pendingDeleteRecord = nil
+            }
+        } message: { record in
+            Text(String(format: String(localized: "transcript_history_delete_message"), record.text))
+        }
+    }
+}
+
+struct TranscriptHistoryRow: View {
+    let record: LocalTranscriptRecord
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(record.text)
+                .font(.body)
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contextMenu {
+                    Button {
+                        UIPasteboard.general.string = record.text
+                    } label: {
+                        Label(String(localized: "copy_button"), systemImage: "doc.on.doc")
+                    }
+                }
+
+            Text(record.createdAt.formatted(date: .omitted, time: .shortened))
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(.vertical, 4)
     }
 }
 
@@ -324,16 +459,40 @@ struct RecognitionStatusView: View {
     let state: RecognitionState
     let statusMessage: String?
     let isEnabled: Bool
+    let canManuallySendTextToMac: Bool
     let showsPairingAction: Bool
     let showsReconnectAction: Bool
     let audioLevel: CGFloat
     let onPressChanged: (Bool) -> Void
+    let onManualSend: () -> Void
 
     @State private var isPressing = false
+    @State private var isSendTargetActive = false
+    @State private var hasStartedPressAction = false
+    @State private var pendingPressWorkItem: DispatchWorkItem?
 
     var body: some View {
         VStack(spacing: 15) {
             ZStack {
+                if shouldShowManualSendTarget {
+                    VStack(spacing: 8) {
+                        Image(systemName: isSendTargetActive ? "paperplane.circle.fill" : "paperplane.circle")
+                            .font(.system(size: 34))
+                            .foregroundColor(isSendTargetActive ? .green : .secondary)
+                            .padding(10)
+                            .background(
+                                Circle()
+                                    .fill(isSendTargetActive ? Color.green.opacity(0.16) : Color(uiColor: .secondarySystemBackground))
+                            )
+
+                        Text(String(localized: isSendTargetActive ? "recognition_release_to_send" : "recognition_drag_up_to_send"))
+                            .font(.caption)
+                            .foregroundColor(isSendTargetActive ? .green : .secondary)
+                    }
+                    .offset(y: -125)
+                    .transition(.opacity.combined(with: .scale))
+                }
+
                 Circle()
                     .fill(buttonBackgroundColor)
                     .frame(width: 140, height: 140)
@@ -350,17 +509,18 @@ struct RecognitionStatusView: View {
             .contentShape(Circle())
             .gesture(
                 DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        guard isEnabled else { return }
+                    .onChanged { value in
+                        guard isInteractionEnabled else { return }
                         if !isPressing {
                             isPressing = true
-                            onPressChanged(true)
+                            startPendingPressAction()
                         }
+
+                        updateManualSendTarget(with: value.translation)
                     }
                     .onEnded { _ in
                         guard isPressing else { return }
-                        isPressing = false
-                        onPressChanged(false)
+                        finishInteraction()
                     }
             )
 
@@ -383,6 +543,59 @@ struct RecognitionStatusView: View {
         }
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.vertical, 40)
+    }
+
+    private var isInteractionEnabled: Bool {
+        isEnabled || canManuallySendTextToMac
+    }
+
+    private var shouldShowManualSendTarget: Bool {
+        isPressing && state == .idle && canManuallySendTextToMac
+    }
+
+    private func startPendingPressAction() {
+        let workItem = DispatchWorkItem {
+            guard isPressing, !isSendTargetActive, isEnabled else { return }
+            hasStartedPressAction = true
+            onPressChanged(true)
+        }
+
+        pendingPressWorkItem?.cancel()
+        pendingPressWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: workItem)
+    }
+
+    private func updateManualSendTarget(with translation: CGSize) {
+        guard state == .idle, canManuallySendTextToMac, !hasStartedPressAction else {
+            isSendTargetActive = false
+            return
+        }
+
+        let reachedTarget = translation.height < -90 && abs(translation.width) < 90
+        isSendTargetActive = reachedTarget
+
+        if reachedTarget {
+            pendingPressWorkItem?.cancel()
+            pendingPressWorkItem = nil
+        }
+    }
+
+    private func finishInteraction() {
+        pendingPressWorkItem?.cancel()
+        pendingPressWorkItem = nil
+
+        if isSendTargetActive {
+            if hasStartedPressAction {
+                onPressChanged(false)
+            }
+            onManualSend()
+        } else if hasStartedPressAction {
+            onPressChanged(false)
+        }
+
+        isPressing = false
+        isSendTargetActive = false
+        hasStartedPressAction = false
     }
 
     private var iconName: String {
@@ -424,6 +637,9 @@ struct RecognitionStatusView: View {
     }
 
     private var statusText: String {
+        if isSendTargetActive {
+            return String(localized: "recognition_release_to_send")
+        }
         if showsPairingAction {
             return String(localized: "recognition_pair_now")
         }

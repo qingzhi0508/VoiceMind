@@ -26,4 +26,11 @@ enum LocalTranscriptHistory {
 
         return Array(([record] + history).prefix(10))
     }
+
+    static func removing(
+        id: UUID,
+        from history: [LocalTranscriptRecord]
+    ) -> [LocalTranscriptRecord] {
+        history.filter { $0.id != id }
+    }
 }

@@ -23,6 +23,16 @@ enum LocalTranscriptionPolicy {
         sendToMacEnabled
     }
 
+    static func canManuallyForwardTextToMac(
+        sendToMacEnabled: Bool,
+        connectionState: ConnectionState,
+        transcriptText: String
+    ) -> Bool {
+        guard sendToMacEnabled else { return false }
+        guard connectionState == .connected else { return false }
+        return !transcriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     static func idleStatusMessageKey(
         hasPermissions: Bool,
         sendToMacEnabled: Bool,

@@ -20,6 +20,8 @@
 "recognition_pair_now" = "进行配对";
 "recognition_hold_to_talk" = "按住录音";
 "recognition_ready" = "准备就绪";
+"recognition_drag_up_to_send" = "上滑到这里发送到 Mac";
+"recognition_release_to_send" = "松开发送到 Mac";
 "recognition_listening" = "正在聆听...";
 "recognition_processing" = "处理中...";
 "recognition_sending" = "发送结果...";
@@ -236,10 +238,22 @@
 "ptt_local_processing" = "正在将语音转换成文字...";
 "ptt_local_saved" = "转写结果已显示在上方。";
 "ptt_local_saved_and_sent" = "转写结果已显示在上方，并同步到 Mac。";
+"ptt_manual_send_success" = "已将当前文字内容发送到 Mac。";
+"ptt_manual_send_requires_mac" = "需要先打开 Mac 协同并连接到 Mac，才能发送当前文字。";
 "transcript_card_title" = "转写结果";
 "transcript_card_placeholder" = "按住下方按钮开始录音。";
-"transcript_card_hint" = "语音会优先在本机转成文字，并显示在这里。";
+"transcript_card_hint" = "这里的内容可以手动编辑输入，按住录音并上滑可发送到 Mac。";
 "transcript_history_title" = "最近 10 条记录";
+"transcript_history_page_title" = "最近 10 条记录";
+"transcript_history_empty_title" = "还没有本地转写记录。";
+"transcript_history_empty_hint" = "在主页面按住说话后，最近 10 条记录会出现在这里。";
+"transcript_history_swipe_hint" = "右滑单条记录可唤起删除确认，长按内容可复制。";
+"copy_button" = "复制";
+"delete_button" = "删除";
+"transcript_history_delete_title" = "删除这条记录？";
+"transcript_history_delete_message" = "删除后无法恢复：\n%@";
+"log_manual_send_title" = "手动发送文字到 Mac";
+"log_manual_send_detail_format" = "Session: %@\n语言: %@\n内容: %@";
 
 "log_title_pairing_start" = "发起配对";
 "log_detail_pairing_start_format" = "服务: %@

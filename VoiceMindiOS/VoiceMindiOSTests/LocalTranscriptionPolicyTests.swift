@@ -47,4 +47,39 @@ struct LocalTranscriptionPolicyTests {
         #expect(!LocalTranscriptionPolicy.shouldShowMacPairingOptions(sendToMacEnabled: false))
         #expect(LocalTranscriptionPolicy.shouldShowMacPairingOptions(sendToMacEnabled: true))
     }
+
+    @Test
+    func manualTextForwardingRequiresToggleConnectionAndTranscript() {
+        #expect(
+            LocalTranscriptionPolicy.canManuallyForwardTextToMac(
+                sendToMacEnabled: true,
+                connectionState: .connected,
+                transcriptText: "hello"
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.canManuallyForwardTextToMac(
+                sendToMacEnabled: false,
+                connectionState: .connected,
+                transcriptText: "hello"
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.canManuallyForwardTextToMac(
+                sendToMacEnabled: true,
+                connectionState: .disconnected,
+                transcriptText: "hello"
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.canManuallyForwardTextToMac(
+                sendToMacEnabled: true,
+                connectionState: .connected,
+                transcriptText: "   "
+            )
+        )
+    }
 }

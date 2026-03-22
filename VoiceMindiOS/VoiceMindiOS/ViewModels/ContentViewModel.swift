@@ -184,6 +184,10 @@ class ContentViewModel: ObservableObject {
         speechController.selectedLanguage = language
     }
 
+    func updateLocalTranscriptText(_ text: String) {
+        localTranscriptText = text
+    }
+
     func startPushToTalk() {
         guard canStartPushToTalk else { return }
 
@@ -318,6 +322,56 @@ class ContentViewModel: ObservableObject {
         LocalTranscriptionPolicy.shouldShowMacPairingOptions(sendToMacEnabled: sendResultsToMacEnabled)
     }
 
+    var canManuallyForwardCurrentTextToMac: Bool {
+        LocalTranscriptionPolicy.canManuallyForwardTextToMac(
+            sendToMacEnabled: sendResultsToMacEnabled,
+            connectionState: connectionState,
+            transcriptText: localTranscriptText
+        )
+    }
+
+    func sendCurrentTranscriptToMac() {
+        let trimmedText = localTranscriptText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedText.isEmpty else { return }
+        guard canManuallyForwardCurrentTextToMac else {
+            pushToTalkStatusMessage = localized("ptt_manual_send_requires_mac")
+            return
+        }
+
+        let sessionId = UUID().uuidString
+        let payload = ResultPayload(
+            sessionId: sessionId,
+            text: trimmedText,
+            language: selectedLanguage
+        )
+
+        guard let payloadData = try? JSONEncoder().encode(payload) else { return }
+
+        let timestamp = Date()
+        let hmac = connectionManager.hmacValidator?.generateHMACForEnvelope(
+            type: .result,
+            payload: payloadData,
+            timestamp: timestamp,
+            deviceId: connectionManager.deviceId
+        )
+
+        let envelope = MessageEnvelope(
+            type: .result,
+            payload: payloadData,
+            timestamp: timestamp,
+            deviceId: connectionManager.deviceId,
+            hmac: hmac
+        )
+
+        connectionManager.send(envelope)
+        pushToTalkStatusMessage = localized("ptt_manual_send_success")
+        appendInboundDataRecord(
+            title: localized("log_manual_send_title"),
+            detail: localized("log_manual_send_detail_format", sessionId, selectedLanguage, trimmedText),
+            category: .voice
+        )
+    }
+
     private func reconnectToPairedDevice() {
         // Find the paired device in discovered services
         guard case .paired(let deviceId, let deviceName) = pairingState else {
@@ -399,6 +453,11 @@ class ContentViewModel: ObservableObject {
     func clearLocalTranscriptHistory() {
         localTranscriptHistory.removeAll()
         UserDefaults.standard.removeObject(forKey: localTranscriptHistoryKey)
+    }
+
+    func removeLocalTranscriptRecord(id: UUID) {
+        localTranscriptHistory = LocalTranscriptHistory.removing(id: id, from: localTranscriptHistory)
+        Self.saveLocalTranscriptHistory(localTranscriptHistory, forKey: localTranscriptHistoryKey)
     }
 
     private func appendInboundDataRecord(
