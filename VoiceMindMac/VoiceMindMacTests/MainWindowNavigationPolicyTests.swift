@@ -6,7 +6,15 @@ final class MainWindowNavigationPolicyTests: XCTestCase {
     func testPrimarySectionsPromoteNotesToHomeAndPlaceCollaborationBelow() {
         XCTAssertEqual(
             MainWindowNavigationPolicy.primarySections,
-            [.home, .records, .collaboration, .data, .speech, .permissions]
+            [.home, .records, .collaboration, .speech, .permissions]
+        )
+    }
+
+    @MainActor
+    func testSecondarySectionsPlaceLogsAboveSettingsAndAbout() {
+        XCTAssertEqual(
+            MainWindowSection.secondaryItems,
+            [.data, .settings, .about]
         )
     }
 

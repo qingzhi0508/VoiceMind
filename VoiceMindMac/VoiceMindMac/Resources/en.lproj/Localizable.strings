@@ -7,6 +7,7 @@
 "main_nav_home" = "Home";
 "main_nav_records" = "Records";
 "main_nav_collaboration" = "Collaboration";
+"main_nav_logs" = "Logs";
 "main_brand_subtitle" = "Desktop dictation hub";
 "main_home_welcome" = "Welcome back";
 "main_home_subtitle" = "Review connection health, service status, and your latest voice activity in one place.";

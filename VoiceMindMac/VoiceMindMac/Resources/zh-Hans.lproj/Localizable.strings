@@ -8,6 +8,7 @@
 "main_nav_home" = "首页";
 "main_nav_records" = "记录";
 "main_nav_collaboration" = "双端协同";
+"main_nav_logs" = "日志";
 "main_brand_subtitle" = "桌面协同输入";
 "main_home_welcome" = "欢迎回来";
 "main_home_subtitle" = "在这里查看连接状态、服务概览和最近的语音活动。";

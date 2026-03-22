@@ -42,7 +42,7 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
         case .collaboration:
             return String(localized: "main_nav_collaboration")
         case .data:
-            return String(localized: "tab_data")
+            return String(localized: "main_nav_logs")
         case .speech:
             return String(localized: "tab_speech")
         case .permissions:
@@ -97,7 +97,7 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
     }
 
     static let primaryItems: [MainWindowSection] = MainWindowNavigationPolicy.primarySections
-    static let secondaryItems: [MainWindowSection] = [.settings, .about]
+    static let secondaryItems: [MainWindowSection] = [.data, .settings, .about]
 }
 
 enum MainWindowContentSection: Equatable {
@@ -112,7 +112,7 @@ enum MainWindowContentSection: Equatable {
 }
 
 enum MainWindowNavigationPolicy {
-    static let primarySections: [MainWindowSection] = [.home, .records, .collaboration, .data, .speech, .permissions]
+    static let primarySections: [MainWindowSection] = [.home, .records, .collaboration, .speech, .permissions]
 
     static func contentSection(for section: MainWindowSection) -> MainWindowContentSection {
         switch section {

@@ -8,6 +8,7 @@
 "main_nav_home" = "首页";
 "main_nav_records" = "記錄";
 "main_nav_collaboration" = "双端协同";
+"main_nav_logs" = "日誌";
 "main_records_subtitle" = "查詢最近 30 天的語音識別文字，包含 Mac 本機與 iPhone 同步結果。";
 "main_collaboration_subtitle" = "管理服务、配对状态，并查看最近的双端协同活动。";
 
