@@ -23,12 +23,6 @@
 "main_notes_subtitle" = "Review the latest text results and trigger local recording input.";
 "main_settings_subtitle" = "Adjust language, appearance, and network service settings.";
 
-"hotkey_title" = "Hotkey Settings";
-"hotkey_modifier_label" = "Modifiers:";
-"hotkey_key_label" = "Key:";
-"hotkey_key_picker" = "Key";
-"hotkey_current_format" = "Current hotkey: %@";
-
 "pair_with_iphone_title" = "Pair with iPhone";
 "pair_with_iphone_instruction" = "Enter this code on your iPhone:";
 "pair_with_iphone_waiting" = "Waiting for iPhone to connect...";
@@ -43,7 +37,6 @@
 
 "window_title_main" = "VoiceMind";
 "window_title_onboarding" = "Welcome to VoiceMind";
-"window_title_hotkey" = "Hotkey Settings";
 "window_title_qr_pairing" = "QR Pairing";
 
 "unpair_alert_title" = "Unpair?";
@@ -115,25 +108,9 @@
 "speech_engine_select_title" = "Select Engine";
 "speech_engine_loading" = "Loading engines...";
 
-"model_management_title" = "Model Management";
-"model_management_desc" = "Manage local speech recognition models";
-"model_name_sensevoice" = "SenseVoice Small";
-"model_desc_sensevoice" = "Multilingual model, about 85MB";
-"model_downloaded" = "Downloaded";
-"model_download_button" = "Download Model";
-"model_engine_not_registered" = "SenseVoice engine not registered";
-
 "engine_available" = "Available";
 "engine_unavailable" = "Unavailable";
 "engine_supported_languages_format" = "Supported languages: %@";
-
-"sensevoice_model_corrupted_title" = "SenseVoice Model Issue";
-"sensevoice_model_corrupted_message" = "The local SenseVoice model appears to be corrupted. It has been removed. Please download it again from Model Management.";
-"sensevoice_model_corrupted_ok" = "OK";
-
-"sensevoice_model_retry_failed_title" = "SenseVoice Auto Download Failed";
-"sensevoice_model_retry_failed_message" = "Automatic model download failed: %@\n\nPlease try downloading again from Model Management.";
-"sensevoice_model_retry_failed_ok" = "OK";
 
 "tab_status" = "Status";
 "tab_settings" = "Settings";

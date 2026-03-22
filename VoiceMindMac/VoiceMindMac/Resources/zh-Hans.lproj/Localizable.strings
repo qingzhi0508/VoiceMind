@@ -24,12 +24,6 @@
 "main_notes_subtitle" = "集中查看最近的文本结果，并进行本地录音输入。";
 "main_settings_subtitle" = "管理语言、界面主题与网络服务参数。";
 
-"hotkey_title" = "热键设置";
-"hotkey_modifier_label" = "修饰键：";
-"hotkey_key_label" = "按键：";
-"hotkey_key_picker" = "按键";
-"hotkey_current_format" = "当前热键: %@";
-
 "pair_with_iphone_title" = "与 iPhone 配对";
 "pair_with_iphone_instruction" = "在 iPhone 上输入此代码：";
 "pair_with_iphone_waiting" = "等待 iPhone 连接...";
@@ -44,7 +38,6 @@
 
 "window_title_main" = "语灵";
 "window_title_onboarding" = "欢迎使用 语灵";
-"window_title_hotkey" = "热键设置";
 "window_title_qr_pairing" = "扫码配对";
 
 "unpair_alert_title" = "解除配对？";
@@ -116,25 +109,9 @@
 "speech_engine_select_title" = "选择识别引擎";
 "speech_engine_loading" = "正在加载引擎...";
 
-"model_management_title" = "模型管理";
-"model_management_desc" = "管理本地语音识别模型";
-"model_name_sensevoice" = "SenseVoice Small";
-"model_desc_sensevoice" = "多语言语音识别模型，约 85MB";
-"model_downloaded" = "已下载";
-"model_download_button" = "下载模型";
-"model_engine_not_registered" = "SenseVoice 引擎未注册";
-
 "engine_available" = "可用";
 "engine_unavailable" = "不可用";
 "engine_supported_languages_format" = "支持语言: %@";
-
-"sensevoice_model_corrupted_title" = "SenseVoice 模型异常";
-"sensevoice_model_corrupted_message" = "本地 SenseVoice 模型疑似损坏，已自动清理。请在模型管理中重新下载。";
-"sensevoice_model_corrupted_ok" = "好";
-
-"sensevoice_model_retry_failed_title" = "SenseVoice 自动下载失败";
-"sensevoice_model_retry_failed_message" = "自动下载失败：%@\n\n请在模型管理中重新下载。";
-"sensevoice_model_retry_failed_ok" = "好";
 
 "tab_status" = "状态";
 "tab_settings" = "设置";
