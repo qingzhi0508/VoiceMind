@@ -249,7 +249,7 @@
 "transcript_history_page_title" = "Recent 10 records";
 "transcript_history_empty_title" = "There are no local transcripts yet.";
 "transcript_history_empty_hint" = "Hold the talk button on the main page and your latest 10 transcripts will appear here.";
-"transcript_history_swipe_hint" = "Swipe right on a record to open delete confirmation, or long-press to copy.";
+"transcript_history_swipe_hint" = "Swipe left on a record to delete it, or long-press to copy.";
 "copy_button" = "Copy";
 "delete_button" = "Delete";
 "transcript_history_delete_title" = "Delete this record?";

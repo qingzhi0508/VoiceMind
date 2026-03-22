@@ -10,7 +10,7 @@ struct ContentView: View {
     @Binding var hasLaunchedBefore: Bool
 
     @State private var showOnboarding = false
-    @State private var selectedPage = 1
+    @State private var selectedPage = 0
     @FocusState private var focusedField: FocusField?
 
     var body: some View {
@@ -57,28 +57,40 @@ struct ContentView: View {
                 }
 
                 TabView(selection: $selectedPage) {
-                    TranscriptHistoryPage(
-                        history: viewModel.localTranscriptHistory,
-                        onDelete: { id in
-                            viewModel.removeLocalTranscriptRecord(id: id)
-                        },
-                        onDismissKeyboard: dismissKeyboard
-                    )
-                    .padding()
-                    .tag(0)
-
                     PrimaryRecognitionPage(
                         viewModel: viewModel,
                         isTranscriptFocused: Binding(
                             get: { focusedField == .transcriptEditor },
                             set: { focusedField = $0 ? .transcriptEditor : nil }
                         ),
-                        onDismissKeyboard: dismissKeyboard
+                        onDismissKeyboard: dismissKeyboard,
+                        onNavigateToHistoryPage: {
+                            navigateToPage(1)
+                        }
                     )
                         .padding()
-                        .tag(1)
+                        .tag(0)
+
+                    TranscriptHistoryPage(
+                        history: viewModel.localTranscriptHistory,
+                        onDelete: { id in
+                            viewModel.removeLocalTranscriptRecord(id: id)
+                        },
+                        onDismissKeyboard: dismissKeyboard,
+                        onNavigateToPrimaryPage: {
+                            navigateToPage(0)
+                        }
+                    )
+                    .padding()
+                    .tag(1)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                .background(
+                    TabViewPagingConfigurator(
+                        isScrollEnabled: false,
+                        bounces: false
+                    )
+                )
             }
             .contentShape(Rectangle())
             .onTapGesture {
@@ -119,6 +131,13 @@ struct ContentView: View {
 
     private func dismissKeyboard() {
         focusedField = nil
+    }
+
+    private func navigateToPage(_ page: Int) {
+        guard page != selectedPage else { return }
+        withAnimation(.easeOut(duration: 0.2)) {
+            selectedPage = page
+        }
     }
 }
 
@@ -161,6 +180,7 @@ struct PrimaryRecognitionPage: View {
     @ObservedObject var viewModel: ContentViewModel
     @Binding var isTranscriptFocused: Bool
     let onDismissKeyboard: () -> Void
+    let onNavigateToHistoryPage: () -> Void
 
     var body: some View {
         VStack {
@@ -211,6 +231,30 @@ struct PrimaryRecognitionPage: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            // Navigation gesture for going to history page
+            // Only triggers on edge swipe (right 25% of screen) to avoid interfering with other interactions
+            DragGesture(minimumDistance: 60)
+                .onEnded { value in
+                    let horizontal = abs(value.translation.width)
+                    let vertical = abs(value.translation.height)
+
+                    // Only navigate if predominantly horizontal swipe from right edge
+                    guard
+                        horizontal > vertical,
+                        horizontal >= 60,
+                        value.translation.width < 0  // Swipe LEFT to go to history
+                    else {
+                        return
+                    }
+
+                    // Only trigger if started from right portion of screen (edge swipe)
+                    let screenWidth = UIScreen.main.bounds.width
+                    if value.startLocation.x > screenWidth * 0.75 {
+                        onNavigateToHistoryPage()
+                    }
+                }
+        )
     }
 }
 
@@ -218,7 +262,7 @@ struct TranscriptHistoryPage: View {
     let history: [LocalTranscriptRecord]
     let onDelete: (UUID) -> Void
     let onDismissKeyboard: () -> Void
-    @State private var pendingDeleteRecord: LocalTranscriptRecord?
+    let onNavigateToPrimaryPage: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -244,13 +288,15 @@ struct TranscriptHistoryPage: View {
                         TranscriptHistoryRow(record: record)
                             .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
                             .listRowBackground(Color(uiColor: .secondarySystemBackground))
-                            .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                                Button {
-                                    pendingDeleteRecord = record
+                            .swipeActions(
+                                edge: TranscriptHistoryDeletePolicy.swipeEdge,
+                                allowsFullSwipe: TranscriptHistoryDeletePolicy.allowsFullSwipe
+                            ) {
+                                Button(role: .destructive) {
+                                    onDelete(record.id)
                                 } label: {
                                     Text(String(localized: "delete_button"))
                                 }
-                                .tint(.orange)
                             }
                     }
                 }
@@ -269,24 +315,98 @@ struct TranscriptHistoryPage: View {
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .alert(
-            String(localized: "transcript_history_delete_title"),
-            isPresented: Binding(
-                get: { pendingDeleteRecord != nil },
-                set: { if !$0 { pendingDeleteRecord = nil } }
-            ),
-            presenting: pendingDeleteRecord
-        ) { record in
-            Button(String(localized: "delete_button"), role: .destructive) {
-                onDelete(record.id)
-                pendingDeleteRecord = nil
-            }
-            Button(String(localized: "cancel_button"), role: .cancel) {
-                pendingDeleteRecord = nil
-            }
-        } message: { record in
-            Text(String(format: String(localized: "transcript_history_delete_message"), record.text))
+        .background(
+            // Navigation gesture for going back to primary page
+            // Only triggers on edge swipe (left 25% of screen) to avoid interfering with List swipe actions
+            DragGesture(minimumDistance: 60)
+                .onEnded { value in
+                    let horizontal = abs(value.translation.width)
+                    let vertical = abs(value.translation.height)
+
+                    // Only navigate if predominantly horizontal swipe from left edge
+                    guard
+                        horizontal > vertical,
+                        horizontal >= 60,
+                        value.translation.width > 0  // Swipe RIGHT to go back
+                    else {
+                        return
+                    }
+
+                    // Only trigger if started from left portion of screen (edge swipe)
+                    let screenWidth = UIScreen.main.bounds.width
+                    if value.startLocation.x < screenWidth * 0.25 {
+                        onNavigateToPrimaryPage()
+                    }
+                }
+        )
+    }
+}
+
+enum TranscriptHistoryDeletePolicy {
+    static let swipeEdge: HorizontalEdge = .trailing
+    static let usesTrailingSwipe = true
+    static let allowsFullSwipe = true
+    static let requiresConfirmation = false
+}
+
+enum PageSwipeNavigationPolicy {
+    private static let minimumHorizontalTranslation: CGFloat = 60
+
+    static func destinationPage(
+        from currentPage: Int,
+        translationWidth: CGFloat,
+        translationHeight: CGFloat,
+        pageCount: Int
+    ) -> Int? {
+        guard
+            pageCount > 1,
+            abs(translationWidth) > abs(translationHeight),
+            abs(translationWidth) >= minimumHorizontalTranslation
+        else {
+            return nil
         }
+
+        if translationWidth < 0 {
+            let nextPage = min(currentPage + 1, pageCount - 1)
+            return nextPage == currentPage ? nil : nextPage
+        }
+
+        let previousPage = max(currentPage - 1, 0)
+        return previousPage == currentPage ? nil : previousPage
+    }
+}
+
+struct TabViewPagingConfigurator: UIViewRepresentable {
+    let isScrollEnabled: Bool
+    let bounces: Bool
+
+    func makeUIView(context: Context) -> UIView {
+        UIView(frame: .zero)
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        DispatchQueue.main.async {
+            guard let scrollView = findEnclosingScrollView(from: uiView) else {
+                return
+            }
+
+            scrollView.isScrollEnabled = isScrollEnabled
+            scrollView.bounces = bounces
+            scrollView.alwaysBounceHorizontal = bounces
+        }
+    }
+
+    private func findEnclosingScrollView(from view: UIView) -> UIScrollView? {
+        var candidate: UIView? = view
+
+        while let current = candidate {
+            if let scrollView = current as? UIScrollView {
+                return scrollView
+            }
+            candidate = current.superview
+        }
+
+        return nil
     }
 }
 

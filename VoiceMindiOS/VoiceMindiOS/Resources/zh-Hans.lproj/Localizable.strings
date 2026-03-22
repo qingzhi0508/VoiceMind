@@ -247,7 +247,7 @@
 "transcript_history_page_title" = "最近 10 条记录";
 "transcript_history_empty_title" = "还没有本地转写记录。";
 "transcript_history_empty_hint" = "在主页面按住说话后，最近 10 条记录会出现在这里。";
-"transcript_history_swipe_hint" = "右滑单条记录可唤起删除确认，长按内容可复制。";
+"transcript_history_swipe_hint" = "左滑单条记录可删除，长按内容可复制。";
 "copy_button" = "复制";
 "delete_button" = "删除";
 "transcript_history_delete_title" = "删除这条记录？";
