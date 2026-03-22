@@ -475,44 +475,6 @@ private struct HomeDashboardView: View {
                     )
             }
 
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: 14),
-                    GridItem(.flexible(), spacing: 14)
-                ],
-                spacing: 14
-            ) {
-                collaborationStatusCard(
-                    title: String(localized: "status_label"),
-                    value: connectionSummaryValue,
-                    tint: spotlightTint,
-                    systemImage: "antenna.radiowaves.left.and.right"
-                )
-
-                collaborationStatusCard(
-                    title: String(localized: "status_service_label"),
-                    value: serviceSummaryValue,
-                    tint: controller.isServiceRunning ? .green : .orange,
-                    systemImage: "server.rack"
-                )
-
-                if let deviceName = controlsPolicy.pairedDeviceName {
-                    collaborationStatusCard(
-                        title: String(localized: "status_paired_device_label"),
-                        value: deviceName,
-                        tint: .blue,
-                        systemImage: "iphone"
-                    )
-                }
-
-                collaborationStatusCard(
-                    title: String(localized: "status_ip_label"),
-                    value: LocalNetworkAccessPolicy.preferredLocalIPv4() ?? String(localized: "status_unknown_value"),
-                    tint: MainWindowColors.secondaryText,
-                    systemImage: "network"
-                )
-            }
-
             HStack(spacing: 14) {
                 spotlightAction(
                     title: controller.isServiceRunning
@@ -554,34 +516,6 @@ private struct HomeDashboardView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
-        )
-    }
-
-    private func collaborationStatusCard(title: String, value: String, tint: Color, systemImage: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: systemImage)
-                    .foregroundColor(tint)
-                Text(title)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(MainWindowColors.secondaryText)
-            }
-
-            Text(value)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(MainWindowColors.title)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, minHeight: 96, alignment: .topLeading)
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(MainWindowColors.softSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(MainWindowColors.cardBorder, lineWidth: 1)
         )
     }
@@ -1026,7 +960,6 @@ struct SettingsTab: View {
                 Section(header: Text(String(localized: "settings_network_title"))) {
                     HStack {
                         Text(String(localized: "settings_network_port_label"))
-                        Spacer()
                         TextField(String(localized: "settings_network_port_placeholder"), text: $serverPortText)
                             .frame(width: 100)
                             .multilineTextAlignment(.trailing)
