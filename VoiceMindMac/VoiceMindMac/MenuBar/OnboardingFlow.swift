@@ -9,7 +9,7 @@ struct OnboardingFlowView: View {
 
     enum OnboardingStep {
         case welcome
-        case permissions
+        case checklist
         case ready
         case running
     }
@@ -19,11 +19,10 @@ struct OnboardingFlowView: View {
             switch currentStep {
             case .welcome:
                 WelcomeView(onContinue: {
-                    currentStep = .permissions
+                    currentStep = .checklist
                 })
-            case .permissions:
-                PermissionsCheckView(
-                    controller: controller,
+            case .checklist:
+                ReadinessCheckView(
                     onComplete: {
                         currentStep = .ready
                     }
@@ -76,8 +75,8 @@ struct WelcomeView: View {
             VStack(alignment: .leading, spacing: 16) {
                 FeatureRow(
                     icon: "text.cursor",
-                    title: "光标自动输入",
-                    description: "识别结果会自动尝试输入到当前聚焦的文本框"
+                    title: "结果集中查看",
+                    description: "识别结果会显示在语灵窗口中，方便复制和整理"
                 )
 
                 FeatureRow(
@@ -134,27 +133,24 @@ struct FeatureRow: View {
     }
 }
 
-// MARK: - Permissions Check View
+// MARK: - Readiness Check View
 
-struct PermissionsCheckView: View {
-    @ObservedObject var controller: MenuBarController
+struct ReadinessCheckView: View {
     let onComplete: () -> Void
-
-    @State private var isCheckingPermissions = false
 
     var body: some View {
         VStack(spacing: 30) {
             // Header
             VStack(spacing: 12) {
-                Image(systemName: "lock.shield.fill")
+                Image(systemName: "checklist")
                     .font(.system(size: 60))
-                    .foregroundColor(.orange)
+                    .foregroundColor(.blue)
 
-                Text("权限设置")
+                Text("使用准备")
                     .font(.largeTitle)
                     .fontWeight(.bold)
 
-                Text("语灵 需要以下权限才能正常工作")
+                Text("当前版本不会向其他应用自动输入文本，请先确认使用方式")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -163,16 +159,18 @@ struct PermissionsCheckView: View {
 
             Spacer()
 
-            // Permission Items
+            // Checklist Items
             VStack(spacing: 20) {
-                PermissionItem(
-                    icon: "lock.shield",
-                    title: "辅助功能权限",
-                    description: "用于识别当前焦点并将转写结果输入到当前应用",
-                    status: controller.accessibilityStatus,
-                    onRequest: {
-                        controller.requestAccessibilityPermissionFromUI()
-                    }
+                ChecklistItem(
+                    icon: "iphone.and.arrow.forward",
+                    title: "连接 iPhone",
+                    description: "通过局域网配对后，从 iPhone 接收语音识别结果"
+                )
+
+                ChecklistItem(
+                    icon: "doc.text",
+                    title: "在应用内查看结果",
+                    description: "识别内容会显示并保存在语灵窗口中，不会自动写入其他应用"
                 )
             }
             .padding(.horizontal, 40)
@@ -180,32 +178,22 @@ struct PermissionsCheckView: View {
             Spacer()
 
             // Status Message
-            if allPermissionsGranted {
-                HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                    Text("所有权限已授予")
-                        .foregroundColor(.green)
-                        .fontWeight(.medium)
-                }
-                .padding()
-                .background(Color.green.opacity(0.1))
-                .cornerRadius(8)
-            } else {
-                Text("请点击上方按钮授予权限")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                Text("已完成准备，可以继续")
+                    .foregroundColor(.green)
+                    .fontWeight(.medium)
             }
+            .padding()
+            .background(Color.green.opacity(0.1))
+            .cornerRadius(8)
 
             // Continue Button
             Button(action: {
-                if allPermissionsGranted {
-                    onComplete()
-                } else {
-                    // Show alert
-                }
+                onComplete()
             }) {
-                Text(allPermissionsGranted ? "继续" : "稍后设置")
+                Text("继续")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -215,30 +203,20 @@ struct PermissionsCheckView: View {
             .padding(.horizontal, 40)
             .padding(.bottom, 40)
         }
-        .onAppear {
-            // Refresh permissions status
-            controller.refreshPermissionState()
-        }
-    }
-
-    private var allPermissionsGranted: Bool {
-        controller.accessibilityStatus == .granted
     }
 }
 
-struct PermissionItem: View {
+struct ChecklistItem: View {
     let icon: String
     let title: String
     let description: String
-    let status: PermissionStatus
-    let onRequest: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             // Icon
             Image(systemName: icon)
                 .font(.title)
-                .foregroundColor(status == .granted ? .green : .orange)
+                .foregroundColor(.blue)
                 .frame(width: 40)
 
             // Content
@@ -246,76 +224,17 @@ struct PermissionItem: View {
                 HStack {
                     Text(title)
                         .font(.headline)
-
-                    Spacer()
-
-                    // Status Badge
-                    StatusBadge(status: status)
                 }
 
                 Text(description)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-
-                if status != .granted {
-                    Button(action: onRequest) {
-                        Text("授予权限")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                    .padding(.top, 4)
-                }
             }
         }
         .padding()
         .background(Color.gray.opacity(0.05))
         .cornerRadius(12)
-    }
-}
-
-struct StatusBadge: View {
-    let status: PermissionStatus
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: statusIcon)
-                .font(.caption)
-            Text(statusText)
-                .font(.caption)
-                .fontWeight(.medium)
-        }
-        .foregroundColor(statusColor)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(statusColor.opacity(0.1))
-        .cornerRadius(6)
-    }
-
-    private var statusIcon: String {
-        switch status {
-        case .granted: return "checkmark.circle.fill"
-        case .denied: return "xmark.circle.fill"
-        case .notDetermined: return "exclamationmark.circle.fill"
-        }
-    }
-
-    private var statusText: String {
-        switch status {
-        case .granted: return "已授予"
-        case .denied: return "已拒绝"
-        case .notDetermined: return "未授予"
-        }
-    }
-
-    private var statusColor: Color {
-        switch status {
-        case .granted: return .green
-        case .denied: return .red
-        case .notDetermined: return .orange
-        }
     }
 }
 
@@ -486,8 +405,7 @@ struct RunningStatusView: View {
 
                 // System Info
                 SystemInfoCard(
-                    localIP: localIPAddress,
-                    accessibilityStatus: controller.accessibilityStatus
+                    localIP: localIPAddress
                 )
 
                 // Device Connection
@@ -605,7 +523,6 @@ struct StatusHeader: View {
 
 struct SystemInfoCard: View {
     let localIP: String
-    let accessibilityStatus: PermissionStatus
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -614,8 +531,7 @@ struct SystemInfoCard: View {
 
             VStack(spacing: 8) {
                 SimpleInfoRow(icon: "network", title: "本机 IP", value: localIP, color: .blue)
-                SimpleInfoRow(icon: "text.cursor", title: "输入方式", value: "iPhone 语音直传 Mac 转写", color: .purple)
-                SimpleInfoRow(icon: "lock.shield", title: "辅助功能", value: accessibilityStatus.displayText, color: accessibilityStatus.color)
+                SimpleInfoRow(icon: "doc.text", title: "结果处理", value: "在语灵窗口内显示与保存", color: .purple)
             }
         }
         .padding()
@@ -751,26 +667,6 @@ struct SimpleInfoRow: View {
             Text(value)
                 .fontWeight(.medium)
                 .foregroundColor(color)
-        }
-    }
-}
-
-// MARK: - PermissionStatus Extension
-
-extension PermissionStatus {
-    var displayText: String {
-        switch self {
-        case .granted: return "已授予"
-        case .denied: return "已拒绝"
-        case .notDetermined: return "未授予"
-        }
-    }
-
-    var color: Color {
-        switch self {
-        case .granted: return .green
-        case .denied: return .red
-        case .notDetermined: return .orange
         }
     }
 }

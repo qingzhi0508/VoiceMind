@@ -21,8 +21,7 @@
 "main_speech_subtitle" = "Manage recognition engines, models, and language preferences.";
 "main_records_subtitle" = "Browse the last 30 days of voice transcripts from local Mac capture and synced iPhone text.";
 "main_notes_subtitle" = "Review the latest text results and trigger local recording input.";
-"main_permissions_subtitle" = "Check whether Accessibility is ready.";
-"main_settings_subtitle" = "Adjust text injection, language, and network service settings.";
+"main_settings_subtitle" = "Adjust language, appearance, and network service settings.";
 
 "hotkey_title" = "Hotkey Settings";
 "hotkey_modifier_label" = "Modifiers:";
@@ -35,25 +34,16 @@
 "pair_with_iphone_waiting" = "Waiting for iPhone to connect...";
 "pair_with_iphone_time_format" = "Time remaining: %@s";
 
-"permissions_title" = "Permissions";
-"permission_accessibility_title" = "Accessibility";
-"permission_accessibility_desc" = "Required to detect the focused input area and insert transcribed text";
-"permission_input_monitor_title" = "Input Monitoring";
-"permission_input_monitor_desc" = "Required for global hotkeys";
-
-
 "menu_status_unpaired" = "Not Paired";
 "menu_show_status" = "Show Status...";
 "menu_return_main" = "Return to Main Window";
 "menu_start_pairing" = "Start Pairing...";
-"menu_permissions" = "Permissions...";
 "menu_unpair" = "Unpair";
 "menu_quit" = "Quit";
 
 "window_title_main" = "VoiceMind";
 "window_title_onboarding" = "Welcome to VoiceMind";
 "window_title_hotkey" = "Hotkey Settings";
-"window_title_permissions" = "Permissions";
 "window_title_qr_pairing" = "QR Pairing";
 
 "unpair_alert_title" = "Unpair?";
@@ -68,20 +58,6 @@
 "status_access_connected" = "Connected";
 "status_menu_pairing" = "Pairing...";
 "status_menu_connected_format" = "Connected to %@";
-
-"text_copy_alert_title" = "Text Injection Failed";
-"text_copy_alert_message_format" = "Unable to inject text: %@
-
-You can copy the text manually.";
-"copy_text_button" = "Copy Text";
-
-"hotkey_permission_error" = "Unable to start hotkey monitoring. Please grant Input Monitoring permission and try again.";
-
-"text_injection_permission_title" = "Accessibility Permission Required";
-"text_injection_permission_message" = "VoiceMind needs Accessibility permission to type results into the current app.
-
-You can also copy the text and paste manually.";
-"open_system_settings_button" = "Open System Settings";
 
 "log_server_port_updated_title" = "Listening Port Updated";
 "log_server_port_updated_detail_format" = "New listening port: %@";
@@ -99,7 +75,6 @@ You can also copy the text and paste manually.";
 
 "system_info_title" = "System Info";
 "system_ip_title" = "Local IP Address";
-"system_accessibility_title" = "Accessibility Permission";
 
 "device_connection_title" = "Device Connection";
 "device_pairing_status" = "Pairing Status";
@@ -115,20 +90,13 @@ You can also copy the text and paste manually.";
 "connection_status_connected" = "Connected";
 "connection_status_error_format" = "Error: %@";
 
-"permissions_section_title" = "Permissions";
-"permissions_accessibility_title" = "Accessibility Permission";
-"permissions_accessibility_desc" = "Needed to detect cursor position and insert transcribed text";
-"permissions_all_granted" = "All permissions granted";
-"authorize_button" = "Authorize";
-
 "quickstart_title" = "Quick Start";
 "quickstart_step1_format" = "Open %@ on your iPhone";
 "quickstart_step2" = "Click the \"Start Pairing\" button below";
 "quickstart_step3" = "Enter the pairing code on your iPhone";
-"quickstart_step4" = "After pairing, hold the mic on your iPhone to speak. The Mac will transcribe and type automatically.";
+"quickstart_step4" = "After pairing, hold the mic on your iPhone to speak. The Mac will transcribe and show the result inside VoiceMind.";
 
 "action_start_pairing" = "Start Pairing";
-"action_permissions" = "Permissions";
 "action_unpair" = "Unpair";
 
 
@@ -171,7 +139,6 @@ You can also copy the text and paste manually.";
 "tab_settings" = "Settings";
 "tab_speech" = "Speech";
 "tab_data" = "Data";
-"tab_permissions" = "Permissions";
 "tab_notes" = "Notes";
 "tab_about" = "About";
 "tab_debug" = "Debug";
@@ -201,9 +168,6 @@ You can also copy the text and paste manually.";
 "note_recording" = "Recording...";
 "note_clear" = "Clear";
 
-"settings_text_injection_title" = "Text Injection";
-"settings_text_injection_clipboard_title" = "Clipboard Paste";
-"settings_text_injection_clipboard_desc" = "Fixed to clipboard paste for the most reliable cursor input compatibility.";
 "settings_language_title" = "Language";
 "settings_language_picker" = "Recognition Language";
 "settings_language_zh" = "Chinese";
@@ -262,20 +226,9 @@ You can also copy the text and paste manually.";
 "records_clear_all_confirm_title" = "Clear all records";
 "records_clear_all_confirm_message" = "This will remove all voice records from the last 30 days.";
 
-"permissions_tab_title" = "System Permissions";
-"permissions_tab_accessibility_title" = "Accessibility";
-"permissions_tab_granted" = "Granted";
-"permissions_tab_denied" = "Denied";
-"permissions_tab_accessibility_desc" = "VoiceMind needs Accessibility permission to detect the focused input area and insert transcribed text.";
-"permissions_tab_input_title" = "Input Monitoring";
-"permissions_tab_input_desc" = "VoiceMind needs Input Monitoring permission to detect hotkey presses.";
-"permissions_tab_check" = "Check Permissions";
-"permissions_tab_request" = "Request Permissions";
-"permissions_tab_open_settings" = "Open System Settings";
-
 "about_version" = "Version 1.0.0";
 "about_title" = "Voice Input Assistant";
-"about_description" = "Use your iOS device for speech recognition and inject results into Mac apps in real time.";
+"about_description" = "Use your iOS device for speech recognition and review results inside the Mac app in real time.";
 "about_help_link" = "View Help Documentation";
 "about_open_guide" = "View Usage Guide";
 "window_title_usage_guide" = "Usage Guide";

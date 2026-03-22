@@ -23,25 +23,16 @@
 "pair_with_iphone_waiting" = "等待 iPhone 连接...";
 "pair_with_iphone_time_format" = "剩余时间: %@秒";
 
-"permissions_title" = "权限设置";
-"permission_accessibility_title" = "辅助功能";
-"permission_accessibility_desc" = "识别当前焦点输入位置并输入转写结果所需";
-"permission_input_monitor_title" = "输入监控";
-"permission_input_monitor_desc" = "全局监听热键所需";
-
-
 "menu_status_unpaired" = "未配对";
 "menu_show_status" = "显示状态...";
 "menu_return_main" = "返回主页面";
 "menu_start_pairing" = "开始配对...";
-"menu_permissions" = "权限设置...";
 "menu_unpair" = "解除配对";
 "menu_quit" = "退出";
 
 "window_title_main" = "语灵";
 "window_title_onboarding" = "欢迎使用 语灵";
 "window_title_hotkey" = "热键设置";
-"window_title_permissions" = "权限设置";
 "window_title_qr_pairing" = "扫码配对";
 
 "unpair_alert_title" = "解除配对？";
@@ -56,18 +47,6 @@
 "status_access_connected" = "已连接";
 "status_menu_pairing" = "配对中...";
 "status_menu_connected_format" = "已连接到 %@";
-
-"text_copy_alert_title" = "文本注入失败";
-"text_copy_alert_message_format" = "无法注入文本: %@
-
-你可以手动复制文本。";
-"copy_text_button" = "复制文本";
-
-"hotkey_permission_error" = "无法启动热键监听。请授予输入监控权限后重试。";
-
-"text_injection_permission_title" = "缺少辅助功能权限";
-"text_injection_permission_message” = “语灵 需要”辅助功能”权限才能把识别结果输入到当前应用。你也可以先复制文本再手动粘贴。";
-"open_system_settings_button" = "打开系统设置";
 
 "log_server_port_updated_title" = "监听端口已更新";
 "log_server_port_updated_detail_format" = "新的监听端口: %@";
@@ -85,7 +64,6 @@
 
 "system_info_title" = "系统信息";
 "system_ip_title" = "本机 IP 地址";
-"system_accessibility_title" = "辅助功能权限";
 
 "device_connection_title" = "设备连接";
 "device_pairing_status" = "配对状态";
@@ -101,20 +79,13 @@
 "connection_status_connected" = "已连接";
 "connection_status_error_format" = "错误: %@";
 
-"permissions_section_title" = "权限管理";
-"permissions_accessibility_title" = "辅助功能权限";
-"permissions_accessibility_desc" = "用于识别当前光标位置并将转写文字输入到目标应用";
-"permissions_all_granted" = "所有权限已授予";
-"authorize_button" = "授权";
-
 "quickstart_title" = "快速开始";
 "quickstart_step1_format" = "在 iPhone 上打开 %@ 应用";
 "quickstart_step2" = "点击下方\"开始配对\"按钮";
 "quickstart_step3" = "在 iPhone 上输入配对码";
-"quickstart_step4" = "配对成功后，在 iPhone 上按住麦克风说话，Mac 会自动转写并尝试输入";
+"quickstart_step4" = "配对成功后，在 iPhone 上按住麦克风说话，Mac 会自动转写并在语灵窗口中显示结果";
 
 "action_start_pairing" = "开始配对";
-"action_permissions" = "权限";
 "action_unpair" = "解除配对";
 
 
@@ -157,7 +128,6 @@
 "tab_settings" = "设置";
 "tab_speech" = "语音识别";
 "tab_data" = "数据";
-"tab_permissions" = "权限";
 "tab_about" = "关于";
 "tab_debug" = "调试";
 
@@ -181,9 +151,6 @@
 "status_connection_connected" = "已连接";
 "status_connection_error" = "错误";
 
-"settings_text_injection_title" = "文本注入方式";
-"settings_text_injection_clipboard_title" = "剪贴板粘贴";
-"settings_text_injection_clipboard_desc" = "已固定为剪贴板粘贴，以获得最稳定的光标输入兼容性。";
 "settings_language_title" = "语言";
 "settings_language_picker" = "识别语言";
 "settings_language_zh" = "中文";
@@ -242,20 +209,9 @@
 "records_clear_all_confirm_title" = "清空全部記錄";
 "records_clear_all_confirm_message" = "將清空最近 30 天的全部語音記錄。";
 
-"permissions_tab_title" = "系统权限";
-"permissions_tab_accessibility_title" = "辅助功能";
-"permissions_tab_granted" = "已授予";
-"permissions_tab_denied" = "未授予";
-"permissions_tab_accessibility_desc" = "语灵 需要辅助功能权限来识别当前焦点输入位置并输入转写结果";
-"permissions_tab_input_title" = "输入监控";
-"permissions_tab_input_desc" = "语灵 需要输入监控权限来检测快捷键按下事件";
-"permissions_tab_check" = "检查权限";
-"permissions_tab_request" = "请求权限";
-"permissions_tab_open_settings" = "打开系统设置";
-
 "about_version" = "版本 1.0.0";
 "about_title" = "语音输入助手";
-"about_description" = "通过设备进行语音识别，将结果展示输入到应用中";
+"about_description" = "通过设备进行语音识别，并在 Mac 应用内即时查看结果";
 "about_help_link" = "查看帮助文档";
 "about_open_guide" = "查看操作指引";
 "window_title_usage_guide" = "操作指引";

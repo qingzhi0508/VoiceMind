@@ -1,18 +1,18 @@
 # VoiceMind (语灵)
 
-VoiceMind 是一个 macOS + iOS 语音输入系统，通过局域网连接 iPhone 与 Mac，将识别结果直接注入到 Mac 的当前输入位置。
+VoiceMind 是一个 macOS + iOS 语音输入系统，通过局域网连接 iPhone 与 Mac，在 Mac 应用内接收和查看识别结果。
 
 ## 功能特点
 
 - 🔒 **安全配对**：使用 6 位数字配对码和 HMAC-SHA256 加密通信
 - 🌐 **本地网络**：通过 Bonjour 自动发现，无需手动配置 IP
 - 🗣️ **多语言支持**：支持中文（普通话）和英文
-- ⚡ **实时注入**：识别结果直接注入到当前光标位置，无需剪贴板
+- 📝 **集中查看**：识别结果会显示并保存在 Mac 应用内
 - 🎙️ **本地识别**：Mac 端可使用 Apple Speech 进行本地语音识别
 
 ## 系统要求
 
-- **macOS**: macOS 13.0 (Ventura) 或更高版本
+- **macOS**: macOS 14.0 (Sonoma) 或更高版本
 - **iOS**: iOS 18.0 或更高版本
 - **网络**: Mac 和 iPhone 需要连接到同一个 Wi-Fi 网络
 
@@ -54,7 +54,7 @@ open VoiceMind.xcworkspace
    - 点击"配对"
 
 3. **授予权限**：
-   - **Mac**: 需要授予辅助功能权限；如使用本地识别，还需要麦克风和语音识别权限
+   - **Mac**: 如使用本地识别，需要麦克风和语音识别权限
    - **iPhone**: 需要授予麦克风和语音识别权限
 
 ### 日常使用
@@ -62,9 +62,8 @@ open VoiceMind.xcworkspace
 1. 确保 Mac 和 iPhone 都在同一个 Wi-Fi 网络
 2. 在 Mac 上启动 VoiceMindMac（菜单栏图标显示为绿色表示已连接）
 3. 在 iPhone 上启动 VoiceMindiOS（显示"已连接"状态）
-4. 在 Mac 的任意应用中保持光标位于可编辑输入区域
-5. 在 iPhone 上开始语音输入
-6. 识别结果会自动注入到 Mac 当前光标位置
+4. 在 iPhone 上开始语音输入
+5. 识别结果会显示在 Mac 应用内
 
 ### 切换语言
 
@@ -114,10 +113,10 @@ open VoiceMind.xcworkspace
 - 检查两台设备是否在同一个 Wi-Fi 网络
 - 尝试在 iPhone 上重启应用
 
-### 识别结果无法注入
+### Mac 端没有显示识别结果
 
-- 检查是否已授予辅助功能权限
-- 尝试在不同的应用中测试（某些应用可能阻止文本注入）
+- 检查 Mac 与 iPhone 是否已完成配对
+- 检查两台设备是否在同一个 Wi-Fi 网络
 
 ### iPhone 无法发现 Mac
 
@@ -143,8 +142,6 @@ VoiceMind/
 ├── VoiceMindMac/             # macOS 应用
 │   ├── Network/               # 网络层（服务器、Bonjour）
 │   ├── Speech/                # 本地语音识别
-│   ├── TextInjection/         # 文本注入
-│   ├── Permissions/           # 权限管理
 │   └── MenuBar/               # 菜单栏 UI
 └── VoiceMindiOS/             # iOS 应用
     ├── Network/               # 网络层（客户端、Bonjour）
