@@ -19,6 +19,7 @@ class ContentViewModel: ObservableObject {
     @Published var audioLevel: CGFloat = 0
     @Published var localTranscriptText: String = ""
     @Published var localTranscriptHistory: [LocalTranscriptRecord] = []
+    @Published var transcriptAutoScrollVersion: Int = 0
     @Published var sendResultsToMacEnabled: Bool {
         didSet {
             UserDefaults.standard.set(sendResultsToMacEnabled, forKey: sendResultsToMacEnabledKey)
@@ -51,6 +52,8 @@ class ContentViewModel: ObservableObject {
     private var currentSessionId: String?
     private var manualSessionId: String?
     private var activeInputMode: ActiveInputMode?
+    private var committedTranscriptText: String = ""
+    private var liveTranscriptText: String = ""
 
     private enum ActiveInputMode {
         case localRecognition
@@ -186,12 +189,16 @@ class ContentViewModel: ObservableObject {
 
     func updateLocalTranscriptText(_ text: String) {
         localTranscriptText = text
+        if recognitionState == .idle {
+            committedTranscriptText = text
+            liveTranscriptText = ""
+        }
     }
 
     func startPushToTalk() {
         guard canStartPushToTalk else { return }
-
-        localTranscriptText = ""
+        committedTranscriptText = localTranscriptText
+        liveTranscriptText = ""
 
         if shouldForwardResultToMac {
             do {
@@ -698,13 +705,25 @@ extension ContentViewModel: SpeechControllerDelegate {
 
     func speechController(_ controller: SpeechController, didUpdateTranscript text: String, language: String, isFinal: Bool) {
         DispatchQueue.main.async {
-            self.localTranscriptText = text
+            self.liveTranscriptText = text
+            self.localTranscriptText = LocalTranscriptHistory.renderingActiveTranscript(
+                committedText: self.committedTranscriptText,
+                liveTranscriptText: self.liveTranscriptText
+            )
+            self.transcriptAutoScrollVersion += 1
         }
     }
 
     func speechController(_ controller: SpeechController, didRecognizeText text: String, language: String) {
         DispatchQueue.main.async {
-            self.localTranscriptText = text
+            let committedText = LocalTranscriptHistory.appendingLatestTranscript(
+                text,
+                to: self.committedTranscriptText
+            )
+            self.committedTranscriptText = committedText
+            self.liveTranscriptText = ""
+            self.localTranscriptText = committedText
+            self.transcriptAutoScrollVersion += 1
             self.appendLocalTranscriptRecord(text: text, language: language)
 
             let shouldForward = self.shouldForwardResultToMac
@@ -755,6 +774,8 @@ extension ContentViewModel: SpeechControllerDelegate {
     func speechController(_ controller: SpeechController, didFailWithError error: Error) {
         print("Speech recognition error: \(error)")
         pushToTalkStatusMessage = error.localizedDescription
+        liveTranscriptText = ""
+        localTranscriptText = committedTranscriptText
         appendInboundDataRecord(
             title: localized("log_speech_error_title"),
             detail: error.localizedDescription,

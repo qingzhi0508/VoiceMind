@@ -33,4 +33,30 @@ enum LocalTranscriptHistory {
     ) -> [LocalTranscriptRecord] {
         history.filter { $0.id != id }
     }
+
+    static func appendingLatestTranscript(
+        _ latestText: String,
+        to existingText: String
+    ) -> String {
+        let trimmedLatest = latestText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedExisting = existingText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedLatest.isEmpty else { return trimmedExisting }
+        guard !trimmedExisting.isEmpty else { return trimmedLatest }
+
+        return "\(trimmedExisting)\n\n\(trimmedLatest)"
+    }
+
+    static func renderingActiveTranscript(
+        committedText: String,
+        liveTranscriptText: String
+    ) -> String {
+        let trimmedCommitted = committedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLive = liveTranscriptText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedLive.isEmpty else { return trimmedCommitted }
+        guard !trimmedCommitted.isEmpty else { return trimmedLive }
+
+        return "\(trimmedCommitted)\n\n\(trimmedLive)"
+    }
 }

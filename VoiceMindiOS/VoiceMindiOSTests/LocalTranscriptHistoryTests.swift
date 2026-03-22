@@ -70,4 +70,34 @@ struct LocalTranscriptHistoryTests {
 
         #expect(history.map { $0.text } == ["third", "first"])
     }
+
+    @Test
+    func appendingLatestTranscriptPlacesNewestTextAtBottom() {
+        let combined = LocalTranscriptHistory.appendingLatestTranscript(
+            "latest",
+            to: "older line"
+        )
+
+        #expect(combined == "older line\n\nlatest")
+    }
+
+    @Test
+    func renderingActiveTranscriptAppendsLiveDraftWithoutDuplicatingCommittedText() {
+        let combined = LocalTranscriptHistory.renderingActiveTranscript(
+            committedText: "older line",
+            liveTranscriptText: "latest draft"
+        )
+
+        #expect(combined == "older line\n\nlatest draft")
+    }
+
+    @Test
+    func renderingActiveTranscriptKeepsCommittedTextWhenDraftIsEmpty() {
+        let combined = LocalTranscriptHistory.renderingActiveTranscript(
+            committedText: "older line",
+            liveTranscriptText: "   "
+        )
+
+        #expect(combined == "older line")
+    }
 }

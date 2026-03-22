@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
     enum FocusField: Hashable {
@@ -68,7 +69,10 @@ struct ContentView: View {
 
                     PrimaryRecognitionPage(
                         viewModel: viewModel,
-                        focusedField: $focusedField,
+                        isTranscriptFocused: Binding(
+                            get: { focusedField == .transcriptEditor },
+                            set: { focusedField = $0 ? .transcriptEditor : nil }
+                        ),
                         onDismissKeyboard: dismissKeyboard
                     )
                         .padding()
@@ -120,46 +124,42 @@ struct ContentView: View {
 
 struct TranscriptCard: View {
     @Binding var transcriptText: String
-    let focusedField: FocusState<ContentView.FocusField?>.Binding
+    @Binding var isFocused: Bool
+    let autoScrollVersion: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(String(localized: "transcript_card_title"))
-                .font(.headline)
+        ZStack(alignment: .topLeading) {
+            TranscriptTextView(
+                text: $transcriptText,
+                isFocused: $isFocused,
+                autoScrollVersion: autoScrollVersion
+            )
+            .frame(height: 150)
 
-            ZStack(alignment: .topLeading) {
-                TextEditor(text: $transcriptText)
-                    .font(.body)
-                    .foregroundColor(.primary)
-                    .scrollContentBackground(.hidden)
-                    .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
-                    .focused(focusedField, equals: .transcriptEditor)
-
-                if transcriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(String(localized: "transcript_card_placeholder"))
-                            .font(.body)
-                            .foregroundColor(.primary)
-                        Text(String(localized: "transcript_card_hint"))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.top, 8)
-                    .padding(.leading, 5)
-                    .allowsHitTesting(false)
+            if transcriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(String(localized: "transcript_card_placeholder"))
+                        .font(.body)
+                        .foregroundColor(.primary)
+                    Text(String(localized: "transcript_card_hint"))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
+                .padding(.top, 8)
+                .padding(.leading, 5)
+                .allowsHitTesting(false)
             }
-            .padding()
-            .background(Color(uiColor: .secondarySystemBackground))
-            .cornerRadius(16)
         }
+        .padding()
+        .background(Color(uiColor: .secondarySystemBackground))
+        .cornerRadius(16)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
 struct PrimaryRecognitionPage: View {
     @ObservedObject var viewModel: ContentViewModel
-    let focusedField: FocusState<ContentView.FocusField?>.Binding
+    @Binding var isTranscriptFocused: Bool
     let onDismissKeyboard: () -> Void
 
     var body: some View {
@@ -169,9 +169,10 @@ struct PrimaryRecognitionPage: View {
                     get: { viewModel.localTranscriptText },
                     set: { viewModel.updateLocalTranscriptText($0) }
                 ),
-                focusedField: focusedField
+                isFocused: $isTranscriptFocused,
+                autoScrollVersion: viewModel.transcriptAutoScrollVersion
             )
-                .padding(.bottom, 16)
+                .padding(.bottom, 12)
 
             if viewModel.shouldShowMacConnectionCard {
                 ConnectionStatusCard(
@@ -185,7 +186,7 @@ struct PrimaryRecognitionPage: View {
                 .padding(.bottom, 20)
             }
 
-            Spacer()
+            Spacer(minLength: 0)
 
             RecognitionStatusView(
                 state: viewModel.recognitionState,
@@ -207,8 +208,9 @@ struct PrimaryRecognitionPage: View {
                 }
             )
 
-            Spacer()
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -746,6 +748,96 @@ struct WaveformView: View {
             withAnimation(.linear(duration: 0.04)) {
                 smoothedLevel = newValue
             }
+        }
+    }
+}
+
+struct TranscriptTextView: UIViewRepresentable {
+    @Binding var text: String
+    @Binding var isFocused: Bool
+    let autoScrollVersion: Int
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeUIView(context: Context) -> UITextView {
+        let textView = UITextView()
+        textView.delegate = context.coordinator
+        textView.backgroundColor = .clear
+        textView.font = .preferredFont(forTextStyle: .body)
+        textView.textColor = UIColor.label
+        textView.alwaysBounceVertical = true
+        textView.keyboardDismissMode = .interactive
+        textView.textContainerInset = UIEdgeInsets(top: 12, left: 2, bottom: 34, right: 2)
+        textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textView.text = text
+        return textView
+    }
+
+    func updateUIView(_ uiView: UITextView, context: Context) {
+        context.coordinator.parent = self
+
+        if uiView.text != text {
+            uiView.text = text
+        }
+
+        if isFocused {
+            if !uiView.isFirstResponder {
+                uiView.becomeFirstResponder()
+            }
+        } else if uiView.isFirstResponder {
+            uiView.resignFirstResponder()
+        }
+
+        if context.coordinator.lastAutoScrollVersion != autoScrollVersion {
+            context.coordinator.lastAutoScrollVersion = autoScrollVersion
+            autoScrollIfNeeded(uiView)
+        }
+    }
+
+    private func autoScrollIfNeeded(_ uiView: UITextView) {
+        uiView.layoutIfNeeded()
+
+        let visibleHeight = uiView.bounds.height - uiView.textContainerInset.top - uiView.textContainerInset.bottom
+        let contentHeight = uiView.contentSize.height - uiView.textContainerInset.top - uiView.textContainerInset.bottom
+
+        guard TranscriptAutoScrollPolicy.shouldAutoScroll(
+            contentHeight: contentHeight,
+            visibleHeight: visibleHeight
+        ) else {
+            return
+        }
+
+        let bottomOffset = max(
+            -uiView.adjustedContentInset.top,
+            uiView.contentSize.height - uiView.bounds.height + uiView.adjustedContentInset.bottom
+        )
+
+        DispatchQueue.main.async {
+            uiView.setContentOffset(CGPoint(x: 0, y: bottomOffset), animated: true)
+        }
+    }
+
+    final class Coordinator: NSObject, UITextViewDelegate {
+        var parent: TranscriptTextView
+        var lastAutoScrollVersion: Int
+
+        init(parent: TranscriptTextView) {
+            self.parent = parent
+            self.lastAutoScrollVersion = parent.autoScrollVersion
+        }
+
+        func textViewDidChange(_ textView: UITextView) {
+            parent.text = textView.text ?? ""
+        }
+
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            parent.isFocused = true
+        }
+
+        func textViewDidEndEditing(_ textView: UITextView) {
+            parent.isFocused = false
         }
     }
 }
