@@ -279,6 +279,12 @@ struct ContentView: View {
 
                 NavigationStack {
                     TranscriptHistoryPage(
+                        canSendToMac: { record in
+                            viewModel.canSendTranscriptRecordToMac(record)
+                        },
+                        onSendToMac: { record in
+                            viewModel.sendTranscriptRecordToMac(record)
+                        },
                         history: viewModel.localTranscriptHistory,
                         onDelete: { id in
                             viewModel.removeLocalTranscriptRecord(id: id)
@@ -588,6 +594,8 @@ struct PrimaryRecognitionPage: View {
 }
 
 struct TranscriptHistoryPage: View {
+    let canSendToMac: (LocalTranscriptRecord) -> Bool
+    let onSendToMac: (LocalTranscriptRecord) -> Void
     let history: [LocalTranscriptRecord]
     let onDelete: (UUID) -> Void
     let onUpdate: (UUID, String) -> Void
@@ -625,6 +633,19 @@ struct TranscriptHistoryPage: View {
                                 .contentShape(Rectangle())
                                 .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
                                 .listRowBackground(Color(uiColor: .secondarySystemBackground))
+                                .swipeActions(
+                                    edge: TranscriptHistorySendPolicy.swipeEdge,
+                                    allowsFullSwipe: TranscriptHistorySendPolicy.allowsFullSwipe
+                                ) {
+                                    if canSendToMac(record) {
+                                        Button {
+                                            onSendToMac(record)
+                                        } label: {
+                                            Label(String(localized: "send_button"), systemImage: "paperplane.fill")
+                                        }
+                                        .tint(.blue)
+                                    }
+                                }
                                 .swipeActions(
                                     edge: TranscriptHistoryDeletePolicy.swipeEdge,
                                     allowsFullSwipe: TranscriptHistoryDeletePolicy.allowsFullSwipe
@@ -718,6 +739,12 @@ enum TranscriptHistoryDeletePolicy {
     static let usesTrailingSwipe = true
     static let allowsFullSwipe = true
     static let requiresConfirmation = false
+}
+
+enum TranscriptHistorySendPolicy {
+    static let swipeEdge: HorizontalEdge = .leading
+    static let usesLeadingSwipe = true
+    static let allowsFullSwipe = false
 }
 
 struct TranscriptHistoryRow: View {

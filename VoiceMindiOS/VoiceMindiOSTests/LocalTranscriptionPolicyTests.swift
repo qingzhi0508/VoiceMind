@@ -13,6 +13,39 @@ struct LocalTranscriptionPolicyTests {
     }
 
     @Test
+    func primaryCaptureRequiresConnectionWhenMacCollaborationIsEnabled() {
+        #expect(
+            !LocalTranscriptionPolicy.canStartPrimaryCapture(
+                recognitionState: .idle,
+                hasPermissions: true,
+                sendToMacEnabled: true,
+                preferredMode: .local,
+                connectionState: .disconnected
+            )
+        )
+
+        #expect(
+            LocalTranscriptionPolicy.canStartPrimaryCapture(
+                recognitionState: .idle,
+                hasPermissions: true,
+                sendToMacEnabled: true,
+                preferredMode: .local,
+                connectionState: .connected
+            )
+        )
+
+        #expect(
+            LocalTranscriptionPolicy.canStartPrimaryCapture(
+                recognitionState: .idle,
+                hasPermissions: true,
+                sendToMacEnabled: false,
+                preferredMode: .local,
+                connectionState: .disconnected
+            )
+        )
+    }
+
+    @Test
     func forwardingToMacIsDisabledByDefault() {
         #expect(
             !LocalTranscriptionPolicy.shouldForwardResultToMac(
@@ -171,8 +204,16 @@ struct LocalTranscriptionPolicyTests {
         )
 
         #expect(
-            !LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
+            LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
                 sendToMacEnabled: true,
+                preferredMode: .local,
+                connectionState: .disconnected
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
+                sendToMacEnabled: false,
                 preferredMode: .local,
                 connectionState: .disconnected
             )

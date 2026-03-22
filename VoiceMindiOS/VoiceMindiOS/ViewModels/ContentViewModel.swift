@@ -423,11 +423,44 @@ class ContentViewModel: ObservableObject {
             return
         }
 
+        sendTranscriptTextToMac(
+            trimmedText,
+            language: selectedLanguage
+        )
+    }
+
+    func canSendTranscriptRecordToMac(_ record: LocalTranscriptRecord) -> Bool {
+        LocalTranscriptionPolicy.canManuallyForwardTextToMac(
+            sendToMacEnabled: sendResultsToMacEnabled,
+            connectionState: connectionState,
+            transcriptText: record.text
+        )
+    }
+
+    func sendTranscriptRecordToMac(_ record: LocalTranscriptRecord) {
+        guard canSendTranscriptRecordToMac(record) else {
+            pushToTalkStatusMessage = localized("ptt_manual_send_requires_mac")
+            return
+        }
+
+        sendTranscriptTextToMac(
+            record.text.trimmingCharacters(in: .whitespacesAndNewlines),
+            language: record.language
+        )
+    }
+
+    private func sendTranscriptTextToMac(
+        _ text: String,
+        language: String
+    ) {
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedText.isEmpty else { return }
+
         let sessionId = UUID().uuidString
         let payload = ResultPayload(
             sessionId: sessionId,
             text: trimmedText,
-            language: selectedLanguage
+            language: language
         )
 
         guard let payloadData = try? JSONEncoder().encode(payload) else { return }
@@ -452,7 +485,7 @@ class ContentViewModel: ObservableObject {
         pushToTalkStatusMessage = localized("ptt_manual_send_success")
         appendInboundDataRecord(
             title: localized("log_manual_send_title"),
-            detail: localized("log_manual_send_detail_format", sessionId, selectedLanguage, trimmedText),
+            detail: localized("log_manual_send_detail_format", sessionId, language, trimmedText),
             category: .voice
         )
     }

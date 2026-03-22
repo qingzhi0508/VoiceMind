@@ -32,10 +32,12 @@ enum LocalTranscriptionPolicy {
         preferredMode: HomeTranscriptionMode,
         connectionState: ConnectionState
     ) -> Bool {
-        effectiveHomeTranscriptionMode(
+        guard sendToMacEnabled else { return false }
+        let mode = effectiveHomeTranscriptionMode(
             sendToMacEnabled: sendToMacEnabled,
             preferredMode: preferredMode
-        ) == .mac && connectionState != .connected
+        )
+        return (mode == .mac || mode == .local) && connectionState != .connected
     }
 
     static func canStartLocalRecognition(
@@ -52,6 +54,14 @@ enum LocalTranscriptionPolicy {
         preferredMode: HomeTranscriptionMode,
         connectionState: ConnectionState
     ) -> Bool {
+        guard !shouldPromptForHomeMacAction(
+            sendToMacEnabled: sendToMacEnabled,
+            preferredMode: preferredMode,
+            connectionState: connectionState
+        ) else {
+            return false
+        }
+
         let mode = effectiveHomeTranscriptionMode(
             sendToMacEnabled: sendToMacEnabled,
             preferredMode: preferredMode
