@@ -73,30 +73,17 @@ extension MenuBarController: ConnectionManagerDelegate {
             category: .voice
         )
 
-        // Validate session ID
-        print("🔍 验证 session ID - 当前: \(currentSessionId?.description ?? "nil"), 收到: \(payload.sessionId)")
-        if let currentSessionId {
-            guard payload.sessionId == currentSessionId else {
-                print("Ignoring result with mismatched session ID")
-                appendInboundDataRecord(
-                    title: "忽略识别结果",
-                    detail: "收到的 Session 与当前热键会话不一致。\n当前: \(currentSessionId)\n收到: \(payload.sessionId)",
-                    category: .voice,
-                    severity: .warning
-                )
-                return
-            }
-            print("✅ Session ID 匹配")
-        } else {
-            print("Accepting proactive speech result without active hotkey session")
+        if let currentSessionId, payload.sessionId != currentSessionId {
+            print("Ignoring result with mismatched session ID")
             appendInboundDataRecord(
-                title: "收到同步文本",
-                detail: "当前没有热键会话，按同步文本消息处理，可直接粘贴到当前光标位置。\nSession: \(payload.sessionId)",
-                category: .voice
+                title: "忽略识别结果",
+                detail: "收到的 Session 与当前活动会话不一致。\n当前: \(currentSessionId)\n收到: \(payload.sessionId)",
+                category: .voice,
+                severity: .warning
             )
+            return
         }
 
-        // Clear session
         currentSessionId = nil
         sessionTimer?.invalidate()
         sessionTimer = nil
@@ -244,84 +231,7 @@ extension MenuBarController: ConnectionManagerDelegate {
             self.showTextCopyAlert(text, error: error.localizedDescription)
         }
     }
-}
-
-// MARK: - HotkeyMonitorDelegate
-extension MenuBarController: HotkeyMonitorDelegate {
-    func hotkeyMonitor(_ monitor: HotkeyMonitor, didPressHotkey sessionId: String) {
-        guard case .paired = connectionManager.pairingState else {
-            return
-        }
-
-        captureInjectionTargetApplication()
-        currentSessionId = sessionId
-
-        // Start 30-second timeout
-        sessionTimer?.invalidate()
-        sessionTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: false) { [weak self] _ in
-            self?.handleSessionTimeout()
-        }
-
-        // Send startListen message
-        let payload = StartListenPayload(sessionId: sessionId)
-        guard let payloadData = try? JSONEncoder().encode(payload) else { return }
-
-        let timestamp = Date()
-        let hmac = connectionManager.hmacValidator?.generateHMACForEnvelope(
-            type: .startListen,
-            payload: payloadData,
-            timestamp: timestamp,
-            deviceId: connectionManager.deviceId
-        )
-
-        let envelope = MessageEnvelope(
-            type: .startListen,
-            payload: payloadData,
-            timestamp: timestamp,
-            deviceId: connectionManager.deviceId,
-            hmac: hmac
-        )
-
-        connectionManager.send(envelope)
-    }
-
-    func hotkeyMonitor(_ monitor: HotkeyMonitor, didReleaseHotkey sessionId: String) {
-        guard sessionId == currentSessionId else { return }
-
-        // Send stopListen message
-        let payload = StopListenPayload(sessionId: sessionId)
-        guard let payloadData = try? JSONEncoder().encode(payload) else { return }
-
-        let timestamp = Date()
-        let hmac = connectionManager.hmacValidator?.generateHMACForEnvelope(
-            type: .stopListen,
-            payload: payloadData,
-            timestamp: timestamp,
-            deviceId: connectionManager.deviceId
-        )
-
-        let envelope = MessageEnvelope(
-            type: .stopListen,
-            payload: payloadData,
-            timestamp: timestamp,
-            deviceId: connectionManager.deviceId,
-            hmac: hmac
-        )
-
-        connectionManager.send(envelope)
-    }
-
-    private func handleSessionTimeout() {
-        appendInboundDataRecord(
-            title: "语音会话超时",
-            detail: "30 秒内未收到 iPhone 返回结果，已结束当前会话。",
-            category: .voice,
-            severity: .warning
-        )
-        currentSessionId = nil
-        showError("30秒内未收到 iPhone 响应")
-    }
-
+    
     private func recordConnectionStateChange(_ state: ConnectionState) {
         switch state {
         case .disconnected:

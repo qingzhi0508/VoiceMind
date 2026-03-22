@@ -6,7 +6,6 @@ import SharedCore
 class MenuBarController: NSObject, ObservableObject {
     var statusItem: NSStatusItem!
     let connectionManager = ConnectionManager()
-    let hotkeyMonitor: HotkeyMonitor
     var textInjector: TextInjectionProtocol!
     let settings = AppSettings.shared
 
@@ -19,7 +18,6 @@ class MenuBarController: NSObject, ObservableObject {
     @Published var inboundDataRecords: [InboundDataRecord]
     @Published var voiceRecognitionRecords: [VoiceRecognitionRecord]
     @Published var accessibilityStatus: PermissionStatus
-    @Published var inputMonitoringStatus: PermissionStatus
     @Published var isServiceRunning = false
 
     // 笔记相关状态
@@ -32,7 +30,6 @@ class MenuBarController: NSObject, ObservableObject {
 
     var pairingWindow: NSWindow?
     var permissionsWindow: NSWindow?
-    var hotkeySettingsWindow: NSWindow?
     var statusWindow: NSWindow?
     var onboardingWindow: NSWindow?
     var usageGuideWindow: NSWindow?
@@ -41,14 +38,12 @@ class MenuBarController: NSObject, ObservableObject {
     private let voiceRecognitionHistoryStore: VoiceRecognitionHistoryStore
 
     init(voiceRecognitionHistoryStore: VoiceRecognitionHistoryStore = VoiceRecognitionHistoryStore()) {
-        self.hotkeyMonitor = HotkeyMonitor()
         self.pairingState = connectionManager.pairingState
         self.connectionState = connectionManager.connectionState
         self.pairingProgressMessage = connectionManager.pairingProgressMessage
         self.inboundDataRecords = []
         self.voiceRecognitionRecords = []
         self.accessibilityStatus = PermissionsManager.checkAccessibility()
-        self.inputMonitoringStatus = PermissionsManager.checkInputMonitoring()
         self.voiceRecognitionHistoryStore = voiceRecognitionHistoryStore
         super.init()
 
@@ -130,14 +125,6 @@ class MenuBarController: NSObject, ObservableObject {
 
     func setupConnectionManager() {
         connectionManager.delegate = self
-    }
-
-    func setupHotkeyMonitor() {
-        hotkeyMonitor.delegate = self
-
-        if hotkeyMonitor.start() == false {
-            showHotkeyPermissionError()
-        }
     }
 
     func captureInjectionTargetApplication() {
@@ -283,31 +270,17 @@ class MenuBarController: NSObject, ObservableObject {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    func showHotkeySettings() {
-        openHotkeySettings()
-    }
-
     func requestAccessibilityPermissionFromUI() {
         PermissionsManager.requestAccessibility()
         refreshPermissionState()
     }
 
-    func requestInputMonitoringPermissionFromUI() {
-        PermissionsManager.requestInputMonitoring()
-        refreshPermissionState()
-    }
-
     func refreshPermissionState() {
         accessibilityStatus = PermissionsManager.checkAccessibility()
-        inputMonitoringStatus = PermissionsManager.checkInputMonitoring()
     }
 
     func showPairingWindowFromUI() {
         startPairing()
-    }
-
-    func openHotkeySettingsFromUI() {
-        openHotkeySettings()
     }
 
     func openPermissionsFromUI() {
@@ -316,32 +289,6 @@ class MenuBarController: NSObject, ObservableObject {
 
     func unpairDeviceFromUI() {
         unpairDevice()
-    }
-
-    @objc private func openHotkeySettings() {
-        if hotkeySettingsWindow == nil {
-            let contentView = HotkeySettingsWindow(
-                onSave: { [weak self] config in
-                    self?.hotkeyMonitor.updateConfiguration(config)
-                    self?.hotkeySettingsWindow?.close()
-                }
-            )
-
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 400, height: 350),
-                styleMask: [.titled, .closable],
-                backing: .buffered,
-                defer: false
-            )
-            window.title = AppLocalization.localizedString("window_title_hotkey")
-            window.contentView = NSHostingView(rootView: contentView)
-            window.center()
-            window.delegate = self
-            hotkeySettingsWindow = window
-        }
-
-        hotkeySettingsWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc private func openPermissions() {
@@ -389,14 +336,12 @@ class MenuBarController: NSObject, ObservableObject {
         pendingInjectionTargetAppPID = nil
 
         stopNetworkServices()
-        hotkeyMonitor.stop()
 
-        [pairingWindow, permissionsWindow, hotkeySettingsWindow, statusWindow, onboardingWindow, usageGuideWindow]
+        [pairingWindow, permissionsWindow, statusWindow, onboardingWindow, usageGuideWindow]
             .forEach { $0?.close() }
 
         pairingWindow = nil
         permissionsWindow = nil
-        hotkeySettingsWindow = nil
         statusWindow = nil
         onboardingWindow = nil
         usageGuideWindow = nil
@@ -503,20 +448,6 @@ class MenuBarController: NSObject, ObservableObject {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(text, forType: .string)
         }
-    }
-
-    func showHotkeyPermissionError() {
-        let missingPermissions = HotkeyMonitor.missingPermissionsForMonitoring(
-            accessibility: PermissionsManager.checkAccessibility(),
-            inputMonitoring: PermissionsManager.checkInputMonitoring()
-        )
-
-        if missingPermissions.contains(.inputMonitoring) {
-            PermissionsManager.showPermissionAlert(for: .inputMonitoring)
-            return
-        }
-
-        showError(String(localized: "hotkey_permission_error"))
     }
 
     func showTextInjectionPermissionError(with text: String) {
@@ -719,8 +650,6 @@ extension MenuBarController: NSWindowDelegate {
                 pairingWindow = nil
             } else if window === permissionsWindow {
                 permissionsWindow = nil
-            } else if window === hotkeySettingsWindow {
-                hotkeySettingsWindow = nil
             } else if window === statusWindow {
                 statusWindow = nil
             } else if window === onboardingWindow {

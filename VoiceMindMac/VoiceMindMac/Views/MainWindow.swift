@@ -1825,7 +1825,6 @@ enum NotesTextSelectionPolicy {
 struct PermissionsTab: View {
     var showsInlineHeader = true
     @State private var accessibilityGranted = false
-    @State private var inputMonitoringGranted = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -1847,21 +1846,6 @@ struct PermissionsTab: View {
                     }
 
                     Text(String(localized: "permissions_tab_accessibility_desc"))
-                        .font(.caption)
-                        .foregroundColor(MainWindowColors.secondaryText)
-
-                    Divider()
-
-                    HStack {
-                        Image(systemName: inputMonitoringGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundColor(inputMonitoringGranted ? .green : .red)
-                        Text(String(localized: "permissions_tab_input_title"))
-                        Spacer()
-                        Text(inputMonitoringGranted ? String(localized: "permissions_tab_granted") : String(localized: "permissions_tab_denied"))
-                            .foregroundColor(MainWindowColors.secondaryText)
-                    }
-
-                    Text(String(localized: "permissions_tab_input_desc"))
                         .font(.caption)
                         .foregroundColor(MainWindowColors.secondaryText)
                 }
@@ -1895,12 +1879,10 @@ struct PermissionsTab: View {
 
     private func checkPermissions() {
         accessibilityGranted = PermissionsManager.checkAccessibility() == .granted
-        inputMonitoringGranted = PermissionsManager.checkInputMonitoring() == .granted
     }
 
     private func requestPermissions() {
         PermissionsManager.requestAccessibility()
-        PermissionsManager.requestInputMonitoring()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             checkPermissions()

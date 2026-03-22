@@ -2,7 +2,6 @@ import SwiftUI
 
 struct PermissionsWindow: View {
     @State private var accessibilityGranted = false
-    @State private var inputMonitoringGranted = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -19,15 +18,6 @@ struct PermissionsWindow: View {
                         checkPermissions()
                     }
                 )
-
-                PermissionRow(
-                    title: String(localized: "permission_input_monitor_title"),
-                    description: String(localized: "permission_input_monitor_desc"),
-                    isGranted: inputMonitoringGranted,
-                    onRequest: {
-                        PermissionsManager.requestInputMonitoring()
-                    }
-                )
             }
             .padding()
 
@@ -35,7 +25,7 @@ struct PermissionsWindow: View {
                 checkPermissions()
             }
         }
-        .frame(width: 500, height: 300)
+        .frame(width: 500, height: 220)
         .padding()
         .onAppear {
             checkPermissions()
@@ -44,7 +34,6 @@ struct PermissionsWindow: View {
 
     private func checkPermissions() {
         accessibilityGranted = PermissionsManager.checkAccessibility() == .granted
-        inputMonitoringGranted = PermissionsManager.checkInputMonitoring() == .granted
     }
 }
 

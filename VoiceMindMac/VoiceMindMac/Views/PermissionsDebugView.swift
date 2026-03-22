@@ -2,7 +2,6 @@ import SwiftUI
 
 struct PermissionsDebugView: View {
     @State private var accessibilityGranted = false
-    @State private var inputMonitoringGranted = false
     @State private var debugInfo = ""
 
     var body: some View {
@@ -18,14 +17,6 @@ struct PermissionsDebugView: View {
                         Text("辅助功能")
                         Spacer()
                         Text(accessibilityGranted ? "已授予" : "未授予")
-                    }
-
-                    HStack {
-                        Image(systemName: inputMonitoringGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundColor(inputMonitoringGranted ? .green : .red)
-                        Text("输入监控")
-                        Spacer()
-                        Text(inputMonitoringGranted ? "已授予" : "未授予")
                     }
                 }
                 .padding()
@@ -66,18 +57,8 @@ struct PermissionsDebugView: View {
                 }
                 .buttonStyle(.borderedProminent)
 
-                Button("3️⃣ 请求输入监控权限") {
-                    requestInputMonitoring()
-                }
-                .buttonStyle(.borderedProminent)
-
-                Button("4️⃣ 打开系统设置 - 辅助功能") {
+                Button("3️⃣ 打开系统设置 - 辅助功能") {
                     openAccessibilitySettings()
-                }
-                .buttonStyle(.bordered)
-
-                Button("5️⃣ 打开系统设置 - 输入监控") {
-                    openInputMonitoringSettings()
                 }
                 .buttonStyle(.bordered)
             }
@@ -95,19 +76,13 @@ struct PermissionsDebugView: View {
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false]
         accessibilityGranted = AXIsProcessTrustedWithOptions(options)
 
-        let inputStatus = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
-        inputMonitoringGranted = (inputStatus == kIOHIDAccessTypeGranted)
-
         debugInfo = """
         检查时间: \(Date())
         辅助功能: \(accessibilityGranted ? "✅" : "❌")
-        输入监控: \(inputMonitoringGranted ? "✅" : "❌")
-        输入监控状态码: \(inputStatus)
         """
 
         print("🔍 权限检查:")
         print("   辅助功能: \(accessibilityGranted ? "✅" : "❌")")
-        print("   输入监控: \(inputMonitoringGranted ? "✅" : "❌")")
     }
 
     private func requestAccessibilityWithPrompt() {
@@ -135,34 +110,10 @@ struct PermissionsDebugView: View {
             checkPermissions()
         }
     }
-
-    private func requestInputMonitoring() {
-        print("🔐 请求输入监控权限...")
-
-        let result = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
-
-        debugInfo += "\n\n请求输入监控权限:"
-        debugInfo += "\n时间: \(Date())"
-        debugInfo += "\n结果: \(result ? "已授予" : "未授予")"
-
-        print("📝 请求结果: \(result)")
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            checkPermissions()
-        }
-    }
-
     private func openAccessibilitySettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
             debugInfo += "\n\n打开系统设置 - 辅助功能"
-        }
-    }
-
-    private func openInputMonitoringSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
-            NSWorkspace.shared.open(url)
-            debugInfo += "\n\n打开系统设置 - 输入监控"
         }
     }
 }

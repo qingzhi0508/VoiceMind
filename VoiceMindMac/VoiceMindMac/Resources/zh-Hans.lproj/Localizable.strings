@@ -22,7 +22,7 @@
 "main_speech_subtitle" = "切换识别引擎、模型和语言偏好。";
 "main_records_subtitle" = "查询最近 30 天的语音识别文本，包含 Mac 本地和 iPhone 同步结果。";
 "main_notes_subtitle" = "集中查看最近的文本结果，并进行本地录音输入。";
-"main_permissions_subtitle" = "检查辅助功能和输入监控权限是否就绪。";
+"main_permissions_subtitle" = "检查辅助功能权限是否就绪。";
 "main_settings_subtitle" = "管理文本注入、语言与网络服务参数。";
 
 "hotkey_title" = "热键设置";

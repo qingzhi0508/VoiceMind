@@ -1,14 +1,14 @@
 # VoiceMind (语灵)
 
-VoiceMind 是一个 macOS + iOS 语音输入系统，通过 Mac 快捷键触发 iPhone 语音识别，将识别结果直接注入到 Mac 的当前输入位置。
+VoiceMind 是一个 macOS + iOS 语音输入系统，通过局域网连接 iPhone 与 Mac，将识别结果直接注入到 Mac 的当前输入位置。
 
 ## 功能特点
 
-- 🎤 **快捷键触发**：在 Mac 上按住快捷键（默认 Option+Space）即可开始语音输入
 - 🔒 **安全配对**：使用 6 位数字配对码和 HMAC-SHA256 加密通信
 - 🌐 **本地网络**：通过 Bonjour 自动发现，无需手动配置 IP
 - 🗣️ **多语言支持**：支持中文（普通话）和英文
 - ⚡ **实时注入**：识别结果直接注入到当前光标位置，无需剪贴板
+- 🎙️ **本地识别**：Mac 端可使用 Apple Speech 进行本地语音识别
 
 ## 系统要求
 
@@ -54,7 +54,7 @@ open VoiceMind.xcworkspace
    - 点击"配对"
 
 3. **授予权限**：
-   - **Mac**: 需要授予辅助功能权限（用于全局快捷键和文本注入）
+   - **Mac**: 需要授予辅助功能权限；如使用本地识别，还需要麦克风和语音识别权限
    - **iPhone**: 需要授予麦克风和语音识别权限
 
 ### 日常使用
@@ -62,18 +62,9 @@ open VoiceMind.xcworkspace
 1. 确保 Mac 和 iPhone 都在同一个 Wi-Fi 网络
 2. 在 Mac 上启动 VoiceMindMac（菜单栏图标显示为绿色表示已连接）
 3. 在 iPhone 上启动 VoiceMindiOS（显示"已连接"状态）
-4. 在 Mac 的任意应用中：
-   - 按住 Option+Space 开始语音输入
-   - 对着 iPhone 说话
-   - 松开 Option+Space 停止录音
-   - 识别结果会自动注入到光标位置
-
-### 自定义快捷键
-
-1. 点击 Mac 菜单栏图标
-2. 选择"快捷键设置"
-3. 点击输入框，按下你想要的快捷键组合
-4. 点击"保存"
+4. 在 Mac 的任意应用中保持光标位于可编辑输入区域
+5. 在 iPhone 上开始语音输入
+6. 识别结果会自动注入到 Mac 当前光标位置
 
 ### 切换语言
 
@@ -123,12 +114,6 @@ open VoiceMind.xcworkspace
 - 检查两台设备是否在同一个 Wi-Fi 网络
 - 尝试在 iPhone 上重启应用
 
-### 快捷键无响应
-
-- 检查是否已授予辅助功能权限：
-  - 系统设置 → 隐私与安全性 → 辅助功能
-  - 确保 VoiceMindMac 已勾选
-
 ### 识别结果无法注入
 
 - 检查是否已授予辅助功能权限
@@ -157,7 +142,7 @@ VoiceMind/
 │       └── Models/            # 数据模型
 ├── VoiceMindMac/             # macOS 应用
 │   ├── Network/               # 网络层（服务器、Bonjour）
-│   ├── Hotkey/                # 快捷键监听
+│   ├── Speech/                # 本地语音识别
 │   ├── TextInjection/         # 文本注入
 │   ├── Permissions/           # 权限管理
 │   └── MenuBar/               # 菜单栏 UI

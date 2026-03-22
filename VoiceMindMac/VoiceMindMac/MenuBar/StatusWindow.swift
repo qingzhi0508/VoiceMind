@@ -18,8 +18,7 @@ struct StatusWindow: View {
                 // System Information
                 SystemInfoSection(
                     localIP: localIPAddress,
-                    accessibilityStatus: controller.accessibilityStatus,
-                    inputMonitoringStatus: controller.inputMonitoringStatus
+                    accessibilityStatus: controller.accessibilityStatus
                 )
 
                 // Device Connection Status
@@ -167,7 +166,6 @@ struct HeaderSection: View {
 struct SystemInfoSection: View {
     let localIP: String
     let accessibilityStatus: PermissionStatus
-    let inputMonitoringStatus: PermissionStatus
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {

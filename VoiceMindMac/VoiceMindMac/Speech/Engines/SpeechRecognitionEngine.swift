@@ -1,12 +1,12 @@
 import Foundation
 
 /// 语音识别引擎协议
-/// 所有语音识别引擎（Apple Speech、SenseVoice 等）都必须实现此协议
+/// 所有语音识别引擎都必须实现此协议
 protocol SpeechRecognitionEngine: AnyObject {
     /// 引擎唯一标识符（如 "apple-speech", "sensevoice"）
     var identifier: String { get }
 
-    /// 引擎显示名称（如 "Apple Speech", "SenseVoice"）
+    /// 引擎显示名称（如 "Apple Speech"）
     var displayName: String { get }
 
     /// 支持的语言列表（如 ["zh-CN", "en-US"]）

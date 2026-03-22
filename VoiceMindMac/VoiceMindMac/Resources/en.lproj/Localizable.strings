@@ -21,7 +21,7 @@
 "main_speech_subtitle" = "Manage recognition engines, models, and language preferences.";
 "main_records_subtitle" = "Browse the last 30 days of voice transcripts from local Mac capture and synced iPhone text.";
 "main_notes_subtitle" = "Review the latest text results and trigger local recording input.";
-"main_permissions_subtitle" = "Check whether Accessibility and Input Monitoring are ready.";
+"main_permissions_subtitle" = "Check whether Accessibility is ready.";
 "main_settings_subtitle" = "Adjust text injection, language, and network service settings.";
 
 "hotkey_title" = "Hotkey Settings";
