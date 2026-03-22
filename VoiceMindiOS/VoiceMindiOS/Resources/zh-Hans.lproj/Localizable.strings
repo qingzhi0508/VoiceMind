@@ -7,6 +7,9 @@
 "ok_button" = "确定";
 "cancel_button" = "取消";
 "reconnect_button" = "重连";
+"home_mac_action_pair_button" = "重新配对";
+"home_mac_action_alert_title" = "Mac 未连接";
+"home_mac_action_alert_message" = "当前已切换到 Mac 转录，但还没有连接成功。你可以重新连接，或重新进入配对。";
 
 "connection_status_unpaired" = "未配对";
 "connection_status_connected" = "已连接";
@@ -22,6 +25,7 @@
 "recognition_pair_now" = "进行配对";
 "recognition_hold_to_talk" = "按住录音";
 "recognition_ready" = "准备就绪";
+"recognition_mac_unavailable" = "Mac 未连接";
 "recognition_drag_up_to_send" = "上滑到这里发送到 Mac";
 "recognition_release_to_send" = "松开发送到 Mac";
 "recognition_listening" = "正在聆听...";
@@ -242,6 +246,8 @@
 "ptt_local_saved_and_sent" = "转写结果已显示在上方，并同步到 Mac。";
 "ptt_manual_send_success" = "已将当前文字内容发送到 Mac。";
 "ptt_manual_send_requires_mac" = "需要先打开 Mac 协同并连接到 Mac，才能发送当前文字。";
+"home_mode_switch_to_mac" = "切换到 Mac 转录";
+"home_mode_switch_to_local" = "切换到本地转录";
 "transcript_card_title" = "转写结果";
 "transcript_card_placeholder" = "按住下方按钮开始录音。";
 "transcript_card_hint" = "这里的内容可以手动编辑输入，按住录音并上滑可发送到 Mac。";

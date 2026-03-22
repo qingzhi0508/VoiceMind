@@ -1,6 +1,33 @@
 import Foundation
 
+enum HomeTranscriptionMode: String {
+    case local
+    case mac
+}
+
 enum LocalTranscriptionPolicy {
+    static func effectiveHomeTranscriptionMode(
+        sendToMacEnabled: Bool,
+        preferredMode: HomeTranscriptionMode
+    ) -> HomeTranscriptionMode {
+        sendToMacEnabled ? preferredMode : .local
+    }
+
+    static func shouldShowTranscriptPreviewOnHome(mode: HomeTranscriptionMode) -> Bool {
+        mode == .local
+    }
+
+    static func shouldPromptForHomeMacAction(
+        sendToMacEnabled: Bool,
+        preferredMode: HomeTranscriptionMode,
+        connectionState: ConnectionState
+    ) -> Bool {
+        effectiveHomeTranscriptionMode(
+            sendToMacEnabled: sendToMacEnabled,
+            preferredMode: preferredMode
+        ) == .mac && connectionState != .connected
+    }
+
     static func canStartLocalRecognition(
         recognitionState: RecognitionState,
         hasPermissions: Bool
@@ -8,12 +35,39 @@ enum LocalTranscriptionPolicy {
         hasPermissions && isIdle(recognitionState)
     }
 
+    static func canStartPrimaryCapture(
+        recognitionState: RecognitionState,
+        hasPermissions: Bool,
+        sendToMacEnabled: Bool,
+        preferredMode: HomeTranscriptionMode,
+        connectionState: ConnectionState
+    ) -> Bool {
+        let mode = effectiveHomeTranscriptionMode(
+            sendToMacEnabled: sendToMacEnabled,
+            preferredMode: preferredMode
+        )
+
+        switch mode {
+        case .local:
+            return canStartLocalRecognition(
+                recognitionState: recognitionState,
+                hasPermissions: hasPermissions
+            )
+        case .mac:
+            return hasPermissions && isIdle(recognitionState) && connectionState == .connected
+        }
+    }
+
     static func shouldForwardResultToMac(
         sendToMacEnabled: Bool,
+        preferredMode: HomeTranscriptionMode,
         pairingState: PairingState,
         connectionState: ConnectionState
     ) -> Bool {
-        guard sendToMacEnabled else { return false }
+        guard effectiveHomeTranscriptionMode(
+            sendToMacEnabled: sendToMacEnabled,
+            preferredMode: preferredMode
+        ) == .mac else { return false }
         guard case .paired = pairingState else { return false }
         guard connectionState == .connected else { return false }
         return true
@@ -49,13 +103,19 @@ enum LocalTranscriptionPolicy {
     static func idleStatusMessageKey(
         hasPermissions: Bool,
         sendToMacEnabled: Bool,
+        preferredMode: HomeTranscriptionMode,
         connectionState: ConnectionState
     ) -> String {
         guard hasPermissions else { return "ptt_local_permissions_required" }
-        if sendToMacEnabled && connectionState == .connected {
-            return "ptt_local_ready_and_sync"
+        switch effectiveHomeTranscriptionMode(
+            sendToMacEnabled: sendToMacEnabled,
+            preferredMode: preferredMode
+        ) {
+        case .local:
+            return "ptt_local_ready"
+        case .mac:
+            return connectionState == .connected ? "ptt_hold_to_talk" : "ptt_connect_to_talk"
         }
-        return "ptt_local_ready"
     }
 
     private static func isIdle(_ state: RecognitionState) -> Bool {

@@ -20,6 +20,17 @@ class ContentViewModel: ObservableObject {
     @Published var localTranscriptText: String = ""
     @Published var localTranscriptHistory: [LocalTranscriptRecord] = []
     @Published var transcriptAutoScrollVersion: Int = 0
+    @Published var preferredHomeTranscriptionMode: HomeTranscriptionMode {
+        didSet {
+            UserDefaults.standard.set(
+                preferredHomeTranscriptionMode.rawValue,
+                forKey: preferredHomeTranscriptionModeKey
+            )
+            if recognitionState == .idle {
+                refreshIdleStatusMessage()
+            }
+        }
+    }
     @Published var sendResultsToMacEnabled: Bool {
         didSet {
             UserDefaults.standard.set(sendResultsToMacEnabled, forKey: sendResultsToMacEnabledKey)
@@ -53,6 +64,7 @@ class ContentViewModel: ObservableObject {
     private let lastKnownDeviceNameKey = "voicerelay.lastKnownDeviceName"
     private let sendResultsToMacEnabledKey = "voicemind.sendResultsToMacEnabled"
     private let localTranscriptHistoryKey = "voicemind.localTranscriptHistory"
+    private let preferredHomeTranscriptionModeKey = "voicemind.preferredHomeTranscriptionMode"
 
     private let connectionManager = ConnectionManager()
     private let speechController = SpeechController()
@@ -80,6 +92,9 @@ class ContentViewModel: ObservableObject {
     init() {
         self.sendResultsToMacEnabled = UserDefaults.standard.bool(forKey: sendResultsToMacEnabledKey)
         self.localTranscriptHistory = Self.loadLocalTranscriptHistory(forKey: localTranscriptHistoryKey)
+        self.preferredHomeTranscriptionMode = HomeTranscriptionMode(
+            rawValue: UserDefaults.standard.string(forKey: preferredHomeTranscriptionModeKey) ?? ""
+        ) ?? .local
         connectionManager.delegate = self
         speechController.delegate = self
         audioStreamController.delegate = self
@@ -217,7 +232,12 @@ class ContentViewModel: ObservableObject {
         liveTranscriptText = ""
         localTranscriptText = clearedTranscriptText
 
-        if shouldForwardResultToMac {
+        if effectiveHomeTranscriptionMode == .mac {
+            guard shouldForwardResultToMac else {
+                pushToTalkStatusMessage = localized("ptt_connect_to_talk")
+                return
+            }
+
             do {
                 let sessionId = UUID().uuidString
                 manualSessionId = sessionId
@@ -267,9 +287,12 @@ class ContentViewModel: ObservableObject {
     }
 
     var canStartPushToTalk: Bool {
-        LocalTranscriptionPolicy.canStartLocalRecognition(
+        LocalTranscriptionPolicy.canStartPrimaryCapture(
             recognitionState: recognitionState,
-            hasPermissions: checkPermissions()
+            hasPermissions: checkPermissions(),
+            sendToMacEnabled: sendResultsToMacEnabled,
+            preferredMode: preferredHomeTranscriptionMode,
+            connectionState: connectionState
         )
     }
 
@@ -324,7 +347,30 @@ class ContentViewModel: ObservableObject {
     }
 
     var shouldShowMacConnectionCard: Bool {
-        LocalTranscriptionPolicy.shouldShowMacPairingOptions(sendToMacEnabled: sendResultsToMacEnabled)
+        false
+    }
+
+    var canShowHomeTranscriptionModeToggle: Bool {
+        sendResultsToMacEnabled
+    }
+
+    var effectiveHomeTranscriptionMode: HomeTranscriptionMode {
+        LocalTranscriptionPolicy.effectiveHomeTranscriptionMode(
+            sendToMacEnabled: sendResultsToMacEnabled,
+            preferredMode: preferredHomeTranscriptionMode
+        )
+    }
+
+    var shouldShowTranscriptPreviewOnHome: Bool {
+        LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(mode: effectiveHomeTranscriptionMode)
+    }
+
+    var shouldPromptForHomeMacAction: Bool {
+        LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
+            sendToMacEnabled: sendResultsToMacEnabled,
+            preferredMode: preferredHomeTranscriptionMode,
+            connectionState: connectionState
+        )
     }
 
     private var isPaired: Bool {
@@ -337,6 +383,7 @@ class ContentViewModel: ObservableObject {
     private var shouldForwardResultToMac: Bool {
         LocalTranscriptionPolicy.shouldForwardResultToMac(
             sendToMacEnabled: sendResultsToMacEnabled,
+            preferredMode: preferredHomeTranscriptionMode,
             pairingState: pairingState,
             connectionState: connectionState
         )
@@ -347,11 +394,21 @@ class ContentViewModel: ObservableObject {
     }
 
     var canManuallyForwardCurrentTextToMac: Bool {
-        LocalTranscriptionPolicy.canManuallyForwardTextToMac(
+        guard effectiveHomeTranscriptionMode == .local else { return false }
+        return LocalTranscriptionPolicy.canManuallyForwardTextToMac(
             sendToMacEnabled: sendResultsToMacEnabled,
             connectionState: connectionState,
             transcriptText: localTranscriptText
         )
+    }
+
+    func toggleHomeTranscriptionMode() {
+        guard sendResultsToMacEnabled else {
+            preferredHomeTranscriptionMode = .local
+            return
+        }
+
+        preferredHomeTranscriptionMode = preferredHomeTranscriptionMode == .local ? .mac : .local
     }
 
     func sendCurrentTranscriptToMac() {
@@ -484,6 +541,11 @@ class ContentViewModel: ObservableObject {
         Self.saveLocalTranscriptHistory(localTranscriptHistory, forKey: localTranscriptHistoryKey)
     }
 
+    func updateLocalTranscriptRecord(id: UUID, text: String) {
+        localTranscriptHistory = LocalTranscriptHistory.updating(id: id, text: text, in: localTranscriptHistory)
+        Self.saveLocalTranscriptHistory(localTranscriptHistory, forKey: localTranscriptHistoryKey)
+    }
+
     private func appendInboundDataRecord(
         title: String,
         detail: String,
@@ -509,6 +571,7 @@ class ContentViewModel: ObservableObject {
         let key = LocalTranscriptionPolicy.idleStatusMessageKey(
             hasPermissions: checkPermissions(),
             sendToMacEnabled: sendResultsToMacEnabled,
+            preferredMode: preferredHomeTranscriptionMode,
             connectionState: connectionState
         )
         pushToTalkStatusMessage = localized(key)

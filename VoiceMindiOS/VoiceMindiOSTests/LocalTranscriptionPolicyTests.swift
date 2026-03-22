@@ -17,6 +17,7 @@ struct LocalTranscriptionPolicyTests {
         #expect(
             !LocalTranscriptionPolicy.shouldForwardResultToMac(
                 sendToMacEnabled: false,
+                preferredMode: .local,
                 pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
                 connectionState: .connected
             )
@@ -28,6 +29,7 @@ struct LocalTranscriptionPolicyTests {
         #expect(
             LocalTranscriptionPolicy.shouldForwardResultToMac(
                 sendToMacEnabled: true,
+                preferredMode: .mac,
                 pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
                 connectionState: .connected
             )
@@ -36,6 +38,7 @@ struct LocalTranscriptionPolicyTests {
         #expect(
             !LocalTranscriptionPolicy.shouldForwardResultToMac(
                 sendToMacEnabled: true,
+                preferredMode: .mac,
                 pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
                 connectionState: .disconnected
             )
@@ -74,6 +77,80 @@ struct LocalTranscriptionPolicyTests {
             LocalTranscriptionPolicy.shouldAutoReconnectToMac(
                 sendToMacEnabled: true,
                 pairingState: .paired(deviceId: "ios-1", deviceName: "cayden")
+            )
+        )
+    }
+
+    @Test
+    func effectiveHomeModeFallsBackToLocalWhenMacCollaborationIsOff() {
+        #expect(
+            LocalTranscriptionPolicy.effectiveHomeTranscriptionMode(
+                sendToMacEnabled: false,
+                preferredMode: .mac
+            ) == .local
+        )
+    }
+
+    @Test
+    func effectiveHomeModeUsesPreferredModeWhenMacCollaborationIsOn() {
+        #expect(
+            LocalTranscriptionPolicy.effectiveHomeTranscriptionMode(
+                sendToMacEnabled: true,
+                preferredMode: .mac
+            ) == .mac
+        )
+    }
+
+    @Test
+    func macModeHidesTranscriptPreviewOnHome() {
+        #expect(LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(mode: .local))
+        #expect(!LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(mode: .mac))
+    }
+
+    @Test
+    func macModeRequiresActionPromptWhenMacIsNotConnected() {
+        #expect(
+            LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
+                sendToMacEnabled: true,
+                preferredMode: .mac,
+                connectionState: .disconnected
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
+                sendToMacEnabled: true,
+                preferredMode: .mac,
+                connectionState: .connected
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
+                sendToMacEnabled: true,
+                preferredMode: .local,
+                connectionState: .disconnected
+            )
+        )
+    }
+
+    @Test
+    func forwardingToMacRequiresMacModeAndConnection() {
+        #expect(
+            !LocalTranscriptionPolicy.shouldForwardResultToMac(
+                sendToMacEnabled: true,
+                preferredMode: .local,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
+                connectionState: .connected
+            )
+        )
+
+        #expect(
+            LocalTranscriptionPolicy.shouldForwardResultToMac(
+                sendToMacEnabled: true,
+                preferredMode: .mac,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
+                connectionState: .connected
             )
         )
     }

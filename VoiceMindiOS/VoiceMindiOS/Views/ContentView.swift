@@ -70,6 +70,17 @@ enum TranscriptTextViewSyncPolicy {
     }
 }
 
+enum TranscriptHistoryEditingPolicy {
+    static func shouldAutoSaveOnBackgroundTap(isEditing: Bool) -> Bool {
+        isEditing
+    }
+
+    static func savedText(originalText: String, draftText: String) -> String {
+        let trimmedDraft = draftText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedDraft.isEmpty ? originalText : trimmedDraft
+    }
+}
+
 struct ContentView: View {
     enum FocusField: Hashable {
         case transcriptEditor
@@ -159,6 +170,9 @@ struct ContentView: View {
                         onDelete: { id in
                             viewModel.removeLocalTranscriptRecord(id: id)
                         },
+                        onUpdate: { id, text in
+                            viewModel.updateLocalTranscriptRecord(id: id, text: text)
+                        },
                         onDismissKeyboard: dismissKeyboard
                     )
                     .padding(.horizontal, AppPageLayout.horizontalPadding)
@@ -210,13 +224,15 @@ struct TranscriptCard: View {
     @Binding var transcriptText: String
     @Binding var isFocused: Bool
     let autoScrollVersion: Int
+    let isEditable: Bool
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             TranscriptTextView(
                 text: $transcriptText,
                 isFocused: $isFocused,
-                autoScrollVersion: autoScrollVersion
+                autoScrollVersion: autoScrollVersion,
+                isEditable: isEditable
             )
             .frame(height: 150)
 
@@ -244,18 +260,22 @@ struct PrimaryRecognitionPage: View {
     @ObservedObject var viewModel: ContentViewModel
     @Binding var isTranscriptFocused: Bool
     let onDismissKeyboard: () -> Void
+    @State private var showsMacActionAlert = false
 
     var body: some View {
         VStack {
-            TranscriptCard(
-                transcriptText: Binding(
-                    get: { viewModel.localTranscriptText },
-                    set: { viewModel.updateLocalTranscriptText($0) }
-                ),
-                isFocused: $isTranscriptFocused,
-                autoScrollVersion: viewModel.transcriptAutoScrollVersion
-            )
-                .padding(.bottom, 12)
+            if viewModel.shouldShowTranscriptPreviewOnHome {
+                TranscriptCard(
+                    transcriptText: Binding(
+                        get: { viewModel.localTranscriptText },
+                        set: { viewModel.updateLocalTranscriptText($0) }
+                    ),
+                    isFocused: $isTranscriptFocused,
+                    autoScrollVersion: viewModel.transcriptAutoScrollVersion,
+                    isEditable: false
+                )
+                    .padding(.bottom, 12)
+            }
 
             if viewModel.shouldShowMacConnectionCard {
                 ConnectionStatusCard(
@@ -277,7 +297,7 @@ struct PrimaryRecognitionPage: View {
                 isEnabled: viewModel.canStartPushToTalk || viewModel.recognitionState != .idle,
                 canManuallySendTextToMac: viewModel.canManuallyForwardCurrentTextToMac,
                 showsPairingAction: false,
-                showsReconnectAction: false,
+                showsReconnectAction: viewModel.shouldPromptForHomeMacAction,
                 audioLevel: viewModel.audioLevel,
                 onPressChanged: { isPressing in
                     if isPressing {
@@ -285,22 +305,66 @@ struct PrimaryRecognitionPage: View {
                     }
                     viewModel.handlePrimaryButtonPressChanged(isPressing)
                 },
+                onReconnectAction: {
+                    onDismissKeyboard()
+                    showsMacActionAlert = true
+                },
                 onManualSend: {
                     onDismissKeyboard()
                     viewModel.sendCurrentTranscriptToMac()
                 }
             )
 
+            if viewModel.canShowHomeTranscriptionModeToggle {
+                Button {
+                    onDismissKeyboard()
+                    viewModel.toggleHomeTranscriptionMode()
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: viewModel.effectiveHomeTranscriptionMode == .local ? "iphone" : "desktopcomputer")
+                            .font(.headline)
+                        Text(
+                            viewModel.effectiveHomeTranscriptionMode == .local
+                            ? String(localized: "home_mode_switch_to_mac")
+                            : String(localized: "home_mode_switch_to_local")
+                        )
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.bordered)
+                .padding(.top, 8)
+            }
+
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .alert(
+            String(localized: "home_mac_action_alert_title"),
+            isPresented: $showsMacActionAlert
+        ) {
+            Button(String(localized: "reconnect_button")) {
+                viewModel.reconnect()
+            }
+            Button(String(localized: "home_mac_action_pair_button")) {
+                viewModel.openPairing()
+            }
+            Button(String(localized: "cancel_button"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "home_mac_action_alert_message"))
+        }
     }
 }
 
 struct TranscriptHistoryPage: View {
     let history: [LocalTranscriptRecord]
     let onDelete: (UUID) -> Void
+    let onUpdate: (UUID, String) -> Void
     let onDismissKeyboard: () -> Void
+    @State private var editingRecordID: UUID?
+    @State private var draftText = ""
+    @State private var isEditingFocused = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -319,19 +383,36 @@ struct TranscriptHistoryPage: View {
             } else {
                 List {
                     ForEach(history) { record in
-                        TranscriptHistoryRow(record: record)
+                        if editingRecordID == record.id {
+                            EditableTranscriptHistoryRow(
+                                text: $draftText,
+                                isFocused: $isEditingFocused
+                            )
                             .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
                             .listRowBackground(Color(uiColor: .secondarySystemBackground))
-                            .swipeActions(
-                                edge: TranscriptHistoryDeletePolicy.swipeEdge,
-                                allowsFullSwipe: TranscriptHistoryDeletePolicy.allowsFullSwipe
-                            ) {
-                                Button(role: .destructive) {
-                                    onDelete(record.id)
-                                } label: {
-                                    Text(String(localized: "delete_button"))
+                        } else {
+                            TranscriptHistoryRow(record: record)
+                                .contentShape(Rectangle())
+                                .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
+                                .listRowBackground(Color(uiColor: .secondarySystemBackground))
+                                .swipeActions(
+                                    edge: TranscriptHistoryDeletePolicy.swipeEdge,
+                                    allowsFullSwipe: TranscriptHistoryDeletePolicy.allowsFullSwipe
+                                ) {
+                                    Button(role: .destructive) {
+                                        onDelete(record.id)
+                                    } label: {
+                                        Text(String(localized: "delete_button"))
+                                    }
                                 }
-                            }
+                                .onTapGesture(count: 2) {
+                                    saveEditingIfNeeded()
+                                    beginEditing(record)
+                                }
+                                .onTapGesture {
+                                    handleNonEditingRowTap()
+                                }
+                        }
                     }
                 }
                 .listStyle(.plain)
@@ -349,7 +430,56 @@ struct TranscriptHistoryPage: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
+        .background(
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    guard TranscriptHistoryEditingPolicy.shouldAutoSaveOnBackgroundTap(
+                        isEditing: editingRecordID != nil
+                    ) else {
+                        return
+                    }
+                    saveEditingIfNeeded()
+                }
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onDisappear {
+            saveEditingIfNeeded()
+        }
+    }
+
+    private func beginEditing(_ record: LocalTranscriptRecord) {
+        editingRecordID = record.id
+        draftText = record.text
+        isEditingFocused = true
+    }
+
+    private func handleNonEditingRowTap() {
+        guard editingRecordID != nil else { return }
+        saveEditingIfNeeded()
+    }
+
+    private func saveEditingIfNeeded() {
+        guard let editingRecordID else { return }
+        guard let record = history.first(where: { $0.id == editingRecordID }) else {
+            clearEditingState()
+            return
+        }
+
+        let savedText = TranscriptHistoryEditingPolicy.savedText(
+            originalText: record.text,
+            draftText: draftText
+        )
+        if savedText != record.text {
+            onUpdate(editingRecordID, savedText)
+        }
+        clearEditingState()
+    }
+
+    private func clearEditingState() {
+        editingRecordID = nil
+        draftText = ""
+        isEditingFocused = false
     }
 }
 
@@ -381,6 +511,22 @@ struct TranscriptHistoryRow: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
+        .padding(.vertical, 4)
+    }
+}
+
+struct EditableTranscriptHistoryRow: View {
+    @Binding var text: String
+    @Binding var isFocused: Bool
+
+    var body: some View {
+        TranscriptTextView(
+            text: $text,
+            isFocused: $isFocused,
+            autoScrollVersion: 0,
+            isEditable: true
+        )
+        .frame(minHeight: 132)
         .padding(.vertical, 4)
     }
 }
@@ -535,6 +681,7 @@ struct RecognitionStatusView: View {
     let showsReconnectAction: Bool
     let audioLevel: CGFloat
     let onPressChanged: (Bool) -> Void
+    let onReconnectAction: () -> Void
     let onManualSend: () -> Void
 
     @State private var isPressing = false
@@ -617,7 +764,7 @@ struct RecognitionStatusView: View {
     }
 
     private var isInteractionEnabled: Bool {
-        isEnabled || canManuallySendTextToMac
+        isEnabled || canManuallySendTextToMac || showsReconnectAction
     }
 
     private var shouldShowManualSendTarget: Bool {
@@ -626,7 +773,13 @@ struct RecognitionStatusView: View {
 
     private func startPendingPressAction() {
         let workItem = DispatchWorkItem {
-            guard isPressing, !isSendTargetActive, isEnabled else { return }
+            guard isPressing, !isSendTargetActive else { return }
+            if showsReconnectAction {
+                onReconnectAction()
+                finishInteraction(resetOnly: true)
+                return
+            }
+            guard isEnabled else { return }
             hasStartedPressAction = true
             onPressChanged(true)
         }
@@ -651,9 +804,16 @@ struct RecognitionStatusView: View {
         }
     }
 
-    private func finishInteraction() {
+    private func finishInteraction(resetOnly: Bool = false) {
         pendingPressWorkItem?.cancel()
         pendingPressWorkItem = nil
+
+        if resetOnly {
+            isPressing = false
+            isSendTargetActive = false
+            hasStartedPressAction = false
+            return
+        }
 
         if isSendTargetActive {
             if hasStartedPressAction {
@@ -693,7 +853,7 @@ struct RecognitionStatusView: View {
             return isEnabled ? .orange : .gray
         }
         if showsReconnectAction {
-            return isEnabled ? .orange : .gray
+            return .orange
         }
         switch state {
         case .idle:
@@ -715,7 +875,7 @@ struct RecognitionStatusView: View {
             return String(localized: "recognition_pair_now")
         }
         if showsReconnectAction {
-            return String(localized: "recognition_connect_service")
+            return String(localized: "recognition_mac_unavailable")
         }
         switch state {
         case .idle:
@@ -734,7 +894,7 @@ struct RecognitionStatusView: View {
             return isEnabled ? Color.orange.opacity(0.18) : Color.gray.opacity(0.12)
         }
         if showsReconnectAction {
-            return isEnabled ? Color.orange.opacity(0.15) : Color.gray.opacity(0.12)
+            return Color.orange.opacity(0.18)
         }
         switch state {
         case .idle:
@@ -753,7 +913,7 @@ struct RecognitionStatusView: View {
             return isEnabled ? .orange.opacity(0.6) : .gray.opacity(0.4)
         }
         if showsReconnectAction {
-            return isEnabled ? .orange.opacity(0.5) : .gray.opacity(0.4)
+            return .orange.opacity(0.6)
         }
         switch state {
         case .idle:
@@ -825,6 +985,7 @@ struct TranscriptTextView: UIViewRepresentable {
     @Binding var text: String
     @Binding var isFocused: Bool
     let autoScrollVersion: Int
+    let isEditable: Bool
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -841,11 +1002,15 @@ struct TranscriptTextView: UIViewRepresentable {
         textView.textContainerInset = UIEdgeInsets(top: 12, left: 2, bottom: 34, right: 2)
         textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textView.text = text
+        textView.isEditable = isEditable
+        textView.isSelectable = true
         return textView
     }
 
     func updateUIView(_ uiView: UITextView, context: Context) {
         context.coordinator.parent = self
+        uiView.isEditable = isEditable
+        uiView.isSelectable = true
 
         if TranscriptTextViewSyncPolicy.shouldApplyExternalText(
             currentText: uiView.text,
@@ -856,7 +1021,7 @@ struct TranscriptTextView: UIViewRepresentable {
             uiView.text = text
         }
 
-        if isFocused {
+        if isEditable && isFocused {
             if !uiView.isFirstResponder {
                 uiView.becomeFirstResponder()
             }
@@ -903,14 +1068,17 @@ struct TranscriptTextView: UIViewRepresentable {
         }
 
         func textViewDidChange(_ textView: UITextView) {
+            guard parent.isEditable else { return }
             parent.text = textView.text ?? ""
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {
+            guard parent.isEditable else { return }
             parent.isFocused = true
         }
 
         func textViewDidEndEditing(_ textView: UITextView) {
+            guard parent.isEditable else { return }
             parent.isFocused = false
         }
     }

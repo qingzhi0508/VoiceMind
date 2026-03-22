@@ -34,6 +34,25 @@ enum LocalTranscriptHistory {
         history.filter { $0.id != id }
     }
 
+    static func updating(
+        id: UUID,
+        text: String,
+        in history: [LocalTranscriptRecord]
+    ) -> [LocalTranscriptRecord] {
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return history.map { record in
+            guard record.id == id else { return record }
+            let nextText = trimmedText.isEmpty ? record.text : trimmedText
+            return LocalTranscriptRecord(
+                id: record.id,
+                text: nextText,
+                language: record.language,
+                createdAt: record.createdAt
+            )
+        }
+    }
+
     static func appendingLatestTranscript(
         _ latestText: String,
         to existingText: String

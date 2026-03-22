@@ -72,6 +72,49 @@ struct LocalTranscriptHistoryTests {
     }
 
     @Test
+    func updatingTranscriptReplacesMatchingRecordAndKeepsOrder() {
+        let first = LocalTranscriptRecord(
+            id: UUID(),
+            text: "first",
+            language: "zh-CN",
+            createdAt: Date(timeIntervalSince1970: 1)
+        )
+        let second = LocalTranscriptRecord(
+            id: UUID(),
+            text: "second",
+            language: "zh-CN",
+            createdAt: Date(timeIntervalSince1970: 2)
+        )
+
+        let history = LocalTranscriptHistory.updating(
+            id: second.id,
+            text: "updated second",
+            in: [second, first]
+        )
+
+        #expect(history.map(\.text) == ["updated second", "first"])
+        #expect(history[0].createdAt == second.createdAt)
+    }
+
+    @Test
+    func updatingTranscriptWithBlankTextKeepsOriginalRecordText() {
+        let record = LocalTranscriptRecord(
+            id: UUID(),
+            text: "original",
+            language: "zh-CN",
+            createdAt: Date(timeIntervalSince1970: 1)
+        )
+
+        let history = LocalTranscriptHistory.updating(
+            id: record.id,
+            text: "   ",
+            in: [record]
+        )
+
+        #expect(history.first?.text == "original")
+    }
+
+    @Test
     func appendingLatestTranscriptPlacesNewestTextAtBottom() {
         let combined = LocalTranscriptHistory.appendingLatestTranscript(
             "latest",

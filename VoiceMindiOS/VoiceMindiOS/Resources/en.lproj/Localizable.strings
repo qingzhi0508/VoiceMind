@@ -9,6 +9,9 @@
 "ok_button" = "OK";
 "cancel_button" = "Cancel";
 "reconnect_button" = "Reconnect";
+"home_mac_action_pair_button" = "Pair Again";
+"home_mac_action_alert_title" = "Mac Not Connected";
+"home_mac_action_alert_message" = "Mac transcription is selected, but the Mac is not connected yet. You can reconnect now or open pairing again.";
 
 "connection_status_unpaired" = "Not Paired";
 "connection_status_connected" = "Connected";
@@ -24,6 +27,7 @@
 "recognition_pair_now" = "Pair Now";
 "recognition_hold_to_talk" = "Hold to Record";
 "recognition_ready" = "Ready";
+"recognition_mac_unavailable" = "Mac Unavailable";
 "recognition_drag_up_to_send" = "Drag up to send to Mac";
 "recognition_release_to_send" = "Release to send to Mac";
 "recognition_listening" = "Listening...";
@@ -244,6 +248,8 @@
 "ptt_local_saved_and_sent" = "The transcription is shown above and also sent to your Mac.";
 "ptt_manual_send_success" = "The current text was sent to your Mac.";
 "ptt_manual_send_requires_mac" = "Turn on Mac collaboration and connect to your Mac before sending the current text.";
+"home_mode_switch_to_mac" = "Switch to Mac Transcription";
+"home_mode_switch_to_local" = "Switch to Local Transcription";
 "transcript_card_title" = "Transcript";
 "transcript_card_placeholder" = "Hold the button below to start recording.";
 "transcript_card_hint" = "You can edit or type here manually. Hold the button and drag up to send the current text to Mac.";
