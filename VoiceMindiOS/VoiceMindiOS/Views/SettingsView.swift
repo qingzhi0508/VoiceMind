@@ -3,6 +3,7 @@ import SharedCore
 
 struct SettingsView: View {
     @ObservedObject var viewModel: ContentViewModel
+    var showsNavigationTitle = true
     @Environment(\.dismiss) private var dismiss
 
     @State private var showPermissionAlert = false
@@ -225,8 +226,10 @@ struct SettingsView: View {
                 Text(String(localized: "settings_about_header"))
             }
         }
-        .navigationTitle(String(localized: "settings_title"))
-        .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.clear)
+        .contentMargins(.top, 8, for: .scrollContent)
+        .modifier(SettingsNavigationTitleModifier(isVisible: showsNavigationTitle))
         .alert(String(localized: "settings_permission_alert_title"), isPresented: $showPermissionAlert) {
             Button(String(localized: "ok_button"), role: .cancel) { }
         } message: {
@@ -315,6 +318,21 @@ struct SettingsView: View {
             return .orange
         case .disconnected:
             return .secondary
+        }
+    }
+}
+
+private struct SettingsNavigationTitleModifier: ViewModifier {
+    let isVisible: Bool
+
+    func body(content: Content) -> some View {
+        if isVisible {
+            content
+                .navigationTitle(String(localized: "settings_title"))
+                .navigationBarTitleDisplayMode(.inline)
+        } else {
+            content
+                .toolbar(.hidden, for: .navigationBar)
         }
     }
 }

@@ -1,6 +1,54 @@
 import SwiftUI
 import UIKit
 
+enum ContentTab: Int, CaseIterable {
+    case home
+    case data
+    case settings
+
+    static let defaultTab: ContentTab = .home
+
+    var titleKey: LocalizedStringResource {
+        switch self {
+        case .home:
+            "tab_home_title"
+        case .data:
+            "tab_data_title"
+        case .settings:
+            "settings_title"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .home:
+            "house.fill"
+        case .data:
+            "tray.full.fill"
+        case .settings:
+            "gearshape.fill"
+        }
+    }
+}
+
+private enum AppPageLayout {
+    static let horizontalPadding: CGFloat = 16
+    static let topPadding: CGFloat = 10
+    static let bottomPadding: CGFloat = 6
+}
+
+private struct AppCardSurface: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(Color(uiColor: .secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.primary.opacity(0.04), lineWidth: 1)
+            )
+    }
+}
+
 struct ContentView: View {
     enum FocusField: Hashable {
         case transcriptEditor
@@ -10,102 +58,98 @@ struct ContentView: View {
     @Binding var hasLaunchedBefore: Bool
 
     @State private var showOnboarding = false
-    @State private var selectedPage = 0
+    @State private var selectedTab = ContentTab.defaultTab
     @FocusState private var focusedField: FocusField?
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                // System Theme Background
-                LinearGradient(
-                    colors: [
-                        Color(UIColor.systemGroupedBackground),
-                        Color(UIColor.secondarySystemGroupedBackground)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+        ZStack {
+            // System Theme Background
+            LinearGradient(
+                colors: [
+                    Color(UIColor.systemGroupedBackground),
+                    Color(UIColor.secondarySystemGroupedBackground)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
 
-                // Decorative Elements
-                GeometryReader { geometry in
-                    // Top right decorative circle
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [Color.accentColor.opacity(0.12), Color.clear],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 200
-                            )
+            // Decorative Elements
+            GeometryReader { geometry in
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.accentColor.opacity(0.12), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 200
                         )
-                        .frame(width: 300, height: 300)
-                        .offset(x: geometry.size.width - 100, y: -50)
+                    )
+                    .frame(width: 300, height: 300)
+                    .offset(x: geometry.size.width - 100, y: -50)
 
-                    // Bottom left decorative circle
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [Color.purple.opacity(0.08), Color.clear],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 180
-                            )
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.purple.opacity(0.08), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 180
                         )
-                        .frame(width: 250, height: 250)
-                        .offset(x: -80, y: geometry.size.height - 150)
-                }
+                    )
+                    .frame(width: 250, height: 250)
+                    .offset(x: -80, y: geometry.size.height - 150)
+            }
 
-                TabView(selection: $selectedPage) {
+            TabView(selection: $selectedTab) {
+                NavigationStack {
                     PrimaryRecognitionPage(
                         viewModel: viewModel,
                         isTranscriptFocused: Binding(
                             get: { focusedField == .transcriptEditor },
                             set: { focusedField = $0 ? .transcriptEditor : nil }
                         ),
-                        onDismissKeyboard: dismissKeyboard,
-                        onNavigateToHistoryPage: {
-                            navigateToPage(1)
-                        }
+                        onDismissKeyboard: dismissKeyboard
                     )
-                        .padding()
-                        .tag(0)
+                    .padding(.horizontal, AppPageLayout.horizontalPadding)
+                    .padding(.top, AppPageLayout.topPadding)
+                    .padding(.bottom, AppPageLayout.bottomPadding)
+                    .toolbar(.hidden, for: .navigationBar)
+                }
+                .tabItem {
+                    Label(String(localized: ContentTab.home.titleKey), systemImage: ContentTab.home.systemImage)
+                }
+                .tag(ContentTab.home)
 
+                NavigationStack {
                     TranscriptHistoryPage(
                         history: viewModel.localTranscriptHistory,
                         onDelete: { id in
                             viewModel.removeLocalTranscriptRecord(id: id)
                         },
-                        onDismissKeyboard: dismissKeyboard,
-                        onNavigateToPrimaryPage: {
-                            navigateToPage(0)
-                        }
+                        onDismissKeyboard: dismissKeyboard
                     )
-                    .padding()
-                    .tag(1)
+                    .padding(.horizontal, AppPageLayout.horizontalPadding)
+                    .padding(.top, AppPageLayout.topPadding)
+                    .padding(.bottom, AppPageLayout.bottomPadding)
+                    .toolbar(.hidden, for: .navigationBar)
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .background(
-                    TabViewPagingConfigurator(
-                        isScrollEnabled: false,
-                        bounces: false
-                    )
-                )
+                .tabItem {
+                    Label(String(localized: ContentTab.data.titleKey), systemImage: ContentTab.data.systemImage)
+                }
+                .tag(ContentTab.data)
+
+                NavigationStack {
+                    SettingsView(viewModel: viewModel, showsNavigationTitle: false)
+                }
+                .tabItem {
+                    Label(String(localized: ContentTab.settings.titleKey), systemImage: ContentTab.settings.systemImage)
+                }
+                .tag(ContentTab.settings)
             }
             .contentShape(Rectangle())
             .onTapGesture {
                 dismissKeyboard()
-            }
-            .navigationTitle(String(localized: "app_title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink {
-                        SettingsView(viewModel: viewModel)
-                    } label: {
-                        Image(systemName: "gear")
-                    }
-                }
             }
             .sheet(isPresented: $viewModel.showPairingView) {
                 PairingView(viewModel: viewModel)
@@ -123,7 +167,7 @@ struct ContentView: View {
                     hasLaunchedBefore = true
                 }
             }
-            .onChange(of: selectedPage) { _, _ in
+            .onChange(of: selectedTab) { _, _ in
                 dismissKeyboard()
             }
         }
@@ -131,13 +175,6 @@ struct ContentView: View {
 
     private func dismissKeyboard() {
         focusedField = nil
-    }
-
-    private func navigateToPage(_ page: Int) {
-        guard page != selectedPage else { return }
-        withAnimation(.easeOut(duration: 0.2)) {
-            selectedPage = page
-        }
     }
 }
 
@@ -170,8 +207,7 @@ struct TranscriptCard: View {
             }
         }
         .padding()
-        .background(Color(uiColor: .secondarySystemBackground))
-        .cornerRadius(16)
+        .modifier(AppCardSurface())
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -180,7 +216,6 @@ struct PrimaryRecognitionPage: View {
     @ObservedObject var viewModel: ContentViewModel
     @Binding var isTranscriptFocused: Bool
     let onDismissKeyboard: () -> Void
-    let onNavigateToHistoryPage: () -> Void
 
     var body: some View {
         VStack {
@@ -231,30 +266,6 @@ struct PrimaryRecognitionPage: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            // Navigation gesture for going to history page
-            // Only triggers on edge swipe (right 25% of screen) to avoid interfering with other interactions
-            DragGesture(minimumDistance: 60)
-                .onEnded { value in
-                    let horizontal = abs(value.translation.width)
-                    let vertical = abs(value.translation.height)
-
-                    // Only navigate if predominantly horizontal swipe from right edge
-                    guard
-                        horizontal > vertical,
-                        horizontal >= 60,
-                        value.translation.width < 0  // Swipe LEFT to go to history
-                    else {
-                        return
-                    }
-
-                    // Only trigger if started from right portion of screen (edge swipe)
-                    let screenWidth = UIScreen.main.bounds.width
-                    if value.startLocation.x > screenWidth * 0.75 {
-                        onNavigateToHistoryPage()
-                    }
-                }
-        )
     }
 }
 
@@ -262,13 +273,9 @@ struct TranscriptHistoryPage: View {
     let history: [LocalTranscriptRecord]
     let onDelete: (UUID) -> Void
     let onDismissKeyboard: () -> Void
-    let onNavigateToPrimaryPage: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "transcript_history_page_title"))
-                .font(.headline)
-
             if history.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(String(localized: "transcript_history_empty_title"))
@@ -280,8 +287,7 @@ struct TranscriptHistoryPage: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding()
-                .background(Color(uiColor: .secondarySystemBackground))
-                .cornerRadius(16)
+                .modifier(AppCardSurface())
             } else {
                 List {
                     ForEach(history) { record in
@@ -303,6 +309,7 @@ struct TranscriptHistoryPage: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
+                .contentMargins(.top, 0, for: .scrollContent)
                 .simultaneousGesture(
                     TapGesture().onEnded {
                         onDismissKeyboard()
@@ -315,30 +322,6 @@ struct TranscriptHistoryPage: View {
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(
-            // Navigation gesture for going back to primary page
-            // Only triggers on edge swipe (left 25% of screen) to avoid interfering with List swipe actions
-            DragGesture(minimumDistance: 60)
-                .onEnded { value in
-                    let horizontal = abs(value.translation.width)
-                    let vertical = abs(value.translation.height)
-
-                    // Only navigate if predominantly horizontal swipe from left edge
-                    guard
-                        horizontal > vertical,
-                        horizontal >= 60,
-                        value.translation.width > 0  // Swipe RIGHT to go back
-                    else {
-                        return
-                    }
-
-                    // Only trigger if started from left portion of screen (edge swipe)
-                    let screenWidth = UIScreen.main.bounds.width
-                    if value.startLocation.x < screenWidth * 0.25 {
-                        onNavigateToPrimaryPage()
-                    }
-                }
-        )
     }
 }
 
@@ -347,67 +330,6 @@ enum TranscriptHistoryDeletePolicy {
     static let usesTrailingSwipe = true
     static let allowsFullSwipe = true
     static let requiresConfirmation = false
-}
-
-enum PageSwipeNavigationPolicy {
-    private static let minimumHorizontalTranslation: CGFloat = 60
-
-    static func destinationPage(
-        from currentPage: Int,
-        translationWidth: CGFloat,
-        translationHeight: CGFloat,
-        pageCount: Int
-    ) -> Int? {
-        guard
-            pageCount > 1,
-            abs(translationWidth) > abs(translationHeight),
-            abs(translationWidth) >= minimumHorizontalTranslation
-        else {
-            return nil
-        }
-
-        if translationWidth < 0 {
-            let nextPage = min(currentPage + 1, pageCount - 1)
-            return nextPage == currentPage ? nil : nextPage
-        }
-
-        let previousPage = max(currentPage - 1, 0)
-        return previousPage == currentPage ? nil : previousPage
-    }
-}
-
-struct TabViewPagingConfigurator: UIViewRepresentable {
-    let isScrollEnabled: Bool
-    let bounces: Bool
-
-    func makeUIView(context: Context) -> UIView {
-        UIView(frame: .zero)
-    }
-
-    func updateUIView(_ uiView: UIView, context: Context) {
-        DispatchQueue.main.async {
-            guard let scrollView = findEnclosingScrollView(from: uiView) else {
-                return
-            }
-
-            scrollView.isScrollEnabled = isScrollEnabled
-            scrollView.bounces = bounces
-            scrollView.alwaysBounceHorizontal = bounces
-        }
-    }
-
-    private func findEnclosingScrollView(from view: UIView) -> UIScrollView? {
-        var candidate: UIView? = view
-
-        while let current = candidate {
-            if let scrollView = current as? UIScrollView {
-                return scrollView
-            }
-            candidate = current.superview
-        }
-
-        return nil
-    }
 }
 
 struct TranscriptHistoryRow: View {
@@ -512,8 +434,7 @@ struct ConnectionStatusCard: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(12)
+        .modifier(AppCardSurface())
     }
 
     private var statusColor: Color {

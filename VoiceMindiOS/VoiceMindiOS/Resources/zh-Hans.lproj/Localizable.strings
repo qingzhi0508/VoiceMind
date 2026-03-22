@@ -1,4 +1,6 @@
 "app_title" = "语灵";
+"tab_home_title" = "首页";
+"tab_data_title" = "记录";
 
 "CFBundleDisplayName" = "语灵";
 "CFBundleName" = "语灵";
