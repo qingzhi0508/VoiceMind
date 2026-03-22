@@ -152,6 +152,7 @@
 "tab_speech" = "语音识别";
 "tab_data" = "数据";
 "tab_permissions" = "权限";
+"tab_notes" = "笔记";
 "tab_about" = "关于";
 "tab_debug" = "调试";
 

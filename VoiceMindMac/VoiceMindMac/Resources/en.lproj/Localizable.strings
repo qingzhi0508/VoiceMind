@@ -153,6 +153,7 @@ You can also copy the text and paste manually.";
 "tab_speech" = "Speech";
 "tab_data" = "Data";
 "tab_permissions" = "Permissions";
+"tab_notes" = "Notes";
 "tab_about" = "About";
 "tab_debug" = "Debug";
 

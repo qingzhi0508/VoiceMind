@@ -59,4 +59,8 @@ enum LocalTranscriptHistory {
 
         return "\(trimmedCommitted)\n\n\(trimmedLive)"
     }
+
+    static func beginningNewRecognitionSession(from _: String) -> String {
+        ""
+    }
 }

@@ -210,8 +210,12 @@ class ContentViewModel: ObservableObject {
 
     func startPushToTalk() {
         guard canStartPushToTalk else { return }
-        committedTranscriptText = localTranscriptText
+        let clearedTranscriptText = LocalTranscriptHistory.beginningNewRecognitionSession(
+            from: localTranscriptText
+        )
+        committedTranscriptText = clearedTranscriptText
         liveTranscriptText = ""
+        localTranscriptText = clearedTranscriptText
 
         if shouldForwardResultToMac {
             do {

@@ -41,13 +41,19 @@ struct MainWindow: View {
                 }
                 .tag(4)
 
+            NotesTab(controller: controller)
+                .tabItem {
+                    Label(String(localized: "tab_notes"), systemImage: "note.text")
+                }
+                .tag(5)
+
             AboutTab(
                 onOpenGuide: {
                     controller.showUsageGuide()
                 },
                 onRevealDebug: {
                     debugUnlocked = true
-                    selectedTab = 6
+                    selectedTab = 7
                 }
             )
                 .tabItem {
@@ -130,41 +136,6 @@ struct StatusTab: View {
                         Spacer()
                         Text(controller.isServiceRunning ? String(localized: "status_service_running") : String(localized: "status_service_stopped"))
                             .foregroundColor(controller.isServiceRunning ? .green : .secondary)
-                    }
-                }
-                .padding()
-            }
-
-            // Notes Section with Local Recording
-            GroupBox(label: Label(String(localized: "note_title"), systemImage: "note.text")) {
-                VStack(alignment: .leading, spacing: 12) {
-                    // Note text display
-                    Text(controller.noteText.isEmpty ? String(localized: "note_placeholder") : controller.noteText)
-                        .font(.body)
-                        .foregroundColor(controller.noteText.isEmpty ? .secondary : .primary)
-                        .frame(maxWidth: .infinity, minHeight: 80, alignment: .topLeading)
-                        .padding(10)
-                        .background(Color(NSColor.controlBackgroundColor))
-                        .cornerRadius(8)
-
-                    // Recording button
-                    HStack {
-                        Spacer()
-
-                        RecordButton(
-                            isRecording: controller.isLocalRecording,
-                            action: {
-                                controller.toggleLocalRecording()
-                            }
-                        )
-
-                        Button(action: {
-                            controller.clearNote()
-                        }) {
-                            Image(systemName: "trash")
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(controller.noteText.isEmpty)
                     }
                 }
                 .padding()
@@ -807,56 +778,103 @@ struct AboutTab: View {
     }
 }
 
+// MARK: - Notes Tab
+
+struct NotesTab: View {
+    @ObservedObject var controller: MenuBarController
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text(String(localized: "note_title"))
+                .font(.title)
+                .padding(.top)
+
+            // Note text display
+            Text(controller.noteText.isEmpty ? String(localized: "note_placeholder") : controller.noteText)
+                .font(.body)
+                .foregroundColor(controller.noteText.isEmpty ? .secondary : .primary)
+                .frame(maxWidth: .infinity, minHeight: 200, alignment: .topLeading)
+                .padding()
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(12)
+
+            Spacer()
+
+            // Recording button
+            VStack(spacing: 12) {
+                RecordButton(
+                    isRecording: controller.isLocalRecording,
+                    onStartRecording: {
+                        controller.startLocalRecording()
+                    },
+                    onStopRecording: {
+                        controller.stopLocalRecording()
+                    }
+                )
+
+                Text(controller.isLocalRecording ? String(localized: "note_recording") : String(localized: "note_placeholder"))
+                    .font(.caption)
+                    .foregroundColor(controller.isLocalRecording ? .red : .secondary)
+
+                Button(action: {
+                    controller.clearNote()
+                }) {
+                    Label(String(localized: "note_clear"), systemImage: "trash")
+                }
+                .buttonStyle(.bordered)
+                .disabled(controller.noteText.isEmpty)
+            }
+            .padding(.bottom, 40)
+        }
+        .padding()
+    }
+}
+
 // MARK: - Record Button
 
 struct RecordButton: View {
     let isRecording: Bool
-    let action: () -> Void
+    let onStartRecording: () -> Void
+    let onStopRecording: () -> Void
 
     @State private var isPressed = false
 
     var body: some View {
-        Button(action: {
-            if isRecording {
-                action()
-            } else {
-                action()
-            }
-        }) {
-            ZStack {
-                Circle()
-                    .fill(isRecording ? Color.red : Color.accentColor)
-                    .frame(width: 60, height: 60)
-                    .shadow(color: isRecording ? .red.opacity(0.5) : .accentColor.opacity(0.3), radius: isRecording ? 10 : 5)
+        ZStack {
+            Circle()
+                .fill(isRecording ? Color.red : Color.accentColor)
+                .frame(width: 60, height: 60)
+                .shadow(color: isRecording ? .red.opacity(0.5) : .accentColor.opacity(0.3), radius: isRecording ? 10 : 5)
 
-                if isRecording {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.white)
-                        .frame(width: 20, height: 20)
-                } else {
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.white)
-                }
+            if isRecording {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.white)
+                    .frame(width: 20, height: 20)
+            } else {
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(.white)
             }
         }
-        .buttonStyle(.plain)
-        .simultaneousGesture(
+        .frame(width: 60, height: 60)
+        .contentShape(Circle())
+        .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
                     if !isPressed {
                         isPressed = true
                         if !isRecording {
-                            action()
+                            onStartRecording()
                         }
                     }
                 }
                 .onEnded { _ in
                     isPressed = false
                     if isRecording {
-                        action()
+                        onStopRecording()
                     }
                 }
         )
     }
 }
+

@@ -100,4 +100,13 @@ struct LocalTranscriptHistoryTests {
 
         #expect(combined == "older line")
     }
+
+    @Test
+    func beginningNewRecognitionSessionClearsPreviousTranscript() {
+        let cleared = LocalTranscriptHistory.beginningNewRecognitionSession(
+            from: "previous transcript"
+        )
+
+        #expect(cleared.isEmpty)
+    }
 }
