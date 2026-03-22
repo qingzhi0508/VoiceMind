@@ -148,6 +148,22 @@ enum TranscriptHistoryEditingPolicy {
     }
 }
 
+enum RecognitionStatusInteractionPolicy {
+    static func shouldShowManualSendTarget(
+        isPressing: Bool,
+        state: RecognitionState
+    ) -> Bool {
+        false
+    }
+
+    static func isInteractionEnabled(
+        isEnabled: Bool,
+        showsReconnectAction: Bool
+    ) -> Bool {
+        isEnabled || showsReconnectAction
+    }
+}
+
 struct ContentView: View {
     enum FocusField: Hashable {
         case transcriptEditor
@@ -507,7 +523,6 @@ struct PrimaryRecognitionPage: View {
                 state: viewModel.recognitionState,
                 statusMessage: viewModel.pushToTalkStatusMessage,
                 isEnabled: viewModel.canStartPushToTalk || viewModel.recognitionState != .idle,
-                canManuallySendTextToMac: viewModel.canManuallyForwardCurrentTextToMac,
                 showsPairingAction: false,
                 showsReconnectAction: viewModel.shouldPromptForHomeMacAction,
                 audioLevel: viewModel.audioLevel,
@@ -520,10 +535,6 @@ struct PrimaryRecognitionPage: View {
                 onReconnectAction: {
                     onDismissKeyboard()
                     showsMacActionAlert = true
-                },
-                onManualSend: {
-                    onDismissKeyboard()
-                    viewModel.sendCurrentTranscriptToMac()
                 }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -895,41 +906,19 @@ struct RecognitionStatusView: View {
     let state: RecognitionState
     let statusMessage: String?
     let isEnabled: Bool
-    let canManuallySendTextToMac: Bool
     let showsPairingAction: Bool
     let showsReconnectAction: Bool
     let audioLevel: CGFloat
     let onPressChanged: (Bool) -> Void
     let onReconnectAction: () -> Void
-    let onManualSend: () -> Void
 
     @State private var isPressing = false
-    @State private var isSendTargetActive = false
     @State private var hasStartedPressAction = false
     @State private var pendingPressWorkItem: DispatchWorkItem?
 
     var body: some View {
         VStack(spacing: 15) {
             ZStack {
-                if shouldShowManualSendTarget {
-                    VStack(spacing: 8) {
-                        Image(systemName: isSendTargetActive ? "paperplane.circle.fill" : "paperplane.circle")
-                            .font(.system(size: 34))
-                            .foregroundColor(isSendTargetActive ? .green : .secondary)
-                            .padding(10)
-                            .background(
-                                Circle()
-                                    .fill(isSendTargetActive ? Color.green.opacity(0.16) : Color(uiColor: .secondarySystemBackground))
-                            )
-
-                        Text(String(localized: isSendTargetActive ? "recognition_release_to_send" : "recognition_drag_up_to_send"))
-                            .font(.caption)
-                            .foregroundColor(isSendTargetActive ? .green : .secondary)
-                    }
-                    .offset(y: -125)
-                    .transition(.opacity.combined(with: .scale))
-                }
-
                 Circle()
                     .fill(buttonBackgroundColor)
                     .frame(width: 140, height: 140)
@@ -952,8 +941,6 @@ struct RecognitionStatusView: View {
                             isPressing = true
                             startPendingPressAction()
                         }
-
-                        updateManualSendTarget(with: value.translation)
                     }
                     .onEnded { _ in
                         guard isPressing else { return }
@@ -983,16 +970,15 @@ struct RecognitionStatusView: View {
     }
 
     private var isInteractionEnabled: Bool {
-        isEnabled || canManuallySendTextToMac || showsReconnectAction
-    }
-
-    private var shouldShowManualSendTarget: Bool {
-        isPressing && state == .idle && canManuallySendTextToMac
+        RecognitionStatusInteractionPolicy.isInteractionEnabled(
+            isEnabled: isEnabled,
+            showsReconnectAction: showsReconnectAction
+        )
     }
 
     private func startPendingPressAction() {
         let workItem = DispatchWorkItem {
-            guard isPressing, !isSendTargetActive else { return }
+            guard isPressing else { return }
             if showsReconnectAction {
                 onReconnectAction()
                 finishInteraction(resetOnly: true)
@@ -1008,43 +994,21 @@ struct RecognitionStatusView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: workItem)
     }
 
-    private func updateManualSendTarget(with translation: CGSize) {
-        guard state == .idle, canManuallySendTextToMac, !hasStartedPressAction else {
-            isSendTargetActive = false
-            return
-        }
-
-        let reachedTarget = translation.height < -90 && abs(translation.width) < 90
-        isSendTargetActive = reachedTarget
-
-        if reachedTarget {
-            pendingPressWorkItem?.cancel()
-            pendingPressWorkItem = nil
-        }
-    }
-
     private func finishInteraction(resetOnly: Bool = false) {
         pendingPressWorkItem?.cancel()
         pendingPressWorkItem = nil
 
         if resetOnly {
             isPressing = false
-            isSendTargetActive = false
             hasStartedPressAction = false
             return
         }
 
-        if isSendTargetActive {
-            if hasStartedPressAction {
-                onPressChanged(false)
-            }
-            onManualSend()
-        } else if hasStartedPressAction {
+        if hasStartedPressAction {
             onPressChanged(false)
         }
 
         isPressing = false
-        isSendTargetActive = false
         hasStartedPressAction = false
     }
 
@@ -1087,9 +1051,6 @@ struct RecognitionStatusView: View {
     }
 
     private var statusText: String {
-        if isSendTargetActive {
-            return String(localized: "recognition_release_to_send")
-        }
         if showsPairingAction {
             return String(localized: "recognition_pair_now")
         }

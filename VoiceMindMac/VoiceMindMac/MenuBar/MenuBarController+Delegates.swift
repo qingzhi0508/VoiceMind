@@ -88,10 +88,9 @@ extension MenuBarController: ConnectionManagerDelegate {
         } else {
             print("Accepting proactive speech result without active hotkey session")
             appendInboundDataRecord(
-                title: "主动识别结果",
-                detail: "当前没有热键会话，按主动语音结果处理。\nSession: \(payload.sessionId)",
-                category: .voice,
-                severity: .warning
+                title: "收到同步文本",
+                detail: "当前没有热键会话，按同步文本消息处理，可直接粘贴到当前光标位置。\nSession: \(payload.sessionId)",
+                category: .voice
             )
         }
 

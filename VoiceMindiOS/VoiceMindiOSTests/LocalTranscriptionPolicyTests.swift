@@ -182,7 +182,7 @@ struct LocalTranscriptionPolicyTests {
     @Test
     func forwardingToMacRequiresMacModeAndConnection() {
         #expect(
-            !LocalTranscriptionPolicy.shouldForwardResultToMac(
+            LocalTranscriptionPolicy.shouldForwardResultToMac(
                 sendToMacEnabled: true,
                 preferredMode: .local,
                 pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
@@ -197,6 +197,27 @@ struct LocalTranscriptionPolicyTests {
                 pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
                 connectionState: .connected
             )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.shouldForwardResultToMac(
+                sendToMacEnabled: true,
+                preferredMode: .local,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
+                connectionState: .disconnected
+            )
+        )
+    }
+
+    @Test
+    func localModeShowsSyncReadyMessageWhenMacIsConnected() {
+        #expect(
+            LocalTranscriptionPolicy.idleStatusMessageKey(
+                hasPermissions: true,
+                sendToMacEnabled: true,
+                preferredMode: .local,
+                connectionState: .connected
+            ) == "ptt_local_ready_and_sync"
         )
     }
 

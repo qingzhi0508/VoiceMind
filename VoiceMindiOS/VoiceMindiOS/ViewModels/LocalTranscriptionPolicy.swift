@@ -74,10 +74,7 @@ enum LocalTranscriptionPolicy {
         pairingState: PairingState,
         connectionState: ConnectionState
     ) -> Bool {
-        guard effectiveHomeTranscriptionMode(
-            sendToMacEnabled: sendToMacEnabled,
-            preferredMode: preferredMode
-        ) == .mac else { return false }
+        guard sendToMacEnabled else { return false }
         guard case .paired = pairingState else { return false }
         guard connectionState == .connected else { return false }
         return true
@@ -122,7 +119,9 @@ enum LocalTranscriptionPolicy {
             preferredMode: preferredMode
         ) {
         case .local:
-            return "ptt_local_ready"
+            return sendToMacEnabled && connectionState == .connected
+            ? "ptt_local_ready_and_sync"
+            : "ptt_local_ready"
         case .mac:
             return connectionState == .connected ? "ptt_hold_to_talk" : "ptt_connect_to_talk"
         }
