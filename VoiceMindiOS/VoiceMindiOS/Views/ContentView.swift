@@ -286,6 +286,9 @@ struct ContentView: View {
                             viewModel.sendTranscriptRecordToMac(record)
                         },
                         history: viewModel.localTranscriptHistory,
+                        onDeleteSelected: { ids in
+                            viewModel.removeLocalTranscriptRecords(ids: ids)
+                        },
                         onDelete: { id in
                             viewModel.removeLocalTranscriptRecord(id: id)
                         },
@@ -597,89 +600,36 @@ struct TranscriptHistoryPage: View {
     let canSendToMac: (LocalTranscriptRecord) -> Bool
     let onSendToMac: (LocalTranscriptRecord) -> Void
     let history: [LocalTranscriptRecord]
+    let onDeleteSelected: (Set<UUID>) -> Void
     let onDelete: (UUID) -> Void
     let onUpdate: (UUID, String) -> Void
     let onDismissKeyboard: () -> Void
     @State private var editingRecordID: UUID?
     @State private var draftText = ""
     @State private var isEditingFocused = false
+    @State private var editMode: EditMode = .inactive
+    @State private var selectedRecordIDs = Set<UUID>()
+    @State private var showsBatchDeleteConfirmation = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if !history.isEmpty {
+                historyActionsBar
+            }
+
             if history.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(String(localized: "transcript_history_empty_title"))
-                        .font(.body)
-                        .foregroundColor(.primary)
-                    Text(String(localized: "transcript_history_empty_hint"))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding()
-                .modifier(AppCardSurface())
+                emptyHistoryView
             } else {
-                List {
-                    ForEach(history) { record in
-                        if editingRecordID == record.id {
-                            EditableTranscriptHistoryRow(
-                                text: $draftText,
-                                isFocused: $isEditingFocused
-                            )
-                            .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
-                            .listRowBackground(Color(uiColor: .secondarySystemBackground))
-                        } else {
-                            TranscriptHistoryRow(record: record)
-                                .contentShape(Rectangle())
-                                .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
-                                .listRowBackground(Color(uiColor: .secondarySystemBackground))
-                                .swipeActions(
-                                    edge: TranscriptHistorySendPolicy.swipeEdge,
-                                    allowsFullSwipe: TranscriptHistorySendPolicy.allowsFullSwipe
-                                ) {
-                                    if canSendToMac(record) {
-                                        Button {
-                                            onSendToMac(record)
-                                        } label: {
-                                            Label(String(localized: "send_button"), systemImage: "paperplane.fill")
-                                        }
-                                        .tint(.blue)
-                                    }
-                                }
-                                .swipeActions(
-                                    edge: TranscriptHistoryDeletePolicy.swipeEdge,
-                                    allowsFullSwipe: TranscriptHistoryDeletePolicy.allowsFullSwipe
-                                ) {
-                                    Button(role: .destructive) {
-                                        onDelete(record.id)
-                                    } label: {
-                                        Text(String(localized: "delete_button"))
-                                    }
-                                }
-                                .onTapGesture(count: 2) {
-                                    saveEditingIfNeeded()
-                                    beginEditing(record)
-                                }
-                                .onTapGesture {
-                                    handleNonEditingRowTap()
-                                }
-                        }
-                    }
-                }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .background(Color.clear)
-                .contentMargins(.top, 0, for: .scrollContent)
-                .simultaneousGesture(
-                    TapGesture().onEnded {
-                        onDismissKeyboard()
-                    }
-                )
+                historyListView
             }
 
             Text(String(localized: "transcript_history_swipe_hint"))
                 .font(.caption)
                 .foregroundColor(.secondary)
+
+            if editMode == .active {
+                batchDeleteBar
+            }
         }
         .background(
             Color.clear
@@ -694,9 +644,147 @@ struct TranscriptHistoryPage: View {
                 }
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .alert(
+            String(localized: "transcript_history_batch_delete_title"),
+            isPresented: $showsBatchDeleteConfirmation
+        ) {
+            Button(String(localized: "delete_button"), role: .destructive) {
+                deleteSelectedRecords()
+            }
+            Button(String(localized: "cancel_button"), role: .cancel) {}
+        } message: {
+            Text(batchDeleteConfirmationMessage)
+        }
+        .onChange(of: editMode) { _, newValue in
+            if newValue != .active {
+                selectedRecordIDs.removeAll()
+            }
+        }
         .onDisappear {
             saveEditingIfNeeded()
         }
+    }
+
+    private var emptyHistoryView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(String(localized: "transcript_history_empty_title"))
+                .font(.body)
+                .foregroundColor(.primary)
+            Text(String(localized: "transcript_history_empty_hint"))
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding()
+        .modifier(AppCardSurface())
+    }
+
+    private var historyListView: some View {
+        List(selection: $selectedRecordIDs) {
+            ForEach(history) { record in
+                historyRow(for: record)
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Color.clear)
+        .contentMargins(.top, 0, for: .scrollContent)
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                onDismissKeyboard()
+            }
+        )
+        .environment(\.editMode, $editMode)
+    }
+
+    @ViewBuilder
+    private func historyRow(for record: LocalTranscriptRecord) -> some View {
+        if editingRecordID == record.id {
+            EditableTranscriptHistoryRow(
+                text: $draftText,
+                isFocused: $isEditingFocused
+            )
+            .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
+            .listRowBackground(Color(uiColor: .secondarySystemBackground))
+        } else {
+            TranscriptHistoryRow(record: record)
+                .tag(record.id)
+                .contentShape(Rectangle())
+                .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
+                .listRowBackground(Color(uiColor: .secondarySystemBackground))
+                .swipeActions(
+                    edge: TranscriptHistorySendPolicy.swipeEdge,
+                    allowsFullSwipe: TranscriptHistorySendPolicy.allowsFullSwipe
+                ) {
+                    if shouldShowSendAction(for: record) {
+                        Button {
+                            onSendToMac(record)
+                        } label: {
+                            Label(String(localized: "send_button"), systemImage: "paperplane.fill")
+                        }
+                        .tint(.blue)
+                    }
+                }
+                .swipeActions(
+                    edge: TranscriptHistoryDeletePolicy.swipeEdge,
+                    allowsFullSwipe: TranscriptHistoryDeletePolicy.allowsFullSwipe
+                ) {
+                    if shouldShowDeleteAction {
+                        Button(role: .destructive) {
+                            onDelete(record.id)
+                        } label: {
+                            Text(String(localized: "delete_button"))
+                        }
+                    }
+                }
+                .onTapGesture(count: 2) {
+                    guard editMode != .active else { return }
+                    saveEditingIfNeeded()
+                    beginEditing(record)
+                }
+                .onTapGesture {
+                    guard editMode != .active else { return }
+                    handleNonEditingRowTap()
+                }
+        }
+    }
+
+    private var historyActionsBar: some View {
+        HStack(spacing: 12) {
+            if editMode == .active {
+                Button(String(localized: "select_all_button")) {
+                    toggleSelectAll()
+                }
+                .font(.subheadline.weight(.medium))
+                .foregroundColor(.blue)
+            }
+
+            Spacer()
+
+            Button(editMode == .active ? String(localized: "done_button") : String(localized: "edit_button")) {
+                toggleEditMode()
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundColor(.primary)
+        }
+        .padding(.horizontal, 2)
+    }
+
+    private var batchDeleteBar: some View {
+        Button(role: .destructive) {
+            guard canDeleteSelectedRecords else {
+                return
+            }
+            showsBatchDeleteConfirmation = true
+        } label: {
+            Text(batchDeleteButtonTitle)
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(.red)
+        .disabled(!canDeleteSelectedRecords)
     }
 
     private func beginEditing(_ record: LocalTranscriptRecord) {
@@ -732,6 +820,65 @@ struct TranscriptHistoryPage: View {
         draftText = ""
         isEditingFocused = false
     }
+
+    private func toggleEditMode() {
+        saveEditingIfNeeded()
+        editMode = editMode == .active ? .inactive : .active
+    }
+
+    private func toggleSelectAll() {
+        if selectedRecordIDs.count == history.count {
+            selectedRecordIDs.removeAll()
+        } else {
+            selectedRecordIDs = Set(history.map(\.id))
+        }
+    }
+
+    private func deleteSelectedRecords() {
+        let ids = selectedRecordIDs
+        guard !ids.isEmpty else { return }
+        onDeleteSelected(ids)
+        selectedRecordIDs.removeAll()
+        editMode = .inactive
+    }
+
+    private var selectedRecordIDStrings: [String] {
+        selectedRecordIDs.map(\.uuidString)
+    }
+
+    private var selectedDeleteCount: Int {
+        TranscriptHistoryBatchDeletePolicy.selectedDeleteCount(
+            selectedRecordIDs: selectedRecordIDStrings
+        )
+    }
+
+    private var canDeleteSelectedRecords: Bool {
+        TranscriptHistoryBatchDeletePolicy.canDeleteSelectedRecords(
+            selectedRecordIDs: selectedRecordIDStrings
+        )
+    }
+
+    private var batchDeleteButtonTitle: String {
+        String(
+            format: String(localized: "transcript_history_delete_selected_format"),
+            selectedDeleteCount
+        )
+    }
+
+    private var batchDeleteConfirmationMessage: String {
+        String(
+            format: String(localized: "transcript_history_batch_delete_message_format"),
+            selectedDeleteCount
+        )
+    }
+
+    private var shouldShowDeleteAction: Bool {
+        editMode != .active
+    }
+
+    private func shouldShowSendAction(for record: LocalTranscriptRecord) -> Bool {
+        editMode != .active && canSendToMac(record)
+    }
 }
 
 enum TranscriptHistoryDeletePolicy {
@@ -745,6 +892,16 @@ enum TranscriptHistorySendPolicy {
     static let swipeEdge: HorizontalEdge = .leading
     static let usesLeadingSwipe = true
     static let allowsFullSwipe = false
+}
+
+enum TranscriptHistoryBatchDeletePolicy {
+    static func canDeleteSelectedRecords(selectedRecordIDs: [String]) -> Bool {
+        !selectedRecordIDs.isEmpty
+    }
+
+    static func selectedDeleteCount(selectedRecordIDs: [String]) -> Int {
+        selectedRecordIDs.count
+    }
 }
 
 struct TranscriptHistoryRow: View {

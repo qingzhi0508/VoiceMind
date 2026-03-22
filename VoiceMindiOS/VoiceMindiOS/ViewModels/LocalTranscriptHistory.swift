@@ -34,6 +34,14 @@ enum LocalTranscriptHistory {
         history.filter { $0.id != id }
     }
 
+    static func removing(
+        ids: Set<UUID>,
+        from history: [LocalTranscriptRecord]
+    ) -> [LocalTranscriptRecord] {
+        guard !ids.isEmpty else { return history }
+        return history.filter { !ids.contains($0.id) }
+    }
+
     static func updating(
         id: UUID,
         text: String,

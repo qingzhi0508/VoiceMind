@@ -72,6 +72,35 @@ struct LocalTranscriptHistoryTests {
     }
 
     @Test
+    func removingMultipleTranscriptsDeletesAllMatchesAndKeepsOrder() {
+        let first = LocalTranscriptRecord(
+            id: UUID(),
+            text: "first",
+            language: "zh-CN",
+            createdAt: Date(timeIntervalSince1970: 1)
+        )
+        let second = LocalTranscriptRecord(
+            id: UUID(),
+            text: "second",
+            language: "zh-CN",
+            createdAt: Date(timeIntervalSince1970: 2)
+        )
+        let third = LocalTranscriptRecord(
+            id: UUID(),
+            text: "third",
+            language: "zh-CN",
+            createdAt: Date(timeIntervalSince1970: 3)
+        )
+
+        let history = LocalTranscriptHistory.removing(
+            ids: [first.id, third.id],
+            from: [third, second, first]
+        )
+
+        #expect(history.map(\.text) == ["second"])
+    }
+
+    @Test
     func updatingTranscriptReplacesMatchingRecordAndKeepsOrder() {
         let first = LocalTranscriptRecord(
             id: UUID(),

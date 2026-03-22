@@ -260,7 +260,13 @@
 "transcript_history_page_title" = "Recent 10 records";
 "transcript_history_empty_title" = "There are no local transcripts yet.";
 "transcript_history_empty_hint" = "Hold the talk button on the main page and your latest 10 transcripts will appear here.";
-"transcript_history_swipe_hint" = "Swipe right to send to Mac, swipe left to delete, or long-press to copy.";
+"transcript_history_swipe_hint" = "Swipe right to send to Mac, swipe left to delete, enter Edit to multi-select for batch delete, or long-press to copy.";
+"edit_button" = "Edit";
+"done_button" = "Done";
+"select_all_button" = "Select All";
+"transcript_history_delete_selected_format" = "Delete Selected (%lld)";
+"transcript_history_batch_delete_title" = "Delete selected records?";
+"transcript_history_batch_delete_message_format" = "Delete these %lld records? This action cannot be undone.";
 "copy_button" = "Copy";
 "send_button" = "Send";
 "delete_button" = "Delete";

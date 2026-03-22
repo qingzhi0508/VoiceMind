@@ -7,6 +7,7 @@ public enum MessageType: String, Codable {
     case startListen
     case stopListen
     case result
+    case textMessage
     case partialResult  // Mac -> iOS: 部分识别结果（实时反馈）
     case ping
     case pong

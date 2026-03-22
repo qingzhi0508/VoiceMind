@@ -49,6 +49,8 @@ extension MenuBarController: ConnectionManagerDelegate {
         switch envelope.type {
         case .result:
             handleResultMessage(envelope)
+        case .textMessage:
+            handleTextMessage(envelope)
         case .ping:
             handlePingMessage(envelope)
         default:
@@ -131,38 +133,29 @@ extension MenuBarController: ConnectionManagerDelegate {
                 return
             }
 
-            print("💉 开始注入文本: \(payload.text)")
-            do {
-                try self.textInjector.inject(payload.text)
-                print("✅ 文本注入成功")
-            } catch TextInjectionError.noFocusedInputTarget {
-                let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
-                self.appendInboundDataRecord(
-                    title: "未找到可输入控件",
-                    detail: "当前没有检测到可写输入框，本次识别结果未自动输入。\n内容: \(payload.text)\n\n\(focusedElementSummary)",
-                    category: .connection,
-                    severity: .warning
-                )
-            } catch TextInjectionError.accessibilityPermissionDenied {
-                self.appendInboundDataRecord(
-                    title: "文本注入权限不足",
-                    detail: "缺少辅助功能权限，无法直接注入文本。\n已提示用户授权或复制文本。\n内容: \(payload.text)",
-                    category: .connection,
-                    severity: .warning
-                )
-                self.showTextInjectionPermissionError(with: payload.text)
-            } catch {
-                let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
-                self.appendInboundDataRecord(
-                    title: "文本注入失败，已降级为复制",
-                    detail: "注入错误: \(error.localizedDescription)\n内容: \(payload.text)\n\n\(focusedElementSummary)",
-                    category: .connection,
-                    severity: .warning
-                )
-                self.showTextCopyAlert(payload.text, error: error.localizedDescription)
-            }
+            self.injectText(payload.text, missingTargetTitle: "未找到可输入控件")
 
             // 更新笔记显示最新识别结果
+            self.noteText = payload.text
+        }
+    }
+
+    private func handleTextMessage(_ envelope: MessageEnvelope) {
+        print("🔔 handleTextMessage 被调用")
+        guard let payload = try? JSONDecoder().decode(TextMessagePayload.self, from: envelope.payload) else {
+            print("❌ 无法解码 TextMessagePayload")
+            return
+        }
+
+        appendInboundDataRecord(
+            title: "收到文本消息",
+            detail: "Session: \(payload.sessionId)\n语言: \(payload.language)\n内容: \(payload.text)",
+            category: .voice
+        )
+
+        restoreInjectionTargetApplicationIfNeeded { [weak self] in
+            guard let self else { return }
+            self.injectText(payload.text, missingTargetTitle: "未找到可粘贴控件")
             self.noteText = payload.text
         }
     }
@@ -215,6 +208,39 @@ extension MenuBarController: ConnectionManagerDelegate {
 
         keyDownEvent.post(tap: .cghidEventTap)
         keyUpEvent.post(tap: .cghidEventTap)
+    }
+
+    private func injectText(_ text: String, missingTargetTitle: String) {
+        print("💉 开始注入文本: \(text)")
+        do {
+            try self.textInjector.inject(text)
+            print("✅ 文本注入成功")
+        } catch TextInjectionError.noFocusedInputTarget {
+            let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
+            self.appendInboundDataRecord(
+                title: missingTargetTitle,
+                detail: "当前没有检测到可写输入框，本次文本未自动输入。\n内容: \(text)\n\n\(focusedElementSummary)",
+                category: .connection,
+                severity: .warning
+            )
+        } catch TextInjectionError.accessibilityPermissionDenied {
+            self.appendInboundDataRecord(
+                title: "文本注入权限不足",
+                detail: "缺少辅助功能权限，无法直接注入文本。\n已提示用户授权或复制文本。\n内容: \(text)",
+                category: .connection,
+                severity: .warning
+            )
+            self.showTextInjectionPermissionError(with: text)
+        } catch {
+            let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
+            self.appendInboundDataRecord(
+                title: "文本注入失败，已降级为复制",
+                detail: "注入错误: \(error.localizedDescription)\n内容: \(text)\n\n\(focusedElementSummary)",
+                category: .connection,
+                severity: .warning
+            )
+            self.showTextCopyAlert(text, error: error.localizedDescription)
+        }
     }
 }
 

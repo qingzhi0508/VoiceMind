@@ -40,4 +40,19 @@ final class MessagePayloadsTests: XCTestCase {
         XCTAssertEqual(decoded.text, "Hello world")
         XCTAssertEqual(decoded.language, "en-US")
     }
+
+    func testTextMessagePayload() throws {
+        let payload = TextMessagePayload(
+            sessionId: "session-uuid-text",
+            text: "Paste this",
+            language: "zh-CN"
+        )
+
+        let encoded = try JSONEncoder().encode(payload)
+        let decoded = try JSONDecoder().decode(TextMessagePayload.self, from: encoded)
+
+        XCTAssertEqual(decoded.sessionId, "session-uuid-text")
+        XCTAssertEqual(decoded.text, "Paste this")
+        XCTAssertEqual(decoded.language, "zh-CN")
+    }
 }

@@ -9,6 +9,7 @@ final class MessageEnvelopeTests: XCTestCase {
         XCTAssertEqual(MessageType.startListen.rawValue, "startListen")
         XCTAssertEqual(MessageType.stopListen.rawValue, "stopListen")
         XCTAssertEqual(MessageType.result.rawValue, "result")
+        XCTAssertEqual(MessageType.textMessage.rawValue, "textMessage")
         XCTAssertEqual(MessageType.ping.rawValue, "ping")
         XCTAssertEqual(MessageType.pong.rawValue, "pong")
         XCTAssertEqual(MessageType.error.rawValue, "error")

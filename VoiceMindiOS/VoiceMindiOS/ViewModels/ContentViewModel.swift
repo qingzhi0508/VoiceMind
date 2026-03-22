@@ -457,7 +457,7 @@ class ContentViewModel: ObservableObject {
         guard !trimmedText.isEmpty else { return }
 
         let sessionId = UUID().uuidString
-        let payload = ResultPayload(
+        let payload = TextMessagePayload(
             sessionId: sessionId,
             text: trimmedText,
             language: language
@@ -467,14 +467,14 @@ class ContentViewModel: ObservableObject {
 
         let timestamp = Date()
         let hmac = connectionManager.hmacValidator?.generateHMACForEnvelope(
-            type: .result,
+            type: .textMessage,
             payload: payloadData,
             timestamp: timestamp,
             deviceId: connectionManager.deviceId
         )
 
         let envelope = MessageEnvelope(
-            type: .result,
+            type: .textMessage,
             payload: payloadData,
             timestamp: timestamp,
             deviceId: connectionManager.deviceId,
@@ -575,6 +575,11 @@ class ContentViewModel: ObservableObject {
 
     func removeLocalTranscriptRecord(id: UUID) {
         localTranscriptHistory = LocalTranscriptHistory.removing(id: id, from: localTranscriptHistory)
+        Self.saveLocalTranscriptHistory(localTranscriptHistory, forKey: localTranscriptHistoryKey)
+    }
+
+    func removeLocalTranscriptRecords(ids: Set<UUID>) {
+        localTranscriptHistory = LocalTranscriptHistory.removing(ids: ids, from: localTranscriptHistory)
         Self.saveLocalTranscriptHistory(localTranscriptHistory, forKey: localTranscriptHistoryKey)
     }
 
@@ -847,7 +852,7 @@ extension ContentViewModel: SpeechControllerDelegate {
             let sessionId = self.currentSessionId ?? self.manualSessionId
 
             if shouldForward, let sessionId {
-                let payload = ResultPayload(
+                let payload = TextMessagePayload(
                     sessionId: sessionId,
                     text: text,
                     language: language
@@ -857,14 +862,14 @@ extension ContentViewModel: SpeechControllerDelegate {
 
                 let timestamp = Date()
                 let hmac = self.connectionManager.hmacValidator?.generateHMACForEnvelope(
-                    type: .result,
+                    type: .textMessage,
                     payload: payloadData,
                     timestamp: timestamp,
                     deviceId: self.connectionManager.deviceId
                 )
 
                 let envelope = MessageEnvelope(
-                    type: .result,
+                    type: .textMessage,
                     payload: payloadData,
                     timestamp: timestamp,
                     deviceId: self.connectionManager.deviceId,
