@@ -250,7 +250,8 @@
 "home_mode_switch_to_local" = "切换到本地转录";
 "transcript_card_title" = "转写结果";
 "transcript_card_placeholder" = "按住下方按钮开始录音。";
-"transcript_card_hint" = "这里的内容可以手动编辑输入，按住录音并上滑可发送到 Mac。";
+"transcript_card_hint" = "本地转录时，这里会实时显示内容。";
+"transcript_card_live_placeholder" = "正在实时转录...";
 "transcript_history_title" = "最近 10 条记录";
 "transcript_history_page_title" = "最近 10 条记录";
 "transcript_history_empty_title" = "还没有本地转写记录。";

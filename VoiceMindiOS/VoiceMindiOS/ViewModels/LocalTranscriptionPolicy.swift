@@ -13,8 +13,18 @@ enum LocalTranscriptionPolicy {
         sendToMacEnabled ? preferredMode : .local
     }
 
-    static func shouldShowTranscriptPreviewOnHome(mode: HomeTranscriptionMode) -> Bool {
-        mode == .local
+    static func shouldShowTranscriptPreviewOnHome(
+        mode: HomeTranscriptionMode,
+        recognitionState: RecognitionState,
+        transcriptText: String
+    ) -> Bool {
+        guard mode == .local else { return false }
+        switch recognitionState {
+        case .listening, .processing, .sending:
+            return true
+        case .idle:
+            return !transcriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
     }
 
     static func shouldPromptForHomeMacAction(

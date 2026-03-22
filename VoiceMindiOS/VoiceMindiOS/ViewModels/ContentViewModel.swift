@@ -362,7 +362,11 @@ class ContentViewModel: ObservableObject {
     }
 
     var shouldShowTranscriptPreviewOnHome: Bool {
-        LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(mode: effectiveHomeTranscriptionMode)
+        LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
+            mode: effectiveHomeTranscriptionMode,
+            recognitionState: recognitionState,
+            transcriptText: localTranscriptText
+        )
     }
 
     var shouldPromptForHomeMacAction: Bool {

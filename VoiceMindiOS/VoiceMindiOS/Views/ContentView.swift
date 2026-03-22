@@ -49,6 +49,12 @@ private struct AppCardSurface: ViewModifier {
     }
 }
 
+enum PrimaryRecognitionLayoutPolicy {
+    static func recognitionControlAlignment(showingTranscriptPreview: Bool) -> Alignment {
+        .center
+    }
+}
+
 enum ContentInteractionPolicy {
     static func shouldDismissKeyboardOnBackgroundTap(isTranscriptEditorFocused: Bool) -> Bool {
         isTranscriptEditorFocused
@@ -225,6 +231,8 @@ struct TranscriptCard: View {
     @Binding var isFocused: Bool
     let autoScrollVersion: Int
     let isEditable: Bool
+    let recognitionState: RecognitionState
+    let liveStatusMessage: String?
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -235,23 +243,48 @@ struct TranscriptCard: View {
                 isEditable: isEditable
             )
             .frame(height: 150)
+            .padding(.horizontal, 2)
 
             if transcriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(String(localized: "transcript_card_placeholder"))
-                        .font(.body)
-                        .foregroundColor(.primary)
-                    Text(String(localized: "transcript_card_hint"))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: 8) {
+                    if recognitionState != .idle {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text(liveStatusMessage ?? String(localized: "transcript_card_live_placeholder"))
+                                .font(.subheadline.weight(.medium))
+                                .foregroundColor(.primary)
+                        }
+                    } else {
+                        Text(String(localized: "transcript_card_placeholder"))
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                    }
                 }
-                .padding(.top, 8)
-                .padding(.leading, 5)
+                .padding(.top, 12)
+                .padding(.leading, 8)
                 .allowsHitTesting(false)
             }
         }
-        .padding()
-        .modifier(AppCardSurface())
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(uiColor: .secondarySystemBackground),
+                            Color(uiColor: .tertiarySystemBackground)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.white.opacity(0.55), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.06), radius: 18, x: 0, y: 10)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -263,34 +296,11 @@ struct PrimaryRecognitionPage: View {
     @State private var showsMacActionAlert = false
 
     var body: some View {
-        VStack {
-            if viewModel.shouldShowTranscriptPreviewOnHome {
-                TranscriptCard(
-                    transcriptText: Binding(
-                        get: { viewModel.localTranscriptText },
-                        set: { viewModel.updateLocalTranscriptText($0) }
-                    ),
-                    isFocused: $isTranscriptFocused,
-                    autoScrollVersion: viewModel.transcriptAutoScrollVersion,
-                    isEditable: false
-                )
-                    .padding(.bottom, 12)
-            }
-
-            if viewModel.shouldShowMacConnectionCard {
-                ConnectionStatusCard(
-                    pairingState: viewModel.pairingState,
-                    connectionState: viewModel.connectionState,
-                    reconnectStatusMessage: viewModel.reconnectStatusMessage,
-                    onReconnect: {
-                        viewModel.reconnect()
-                    }
-                )
-                .padding(.bottom, 20)
-            }
-
-            Spacer(minLength: 0)
-
+        ZStack(
+            alignment: PrimaryRecognitionLayoutPolicy.recognitionControlAlignment(
+                showingTranscriptPreview: viewModel.shouldShowTranscriptPreviewOnHome
+            )
+        ) {
             RecognitionStatusView(
                 state: viewModel.recognitionState,
                 statusMessage: viewModel.pushToTalkStatusMessage,
@@ -314,32 +324,68 @@ struct PrimaryRecognitionPage: View {
                     viewModel.sendCurrentTranscriptToMac()
                 }
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
-            if viewModel.canShowHomeTranscriptionModeToggle {
-                Button {
-                    onDismissKeyboard()
-                    viewModel.toggleHomeTranscriptionMode()
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: viewModel.effectiveHomeTranscriptionMode == .local ? "iphone" : "desktopcomputer")
-                            .font(.headline)
-                        Text(
-                            viewModel.effectiveHomeTranscriptionMode == .local
-                            ? String(localized: "home_mode_switch_to_mac")
-                            : String(localized: "home_mode_switch_to_local")
+            VStack(spacing: 0) {
+                if viewModel.shouldShowTranscriptPreviewOnHome {
+                    TranscriptCard(
+                        transcriptText: Binding(
+                            get: { viewModel.localTranscriptText },
+                            set: { viewModel.updateLocalTranscriptText($0) }
+                        ),
+                        isFocused: $isTranscriptFocused,
+                        autoScrollVersion: viewModel.transcriptAutoScrollVersion,
+                        isEditable: false,
+                        recognitionState: viewModel.recognitionState,
+                        liveStatusMessage: viewModel.pushToTalkStatusMessage
+                    )
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .top)
+                                .combined(with: .opacity)
+                                .combined(with: .scale(scale: 0.96, anchor: .top)),
+                            removal: .opacity
                         )
-                            .font(.subheadline.weight(.medium))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    )
+                    .padding(.top, 4)
                 }
-                .buttonStyle(.bordered)
-                .padding(.top, 8)
-            }
 
-            Spacer(minLength: 0)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+
+                if viewModel.canShowHomeTranscriptionModeToggle {
+                    Button {
+                        onDismissKeyboard()
+                        viewModel.toggleHomeTranscriptionMode()
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: viewModel.effectiveHomeTranscriptionMode == .local ? "iphone" : "desktopcomputer")
+                                .font(.headline)
+                            Text(
+                                viewModel.effectiveHomeTranscriptionMode == .local
+                                ? String(localized: "home_mode_switch_to_mac")
+                                : String(localized: "home_mode_switch_to_local")
+                            )
+                                .font(.subheadline.weight(.medium))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.bordered)
+                    .padding(.bottom, 12)
+                }
+
+                Color.clear
+                    .frame(height: 6)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(.spring(response: 0.42, dampingFraction: 0.88), value: viewModel.shouldShowTranscriptPreviewOnHome)
         .alert(
             String(localized: "home_mac_action_alert_title"),
             isPresented: $showsMacActionAlert

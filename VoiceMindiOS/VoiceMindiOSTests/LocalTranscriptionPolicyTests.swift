@@ -102,9 +102,54 @@ struct LocalTranscriptionPolicyTests {
     }
 
     @Test
-    func macModeHidesTranscriptPreviewOnHome() {
-        #expect(LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(mode: .local))
-        #expect(!LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(mode: .mac))
+    func transcriptPreviewOnHomeRequiresLocalModeCompletedRecognitionAndText() {
+        #expect(
+            LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
+                mode: .local,
+                recognitionState: .listening,
+                transcriptText: ""
+            )
+        )
+
+        #expect(
+            LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
+                mode: .local,
+                recognitionState: .processing,
+                transcriptText: ""
+            )
+        )
+
+        #expect(
+            LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
+                mode: .local,
+                recognitionState: .idle,
+                transcriptText: "hello"
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
+                mode: .local,
+                recognitionState: .idle,
+                transcriptText: "   "
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
+                mode: .local,
+                recognitionState: .idle,
+                transcriptText: "   "
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
+                mode: .mac,
+                recognitionState: .listening,
+                transcriptText: ""
+            )
+        )
     }
 
     @Test

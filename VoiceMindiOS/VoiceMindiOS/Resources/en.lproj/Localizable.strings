@@ -252,7 +252,8 @@
 "home_mode_switch_to_local" = "Switch to Local Transcription";
 "transcript_card_title" = "Transcript";
 "transcript_card_placeholder" = "Hold the button below to start recording.";
-"transcript_card_hint" = "You can edit or type here manually. Hold the button and drag up to send the current text to Mac.";
+"transcript_card_hint" = "Local transcription appears here in real time.";
+"transcript_card_live_placeholder" = "Transcribing live...";
 "transcript_history_title" = "Recent 10 records";
 "transcript_history_page_title" = "Recent 10 records";
 "transcript_history_empty_title" = "There are no local transcripts yet.";
