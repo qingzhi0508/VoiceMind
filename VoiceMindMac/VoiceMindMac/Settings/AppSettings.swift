@@ -82,7 +82,7 @@ class AppSettings: ObservableObject {
         }
 
         let savedPort = defaults.integer(forKey: Keys.serverPort)
-        self.serverPort = savedPort > 0 ? UInt16(savedPort) : 8899
+        self.serverPort = savedPort > 0 ? UInt16(savedPort) : 18661
     }
 
     // MARK: - Helper Methods
@@ -92,6 +92,6 @@ class AppSettings: ObservableObject {
         hotkeyModifiers = 0x80000 // Option
         hotkeyKey = 49 // Space
         language = "zh-CN"
-        serverPort = 8899
+        serverPort = 18661
     }
 }

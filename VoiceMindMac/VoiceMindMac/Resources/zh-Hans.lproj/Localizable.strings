@@ -5,6 +5,22 @@
 "save_button" = "保存";
 "refresh_button" = "刷新";
 "grant_permission_button" = "授予权限";
+"main_nav_home" = "首页";
+"main_nav_collaboration" = "双端协同";
+"main_brand_subtitle" = "桌面协同输入";
+"main_home_welcome" = "欢迎回来";
+"main_home_subtitle" = "在这里查看连接状态、服务概览和最近的语音活动。";
+"main_home_status_spotlight" = "当前桌面输入状态";
+"main_home_unpaired_summary" = "当前还没有和 iPhone 建立配对。启动服务后，可以开始新的配对流程。";
+"main_home_paired_summary_format" = "当前已与 %@ 完成配对。你可以继续接收文本同步，或检查最近活动。";
+"main_home_recent_activity" = "最近活动";
+"main_home_open_notes" = "查看笔记";
+"main_home_note_count_format" = "%d 字符";
+"main_collaboration_subtitle" = "管理服务、配对状态，并查看最近的双端协同活动。";
+"main_speech_subtitle" = "切换识别引擎、模型和语言偏好。";
+"main_notes_subtitle" = "集中查看最近的文本结果，并进行本地录音输入。";
+"main_permissions_subtitle" = "检查辅助功能和输入监控权限是否就绪。";
+"main_settings_subtitle" = "管理文本注入、语言与网络服务参数。";
 
 "hotkey_title" = "热键设置";
 "hotkey_modifier_label" = "修饰键：";
@@ -190,8 +206,8 @@
 "settings_language_en" = "英文";
 "settings_network_title" = "网络服务";
 "settings_network_port_label" = "监听端口";
-"settings_network_port_placeholder" = "8899";
-"settings_network_port_desc" = "默认端口已改为 8899。修改后如果服务正在运行，会自动重启到新端口。";
+"settings_network_port_placeholder" = "18661";
+"settings_network_port_desc" = "默认端口已改为 18661。修改后如果服务正在运行，会自动重启到新端口。";
 
 "data_filter_all" = "全部";
 "data_filter_voice" = "语音";

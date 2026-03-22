@@ -4,6 +4,22 @@
 "save_button" = "Save";
 "refresh_button" = "Refresh";
 "grant_permission_button" = "Grant Permission";
+"main_nav_home" = "Home";
+"main_nav_collaboration" = "Collaboration";
+"main_brand_subtitle" = "Desktop dictation hub";
+"main_home_welcome" = "Welcome back";
+"main_home_subtitle" = "Review connection health, service status, and your latest voice activity in one place.";
+"main_home_status_spotlight" = "Current desktop input status";
+"main_home_unpaired_summary" = "Your Mac is not paired with an iPhone yet. Start the service to begin a new pairing flow.";
+"main_home_paired_summary_format" = "Your Mac is paired with %@. You can keep receiving synced text or review recent activity.";
+"main_home_recent_activity" = "Recent activity";
+"main_home_open_notes" = "Open notes";
+"main_home_note_count_format" = "%d chars";
+"main_collaboration_subtitle" = "Manage service, pairing status, and your latest cross-device activity.";
+"main_speech_subtitle" = "Manage recognition engines, models, and language preferences.";
+"main_notes_subtitle" = "Review the latest text results and trigger local recording input.";
+"main_permissions_subtitle" = "Check whether Accessibility and Input Monitoring are ready.";
+"main_settings_subtitle" = "Adjust text injection, language, and network service settings.";
 
 "hotkey_title" = "Hotkey Settings";
 "hotkey_modifier_label" = "Modifiers:";
@@ -191,8 +207,8 @@ You can also copy the text and paste manually.";
 "settings_language_en" = "English";
 "settings_network_title" = "Network Service";
 "settings_network_port_label" = "Listening Port";
-"settings_network_port_placeholder" = "8899";
-"settings_network_port_desc" = "The default port is now 8899. If the service is running, it will restart on the new port.";
+"settings_network_port_placeholder" = "18661";
+"settings_network_port_desc" = "The default port is now 18661. If the service is running, it will restart on the new port.";
 
 "data_filter_all" = "All";
 "data_filter_voice" = "Voice";

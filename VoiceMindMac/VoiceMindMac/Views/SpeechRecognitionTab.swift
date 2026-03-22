@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SpeechRecognitionTab: View {
     @ObservedObject var controller: MenuBarController
+    var showsInlineHeader = true
     @State private var availableEngines: [SpeechRecognitionEngine] = []
     @State private var selectedEngineId: String = ""
     @State private var isRefreshing = false
@@ -15,9 +16,11 @@ struct SpeechRecognitionTab: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text(String(localized: "speech_engine_title"))
-                .font(.title2)
-                .fontWeight(.semibold)
+            if showsInlineHeader {
+                Text(String(localized: "speech_engine_title"))
+                    .font(.title2)
+                    .fontWeight(.semibold)
+            }
 
             engineSelectionSection
 
@@ -38,7 +41,7 @@ struct SpeechRecognitionTab: View {
             VStack(alignment: .leading, spacing: 12) {
                 if availableEngines.isEmpty {
                     Text(String(localized: "speech_engine_loading"))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(MainWindowColors.secondaryText)
                 } else {
                     ForEach(availableEngines, id: \.identifier) { engine in
                         engineRow(engine)
@@ -55,11 +58,11 @@ struct SpeechRecognitionTab: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text(String(localized: "model_management_desc"))
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(MainWindowColors.secondaryText)
 
                 if availableModels.isEmpty {
                     Text(String(localized: "model_loading"))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(MainWindowColors.secondaryText)
                         .font(.caption)
                 } else {
                     ForEach(availableModels, id: \.id) { model in
@@ -81,15 +84,15 @@ struct SpeechRecognitionTab: View {
 
                     Text(model.description)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(MainWindowColors.secondaryText)
 
                     HStack(spacing: 8) {
                         Text("引擎: \(model.engineType)")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(MainWindowColors.secondaryText)
                         Text("大小: \(formatFileSize(model.size))")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(MainWindowColors.secondaryText)
                     }
                 }
 
@@ -142,7 +145,7 @@ struct SpeechRecognitionTab: View {
                 HStack {
                     Text("支持语言: \(model.languages.prefix(5).joined(separator: ", "))")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(MainWindowColors.secondaryText)
                     Spacer()
                 }
             }
@@ -150,7 +153,7 @@ struct SpeechRecognitionTab: View {
         .padding(.vertical, 4)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
         )
         .padding(8)
     }
@@ -182,7 +185,7 @@ struct SpeechRecognitionTab: View {
 
                     Text(String(format: String(localized: "engine_supported_languages_format"), engine.supportedLanguages.prefix(3).joined(separator: ", ")))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(MainWindowColors.secondaryText)
                 }
             }
 
@@ -351,7 +354,7 @@ struct RadioButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: isSelected ? "circle.inset.filled" : "circle")
-                .foregroundColor(isSelected ? .accentColor : .secondary)
+                .foregroundColor(isSelected ? .accentColor : MainWindowColors.secondaryText)
         }
         .buttonStyle(.plain)
     }

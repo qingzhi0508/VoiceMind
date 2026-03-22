@@ -5,6 +5,9 @@
 "save_button" = "保存";
 "refresh_button" = "刷新";
 "grant_permission_button" = "授予权限";
+"main_nav_home" = "首页";
+"main_nav_collaboration" = "双端协同";
+"main_collaboration_subtitle" = "管理服务、配对状态，并查看最近的双端协同活动。";
 
 "hotkey_title" = "热键设置";
 "hotkey_modifier_label" = "修饰键：";
@@ -184,8 +187,8 @@
 "settings_language_en" = "英文";
 "settings_network_title" = "网络服务";
 "settings_network_port_label" = "监听端口";
-"settings_network_port_placeholder" = "8899";
-"settings_network_port_desc" = "默认端口已改为 8899。修改后如果服务正在运行，会自动重启到新端口。";
+"settings_network_port_placeholder" = "18661";
+"settings_network_port_desc" = "默认端口已改为 18661。修改后如果服务正在运行，会自动重启到新端口。";
 
 "data_filter_all" = "全部";
 "data_filter_voice" = "语音";

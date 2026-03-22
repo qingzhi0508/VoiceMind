@@ -14,4 +14,16 @@ final class AppSettingsTests: XCTestCase {
 
         settings.hasShownUsageGuide = originalValue
     }
+
+    func testResetToDefaultsUsesNewListeningPort() {
+        let settings = AppSettings.shared
+        let originalPort = settings.serverPort
+
+        settings.serverPort = 19999
+        settings.resetToDefaults()
+
+        XCTAssertEqual(settings.serverPort, 18661)
+
+        settings.serverPort = originalPort
+    }
 }

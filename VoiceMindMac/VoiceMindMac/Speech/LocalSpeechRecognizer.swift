@@ -2,6 +2,16 @@ import Foundation
 import Speech
 import AVFoundation
 
+enum LocalSpeechRecognitionStopPolicy {
+    static let cancellationDelay: TimeInterval = 1.0
+
+    static func shouldSuppressErrorAfterStop(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        let description = nsError.localizedDescription.lowercased()
+        return nsError.code == 1110 || description.contains("no speech detected")
+    }
+}
+
 /// Mac 端本地麦克风语音识别器
 class LocalSpeechRecognizer: NSObject {
 
@@ -11,6 +21,7 @@ class LocalSpeechRecognizer: NSObject {
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
+    private var isStopping = false
 
     private var selectedLanguage: String = "zh-CN"
 
@@ -62,6 +73,8 @@ class LocalSpeechRecognizer: NSObject {
     /// 开始本地录音识别
     func startRecording(languageCode: String? = nil) throws {
         print("🎤 开始本地录音识别")
+
+        isStopping = false
 
         // 检查麦克风权限
         guard checkMicrophonePermission() else {
@@ -127,6 +140,11 @@ class LocalSpeechRecognizer: NSObject {
             }
 
             if let error = error {
+                if self.isStopping && LocalSpeechRecognitionStopPolicy.shouldSuppressErrorAfterStop(error) {
+                    print("ℹ️ 忽略停止录音后的识别收尾错误: \(error.localizedDescription)")
+                    return
+                }
+
                 print("❌ 本地识别错误: \(error.localizedDescription)")
                 self.delegate?.localSpeechRecognizer(self, didFailWithError: error)
             }
@@ -148,11 +166,15 @@ class LocalSpeechRecognizer: NSObject {
             audioEngine.inputNode.removeTap(onBus: 0)
         }
 
+        isStopping = true
         recognitionRequest?.endAudio()
         recognitionRequest = nil
 
-        recognitionTask?.cancel()
-        recognitionTask = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + LocalSpeechRecognitionStopPolicy.cancellationDelay) { [weak self] in
+            self?.recognitionTask?.cancel()
+            self?.recognitionTask = nil
+            self?.isStopping = false
+        }
 
         print("✅ 本地录音识别已停止")
     }
