@@ -107,6 +107,20 @@ enum LocalTranscriptionPolicy {
         return true
     }
 
+    static func shouldRetryReconnectOnDisconnect(
+        sendToMacEnabled: Bool,
+        pairingState: PairingState,
+        reconnectNeedsManualAction: Bool
+    ) -> Bool {
+        guard shouldAutoReconnectToMac(
+            sendToMacEnabled: sendToMacEnabled,
+            pairingState: pairingState
+        ) else {
+            return false
+        }
+        return !reconnectNeedsManualAction
+    }
+
     static func canManuallyForwardTextToMac(
         sendToMacEnabled: Bool,
         connectionState: ConnectionState,

@@ -492,14 +492,14 @@ class ContentViewModel: ObservableObject {
 
     private func reconnectToPairedDevice() {
         // Find the paired device in discovered services
-        guard case .paired(let deviceId, let deviceName) = pairingState else {
+        guard case .paired(_, let deviceName) = pairingState else {
             print("⚠️ 无法重连: 未配对")
             return
         }
 
-        print("🔍 查找已配对的设备: \(deviceName) (ID: \(deviceId))")
+        print("🔍 查找已配对的设备: \(deviceName)")
 
-        if let service = discoveredServices.first(where: { $0.id.uuidString == deviceId || $0.name == deviceName }) {
+        if let service = discoveredServices.first(where: { $0.name == deviceName }) {
             print("✅ 找到设备，开始连接: \(service.host):\(service.port)")
             latestPairingFeedback = localized("reconnect_found_format", service.name)
             reconnectStatusMessage = localized("reconnect_found_format", service.name)
@@ -728,7 +728,13 @@ extension ContentViewModel: ConnectionManagerDelegate {
                 } else if self.recognitionState == .idle {
                     self.refreshIdleStatusMessage()
                 }
-                break
+                if LocalTranscriptionPolicy.shouldRetryReconnectOnDisconnect(
+                    sendToMacEnabled: self.sendResultsToMacEnabled,
+                    pairingState: self.pairingState,
+                    reconnectNeedsManualAction: self.reconnectNeedsManualAction
+                ) {
+                    self.reconnectToPairedDevice()
+                }
             }
         }
     }
@@ -951,14 +957,14 @@ extension ContentViewModel: BonjourBrowserDelegate {
             }
 
             // Auto-connect if this is our paired device
-            if case .paired(let deviceId, let deviceName) = self.pairingState,
-               (service.id.uuidString == deviceId || service.name == deviceName),
+            if case .paired(_, let deviceName) = self.pairingState,
+               service.name == deviceName,
                self.connectionState != .connected,
                !self.reconnectNeedsManualAction {
                 self.reconnectStatusMessage = self.localized("reconnect_found_auto")
                 self.connectionManager.connect(to: service)
-            } else if case .paired(let deviceId, let deviceName) = self.pairingState,
-                      (service.id.uuidString == deviceId || service.name == deviceName),
+            } else if case .paired(_, let deviceName) = self.pairingState,
+                      service.name == deviceName,
                       self.reconnectNeedsManualAction {
                 self.reconnectNeedsManualAction = false
                 self.reconnectStatusMessage = self.localized("reconnect_found_again")
