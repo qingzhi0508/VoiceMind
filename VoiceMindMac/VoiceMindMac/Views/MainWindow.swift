@@ -1525,7 +1525,7 @@ struct RecordButton: View {
     let onStartRecording: () -> Void
     let onStopRecording: () -> Void
 
-    @State private var isPressed = false
+    @State private var isPressActive = false
 
     var body: some View {
         ZStack {
@@ -1546,22 +1546,110 @@ struct RecordButton: View {
         }
         .frame(width: 60, height: 60)
         .contentShape(Circle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    if !isPressed {
-                        isPressed = true
-                        if !isRecording {
-                            onStartRecording()
-                        }
+        .overlay(
+            RecordButtonPressCaptureView(
+                onPressBegan: {
+                    if RecordButtonInteractionPolicy.shouldStartRecording(
+                        isPressActive: isPressActive,
+                        isRecording: isRecording
+                    ) {
+                        isPressActive = true
+                        onStartRecording()
                     }
-                }
-                .onEnded { _ in
-                    isPressed = false
-                    if isRecording {
+                },
+                onPressEnded: {
+                    let shouldStop = RecordButtonInteractionPolicy.shouldStopRecording(
+                        isPressActive: isPressActive,
+                        isRecording: isRecording
+                    )
+                    isPressActive = false
+                    if shouldStop {
                         onStopRecording()
                     }
                 }
+            )
         )
+    }
+}
+
+enum RecordButtonInteractionPolicy {
+    static func shouldStartRecording(isPressActive: Bool, isRecording: Bool) -> Bool {
+        !isPressActive && !isRecording
+    }
+
+    static func shouldStopRecording(isPressActive: Bool, isRecording: Bool) -> Bool {
+        isPressActive && isRecording
+    }
+}
+
+private struct RecordButtonPressCaptureView: NSViewRepresentable {
+    let onPressBegan: () -> Void
+    let onPressEnded: () -> Void
+
+    func makeNSView(context: Context) -> PressCaptureNSView {
+        let view = PressCaptureNSView()
+        view.onPressBegan = onPressBegan
+        view.onPressEnded = onPressEnded
+        return view
+    }
+
+    func updateNSView(_ nsView: PressCaptureNSView, context: Context) {
+        nsView.onPressBegan = onPressBegan
+        nsView.onPressEnded = onPressEnded
+    }
+}
+
+private final class PressCaptureNSView: NSView {
+    var onPressBegan: (() -> Void)?
+    var onPressEnded: (() -> Void)?
+    private var isTrackingPress = false
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard !isTrackingPress else { return }
+        isTrackingPress = true
+        onPressBegan?()
+
+        window?.trackEvents(
+            matching: [.leftMouseDragged, .leftMouseUp],
+            timeout: 86_400,
+            mode: .eventTracking
+        ) { [weak self] trackedEvent, stop in
+            guard let self else {
+                stop.pointee = true
+                return
+            }
+
+            guard let trackedEvent else {
+                self.finishTracking()
+                stop.pointee = true
+                return
+            }
+
+            let location = self.convert(trackedEvent.locationInWindow, from: nil)
+            if trackedEvent.type == .leftMouseDragged, !self.bounds.contains(location) {
+                self.finishTracking()
+                stop.pointee = true
+                return
+            }
+
+            if trackedEvent.type == .leftMouseUp {
+                self.finishTracking()
+                stop.pointee = true
+            }
+        }
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        finishTracking()
+    }
+
+    private func finishTracking() {
+        guard isTrackingPress else { return }
+        isTrackingPress = false
+        onPressEnded?()
     }
 }
