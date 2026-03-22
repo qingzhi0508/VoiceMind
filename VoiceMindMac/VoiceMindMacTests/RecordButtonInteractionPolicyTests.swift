@@ -43,4 +43,12 @@ final class RecordButtonInteractionPolicyTests: XCTestCase {
             )
         )
     }
+
+    func testDragDoesNotStopRecordingEarly() {
+        XCTAssertFalse(RecordButtonInteractionPolicy.shouldStopRecordingOnPointerDrag)
+    }
+
+    func testDoesNotUseBlockingEventTrackingLoop() {
+        XCTAssertFalse(RecordButtonInteractionPolicy.usesBlockingEventTrackingLoop)
+    }
 }

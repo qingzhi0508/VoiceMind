@@ -2,13 +2,44 @@ import Foundation
 import Speech
 import AVFoundation
 
+enum LocalSpeechRecognitionStartPolicy {
+    static func shouldStartImmediately(
+        microphoneGranted: Bool,
+        speechRecognitionGranted: Bool
+    ) -> Bool {
+        microphoneGranted && speechRecognitionGranted
+    }
+
+    static func shouldRequireOnDeviceRecognition(
+        supportsOnDeviceRecognition: Bool
+    ) -> Bool {
+        false
+    }
+}
+
 enum LocalSpeechRecognitionStopPolicy {
     static let cancellationDelay: TimeInterval = 1.0
+
+    static func shouldStopExistingSessionBeforeStarting(
+        isAudioEngineRunning: Bool,
+        hasRecognitionTask: Bool,
+        hasRecognitionRequest: Bool
+    ) -> Bool {
+        isAudioEngineRunning || hasRecognitionTask || hasRecognitionRequest
+    }
 
     static func shouldSuppressErrorAfterStop(_ error: Error) -> Bool {
         let nsError = error as NSError
         let description = nsError.localizedDescription.lowercased()
         return nsError.code == 1110 || description.contains("no speech detected")
+    }
+
+    static func shouldCancelDelayedTask(
+        scheduledSessionGeneration: Int,
+        currentSessionGeneration: Int,
+        isAudioEngineRunning: Bool
+    ) -> Bool {
+        scheduledSessionGeneration == currentSessionGeneration && !isAudioEngineRunning
     }
 }
 
@@ -22,6 +53,7 @@ class LocalSpeechRecognizer: NSObject {
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
     private var isStopping = false
+    private var sessionGeneration = 0
 
     private var selectedLanguage: String = "zh-CN"
 
@@ -88,8 +120,14 @@ class LocalSpeechRecognizer: NSObject {
             throw SpeechRecognitionError.permissionDenied
         }
 
-        // 停止之前的识别
-        stopRecording()
+        // 只有旧会话真的存在时，才做一次优雅停止。
+        if LocalSpeechRecognitionStopPolicy.shouldStopExistingSessionBeforeStarting(
+            isAudioEngineRunning: audioEngine.isRunning,
+            hasRecognitionTask: recognitionTask != nil,
+            hasRecognitionRequest: recognitionRequest != nil
+        ) {
+            stopRecording()
+        }
 
         let language = languageCode ?? selectedLanguage
         let recognizer = SFSpeechRecognizer(locale: Locale(identifier: language))
@@ -99,6 +137,7 @@ class LocalSpeechRecognizer: NSObject {
         }
 
         // 创建识别请求
+        sessionGeneration += 1
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
 
         guard let recognitionRequest = recognitionRequest else {
@@ -108,9 +147,13 @@ class LocalSpeechRecognizer: NSObject {
         recognitionRequest.shouldReportPartialResults = true
 
         // 优先使用设备上识别（离线）
-        if recognizer.supportsOnDeviceRecognition {
+        if recognizer.supportsOnDeviceRecognition && LocalSpeechRecognitionStartPolicy.shouldRequireOnDeviceRecognition(
+            supportsOnDeviceRecognition: recognizer.supportsOnDeviceRecognition
+        ) {
             recognitionRequest.requiresOnDeviceRecognition = true
             print("✅ 使用设备上识别（离线模式）")
+        } else if recognizer.supportsOnDeviceRecognition {
+            print("✅ 支持设备上识别，允许系统按最佳路径自动选择")
         }
 
         // 获取麦克风输入
@@ -167,13 +210,31 @@ class LocalSpeechRecognizer: NSObject {
         }
 
         isStopping = true
+        let scheduledSessionGeneration = sessionGeneration
+        let taskToCancel = recognitionTask
         recognitionRequest?.endAudio()
         recognitionRequest = nil
 
         DispatchQueue.main.asyncAfter(deadline: .now() + LocalSpeechRecognitionStopPolicy.cancellationDelay) { [weak self] in
-            self?.recognitionTask?.cancel()
-            self?.recognitionTask = nil
-            self?.isStopping = false
+            guard let self = self else { return }
+
+            defer {
+                self.isStopping = false
+            }
+
+            guard LocalSpeechRecognitionStopPolicy.shouldCancelDelayedTask(
+                scheduledSessionGeneration: scheduledSessionGeneration,
+                currentSessionGeneration: self.sessionGeneration,
+                isAudioEngineRunning: self.audioEngine.isRunning
+            ) else {
+                return
+            }
+
+            taskToCancel?.cancel()
+
+            if self.recognitionTask === taskToCancel {
+                self.recognitionTask = nil
+            }
         }
 
         print("✅ 本地录音识别已停止")
