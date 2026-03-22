@@ -250,6 +250,8 @@
 "ptt_manual_send_requires_mac" = "Turn on Mac collaboration and connect to your Mac before sending the current text.";
 "home_mode_switch_to_mac" = "Switch to Mac Transcription";
 "home_mode_switch_to_local" = "Switch to Local Transcription";
+"bottom_mode_toggle_mac" = "Mac Mode";
+"bottom_mode_toggle_local" = "Local Mode";
 "transcript_card_title" = "Transcript";
 "transcript_card_placeholder" = "Hold the button below to start recording.";
 "transcript_card_hint" = "Local transcription appears here in real time.";

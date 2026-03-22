@@ -248,6 +248,8 @@
 "ptt_manual_send_requires_mac" = "需要先打开 Mac 协同并连接到 Mac，才能发送当前文字。";
 "home_mode_switch_to_mac" = "切换到 Mac 转录";
 "home_mode_switch_to_local" = "切换到本地转录";
+"bottom_mode_toggle_mac" = "Mac 转录";
+"bottom_mode_toggle_local" = "本地转录";
 "transcript_card_title" = "转写结果";
 "transcript_card_placeholder" = "按住下方按钮开始录音。";
 "transcript_card_hint" = "本地转录时，这里会实时显示内容。";
