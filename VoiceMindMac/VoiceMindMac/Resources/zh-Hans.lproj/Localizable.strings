@@ -6,6 +6,7 @@
 "refresh_button" = "刷新";
 "grant_permission_button" = "授予权限";
 "main_nav_home" = "首页";
+"main_nav_records" = "记录";
 "main_nav_collaboration" = "双端协同";
 "main_brand_subtitle" = "桌面协同输入";
 "main_home_welcome" = "欢迎回来";
@@ -18,6 +19,7 @@
 "main_home_note_count_format" = "%d 字符";
 "main_collaboration_subtitle" = "管理服务、配对状态，并查看最近的双端协同活动。";
 "main_speech_subtitle" = "切换识别引擎、模型和语言偏好。";
+"main_records_subtitle" = "查询最近 30 天的语音识别文本，包含 Mac 本地和 iPhone 同步结果。";
 "main_notes_subtitle" = "集中查看最近的文本结果，并进行本地录音输入。";
 "main_permissions_subtitle" = "检查辅助功能和输入监控权限是否就绪。";
 "main_settings_subtitle" = "管理文本注入、语言与网络服务参数。";
@@ -235,6 +237,14 @@
 "data_category_pairing" = "配对";
 "data_category_connection" = "连接";
 "data_section_count_format" = "%d 条";
+"records_search_placeholder" = "搜索最近 30 天的识别文本";
+"records_empty_title" = "暂无语音记录";
+"records_empty_desc" = "Mac 本地识别结果和 iPhone 同步文本会按时间保存在这里。";
+"records_empty_search_desc" = "没有匹配当前关键词的语音记录。";
+"records_section_count_format" = "%d 条";
+"records_summary_count_format" = "最近 30 天共 %d 条";
+"records_source_local_mac" = "Mac 本地";
+"records_source_ios_sync" = "iPhone 同步";
 
 "permissions_tab_title" = "系统权限";
 "permissions_tab_accessibility_title" = "辅助功能";

@@ -23,6 +23,7 @@ enum MainWindowColors {
 
 enum MainWindowSection: String, CaseIterable, Identifiable {
     case home
+    case records
     case collaboration
     case data
     case speech
@@ -36,6 +37,8 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
         switch self {
         case .home:
             return String(localized: "main_nav_home")
+        case .records:
+            return String(localized: "main_nav_records")
         case .collaboration:
             return String(localized: "main_nav_collaboration")
         case .data:
@@ -55,6 +58,8 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
         switch self {
         case .home:
             return String(localized: "main_notes_subtitle")
+        case .records:
+            return String(localized: "main_records_subtitle")
         case .collaboration:
             return String(localized: "main_collaboration_subtitle")
         case .data:
@@ -74,6 +79,8 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
         switch self {
         case .home:
             return "note.text"
+        case .records:
+            return "clock.arrow.circlepath"
         case .collaboration:
             return "dot.radiowaves.left.and.right"
         case .data:
@@ -95,6 +102,7 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
 
 enum MainWindowContentSection: Equatable {
     case notes
+    case records
     case collaboration
     case data
     case speech
@@ -104,12 +112,14 @@ enum MainWindowContentSection: Equatable {
 }
 
 enum MainWindowNavigationPolicy {
-    static let primarySections: [MainWindowSection] = [.home, .collaboration, .data, .speech, .permissions]
+    static let primarySections: [MainWindowSection] = [.home, .records, .collaboration, .data, .speech, .permissions]
 
     static func contentSection(for section: MainWindowSection) -> MainWindowContentSection {
         switch section {
         case .home:
             return .notes
+        case .records:
+            return .records
         case .collaboration:
             return .collaboration
         case .data:
@@ -129,6 +139,7 @@ enum MainWindowNavigationPolicy {
 enum MainWindowPagePersistencePolicy {
     static let persistentSections: [MainWindowSection] = [
         .home,
+        .records,
         .collaboration,
         .data,
         .speech,
@@ -319,6 +330,10 @@ struct MainWindow: View {
             WindowPageShell(section: section) {
                 NotesTab(controller: controller, showsInlineHeader: false)
             }
+        case .records:
+            WindowPageShell(section: section) {
+                VoiceRecognitionRecordsTab(controller: controller, showsInlineHeader: false)
+            }
         case .collaboration:
             HomeDashboardView(
                 controller: controller,
@@ -352,6 +367,153 @@ struct MainWindow: View {
             }
         }
     }
+}
+
+private struct VoiceRecognitionRecordsTab: View {
+    @ObservedObject var controller: MenuBarController
+    var showsInlineHeader = true
+    @State private var keyword = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            if showsInlineHeader {
+                Text(String(localized: "main_nav_records"))
+                    .font(.title.weight(.bold))
+                    .foregroundColor(MainWindowColors.title)
+            }
+
+            HStack(spacing: 12) {
+                Label(
+                    String(format: String(localized: "records_summary_count_format"), filteredRecords.count),
+                    systemImage: "waveform.badge.magnifyingglass"
+                )
+                .font(.subheadline.weight(.medium))
+                .foregroundColor(MainWindowColors.secondaryText)
+
+                Spacer()
+
+                TextField(String(localized: "records_search_placeholder"), text: $keyword)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: 260)
+            }
+
+            if filteredRecords.isEmpty {
+                ContentUnavailableView(
+                    String(localized: "records_empty_title"),
+                    systemImage: "text.magnifyingglass",
+                    description: Text(AppLocalization.localizedString(recordsEmptyDescriptionKey))
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 22, pinnedViews: [.sectionHeaders]) {
+                        ForEach(groupedRecords, id: \.title) { section in
+                            Section {
+                                VStack(spacing: 12) {
+                                    ForEach(section.records) { record in
+                                        voiceRecognitionRecordCard(record)
+                                    }
+                                }
+                            } header: {
+                                HStack {
+                                    Text(section.title)
+                                        .font(.headline.weight(.semibold))
+                                        .foregroundColor(MainWindowColors.secondaryText)
+                                    Spacer()
+                                    Text(String(format: String(localized: "records_section_count_format"), section.records.count))
+                                        .font(.caption.weight(.medium))
+                                        .foregroundColor(MainWindowColors.secondaryText)
+                                }
+                                .padding(.vertical, 4)
+                                .background(MainWindowColors.canvasBackground)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
+    }
+
+    private var filteredRecords: [VoiceRecognitionRecord] {
+        VoiceRecognitionHistoryQueryPolicy.filteredRecords(
+            from: controller.voiceRecognitionRecords,
+            referenceDate: .now,
+            keyword: keyword
+        )
+    }
+
+    private var groupedRecords: [GroupedVoiceRecognitionRecords] {
+        let calendar = Calendar.current
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+
+        let groups = Dictionary(grouping: filteredRecords) { record in
+            calendar.startOfDay(for: record.createdAt)
+        }
+
+        return groups
+            .sorted { $0.key > $1.key }
+            .map { date, records in
+                GroupedVoiceRecognitionRecords(
+                    title: formatter.string(from: date),
+                    records: records.sorted { $0.createdAt > $1.createdAt }
+                )
+            }
+    }
+
+    private var recordsEmptyDescriptionKey: String {
+        keyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        ? "records_empty_desc"
+        : "records_empty_search_desc"
+    }
+
+    private func voiceRecognitionRecordCard(_ record: VoiceRecognitionRecord) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(record.createdAt.formatted(date: .omitted, time: .shortened))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(MainWindowColors.title)
+
+                    Text(AppLocalization.localizedString(record.source.localizedTitleKey))
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(MainWindowColors.secondaryText)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(MainWindowColors.softSurface)
+                        )
+                }
+
+                Spacer()
+            }
+
+            Text(record.text)
+                .font(.body)
+                .foregroundColor(MainWindowColors.primaryText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(MainWindowColors.cardSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
+    }
+}
+
+private struct GroupedVoiceRecognitionRecords {
+    let title: String
+    let records: [VoiceRecognitionRecord]
 }
 
 private struct WindowPageShell<Content: View>: View {
@@ -1573,6 +1735,9 @@ struct RecordButton: View {
 }
 
 enum RecordButtonInteractionPolicy {
+    static let shouldStopRecordingOnPointerDrag = false
+    static let usesBlockingEventTrackingLoop = false
+
     static func shouldStartRecording(isPressActive: Bool, isRecording: Bool) -> Bool {
         !isPressActive && !isRecording
     }
@@ -1603,6 +1768,8 @@ private final class PressCaptureNSView: NSView {
     var onPressBegan: (() -> Void)?
     var onPressEnded: (() -> Void)?
     private var isTrackingPress = false
+    private var localMouseUpMonitor: Any?
+    private var globalMouseUpMonitor: Any?
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         true
@@ -1611,45 +1778,55 @@ private final class PressCaptureNSView: NSView {
     override func mouseDown(with event: NSEvent) {
         guard !isTrackingPress else { return }
         isTrackingPress = true
+        startMouseUpMonitoring()
         onPressBegan?()
-
-        window?.trackEvents(
-            matching: [.leftMouseDragged, .leftMouseUp],
-            timeout: 86_400,
-            mode: .eventTracking
-        ) { [weak self] trackedEvent, stop in
-            guard let self else {
-                stop.pointee = true
-                return
-            }
-
-            guard let trackedEvent else {
-                self.finishTracking()
-                stop.pointee = true
-                return
-            }
-
-            let location = self.convert(trackedEvent.locationInWindow, from: nil)
-            if trackedEvent.type == .leftMouseDragged, !self.bounds.contains(location) {
-                self.finishTracking()
-                stop.pointee = true
-                return
-            }
-
-            if trackedEvent.type == .leftMouseUp {
-                self.finishTracking()
-                stop.pointee = true
-            }
-        }
     }
 
     override func mouseUp(with event: NSEvent) {
         finishTracking()
     }
 
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+
+        if window == nil {
+            finishTracking()
+        }
+    }
+
     private func finishTracking() {
         guard isTrackingPress else { return }
         isTrackingPress = false
+        stopMouseUpMonitoring()
         onPressEnded?()
+    }
+
+    private func startMouseUpMonitoring() {
+        stopMouseUpMonitoring()
+
+        localMouseUpMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] event in
+            self?.finishTracking()
+            return event
+        }
+
+        globalMouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] _ in
+            self?.finishTracking()
+        }
+    }
+
+    private func stopMouseUpMonitoring() {
+        if let localMouseUpMonitor {
+            NSEvent.removeMonitor(localMouseUpMonitor)
+            self.localMouseUpMonitor = nil
+        }
+
+        if let globalMouseUpMonitor {
+            NSEvent.removeMonitor(globalMouseUpMonitor)
+            self.globalMouseUpMonitor = nil
+        }
+    }
+
+    deinit {
+        stopMouseUpMonitoring()
     }
 }

@@ -137,6 +137,7 @@ extension MenuBarController: ConnectionManagerDelegate {
 
             // 更新笔记显示最新识别结果
             self.noteText = payload.text
+            self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
         }
     }
 
@@ -157,6 +158,7 @@ extension MenuBarController: ConnectionManagerDelegate {
             guard let self else { return }
             self.injectText(payload.text, missingTargetTitle: "未找到可粘贴控件")
             self.noteText = payload.text
+            self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
         }
     }
 

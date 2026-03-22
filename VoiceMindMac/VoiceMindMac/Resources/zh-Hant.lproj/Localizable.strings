@@ -6,7 +6,9 @@
 "refresh_button" = "刷新";
 "grant_permission_button" = "授予权限";
 "main_nav_home" = "首页";
+"main_nav_records" = "記錄";
 "main_nav_collaboration" = "双端协同";
+"main_records_subtitle" = "查詢最近 30 天的語音識別文字，包含 Mac 本機與 iPhone 同步結果。";
 "main_collaboration_subtitle" = "管理服务、配对状态，并查看最近的双端协同活动。";
 
 "hotkey_title" = "热键设置";
@@ -216,6 +218,14 @@
 "data_category_pairing" = "配对";
 "data_category_connection" = "连接";
 "data_section_count_format" = "%d 条";
+"records_search_placeholder" = "搜尋最近 30 天的識別文字";
+"records_empty_title" = "暫無語音記錄";
+"records_empty_desc" = "Mac 本機識別結果與 iPhone 同步文字會依時間保存在這裡。";
+"records_empty_search_desc" = "沒有符合目前關鍵字的語音記錄。";
+"records_section_count_format" = "%d 筆";
+"records_summary_count_format" = "最近 30 天共 %d 筆";
+"records_source_local_mac" = "Mac 本機";
+"records_source_ios_sync" = "iPhone 同步";
 
 "permissions_tab_title" = "系统权限";
 "permissions_tab_accessibility_title" = "辅助功能";

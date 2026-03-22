@@ -5,6 +5,7 @@
 "refresh_button" = "Refresh";
 "grant_permission_button" = "Grant Permission";
 "main_nav_home" = "Home";
+"main_nav_records" = "Records";
 "main_nav_collaboration" = "Collaboration";
 "main_brand_subtitle" = "Desktop dictation hub";
 "main_home_welcome" = "Welcome back";
@@ -17,6 +18,7 @@
 "main_home_note_count_format" = "%d chars";
 "main_collaboration_subtitle" = "Manage service, pairing status, and your latest cross-device activity.";
 "main_speech_subtitle" = "Manage recognition engines, models, and language preferences.";
+"main_records_subtitle" = "Browse the last 30 days of voice transcripts from local Mac capture and synced iPhone text.";
 "main_notes_subtitle" = "Review the latest text results and trigger local recording input.";
 "main_permissions_subtitle" = "Check whether Accessibility and Input Monitoring are ready.";
 "main_settings_subtitle" = "Adjust text injection, language, and network service settings.";
@@ -236,6 +238,14 @@ You can also copy the text and paste manually.";
 "data_category_pairing" = "Pairing";
 "data_category_connection" = "Connection";
 "data_section_count_format" = "%d items";
+"records_search_placeholder" = "Search transcripts from the last 30 days";
+"records_empty_title" = "No voice records yet";
+"records_empty_desc" = "Final Mac transcripts and synced iPhone text will appear here over time.";
+"records_empty_search_desc" = "No voice records match the current keyword.";
+"records_section_count_format" = "%d items";
+"records_summary_count_format" = "%d items in the last 30 days";
+"records_source_local_mac" = "Mac Local";
+"records_source_ios_sync" = "iPhone Sync";
 
 "permissions_tab_title" = "System Permissions";
 "permissions_tab_accessibility_title" = "Accessibility";

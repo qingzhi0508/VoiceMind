@@ -6,7 +6,7 @@ final class MainWindowPagePersistencePolicyTests: XCTestCase {
     func testAllPrimaryAndSecondarySectionsStayMountedForFastSwitching() {
         XCTAssertEqual(
             MainWindowPagePersistencePolicy.persistentSections,
-            [.home, .collaboration, .data, .speech, .permissions, .settings, .about]
+            [.home, .records, .collaboration, .data, .speech, .permissions, .settings, .about]
         )
     }
 }

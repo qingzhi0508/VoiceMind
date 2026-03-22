@@ -17,6 +17,7 @@ class MenuBarController: NSObject, ObservableObject {
     @Published var connectionState: ConnectionState
     @Published var pairingProgressMessage: String?
     @Published var inboundDataRecords: [InboundDataRecord]
+    @Published var voiceRecognitionRecords: [VoiceRecognitionRecord]
     @Published var accessibilityStatus: PermissionStatus
     @Published var inputMonitoringStatus: PermissionStatus
     @Published var isServiceRunning = false
@@ -37,15 +38,18 @@ class MenuBarController: NSObject, ObservableObject {
     var usageGuideWindow: NSWindow?
 
     private var cancellables = Set<AnyCancellable>()
+    private let voiceRecognitionHistoryStore: VoiceRecognitionHistoryStore
 
-    override init() {
+    init(voiceRecognitionHistoryStore: VoiceRecognitionHistoryStore = VoiceRecognitionHistoryStore()) {
         self.hotkeyMonitor = HotkeyMonitor()
         self.pairingState = connectionManager.pairingState
         self.connectionState = connectionManager.connectionState
         self.pairingProgressMessage = connectionManager.pairingProgressMessage
         self.inboundDataRecords = []
+        self.voiceRecognitionRecords = []
         self.accessibilityStatus = PermissionsManager.checkAccessibility()
         self.inputMonitoringStatus = PermissionsManager.checkInputMonitoring()
+        self.voiceRecognitionHistoryStore = voiceRecognitionHistoryStore
         super.init()
 
         // 设置本地语音识别代理
@@ -68,6 +72,7 @@ class MenuBarController: NSObject, ObservableObject {
 
         setupStatusItem()
         setupConnectionManager()
+        reloadVoiceRecognitionHistory()
         // Don't start services automatically
         // User will start them manually from the UI
     }
@@ -558,6 +563,24 @@ class MenuBarController: NSObject, ObservableObject {
         inboundDataRecords.removeAll()
     }
 
+    func appendVoiceRecognitionRecord(_ text: String, source: VoiceRecognitionRecordSource) {
+        do {
+            try voiceRecognitionHistoryStore.append(text: text, source: source)
+            reloadVoiceRecognitionHistory()
+        } catch {
+            print("❌ 保存语音记录失败: \(error.localizedDescription)")
+        }
+    }
+
+    func reloadVoiceRecognitionHistory() {
+        do {
+            voiceRecognitionRecords = try voiceRecognitionHistoryStore.loadRecentRecords()
+        } catch {
+            voiceRecognitionRecords = []
+            print("❌ 加载语音记录失败: \(error.localizedDescription)")
+        }
+    }
+
     private func handleServerPortChange(_ newPort: UInt16) {
         appendInboundDataRecord(
             title: String(localized: "log_server_port_updated_title"),
@@ -657,6 +680,7 @@ extension MenuBarController: LocalSpeechRecognizerDelegate {
 
             if isFinal {
                 self.isLocalRecording = false
+                self.appendVoiceRecognitionRecord(text, source: .localMac)
             }
         }
     }
