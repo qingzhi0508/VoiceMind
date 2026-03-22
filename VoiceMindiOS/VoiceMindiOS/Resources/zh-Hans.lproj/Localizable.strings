@@ -148,8 +148,8 @@
 "settings_theme_light" = "浅色";
 "settings_theme_dark" = "深色";
 "settings_language_header" = "界面语言";
-"settings_language_restart_title" = "需要重启";
-"settings_language_restart_message" = "请重新启动应用以应用新语言。";
+"settings_language_restart_title" = "需要重新打开";
+"settings_language_restart_message" = "请关闭并重新打开应用以应用新语言。";
 "settings_language_restart_button" = "知道了";
 "settings_permissions_header" = "权限";
 "settings_permission_microphone" = "麦克风";

@@ -236,9 +236,7 @@ struct SettingsView: View {
             Text(String(localized: "settings_permission_alert_message"))
         }
         .alert(String(localized: "settings_language_restart_title"), isPresented: $showLanguageRestartAlert) {
-            Button(String(localized: "settings_language_restart_button"), role: .cancel) {
-                AppLanguageManager.restartAfterLanguageChange()
-            }
+            Button(String(localized: "settings_language_restart_button"), role: .cancel) { }
         } message: {
             Text(String(localized: "settings_language_restart_message"))
         }

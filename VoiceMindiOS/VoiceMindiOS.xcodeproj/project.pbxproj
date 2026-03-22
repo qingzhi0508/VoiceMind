@@ -223,6 +223,9 @@
 			);
 			mainGroup = B919E28A2F68598F002A347A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				B919E3502F6861CF002A347A /* XCLocalSwiftPackageReference "SharedCore" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = B919E2942F68598F002A347A /* Products */;
 			projectDirPath = "";
@@ -438,7 +441,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -475,7 +478,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -633,9 +636,17 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		B919E3502F6861CF002A347A /* XCLocalSwiftPackageReference "SharedCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		B919E34E2F6861CF002A347A /* SharedCore */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = B919E3502F6861CF002A347A /* XCLocalSwiftPackageReference "SharedCore" */;
 			productName = SharedCore;
 		};
 /* End XCSwiftPackageProductDependency section */

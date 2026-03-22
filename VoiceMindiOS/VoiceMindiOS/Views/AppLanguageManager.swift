@@ -13,10 +13,9 @@ enum AppLanguageManager {
         UserDefaults.standard.synchronize()
     }
 
-    static func restartAfterLanguageChange() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            exit(0)
-        }
+    static func restartAfterLanguageChange(_ terminationHandler: () -> Void = {}) {
+        // iOS apps should not terminate themselves after a settings change.
+        _ = terminationHandler
     }
 
     static func normalized(_ code: String) -> String {
