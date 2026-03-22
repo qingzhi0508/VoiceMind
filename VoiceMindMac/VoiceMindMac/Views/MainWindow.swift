@@ -322,10 +322,7 @@ struct MainWindow: View {
         case .collaboration:
             HomeDashboardView(
                 controller: controller,
-                showsWelcomeHeader: false,
-                onOpenNotes: {
-                    selectedSection = .home
-                }
+                showsWelcomeHeader: false
             )
         case .data:
             WindowPageShell(section: section) {
@@ -387,7 +384,6 @@ private struct WindowPageShell<Content: View>: View {
 private struct HomeDashboardView: View {
     @ObservedObject var controller: MenuBarController
     var showsWelcomeHeader = true
-    let onOpenNotes: () -> Void
 
     private var controlsPolicy: CollaborationControlsPolicy {
         CollaborationControlsPolicy(
@@ -424,8 +420,6 @@ private struct HomeDashboardView: View {
                     dashboardStat(icon: "note.text", value: noteSummaryValue, tint: .green)
                 }
             }
-
-            spotlightCard
 
             collaborationControlsCard
 
@@ -475,6 +469,44 @@ private struct HomeDashboardView: View {
                     )
             }
 
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: 14),
+                    GridItem(.flexible(), spacing: 14)
+                ],
+                spacing: 14
+            ) {
+                collaborationStatusCard(
+                    title: String(localized: "status_label"),
+                    value: connectionSummaryValue,
+                    tint: spotlightTint,
+                    systemImage: "antenna.radiowaves.left.and.right"
+                )
+
+                collaborationStatusCard(
+                    title: String(localized: "status_service_label"),
+                    value: serviceSummaryValue,
+                    tint: controller.isServiceRunning ? .green : .orange,
+                    systemImage: "server.rack"
+                )
+
+                if let deviceName = controlsPolicy.pairedDeviceName {
+                    collaborationStatusCard(
+                        title: String(localized: "status_paired_device_label"),
+                        value: deviceName,
+                        tint: .blue,
+                        systemImage: "iphone"
+                    )
+                }
+
+                collaborationStatusCard(
+                    title: String(localized: "status_ip_label"),
+                    value: LocalNetworkAccessPolicy.preferredLocalIPv4() ?? String(localized: "status_unknown_value"),
+                    tint: MainWindowColors.secondaryText,
+                    systemImage: "network"
+                )
+            }
+
             HStack(spacing: 14) {
                 spotlightAction(
                     title: controller.isServiceRunning
@@ -520,78 +552,32 @@ private struct HomeDashboardView: View {
         )
     }
 
-    private var spotlightCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(String(localized: "main_home_status_spotlight"))
-                        .font(.system(size: 28, weight: .semibold))
-                        .foregroundColor(MainWindowColors.title)
-
-                    Text(spotlightDescription)
-                        .font(.body)
-                        .foregroundColor(MainWindowColors.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 24)
-
-                Image(systemName: spotlightIcon)
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundColor(spotlightTint)
+    private func collaborationStatusCard(title: String, value: String, tint: Color, systemImage: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .foregroundColor(tint)
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(MainWindowColors.secondaryText)
             }
 
-            HStack(spacing: 16) {
-                spotlightAction(
-                    title: controller.isServiceRunning
-                    ? String(localized: "status_action_stop_service")
-                    : String(localized: "status_action_start_service"),
-                    role: controller.isServiceRunning ? .secondary : .primary
-                ) {
-                    if controller.isServiceRunning {
-                        controller.stopNetworkServices()
-                    } else {
-                        controller.startNetworkServices()
-                    }
-                }
-
-                if case .unpaired = controller.pairingState {
-                    spotlightAction(
-                        title: String(localized: "status_action_start_pairing"),
-                        role: .secondary
-                    ) {
-                        controller.showPairingWindowFromUI()
-                    }
-                } else {
-                    spotlightAction(
-                        title: String(localized: "main_home_open_notes"),
-                        role: .secondary
-                    ) {
-                        onOpenNotes()
-                    }
-                }
-            }
+            Text(value)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(MainWindowColors.title)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(28)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 96, alignment: .topLeading)
+        .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            MainWindowColors.spotlightTop,
-                            MainWindowColors.spotlightBottom
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(MainWindowColors.softSurface)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.orange.opacity(0.2), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.05), radius: 18, x: 0, y: 10)
     }
 
     private func dashboardStat(icon: String, value: String, tint: Color) -> some View {
@@ -689,19 +675,6 @@ private struct HomeDashboardView: View {
         }
 
         return String(localized: "main_home_unpaired_summary")
-    }
-
-    private var spotlightIcon: String {
-        switch controller.connectionState {
-        case .connected:
-            return "checkmark.circle.fill"
-        case .connecting:
-            return "arrow.triangle.2.circlepath.circle.fill"
-        case .disconnected:
-            return "antenna.radiowaves.left.and.right.slash"
-        case .error:
-            return "exclamationmark.triangle.fill"
-        }
     }
 
     private var spotlightTint: Color {
@@ -958,27 +931,32 @@ struct SettingsTab: View {
                 }
 
                 Section(header: Text(String(localized: "settings_network_title"))) {
-                    HStack {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text(String(localized: "settings_network_port_label"))
-                        TextField(String(localized: "settings_network_port_placeholder"), text: $serverPortText)
-                            .frame(width: 100)
-                            .multilineTextAlignment(.trailing)
-                            .textFieldStyle(.roundedBorder)
-                            .onAppear {
-                                serverPortText = String(settings.serverPort)
-                            }
-                            .onChange(of: serverPortText) { _, newValue in
-                                let digitsOnly = newValue.filter(\.isNumber)
-                                if digitsOnly != serverPortText {
-                                    serverPortText = digitsOnly
-                                    return
-                                }
 
-                                guard let port = UInt16(digitsOnly), port >= 1024 else { return }
-                                if settings.serverPort != port {
-                                    settings.serverPort = port
+                        HStack {
+                            Spacer()
+                            TextField(String(localized: "settings_network_port_placeholder"), text: $serverPortText)
+                                .frame(width: 120)
+                                .multilineTextAlignment(.center)
+                                .textFieldStyle(.roundedBorder)
+                                .onAppear {
+                                    serverPortText = String(settings.serverPort)
                                 }
-                            }
+                                .onChange(of: serverPortText) { _, newValue in
+                                    let digitsOnly = newValue.filter(\.isNumber)
+                                    if digitsOnly != serverPortText {
+                                        serverPortText = digitsOnly
+                                        return
+                                    }
+
+                                    guard let port = UInt16(digitsOnly), port >= 1024 else { return }
+                                    if settings.serverPort != port {
+                                        settings.serverPort = port
+                                    }
+                                }
+                            Spacer()
+                        }
                     }
 
                     Text(String(localized: "settings_network_port_desc"))

@@ -3,8 +3,7 @@ import SwiftUI
 struct SpeechRecognitionTab: View {
     @ObservedObject var controller: MenuBarController
     var showsInlineHeader = true
-    @State private var availableEngines: [SpeechRecognitionEngine] = []
-    @State private var selectedEngineId: String = ""
+    @StateObject private var engineListStore = SpeechRecognitionEngineListStore()
     @State private var isRefreshing = false
     
     // 模型管理相关状态
@@ -199,7 +198,7 @@ struct SpeechRecognitionTab: View {
     private func selectEngine(_ identifier: String) {
         do {
             try SpeechRecognitionManager.shared.selectEngine(identifier: identifier)
-            selectedEngineId = identifier
+            engineListStore.reload()
             UserDefaults.standard.selectedSpeechEngine = identifier
 
             // Post notification for engine change
@@ -319,8 +318,7 @@ struct SpeechRecognitionTab: View {
 
     private func refreshEngines() {
         isRefreshing = true
-        availableEngines = SpeechRecognitionManager.shared.availableEngines()
-        selectedEngineId = SpeechRecognitionManager.shared.currentEngine?.identifier ?? ""
+        engineListStore.reload()
         isRefreshing = false
     }
 
@@ -332,6 +330,16 @@ struct SpeechRecognitionTab: View {
         if selectedEngineId != "sensevoice" {
             selectEngine("sensevoice")
         }
+    }
+}
+
+private extension SpeechRecognitionTab {
+    var availableEngines: [SpeechRecognitionEngine] {
+        engineListStore.availableEngines
+    }
+
+    var selectedEngineId: String {
+        engineListStore.selectedEngineId
     }
 }
 
