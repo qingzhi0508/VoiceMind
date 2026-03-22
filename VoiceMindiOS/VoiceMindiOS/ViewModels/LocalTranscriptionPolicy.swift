@@ -23,6 +23,19 @@ enum LocalTranscriptionPolicy {
         sendToMacEnabled
     }
 
+    static func shouldStartBonjourBrowsing(sendToMacEnabled: Bool) -> Bool {
+        sendToMacEnabled
+    }
+
+    static func shouldAutoReconnectToMac(
+        sendToMacEnabled: Bool,
+        pairingState: PairingState
+    ) -> Bool {
+        guard sendToMacEnabled else { return false }
+        guard case .paired = pairingState else { return false }
+        return true
+    }
+
     static func canManuallyForwardTextToMac(
         sendToMacEnabled: Bool,
         connectionState: ConnectionState,

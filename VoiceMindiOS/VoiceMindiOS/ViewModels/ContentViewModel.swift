@@ -24,16 +24,26 @@ class ContentViewModel: ObservableObject {
         didSet {
             UserDefaults.standard.set(sendResultsToMacEnabled, forKey: sendResultsToMacEnabledKey)
             if !sendResultsToMacEnabled {
+                bonjourBrowser.stop()
+                discoveredServices = []
                 connectionManager.disconnect()
                 reconnectStatusMessage = nil
+                latestPairingFeedback = nil
+                reconnectNeedsManualAction = false
                 connectionState = .disconnected
                 if recognitionState == .idle {
                     refreshIdleStatusMessage()
                 }
-            } else if case .paired = pairingState, connectionState == .disconnected {
+            } else {
+                bonjourBrowser.start()
+                if LocalTranscriptionPolicy.shouldAutoReconnectToMac(
+                    sendToMacEnabled: sendResultsToMacEnabled,
+                    pairingState: pairingState
+                ), connectionState == .disconnected {
                 reconnectToPairedDevice()
-            } else if recognitionState == .idle {
-                refreshIdleStatusMessage()
+                } else if recognitionState == .idle {
+                    refreshIdleStatusMessage()
+                }
             }
         }
     }
@@ -78,11 +88,14 @@ class ContentViewModel: ObservableObject {
         // Load pairing state
         pairingState = connectionManager.pairingState
 
-        // Start browsing for services
-        bonjourBrowser.start()
+        if LocalTranscriptionPolicy.shouldStartBonjourBrowsing(sendToMacEnabled: sendResultsToMacEnabled) {
+            bonjourBrowser.start()
+        }
 
-        // Auto-reconnect if paired
-        if sendResultsToMacEnabled, case .paired = pairingState {
+        if LocalTranscriptionPolicy.shouldAutoReconnectToMac(
+            sendToMacEnabled: sendResultsToMacEnabled,
+            pairingState: pairingState
+        ) {
             reconnectToPairedDevice()
         }
 

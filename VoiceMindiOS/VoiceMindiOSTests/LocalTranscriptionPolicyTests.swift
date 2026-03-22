@@ -49,6 +49,36 @@ struct LocalTranscriptionPolicyTests {
     }
 
     @Test
+    func bonjourBrowsingRequiresMacCollaborationToggle() {
+        #expect(!LocalTranscriptionPolicy.shouldStartBonjourBrowsing(sendToMacEnabled: false))
+        #expect(LocalTranscriptionPolicy.shouldStartBonjourBrowsing(sendToMacEnabled: true))
+    }
+
+    @Test
+    func autoReconnectRequiresToggleAndPairing() {
+        #expect(
+            !LocalTranscriptionPolicy.shouldAutoReconnectToMac(
+                sendToMacEnabled: false,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden")
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.shouldAutoReconnectToMac(
+                sendToMacEnabled: true,
+                pairingState: .unpaired
+            )
+        )
+
+        #expect(
+            LocalTranscriptionPolicy.shouldAutoReconnectToMac(
+                sendToMacEnabled: true,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden")
+            )
+        )
+    }
+
+    @Test
     func manualTextForwardingRequiresToggleConnectionAndTranscript() {
         #expect(
             LocalTranscriptionPolicy.canManuallyForwardTextToMac(

@@ -49,6 +49,27 @@ private struct AppCardSurface: ViewModifier {
     }
 }
 
+enum ContentInteractionPolicy {
+    static func shouldDismissKeyboardOnBackgroundTap(isTranscriptEditorFocused: Bool) -> Bool {
+        isTranscriptEditorFocused
+    }
+}
+
+enum TranscriptTextViewSyncPolicy {
+    static func shouldApplyExternalText(
+        currentText: String,
+        newText: String,
+        isFirstResponder: Bool,
+        hasMarkedText: Bool
+    ) -> Bool {
+        guard currentText != newText else { return false }
+        if isFirstResponder && hasMarkedText {
+            return false
+        }
+        return true
+    }
+}
+
 struct ContentView: View {
     enum FocusField: Hashable {
         case transcriptEditor
@@ -76,29 +97,40 @@ struct ContentView: View {
 
             // Decorative Elements
             GeometryReader { geometry in
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color.accentColor.opacity(0.12), Color.clear],
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 200
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [Color.accentColor.opacity(0.12), Color.clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 200
+                            )
                         )
-                    )
-                    .frame(width: 300, height: 300)
-                    .offset(x: geometry.size.width - 100, y: -50)
+                        .frame(width: 300, height: 300)
+                        .offset(x: geometry.size.width - 100, y: -50)
 
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color.purple.opacity(0.08), Color.clear],
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 180
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [Color.purple.opacity(0.08), Color.clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 180
+                            )
                         )
-                    )
-                    .frame(width: 250, height: 250)
-                    .offset(x: -80, y: geometry.size.height - 150)
+                        .frame(width: 250, height: 250)
+                        .offset(x: -80, y: geometry.size.height - 150)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    guard ContentInteractionPolicy.shouldDismissKeyboardOnBackgroundTap(
+                        isTranscriptEditorFocused: focusedField == .transcriptEditor
+                    ) else {
+                        return
+                    }
+                    dismissKeyboard()
+                }
             }
 
             TabView(selection: $selectedTab) {
@@ -146,10 +178,6 @@ struct ContentView: View {
                     Label(String(localized: ContentTab.settings.titleKey), systemImage: ContentTab.settings.systemImage)
                 }
                 .tag(ContentTab.settings)
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                dismissKeyboard()
             }
             .sheet(isPresented: $viewModel.showPairingView) {
                 PairingView(viewModel: viewModel)
@@ -819,7 +847,12 @@ struct TranscriptTextView: UIViewRepresentable {
     func updateUIView(_ uiView: UITextView, context: Context) {
         context.coordinator.parent = self
 
-        if uiView.text != text {
+        if TranscriptTextViewSyncPolicy.shouldApplyExternalText(
+            currentText: uiView.text,
+            newText: text,
+            isFirstResponder: uiView.isFirstResponder,
+            hasMarkedText: uiView.markedTextRange != nil
+        ) {
             uiView.text = text
         }
 
@@ -827,7 +860,7 @@ struct TranscriptTextView: UIViewRepresentable {
             if !uiView.isFirstResponder {
                 uiView.becomeFirstResponder()
             }
-        } else if uiView.isFirstResponder {
+        } else if uiView.isFirstResponder && uiView.markedTextRange == nil {
             uiView.resignFirstResponder()
         }
 
