@@ -8,6 +8,8 @@ struct LocalTranscriptRecord: Identifiable, Codable, Equatable {
 }
 
 enum LocalTranscriptHistory {
+    static let maxRecords = 1000
+
     static func appending(
         text: String,
         language: String,
@@ -24,7 +26,7 @@ enum LocalTranscriptHistory {
             createdAt: now
         )
 
-        return Array(([record] + history).prefix(10))
+        return Array(([record] + history).prefix(maxRecords))
     }
 
     static func removing(

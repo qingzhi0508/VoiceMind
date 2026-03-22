@@ -4,10 +4,10 @@ import Testing
 
 struct LocalTranscriptHistoryTests {
     @Test
-    func appendingTranscriptKeepsNewestTenRecords() {
+    func appendingTranscriptKeepsNewestThousandRecords() {
         var history: [LocalTranscriptRecord] = []
 
-        for index in 1...11 {
+        for index in 1...1001 {
             history = LocalTranscriptHistory.appending(
                 text: "record-\(index)",
                 language: "zh-CN",
@@ -16,8 +16,8 @@ struct LocalTranscriptHistoryTests {
             )
         }
 
-        #expect(history.count == 10)
-        #expect(history.first?.text == "record-11")
+        #expect(history.count == 1000)
+        #expect(history.first?.text == "record-1001")
         #expect(history.last?.text == "record-2")
     }
 

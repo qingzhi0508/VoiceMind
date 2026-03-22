@@ -254,10 +254,10 @@
 "transcript_card_placeholder" = "按住下方按钮开始录音。";
 "transcript_card_hint" = "本地转录时，这里会实时显示内容。";
 "transcript_card_live_placeholder" = "正在实时转录...";
-"transcript_history_title" = "最近 10 条记录";
-"transcript_history_page_title" = "最近 10 条记录";
+"transcript_history_title" = "最近 1000 条记录";
+"transcript_history_page_title" = "最近 1000 条记录";
 "transcript_history_empty_title" = "还没有本地转写记录。";
-"transcript_history_empty_hint" = "在主页面按住说话后，最近 10 条记录会出现在这里。";
+"transcript_history_empty_hint" = "在主页面按住说话后，最近 1000 条记录会出现在这里。";
 "transcript_history_swipe_hint" = "右滑可发送到 Mac，左滑可删除；进入编辑后可多选批量删除，长按内容可复制。";
 "edit_button" = "编辑";
 "done_button" = "完成";
