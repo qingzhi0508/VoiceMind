@@ -252,6 +252,15 @@ You can also copy the text and paste manually.";
 "records_summary_count_format" = "%d items in the last 30 days";
 "records_source_local_mac" = "Mac Local";
 "records_source_ios_sync" = "iPhone Sync";
+"records_action_edit" = "Edit";
+"records_action_done" = "Done";
+"records_action_select_all" = "Select All";
+"records_action_delete_selected" = "Delete Selected";
+"records_action_clear_all" = "Clear All";
+"records_delete_selected_confirm_title" = "Delete selected records";
+"records_delete_selected_confirm_message_format" = "This will delete %d selected records.";
+"records_clear_all_confirm_title" = "Clear all records";
+"records_clear_all_confirm_message" = "This will remove all voice records from the last 30 days.";
 
 "permissions_tab_title" = "System Permissions";
 "permissions_tab_accessibility_title" = "Accessibility";

@@ -96,6 +96,17 @@ struct VoiceRecognitionHistoryStore {
         )
     }
 
+    func deleteRecords(withIDs ids: Set<UUID>) throws {
+        guard !ids.isEmpty else { return }
+        let records = try loadAllRecords()
+        let remainingRecords = records.filter { !ids.contains($0.id) }
+        try save(remainingRecords)
+    }
+
+    func clearRecentRecords() throws {
+        try save([])
+    }
+
     private func loadAllRecords() throws -> [VoiceRecognitionRecord] {
         guard fileManager.fileExists(atPath: fileURL.path) else {
             return []

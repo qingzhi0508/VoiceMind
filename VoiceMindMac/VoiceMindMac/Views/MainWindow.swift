@@ -459,6 +459,10 @@ private struct VoiceRecognitionRecordsTab: View {
     @ObservedObject var controller: MenuBarController
     var showsInlineHeader = true
     @State private var keyword = ""
+    @State private var isEditing = false
+    @State private var selectedRecordIDs = Set<UUID>()
+    @State private var showsDeleteSelectedConfirmation = false
+    @State private var showsClearAllConfirmation = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -478,9 +482,43 @@ private struct VoiceRecognitionRecordsTab: View {
 
                 Spacer()
 
+                Button(isEditing ? String(localized: "records_action_done") : String(localized: "records_action_edit")) {
+                    if isEditing {
+                        selectedRecordIDs.removeAll()
+                    }
+                    isEditing.toggle()
+                }
+                .buttonStyle(.bordered)
+
                 TextField(String(localized: "records_search_placeholder"), text: $keyword)
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 260)
+            }
+
+            if bulkActionPolicy.canClearAll || isEditing {
+                HStack(spacing: 12) {
+                    if isEditing {
+                        Button(String(localized: "records_action_select_all")) {
+                            selectedRecordIDs = Set(filteredRecords.map(\.id))
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(filteredRecords.isEmpty || selectedRecordIDs.count == filteredRecords.count)
+
+                        Button(String(localized: "records_action_delete_selected")) {
+                            showsDeleteSelectedConfirmation = true
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(!bulkActionPolicy.canDeleteSelection)
+                    }
+
+                    Spacer()
+
+                    Button(String(localized: "records_action_clear_all")) {
+                        showsClearAllConfirmation = true
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!bulkActionPolicy.canClearAll)
+                }
             }
 
             if filteredRecords.isEmpty {
@@ -519,6 +557,34 @@ private struct VoiceRecognitionRecordsTab: View {
                 }
             }
         }
+        .confirmationDialog(
+            String(localized: "records_delete_selected_confirm_title"),
+            isPresented: $showsDeleteSelectedConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: "records_action_delete_selected"), role: .destructive) {
+                controller.deleteVoiceRecognitionRecords(withIDs: selectedRecordIDs)
+                selectedRecordIDs.removeAll()
+                isEditing = false
+            }
+            Button(String(localized: "cancel_button"), role: .cancel) {}
+        } message: {
+            Text(String(format: String(localized: "records_delete_selected_confirm_message_format"), selectedRecordIDs.count))
+        }
+        .confirmationDialog(
+            String(localized: "records_clear_all_confirm_title"),
+            isPresented: $showsClearAllConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: "records_action_clear_all"), role: .destructive) {
+                controller.clearVoiceRecognitionRecords()
+                selectedRecordIDs.removeAll()
+                isEditing = false
+            }
+            Button(String(localized: "cancel_button"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "records_clear_all_confirm_message"))
+        }
     }
 
     private var filteredRecords: [VoiceRecognitionRecord] {
@@ -556,33 +622,50 @@ private struct VoiceRecognitionRecordsTab: View {
         : "records_empty_search_desc"
     }
 
+    private var bulkActionPolicy: VoiceRecognitionRecordsBulkActionPolicy {
+        VoiceRecognitionRecordsBulkActionPolicy(
+            isEditing: isEditing,
+            totalRecordCount: filteredRecords.count,
+            selectedRecordCount: selectedRecordIDs.count
+        )
+    }
+
     private func voiceRecognitionRecordCard(_ record: VoiceRecognitionRecord) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(record.createdAt.formatted(date: .omitted, time: .shortened))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(MainWindowColors.title)
-
-                    Text(AppLocalization.localizedString(record.source.localizedTitleKey))
-                        .font(.caption.weight(.medium))
-                        .foregroundColor(MainWindowColors.secondaryText)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(MainWindowColors.softSurface)
-                        )
-                }
-
-                Spacer()
+        HStack(alignment: .top, spacing: 14) {
+            if isEditing {
+                Image(systemName: selectedRecordIDs.contains(record.id) ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(selectedRecordIDs.contains(record.id) ? .accentColor : MainWindowColors.secondaryText)
+                    .padding(.top, 2)
             }
 
-            Text(record.text)
-                .font(.body)
-                .foregroundColor(MainWindowColors.primaryText)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(record.createdAt.formatted(date: .omitted, time: .shortened))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(MainWindowColors.title)
+
+                        Text(AppLocalization.localizedString(record.source.localizedTitleKey))
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(MainWindowColors.secondaryText)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(MainWindowColors.softSurface)
+                            )
+                    }
+
+                    Spacer()
+                }
+
+                Text(record.text)
+                    .font(.body)
+                    .foregroundColor(MainWindowColors.primaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -594,6 +677,29 @@ private struct VoiceRecognitionRecordsTab: View {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(MainWindowColors.cardBorder, lineWidth: 1)
         )
+        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .onTapGesture {
+            guard isEditing else { return }
+            if selectedRecordIDs.contains(record.id) {
+                selectedRecordIDs.remove(record.id)
+            } else {
+                selectedRecordIDs.insert(record.id)
+            }
+        }
+    }
+}
+
+struct VoiceRecognitionRecordsBulkActionPolicy {
+    let isEditing: Bool
+    let totalRecordCount: Int
+    let selectedRecordCount: Int
+
+    var canDeleteSelection: Bool {
+        isEditing && selectedRecordCount > 0
+    }
+
+    var canClearAll: Bool {
+        totalRecordCount > 0
     }
 }
 

@@ -251,6 +251,15 @@
 "records_summary_count_format" = "最近 30 天共 %d 条";
 "records_source_local_mac" = "Mac 本地";
 "records_source_ios_sync" = "iPhone 同步";
+"records_action_edit" = "编辑";
+"records_action_done" = "完成";
+"records_action_select_all" = "全选";
+"records_action_delete_selected" = "删除所选";
+"records_action_clear_all" = "清空全部";
+"records_delete_selected_confirm_title" = "删除所选记录";
+"records_delete_selected_confirm_message_format" = "将删除已选中的 %d 条记录。";
+"records_clear_all_confirm_title" = "清空全部记录";
+"records_clear_all_confirm_message" = "将清空最近 30 天的全部语音记录。";
 
 "permissions_tab_title" = "系统权限";
 "permissions_tab_accessibility_title" = "辅助功能";

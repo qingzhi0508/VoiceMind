@@ -581,6 +581,24 @@ class MenuBarController: NSObject, ObservableObject {
         }
     }
 
+    func deleteVoiceRecognitionRecords(withIDs ids: Set<UUID>) {
+        do {
+            try voiceRecognitionHistoryStore.deleteRecords(withIDs: ids)
+            reloadVoiceRecognitionHistory()
+        } catch {
+            print("❌ 删除语音记录失败: \(error.localizedDescription)")
+        }
+    }
+
+    func clearVoiceRecognitionRecords() {
+        do {
+            try voiceRecognitionHistoryStore.clearRecentRecords()
+            reloadVoiceRecognitionHistory()
+        } catch {
+            print("❌ 清空语音记录失败: \(error.localizedDescription)")
+        }
+    }
+
     private func handleServerPortChange(_ newPort: UInt16) {
         appendInboundDataRecord(
             title: String(localized: "log_server_port_updated_title"),
