@@ -2,23 +2,109 @@ import AppKit
 import SharedCore
 import SwiftUI
 
+private extension Color {
+    static func adaptive(
+        light: (red: Double, green: Double, blue: Double, opacity: Double),
+        dark: (red: Double, green: Double, blue: Double, opacity: Double)
+    ) -> Color {
+        Color(
+            nsColor: NSColor(
+                name: nil,
+                dynamicProvider: { appearance in
+                    let palette = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
+                    return NSColor(
+                        calibratedRed: palette.red,
+                        green: palette.green,
+                        blue: palette.blue,
+                        alpha: palette.opacity
+                    )
+                }
+            )
+        )
+    }
+}
+
 enum MainWindowColors {
-    static let pageBackground = Color(red: 0.95, green: 0.96, blue: 0.985)
-    static let sidebarBackgroundTop = Color(red: 0.965, green: 0.972, blue: 0.988)
-    static let sidebarBackgroundBottom = Color(red: 0.935, green: 0.945, blue: 0.972)
-    static let canvasBackground = Color.white
-    static let canvasBorder = Color.black.opacity(0.08)
-    static let title = Color(red: 0.09, green: 0.12, blue: 0.2)
-    static let primaryText = Color(red: 0.18, green: 0.22, blue: 0.3)
-    static let secondaryText = Color(red: 0.42, green: 0.48, blue: 0.6)
-    static let sidebarText = Color(red: 0.3, green: 0.36, blue: 0.48)
-    static let sidebarSelectedFill = Color(red: 0.84, green: 0.89, blue: 0.98)
-    static let sidebarSelectedBorder = Color(red: 0.48, green: 0.74, blue: 0.96)
-    static let spotlightTop = Color(red: 0.99, green: 0.96, blue: 0.82)
-    static let spotlightBottom = Color(red: 0.98, green: 0.93, blue: 0.72)
-    static let cardBorder = Color(red: 0.84, green: 0.88, blue: 0.95)
-    static let softSurface = Color(red: 0.965, green: 0.972, blue: 0.988)
-    static let cardSurface = Color(red: 0.975, green: 0.98, blue: 0.992)
+    static let pageBackground = Color.adaptive(
+        light: (0.95, 0.96, 0.985, 1),
+        dark: (0.08, 0.1, 0.14, 1)
+    )
+    static let sidebarBackgroundTop = Color.adaptive(
+        light: (0.965, 0.972, 0.988, 1),
+        dark: (0.1, 0.12, 0.17, 1)
+    )
+    static let sidebarBackgroundBottom = Color.adaptive(
+        light: (0.935, 0.945, 0.972, 1),
+        dark: (0.08, 0.1, 0.15, 1)
+    )
+    static let canvasBackground = Color.adaptive(
+        light: (1, 1, 1, 1),
+        dark: (0.11, 0.13, 0.18, 1)
+    )
+    static let canvasBorder = Color.adaptive(
+        light: (0, 0, 0, 0.08),
+        dark: (1, 1, 1, 0.08)
+    )
+    static let title = Color.adaptive(
+        light: (0.09, 0.12, 0.2, 1),
+        dark: (0.93, 0.95, 0.99, 1)
+    )
+    static let primaryText = Color.adaptive(
+        light: (0.18, 0.22, 0.3, 1),
+        dark: (0.82, 0.86, 0.94, 1)
+    )
+    static let secondaryText = Color.adaptive(
+        light: (0.42, 0.48, 0.6, 1),
+        dark: (0.61, 0.68, 0.8, 1)
+    )
+    static let sidebarText = Color.adaptive(
+        light: (0.3, 0.36, 0.48, 1),
+        dark: (0.74, 0.79, 0.88, 1)
+    )
+    static let sidebarSelectedFill = Color.adaptive(
+        light: (0.84, 0.89, 0.98, 1),
+        dark: (0.18, 0.24, 0.35, 1)
+    )
+    static let sidebarSelectedBorder = Color.adaptive(
+        light: (0.48, 0.74, 0.96, 1),
+        dark: (0.38, 0.63, 0.95, 1)
+    )
+    static let spotlightTop = Color.adaptive(
+        light: (0.99, 0.96, 0.82, 1),
+        dark: (0.28, 0.22, 0.1, 1)
+    )
+    static let spotlightBottom = Color.adaptive(
+        light: (0.98, 0.93, 0.72, 1),
+        dark: (0.22, 0.18, 0.08, 1)
+    )
+    static let cardBorder = Color.adaptive(
+        light: (0.84, 0.88, 0.95, 1),
+        dark: (0.23, 0.29, 0.39, 1)
+    )
+    static let softSurface = Color.adaptive(
+        light: (0.965, 0.972, 0.988, 1),
+        dark: (0.14, 0.17, 0.23, 1)
+    )
+    static let cardSurface = Color.adaptive(
+        light: (0.975, 0.98, 0.992, 1),
+        dark: (0.13, 0.15, 0.21, 1)
+    )
+    static let recentActivitySurface = Color.adaptive(
+        light: (0.99, 0.995, 1.0, 1),
+        dark: (0.16, 0.19, 0.25, 1)
+    )
+    static let secondaryButtonSurface = Color.adaptive(
+        light: (0.94, 0.96, 0.99, 1),
+        dark: (0.18, 0.22, 0.3, 1)
+    )
+}
+
+enum SettingsSurfaceStylePolicy {
+    static let usesNativeGroupedForm = false
+    static let cardBorderColor = MainWindowColors.cardBorder
+    static let cardFillColor = MainWindowColors.cardSurface
+    static let rowFillColor = MainWindowColors.softSurface
+    static let secondaryTextColor = MainWindowColors.secondaryText
 }
 
 enum MainWindowSection: String, CaseIterable, Identifiable {
@@ -199,7 +285,7 @@ struct MainWindow: View {
             }
         }
         .frame(width: 1220, height: 780)
-        .preferredColorScheme(.light)
+        .preferredColorScheme(settings.themePreference.preferredColorScheme)
     }
 
     private var sidebar: some View {
@@ -796,7 +882,7 @@ private struct HomeDashboardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(red: 0.99, green: 0.995, blue: 1.0))
+                .fill(MainWindowColors.recentActivitySurface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -877,7 +963,7 @@ enum SpotlightActionStylePolicy {
             )
         case .secondary:
             return SpotlightActionStyle(
-                fillColor: Color(red: 0.94, green: 0.96, blue: 0.99),
+                fillColor: MainWindowColors.secondaryButtonSurface,
                 foregroundColor: MainWindowColors.title,
                 borderColor: MainWindowColors.cardBorder,
                 shadowOpacity: 0
@@ -1063,48 +1149,67 @@ struct SettingsTab: View {
     @ObservedObject var controller: MenuBarController
     var showsInlineHeader = false
     @State private var serverPortText = ""
+    @State private var languageSelection = "zh-CN"
+    @State private var themeSelection: AppThemePreference = .system
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
             if showsInlineHeader {
                 Text(String(localized: "tab_settings"))
                     .font(.title2)
                     .fontWeight(.semibold)
             }
 
-            Form {
-                Section(header: Text(String(localized: "settings_text_injection_title"))) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(String(localized: "settings_text_injection_clipboard_title"))
-                            .font(.body)
-                            .fontWeight(.medium)
+                settingsSectionCard(
+                    title: String(localized: "settings_text_injection_title")
+                ) {
+                    settingsInfoRow(
+                        title: String(localized: "settings_text_injection_clipboard_title"),
+                        detail: String(localized: "settings_text_injection_clipboard_desc")
+                    )
+                }
 
-                        Text(String(localized: "settings_text_injection_clipboard_desc"))
-                            .font(.caption)
-                            .foregroundColor(MainWindowColors.secondaryText)
+                settingsSectionCard(
+                    title: String(localized: "settings_language_title")
+                ) {
+                    settingsPickerRow(
+                        title: String(localized: "settings_language_picker")
+                    ) {
+                        Picker(String(localized: "settings_language_picker"), selection: $languageSelection) {
+                            Text(String(localized: "settings_language_zh")).tag("zh-CN")
+                            Text(String(localized: "settings_language_en")).tag("en-US")
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 260)
                     }
                 }
 
-                Section(header: Text(String(localized: "settings_language_title"))) {
-                    Picker(String(localized: "settings_language_picker"), selection: $settings.language) {
-                        Text(String(localized: "settings_language_zh")).tag("zh-CN")
-                        Text(String(localized: "settings_language_en")).tag("en-US")
+                settingsSectionCard(
+                    title: String(localized: "settings_theme_title")
+                ) {
+                    settingsPickerRow(
+                        title: String(localized: "settings_theme_picker")
+                    ) {
+                        Picker(String(localized: "settings_theme_picker"), selection: $themeSelection) {
+                            ForEach(AppThemePreference.allCases) { preference in
+                                Text(AppLocalization.localizedString(preference.localizedTitleKey))
+                                    .tag(preference)
+                            }
+                        }
+                        .pickerStyle(.segmented)
                     }
                 }
 
-                Section(header: Text(String(localized: "settings_network_title"))) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(String(localized: "settings_network_port_label"))
-
-                        HStack {
-                            Spacer()
+                settingsSectionCard(
+                    title: String(localized: "settings_network_title")
+                ) {
+                    VStack(alignment: .leading, spacing: 14) {
+                        settingsInputRow(title: String(localized: "settings_network_port_label")) {
                             TextField(String(localized: "settings_network_port_placeholder"), text: $serverPortText)
-                                .frame(width: 120)
+                                .frame(width: 140)
                                 .multilineTextAlignment(.center)
                                 .textFieldStyle(.roundedBorder)
-                                .onAppear {
-                                    serverPortText = String(settings.serverPort)
-                                }
                                 .onChange(of: serverPortText) { _, newValue in
                                     let digitsOnly = newValue.filter(\.isNumber)
                                     if digitsOnly != serverPortText {
@@ -1113,23 +1218,142 @@ struct SettingsTab: View {
                                     }
 
                                     guard let port = UInt16(digitsOnly), port >= 1024 else { return }
-                                    if settings.serverPort != port {
-                                        settings.serverPort = port
-                                    }
+                                    updateSettingsPortIfNeeded(port)
                                 }
-                            Spacer()
                         }
-                    }
 
-                    Text(String(localized: "settings_network_port_desc"))
-                        .font(.caption)
-                        .foregroundColor(MainWindowColors.secondaryText)
+                        Text(String(localized: "settings_network_port_desc"))
+                            .font(.caption)
+                            .foregroundColor(SettingsSurfaceStylePolicy.secondaryTextColor)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
-            .formStyle(.grouped)
-            .scrollContentBackground(.hidden)
+            .padding(.bottom, 8)
+        }
+        .onAppear {
+            syncLocalSettingsState()
+        }
+        .onChange(of: languageSelection) { _, newValue in
+            guard settings.language != newValue else { return }
+            DispatchQueue.main.async {
+                settings.language = newValue
+            }
+        }
+        .onChange(of: themeSelection) { _, newValue in
+            guard settings.themePreference != newValue else { return }
+            DispatchQueue.main.async {
+                settings.themePreference = newValue
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private func syncLocalSettingsState() {
+        languageSelection = settings.language
+        themeSelection = settings.themePreference
+        serverPortText = String(settings.serverPort)
+    }
+
+    private func updateSettingsPortIfNeeded(_ port: UInt16) {
+        guard settings.serverPort != port else { return }
+        DispatchQueue.main.async {
+            settings.serverPort = port
+        }
+    }
+
+    private func settingsSectionCard<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(title)
+                .font(.headline.weight(.semibold))
+                .foregroundColor(MainWindowColors.title)
+
+            content()
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(SettingsSurfaceStylePolicy.cardFillColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(SettingsSurfaceStylePolicy.cardBorderColor, lineWidth: 1)
+        )
+    }
+
+    private func settingsInfoRow(title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.body.weight(.semibold))
+                .foregroundColor(MainWindowColors.title)
+
+            Text(detail)
+                .font(.callout)
+                .foregroundColor(SettingsSurfaceStylePolicy.secondaryTextColor)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(SettingsSurfaceStylePolicy.rowFillColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(SettingsSurfaceStylePolicy.cardBorderColor, lineWidth: 1)
+        )
+    }
+
+    private func settingsPickerRow<Content: View>(
+        title: String,
+        @ViewBuilder control: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.body.weight(.semibold))
+                .foregroundColor(MainWindowColors.title)
+
+            control()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(SettingsSurfaceStylePolicy.rowFillColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(SettingsSurfaceStylePolicy.cardBorderColor, lineWidth: 1)
+        )
+    }
+
+    private func settingsInputRow<Content: View>(
+        title: String,
+        @ViewBuilder control: () -> Content
+    ) -> some View {
+        HStack(alignment: .center, spacing: 18) {
+            Text(title)
+                .font(.body.weight(.semibold))
+                .foregroundColor(MainWindowColors.title)
+
+            Spacer(minLength: 0)
+
+            control()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(SettingsSurfaceStylePolicy.rowFillColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(SettingsSurfaceStylePolicy.cardBorderColor, lineWidth: 1)
+        )
     }
 }
 

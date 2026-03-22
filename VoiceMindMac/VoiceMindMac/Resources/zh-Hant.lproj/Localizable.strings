@@ -188,6 +188,11 @@
 "settings_language_picker" = "识别语言";
 "settings_language_zh" = "中文";
 "settings_language_en" = "英文";
+"settings_theme_title" = "介面主題";
+"settings_theme_picker" = "主題模式";
+"settings_theme_system" = "跟隨系統";
+"settings_theme_light" = "淺色";
+"settings_theme_dark" = "深色";
 "settings_network_title" = "网络服务";
 "settings_network_port_label" = "监听端口";
 "settings_network_port_placeholder" = "18661";

@@ -1,5 +1,53 @@
 import Foundation
 import Combine
+import SwiftUI
+
+enum AppThemePreference: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var preferredColorScheme: ColorScheme? {
+        switch self {
+        case .system:
+            return nil
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        }
+    }
+
+    var localizedTitleKey: String {
+        switch self {
+        case .system:
+            return "settings_theme_system"
+        case .light:
+            return "settings_theme_light"
+        case .dark:
+            return "settings_theme_dark"
+        }
+    }
+}
+
+enum ListeningPortMigrationPolicy {
+    static let defaultPort: UInt16 = 18661
+    static let legacyDefaultPort: UInt16 = 19999
+
+    static func resolvedPort(savedPort: Int, hasCustomizedPort: Bool) -> UInt16 {
+        guard savedPort > 0, let resolvedSavedPort = UInt16(exactly: savedPort) else {
+            return defaultPort
+        }
+
+        if resolvedSavedPort == legacyDefaultPort {
+            return defaultPort
+        }
+
+        return resolvedSavedPort
+    }
+}
 
 class AppSettings: ObservableObject {
     static let shared = AppSettings()
@@ -14,6 +62,8 @@ class AppSettings: ObservableObject {
         static let hotkeyKey = "hotkeyKey"
         static let language = "language"
         static let serverPort = "serverPort"
+        static let hasCustomizedServerPort = "hasCustomizedServerPort"
+        static let themePreference = "themePreference"
         static let hasLaunchedBefore = "hasLaunchedBefore"
         static let hasShownUsageGuide = "hasShownUsageGuide"
     }
@@ -47,6 +97,13 @@ class AppSettings: ObservableObject {
     @Published var serverPort: UInt16 {
         didSet {
             defaults.set(Int(serverPort), forKey: Keys.serverPort)
+            defaults.set(true, forKey: Keys.hasCustomizedServerPort)
+        }
+    }
+
+    @Published var themePreference: AppThemePreference {
+        didSet {
+            defaults.set(themePreference.rawValue, forKey: Keys.themePreference)
         }
     }
 
@@ -82,7 +139,22 @@ class AppSettings: ObservableObject {
         }
 
         let savedPort = defaults.integer(forKey: Keys.serverPort)
-        self.serverPort = savedPort > 0 ? UInt16(savedPort) : 18661
+        let hasCustomizedServerPort = defaults.bool(forKey: Keys.hasCustomizedServerPort)
+        let resolvedPort = ListeningPortMigrationPolicy.resolvedPort(
+            savedPort: savedPort,
+            hasCustomizedPort: hasCustomizedServerPort
+        )
+        self.serverPort = resolvedPort
+        if savedPort != Int(resolvedPort) {
+            defaults.set(Int(resolvedPort), forKey: Keys.serverPort)
+        }
+
+        if let rawThemePreference = defaults.string(forKey: Keys.themePreference),
+           let themePreference = AppThemePreference(rawValue: rawThemePreference) {
+            self.themePreference = themePreference
+        } else {
+            self.themePreference = .system
+        }
     }
 
     // MARK: - Helper Methods
@@ -92,6 +164,8 @@ class AppSettings: ObservableObject {
         hotkeyModifiers = 0x80000 // Option
         hotkeyKey = 49 // Space
         language = "zh-CN"
-        serverPort = 18661
+        serverPort = ListeningPortMigrationPolicy.defaultPort
+        defaults.set(false, forKey: Keys.hasCustomizedServerPort)
+        themePreference = .system
     }
 }
