@@ -113,7 +113,6 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
     case collaboration
     case data
     case speech
-    case permissions
     case about
     case settings
 
@@ -131,8 +130,6 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
             return String(localized: "main_nav_logs")
         case .speech:
             return String(localized: "tab_speech")
-        case .permissions:
-            return String(localized: "tab_permissions")
         case .about:
             return String(localized: "tab_about")
         case .settings:
@@ -152,8 +149,6 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
             return String(localized: "data_subtitle")
         case .speech:
             return String(localized: "main_speech_subtitle")
-        case .permissions:
-            return String(localized: "main_permissions_subtitle")
         case .about:
             return String(localized: "about_description")
         case .settings:
@@ -173,8 +168,6 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
             return "tray.full"
         case .speech:
             return "waveform.circle"
-        case .permissions:
-            return "lock.shield"
         case .about:
             return "questionmark.circle"
         case .settings:
@@ -192,13 +185,12 @@ enum MainWindowContentSection: Equatable {
     case collaboration
     case data
     case speech
-    case permissions
     case about
     case settings
 }
 
 enum MainWindowNavigationPolicy {
-    static let primarySections: [MainWindowSection] = [.home, .records, .collaboration, .speech, .permissions]
+    static let primarySections: [MainWindowSection] = [.home, .records, .collaboration, .speech]
 
     static func contentSection(for section: MainWindowSection) -> MainWindowContentSection {
         switch section {
@@ -212,8 +204,6 @@ enum MainWindowNavigationPolicy {
             return .data
         case .speech:
             return .speech
-        case .permissions:
-            return .permissions
         case .about:
             return .about
         case .settings:
@@ -229,7 +219,6 @@ enum MainWindowPagePersistencePolicy {
         .collaboration,
         .data,
         .speech,
-        .permissions,
         .settings,
         .about
     ]
@@ -432,10 +421,6 @@ struct MainWindow: View {
         case .speech:
             WindowPageShell(section: section) {
                 SpeechRecognitionTab(controller: controller, showsInlineHeader: false)
-            }
-        case .permissions:
-            WindowPageShell(section: section) {
-                PermissionsTab(showsInlineHeader: false)
             }
         case .about:
             WindowPageShell(section: section) {
@@ -1268,15 +1253,6 @@ struct SettingsTab: View {
             }
 
                 settingsSectionCard(
-                    title: String(localized: "settings_text_injection_title")
-                ) {
-                    settingsInfoRow(
-                        title: String(localized: "settings_text_injection_clipboard_title"),
-                        detail: String(localized: "settings_text_injection_clipboard_desc")
-                    )
-                }
-
-                settingsSectionCard(
                     title: String(localized: "settings_language_title")
                 ) {
                     settingsPickerRow(
@@ -1817,76 +1793,6 @@ private struct GroupedDataRecords {
 enum NotesTextSelectionPolicy {
     static func allowsSelection(for text: String) -> Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-}
-
-// MARK: - Permissions Tab
-
-struct PermissionsTab: View {
-    var showsInlineHeader = true
-    @State private var accessibilityGranted = false
-
-    var body: some View {
-        VStack(spacing: 20) {
-            if showsInlineHeader {
-                Text(String(localized: "permissions_tab_title"))
-                    .font(.title)
-                    .padding(.top)
-            }
-
-            GroupBox {
-                VStack(alignment: .leading, spacing: 15) {
-                    HStack {
-                        Image(systemName: accessibilityGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundColor(accessibilityGranted ? .green : .red)
-                        Text(String(localized: "permissions_tab_accessibility_title"))
-                        Spacer()
-                        Text(accessibilityGranted ? String(localized: "permissions_tab_granted") : String(localized: "permissions_tab_denied"))
-                            .foregroundColor(MainWindowColors.secondaryText)
-                    }
-
-                    Text(String(localized: "permissions_tab_accessibility_desc"))
-                        .font(.caption)
-                        .foregroundColor(MainWindowColors.secondaryText)
-                }
-                .padding()
-            }
-
-            HStack(spacing: 15) {
-                Button(AppLocalization.localizedString("permissions_tab_check")) {
-                    checkPermissions()
-                }
-                .buttonStyle(.bordered)
-
-                Button(AppLocalization.localizedString("permissions_tab_request")) {
-                    requestPermissions()
-                }
-                .buttonStyle(.borderedProminent)
-
-                Button(AppLocalization.localizedString("permissions_tab_open_settings")) {
-                    PermissionsManager.openSystemPreferences(for: .accessibility)
-                }
-                .buttonStyle(.bordered)
-            }
-
-            Spacer()
-        }
-        .padding()
-        .onAppear {
-            checkPermissions()
-        }
-    }
-
-    private func checkPermissions() {
-        accessibilityGranted = PermissionsManager.checkAccessibility() == .granted
-    }
-
-    private func requestPermissions() {
-        PermissionsManager.requestAccessibility()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            checkPermissions()
-        }
     }
 }
 

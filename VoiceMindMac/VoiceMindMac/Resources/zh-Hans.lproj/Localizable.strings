@@ -1,6 +1,6 @@
-"app_title" = "语灵";
-"CFBundleDisplayName" = "语灵";
-"CFBundleName" = "语灵";
+"app_title" = "VoiceMind";
+"CFBundleDisplayName" = "VoiceMind";
+"CFBundleName" = "VoiceMind";
 "cancel_button" = "取消";
 "save_button" = "保存";
 "refresh_button" = "刷新";
@@ -22,43 +22,26 @@
 "main_speech_subtitle" = "切换识别引擎、模型和语言偏好。";
 "main_records_subtitle" = "查询最近 30 天的语音识别文本，包含 Mac 本地和 iPhone 同步结果。";
 "main_notes_subtitle" = "集中查看最近的文本结果，并进行本地录音输入。";
-"main_permissions_subtitle" = "检查辅助功能权限是否就绪。";
-"main_settings_subtitle" = "管理文本注入、语言与网络服务参数。";
-
-"hotkey_title" = "热键设置";
-"hotkey_modifier_label" = "修饰键：";
-"hotkey_key_label" = "按键：";
-"hotkey_key_picker" = "按键";
-"hotkey_current_format" = "当前热键: %@";
+"main_settings_subtitle" = "管理语言、界面主题与网络服务参数。";
 
 "pair_with_iphone_title" = "与 iPhone 配对";
 "pair_with_iphone_instruction" = "在 iPhone 上输入此代码：";
 "pair_with_iphone_waiting" = "等待 iPhone 连接...";
 "pair_with_iphone_time_format" = "剩余时间: %@秒";
 
-"permissions_title" = "权限设置";
-"permission_accessibility_title" = "辅助功能";
-"permission_accessibility_desc" = "识别当前焦点输入位置并输入转写结果所需";
-"permission_input_monitor_title" = "输入监控";
-"permission_input_monitor_desc" = "全局监听热键所需";
-
-
 "menu_status_unpaired" = "未配对";
 "menu_show_status" = "显示状态...";
 "menu_return_main" = "返回主页面";
 "menu_start_pairing" = "开始配对...";
-"menu_permissions" = "权限设置...";
 "menu_unpair" = "解除配对";
 "menu_quit" = "退出";
 
-"window_title_main" = "语灵";
-"window_title_onboarding" = "欢迎使用 语灵";
-"window_title_hotkey" = "热键设置";
-"window_title_permissions" = "权限设置";
+"window_title_main" = "VoiceMind";
+"window_title_onboarding" = "VoiceMind for Mac";
 "window_title_qr_pairing" = "扫码配对";
 
 "unpair_alert_title" = "解除配对？";
-"unpair_alert_message" = "这将移除与 iPhone 的配对。你需要重新配对才能使用语灵。";
+"unpair_alert_message" = "这将移除与 iPhone 的配对。你需要重新配对才能继续使用 VoiceMind。";
 "unpair_alert_button" = "解除配对";
 
 "error_title" = "错误";
@@ -69,18 +52,6 @@
 "status_access_connected" = "已连接";
 "status_menu_pairing" = "配对中...";
 "status_menu_connected_format" = "已连接到 %@";
-
-"text_copy_alert_title" = "文本注入失败";
-"text_copy_alert_message_format" = "无法注入文本: %@
-
-你可以手动复制文本。";
-"copy_text_button" = "复制文本";
-
-"hotkey_permission_error" = "无法启动热键监听。请授予输入监控权限后重试。";
-
-"text_injection_permission_title" = "缺少辅助功能权限";
-"text_injection_permission_message” = “语灵 需要”辅助功能”权限才能把识别结果输入到当前应用。你也可以先复制文本再手动粘贴。";
-"open_system_settings_button" = "打开系统设置";
 
 "log_server_port_updated_title" = "监听端口已更新";
 "log_server_port_updated_detail_format" = "新的监听端口: %@";
@@ -98,7 +69,6 @@
 
 "system_info_title" = "系统信息";
 "system_ip_title" = "本机 IP 地址";
-"system_accessibility_title" = "辅助功能权限";
 
 "device_connection_title" = "设备连接";
 "device_pairing_status" = "配对状态";
@@ -114,20 +84,13 @@
 "connection_status_connected" = "已连接";
 "connection_status_error_format" = "错误: %@";
 
-"permissions_section_title" = "权限管理";
-"permissions_accessibility_title" = "辅助功能权限";
-"permissions_accessibility_desc" = "用于识别当前光标位置并将转写文字输入到目标应用";
-"permissions_all_granted" = "所有权限已授予";
-"authorize_button" = "授权";
-
 "quickstart_title" = "快速开始";
 "quickstart_step1_format" = "在 iPhone 上打开 %@ 应用";
 "quickstart_step2" = "点击下方\"开始配对\"按钮";
 "quickstart_step3" = "在 iPhone 上输入配对码";
-"quickstart_step4" = "配对成功后，在 iPhone 上按住麦克风说话，Mac 会自动转写并尝试输入";
+"quickstart_step4" = "配对成功后，在 iPhone 上按住麦克风说话，Mac 会自动转写并在 VoiceMind 窗口中显示结果";
 
 "action_start_pairing" = "开始配对";
-"action_permissions" = "权限";
 "action_unpair" = "解除配对";
 
 
@@ -146,31 +109,14 @@
 "speech_engine_select_title" = "选择识别引擎";
 "speech_engine_loading" = "正在加载引擎...";
 
-"model_management_title" = "模型管理";
-"model_management_desc" = "管理本地语音识别模型";
-"model_name_sensevoice" = "SenseVoice Small";
-"model_desc_sensevoice" = "多语言语音识别模型，约 85MB";
-"model_downloaded" = "已下载";
-"model_download_button" = "下载模型";
-"model_engine_not_registered" = "SenseVoice 引擎未注册";
-
 "engine_available" = "可用";
 "engine_unavailable" = "不可用";
 "engine_supported_languages_format" = "支持语言: %@";
-
-"sensevoice_model_corrupted_title" = "SenseVoice 模型异常";
-"sensevoice_model_corrupted_message" = "本地 SenseVoice 模型疑似损坏，已自动清理。请在模型管理中重新下载。";
-"sensevoice_model_corrupted_ok" = "好";
-
-"sensevoice_model_retry_failed_title" = "SenseVoice 自动下载失败";
-"sensevoice_model_retry_failed_message" = "自动下载失败：%@\n\n请在模型管理中重新下载。";
-"sensevoice_model_retry_failed_ok" = "好";
 
 "tab_status" = "状态";
 "tab_settings" = "设置";
 "tab_speech" = "语音识别";
 "tab_data" = "数据";
-"tab_permissions" = "权限";
 "tab_notes" = "笔记";
 "tab_about" = "关于";
 "tab_debug" = "调试";
@@ -200,9 +146,6 @@
 "note_recording" = "录音中...";
 "note_clear" = "清空";
 
-"settings_text_injection_title" = "文本注入方式";
-"settings_text_injection_clipboard_title" = "剪贴板粘贴";
-"settings_text_injection_clipboard_desc" = "已固定为剪贴板粘贴，以获得最稳定的光标输入兼容性。";
 "settings_language_title" = "语言";
 "settings_language_picker" = "识别语言";
 "settings_language_zh" = "中文";
@@ -261,24 +204,13 @@
 "records_clear_all_confirm_title" = "清空全部记录";
 "records_clear_all_confirm_message" = "将清空最近 30 天的全部语音记录。";
 
-"permissions_tab_title" = "系统权限";
-"permissions_tab_accessibility_title" = "辅助功能";
-"permissions_tab_granted" = "已授予";
-"permissions_tab_denied" = "未授予";
-"permissions_tab_accessibility_desc" = "语灵 需要辅助功能权限来识别当前焦点输入位置并输入转写结果";
-"permissions_tab_input_title" = "输入监控";
-"permissions_tab_input_desc" = "语灵 需要输入监控权限来检测快捷键按下事件";
-"permissions_tab_check" = "检查权限";
-"permissions_tab_request" = "请求权限";
-"permissions_tab_open_settings" = "打开系统设置";
-
 "about_version" = "版本 1.0.0";
 "about_title" = "语音输入助手";
-"about_description" = "通过设备进行语音识别，将结果展示输入到应用中";
+"about_description" = "通过设备进行语音识别，并在 Mac 应用内实时查看结果";
 "about_help_link" = "查看帮助文档";
 "about_open_guide" = "查看操作指引";
 "window_title_usage_guide" = "操作指引";
-"usage_guide_title" = "语灵操作指引";
+"usage_guide_title" = "VoiceMind 操作指引";
 "usage_guide_subtitle" = "首次使用时，你可以先按下面步骤完成配对和开始语音输入。后续也可以在“关于”页再次查看这份指引。";
 "usage_guide_step1" = "确认 Mac 和 iPhone 连接在同一个局域网下。";
 "usage_guide_step3" = "在 Mac 中点击“开始配对”，然后用 iPhone 扫描二维码或输入配对码。";
@@ -289,3 +221,60 @@
 "pairing_progress_connecting_format" = "已完成配对，正在与 %@ 建立连接。";
 "pairing_progress_waiting_reconnect_format" = "已完成配对，等待 %@ 重新连接。";
 "pairing_progress_connection_error_format" = "已完成配对，但与 %@ 的连接出现异常。";
+
+"mac_onboarding_product_name" = "VoiceMind";
+"mac_onboarding_continue" = "继续";
+"mac_onboarding_back" = "返回";
+"mac_onboarding_fetching_ip" = "正在获取本机地址...";
+"mac_onboarding_results_location" = "转写结果会保留在 VoiceMind 的 Mac 窗口中";
+
+"mac_onboarding_brand_badge" = "VOICEMIND FOR MAC";
+"mac_onboarding_welcome_title" = "VoiceMind for Mac，让语音想法落到更大的工作台。";
+"mac_onboarding_welcome_subtitle" = "把捕捉留给 iPhone，把查看、整理与推进交给 Mac。";
+"mac_onboarding_brand_panel_title" = "为桌面语音工作流而生";
+"mac_onboarding_brand_panel_point1" = "转写结果集中出现，不用在多个窗口之间来回寻找。";
+"mac_onboarding_brand_panel_point2" = "想法刚落地，就能立刻查看、调整、继续推进。";
+"mac_onboarding_brand_panel_point3" = "需要时再连接 iPhone，让双端协同自然发生。";
+"mac_onboarding_brand_feature1_title" = "给语音一个更大的画布";
+"mac_onboarding_brand_feature1_desc" = "从快速捕捉切换到专注查看，始终留在 VoiceMind。";
+"mac_onboarding_brand_feature2_title" = "顺着 Mac 的节奏工作";
+"mac_onboarding_brand_feature2_desc" = "把结果留在桌面端，方便继续整理和推进下一步。";
+
+"mac_onboarding_capture_badge" = "捕捉与查看";
+"mac_onboarding_capture_title" = "Mac 是 VoiceMind 的查看台，也是你推进内容的地方。";
+"mac_onboarding_capture_subtitle" = "新的结果会持续汇入，让你能边看边整理，不打断节奏。";
+"mac_onboarding_capture_panel_title" = "Mac 端会发生什么";
+"mac_onboarding_capture_panel_point1" = "新的转写内容会持续汇入同一个清晰的工作区。";
+"mac_onboarding_capture_panel_point2" = "趁上下文还在眼前，马上查看并做出调整。";
+"mac_onboarding_capture_panel_point3" = "让桌面端始终准备好，接住下一段语音内容。";
+"mac_onboarding_capture_feature1_title" = "带着上下文查看";
+"mac_onboarding_capture_feature1_desc" = "结果展示更清楚，后续编辑和判断也更自然。";
+"mac_onboarding_capture_feature2_title" = "把内容留在掌控中";
+"mac_onboarding_capture_feature2_desc" = "用 VoiceMind 作为捕捉之后、下一步之前的整理层。";
+
+"mac_onboarding_connect_badge" = "连接 IPHONE";
+"mac_onboarding_connect_title" = "连接一次 iPhone 和 Mac，让语音工作流自然延续。";
+"mac_onboarding_connect_subtitle" = "iPhone 负责开口捕捉，Mac 负责展开查看，二者通过局域网保持同步。";
+"mac_onboarding_device_iphone" = "iPhone";
+"mac_onboarding_device_mac" = "Mac";
+"mac_onboarding_connect_bridge" = "安全连接";
+"mac_onboarding_connect_step1_title" = "让两台设备处于同一网络";
+"mac_onboarding_connect_step1_desc" = "确认 iPhone 和 Mac 在同一个局域网内，方便彼此发现。";
+"mac_onboarding_connect_step2_title" = "从 Mac 发起配对";
+"mac_onboarding_connect_step2_desc" = "VoiceMind 会在 Mac 上显示二维码和配对码，等待 iPhone 接入。";
+"mac_onboarding_connect_step3_title" = "在 iPhone 上确认连接";
+"mac_onboarding_connect_step3_desc" = "扫描并确认本次会话后，VoiceMind 会让两端保持同步。";
+
+"mac_onboarding_start_badge" = "启动 VOICEMIND";
+"mac_onboarding_start_title" = "启动 Mac 端 VoiceMind，准备开始第一段协同。";
+"mac_onboarding_start_subtitle" = "启动网络服务后，这台 Mac 就能被发现、完成配对，并进入后续运行状态。";
+"mac_onboarding_start_button" = "启动 VoiceMind";
+"mac_onboarding_start_continue" = "查看运行状态";
+"mac_onboarding_start_ip_title" = "本机网络地址";
+"mac_onboarding_start_mode_title" = "工作方式";
+"mac_onboarding_start_mode_value" = "iPhone 负责采集，Mac 负责查看";
+"mac_onboarding_start_steps_title" = "接下来会发生什么";
+"mac_onboarding_start_step1" = "先在这台 Mac 上启动 VoiceMind 服务。";
+"mac_onboarding_start_step1_running" = "VoiceMind 服务已经在这台 Mac 上运行。";
+"mac_onboarding_start_step2" = "准备好后，在 iPhone 上打开 VoiceMind 并进入配对界面。";
+"mac_onboarding_start_step3" = "完成连接后，在 iPhone 开口说话，在 Mac 继续查看与整理。";

@@ -17,22 +17,13 @@ struct StatusWindow: View {
 
                 // System Information
                 SystemInfoSection(
-                    localIP: localIPAddress,
-                    accessibilityStatus: controller.accessibilityStatus
+                    localIP: localIPAddress
                 )
 
                 // Device Connection Status
                 DeviceConnectionSection(
                     pairingState: controller.pairingState,
                     connectionState: controller.connectionState
-                )
-
-                // Permissions Section
-                PermissionsSection(
-                    accessibilityStatus: controller.accessibilityStatus,
-                    onRequestAccessibility: {
-                        controller.requestAccessibilityPermissionFromUI()
-                    }
                 )
 
                 // Quick Start Guide (only show when unpaired)
@@ -50,9 +41,6 @@ struct StatusWindow: View {
                     onStartPairing: {
                         controller.showPairingWindowFromUI()
                     },
-                    onOpenPermissions: {
-                        controller.openPermissionsFromUI()
-                    },
                     onUnpair: {
                         controller.unpairDeviceFromUI()
                     }
@@ -60,7 +48,7 @@ struct StatusWindow: View {
             }
             .padding()
         }
-        .frame(width: 480, height: 560)
+        .frame(width: 480, height: 500)
         .onAppear {
             fetchLocalIPAddress()
             // Refresh every 5 seconds
@@ -165,7 +153,6 @@ struct HeaderSection: View {
 
 struct SystemInfoSection: View {
     let localIP: String
-    let accessibilityStatus: PermissionStatus
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -178,13 +165,6 @@ struct SystemInfoSection: View {
                     title: String(localized: "system_ip_title"),
                     value: localIP,
                     color: .blue
-                )
-
-                InfoRow(
-                    icon: "lock.shield",
-                    title: String(localized: "system_accessibility_title"),
-                    value: accessibilityStatus.displayText,
-                    color: accessibilityStatus.color
                 )
             }
         }
@@ -284,76 +264,6 @@ struct DeviceConnectionSection: View {
     }
 }
 
-// MARK: - Permissions Section
-
-struct PermissionsSection: View {
-    let accessibilityStatus: PermissionStatus
-    let onRequestAccessibility: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "permissions_section_title"))
-                .font(.headline)
-
-            if accessibilityStatus != .granted {
-                VStack(spacing: 8) {
-                    PermissionRequestRow(
-                        icon: "lock.shield",
-                        title: String(localized: "permissions_accessibility_title"),
-                        description: String(localized: "permissions_accessibility_desc"),
-                        status: accessibilityStatus,
-                        onRequest: onRequestAccessibility
-                    )
-                }
-            } else {
-                HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                    Text(String(localized: "permissions_all_granted"))
-                        .foregroundColor(.secondary)
-                }
-                .padding(.vertical, 4)
-            }
-        }
-        .padding()
-        .background(Color.orange.opacity(accessibilityStatus != .granted ? 0.1 : 0.05))
-        .cornerRadius(12)
-    }
-}
-
-struct PermissionRequestRow: View {
-    let icon: String
-    let title: String
-    let description: String
-    let status: PermissionStatus
-    let onRequest: () -> Void
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Image(systemName: icon)
-                        .foregroundColor(.orange)
-                    Text(title)
-                        .fontWeight(.medium)
-                }
-                Text(description)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-
-            Spacer()
-
-            Button(AppLocalization.localizedString("authorize_button")) {
-                onRequest()
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-        }
-        .padding(.vertical, 4)
-    }
-}
-
 // MARK: - Quick Start Section
 
 struct QuickStartSection: View {
@@ -404,7 +314,6 @@ struct GuideStep: View {
 struct ActionButtonsSection: View {
     let pairingState: PairingState
     let onStartPairing: () -> Void
-    let onOpenPermissions: () -> Void
     let onUnpair: () -> Void
 
     var body: some View {
@@ -423,15 +332,6 @@ struct ActionButtonsSection: View {
             }
 
             HStack(spacing: 12) {
-                Button(action: onOpenPermissions) {
-                    HStack {
-                        Image(systemName: "lock.shield")
-                        Text(String(localized: "action_permissions"))
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-
                 if case .paired = pairingState {
                     Button(action: onUnpair) {
                         HStack {

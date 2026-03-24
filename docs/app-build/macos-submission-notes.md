@@ -5,7 +5,7 @@ Last updated: 2026-03-22
 ## Current Product Shape
 
 VoiceMind for macOS is a menu bar app that connects to the companion iPhone app over the local network.
-The Mac app receives transcribed text from iPhone and inserts it into the currently focused text field.
+The Mac app receives transcribed text from iPhone and displays it inside the app.
 The Mac app also supports local speech recognition using Apple's built-in Speech framework.
 
 The current macOS build no longer includes:
@@ -17,18 +17,6 @@ The current macOS build no longer includes:
 - Apple Events / AppleScript automation
 
 ## Permissions Used
-
-### Accessibility
-
-Why it is needed:
-
-- detect the currently focused editable control
-- insert recognized text into the current app
-- send a Return key event when the recognized command is exactly "执行"
-
-User-facing explanation:
-
-- VoiceMind uses Accessibility permission only to place recognized text into the current text input area the user is actively using.
 
 ### Local Network
 
@@ -61,17 +49,16 @@ How to review:
 1. Launch the macOS app and keep it running.
 2. Open the companion iPhone app on the same local network.
 3. Pair the devices using the in-app pairing flow.
-4. On macOS, place the cursor in any editable text field.
-5. Speak on iPhone and confirm the recognized text is inserted into the focused text field on macOS.
+4. Speak on iPhone and confirm the recognized text appears inside the macOS app.
 
 Permissions used:
 
-- Accessibility: required to insert recognized text into the currently focused text field.
 - Local Network: required for Bonjour discovery and communication with the paired iPhone.
 - Microphone and Speech Recognition: used only for the optional local speech recognition feature on macOS.
 
 Important clarifications:
 
+- The macOS app no longer requests Accessibility permission.
 - The macOS app does not use Apple Events or AppleScript automation.
 - The macOS app does not request Input Monitoring permission.
 - The macOS app does not download third-party speech models.
@@ -81,14 +68,12 @@ Important clarifications:
 
 These are the main remaining risks for Mac App Store review:
 
-- The app still uses Accessibility APIs to modify text in other apps. This is the biggest remaining policy risk and should be explained clearly in review notes.
-- The app can simulate a Return key for the exact recognized command "执行". This should be documented in review notes so it is not interpreted as hidden automation.
 - The bundle still uses an App Sandbox entitlement set that should be reviewed once the final feature set is frozen.
 
 ## Pre-Submission Checklist
 
 - Verify `Release` build succeeds from `VoiceMindMac.xcworkspace`.
 - Re-check that `NSAppleEventsUsageDescription` is absent from the final app bundle.
-- Confirm the app never prompts for Input Monitoring during onboarding or normal use.
+- Confirm the app never prompts for Accessibility or Input Monitoring during onboarding or normal use.
 - Capture fresh screenshots that do not show removed hotkey settings or model download UI.
 - Make sure App Store metadata does not mention hotkeys, model downloads, SenseVoice, ONNX, or sherpa-onnx.

@@ -53,11 +53,17 @@ class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
     private let defaults = UserDefaults.standard
-    private var cancellables = Set<AnyCancellable>()
+
+    enum DeprecatedPreferenceCleanupPolicy {
+        static let legacyTextInjectionMethodKey = "textInjectionMethod"
+
+        static func cleanup(defaults: UserDefaults) {
+            defaults.removeObject(forKey: legacyTextInjectionMethodKey)
+        }
+    }
 
     // MARK: - Settings Keys
     private enum Keys {
-        static let textInjectionMethod = "textInjectionMethod"
         static let hotkeyModifiers = "hotkeyModifiers"
         static let hotkeyKey = "hotkeyKey"
         static let language = "language"
@@ -69,12 +75,6 @@ class AppSettings: ObservableObject {
     }
 
     // MARK: - Published Properties
-
-    @Published var textInjectionMethod: TextInjectionMethod {
-        didSet {
-            defaults.set(textInjectionMethod.rawValue, forKey: Keys.textInjectionMethod)
-        }
-    }
 
     @Published var hotkeyModifiers: UInt {
         didSet {
@@ -120,9 +120,7 @@ class AppSettings: ObservableObject {
     // MARK: - Initialization
 
     private init() {
-        // Always use clipboard paste for the most reliable text injection behavior.
-        self.textInjectionMethod = .clipboard
-        defaults.set(TextInjectionMethod.clipboard.rawValue, forKey: Keys.textInjectionMethod)
+        DeprecatedPreferenceCleanupPolicy.cleanup(defaults: defaults)
 
         // Load hotkey configuration
         let savedModifiers = UInt(defaults.integer(forKey: Keys.hotkeyModifiers))
@@ -160,7 +158,6 @@ class AppSettings: ObservableObject {
     // MARK: - Helper Methods
 
     func resetToDefaults() {
-        textInjectionMethod = .clipboard
         hotkeyModifiers = 0x80000 // Option
         hotkeyKey = 49 // Space
         language = "zh-CN"

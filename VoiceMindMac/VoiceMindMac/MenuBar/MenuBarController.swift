@@ -6,7 +6,6 @@ import SharedCore
 class MenuBarController: NSObject, ObservableObject {
     var statusItem: NSStatusItem!
     let connectionManager = ConnectionManager()
-    var textInjector: TextInjectionProtocol!
     let settings = AppSettings.shared
 
     // 本地语音识别
@@ -17,7 +16,6 @@ class MenuBarController: NSObject, ObservableObject {
     @Published var pairingProgressMessage: String?
     @Published var inboundDataRecords: [InboundDataRecord]
     @Published var voiceRecognitionRecords: [VoiceRecognitionRecord]
-    @Published var accessibilityStatus: PermissionStatus
     @Published var isServiceRunning = false
 
     // 笔记相关状态
@@ -26,10 +24,8 @@ class MenuBarController: NSObject, ObservableObject {
 
     var currentSessionId: String?
     var sessionTimer: Timer?
-    var pendingInjectionTargetAppPID: pid_t?
 
     var pairingWindow: NSWindow?
-    var permissionsWindow: NSWindow?
     var statusWindow: NSWindow?
     var onboardingWindow: NSWindow?
     var usageGuideWindow: NSWindow?
@@ -43,20 +39,11 @@ class MenuBarController: NSObject, ObservableObject {
         self.pairingProgressMessage = connectionManager.pairingProgressMessage
         self.inboundDataRecords = []
         self.voiceRecognitionRecords = []
-        self.accessibilityStatus = PermissionsManager.checkAccessibility()
         self.voiceRecognitionHistoryStore = voiceRecognitionHistoryStore
         super.init()
 
         // 设置本地语音识别代理
         localSpeechRecognizer.delegate = self
-
-        // Initialize text injector based on settings
-        updateTextInjector()
-
-        // Observe settings changes
-        settings.$textInjectionMethod.sink { [weak self] _ in
-            self?.updateTextInjector()
-        }.store(in: &cancellables)
 
         settings.$serverPort
             .dropFirst()
@@ -70,18 +57,6 @@ class MenuBarController: NSObject, ObservableObject {
         reloadVoiceRecognitionHistory()
         // Don't start services automatically
         // User will start them manually from the UI
-    }
-
-    private func updateTextInjector() {
-        switch settings.textInjectionMethod {
-        case .clipboard:
-            textInjector = ClipboardTextInjector()
-        case .cgEvent:
-            textInjector = CGEventTextInjector()
-        case .accessibility:
-            textInjector = AccessibilityTextInjector()
-        }
-        print("📝 文本注入方式已切换到: \(settings.textInjectionMethod.displayName)")
     }
 
     private func setupStatusItem() {
@@ -109,12 +84,6 @@ class MenuBarController: NSObject, ObservableObject {
         returnItem.target = self
         menu.addItem(returnItem)
 
-        let permissionsItem = NSMenuItem(title: AppLocalization.localizedString("menu_permissions"), action: #selector(openPermissions), keyEquivalent: "")
-        permissionsItem.target = self
-        menu.addItem(permissionsItem)
-
-        menu.addItem(NSMenuItem.separator())
-
         let quitItem = NSMenuItem(title: AppLocalization.localizedString("menu_quit"), action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
@@ -125,42 +94,6 @@ class MenuBarController: NSObject, ObservableObject {
 
     func setupConnectionManager() {
         connectionManager.delegate = self
-    }
-
-    func captureInjectionTargetApplication() {
-        guard let app = NSWorkspace.shared.frontmostApplication else {
-            pendingInjectionTargetAppPID = nil
-            return
-        }
-
-        if app.bundleIdentifier == Bundle.main.bundleIdentifier {
-            pendingInjectionTargetAppPID = nil
-            return
-        }
-
-        pendingInjectionTargetAppPID = app.processIdentifier
-    }
-
-    func restoreInjectionTargetApplicationIfNeeded(completion: @escaping () -> Void) {
-        guard let pid = pendingInjectionTargetAppPID,
-              let app = NSRunningApplication(processIdentifier: pid) else {
-            pendingInjectionTargetAppPID = nil
-            completion()
-            return
-        }
-
-        let isAlreadyFrontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier == pid
-        pendingInjectionTargetAppPID = nil
-
-        guard !isAlreadyFrontmost else {
-            completion()
-            return
-        }
-
-        app.activate(options: [])
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            completion()
-        }
     }
 
     func startServices() {
@@ -270,46 +203,12 @@ class MenuBarController: NSObject, ObservableObject {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    func requestAccessibilityPermissionFromUI() {
-        PermissionsManager.requestAccessibility()
-        refreshPermissionState()
-    }
-
-    func refreshPermissionState() {
-        accessibilityStatus = PermissionsManager.checkAccessibility()
-    }
-
     func showPairingWindowFromUI() {
         startPairing()
     }
 
-    func openPermissionsFromUI() {
-        openPermissions()
-    }
-
     func unpairDeviceFromUI() {
         unpairDevice()
-    }
-
-    @objc private func openPermissions() {
-        if permissionsWindow == nil {
-            let contentView = PermissionsWindow()
-
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 500, height: 300),
-                styleMask: [.titled, .closable],
-                backing: .buffered,
-                defer: false
-            )
-            window.title = AppLocalization.localizedString("window_title_permissions")
-            window.contentView = NSHostingView(rootView: contentView)
-            window.center()
-            window.delegate = self
-            permissionsWindow = window
-        }
-
-        permissionsWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc private func unpairDevice() {
@@ -333,15 +232,13 @@ class MenuBarController: NSObject, ObservableObject {
     func prepareForQuit() {
         sessionTimer?.invalidate()
         sessionTimer = nil
-        pendingInjectionTargetAppPID = nil
 
         stopNetworkServices()
 
-        [pairingWindow, permissionsWindow, statusWindow, onboardingWindow, usageGuideWindow]
+        [pairingWindow, statusWindow, onboardingWindow, usageGuideWindow]
             .forEach { $0?.close() }
 
         pairingWindow = nil
-        permissionsWindow = nil
         statusWindow = nil
         onboardingWindow = nil
         usageGuideWindow = nil
@@ -436,40 +333,6 @@ class MenuBarController: NSObject, ObservableObject {
         alert.runModal()
     }
 
-    func showTextCopyAlert(_ text: String, error: String) {
-        let alert = NSAlert()
-        alert.messageText = String(localized: "text_copy_alert_title")
-        alert.informativeText = String(format: String(localized: "text_copy_alert_message_format"), error)
-        alert.addButton(withTitle: AppLocalization.localizedString("copy_text_button"))
-        alert.addButton(withTitle: AppLocalization.localizedString("cancel_button"))
-        alert.alertStyle = .warning
-
-        if alert.runModal() == .alertFirstButtonReturn {
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(text, forType: .string)
-        }
-    }
-
-    func showTextInjectionPermissionError(with text: String) {
-        let alert = NSAlert()
-        alert.messageText = String(localized: "text_injection_permission_title")
-        alert.informativeText = String(localized: "text_injection_permission_message")
-        alert.addButton(withTitle: AppLocalization.localizedString("open_system_settings_button"))
-        alert.addButton(withTitle: AppLocalization.localizedString("copy_text_button"))
-        alert.addButton(withTitle: AppLocalization.localizedString("cancel_button"))
-        alert.alertStyle = .warning
-
-        switch alert.runModal() {
-        case .alertFirstButtonReturn:
-            PermissionsManager.openSystemPreferences(for: .accessibility)
-        case .alertSecondButtonReturn:
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(text, forType: .string)
-        default:
-            break
-        }
-    }
-
     func appendInboundDataRecord(
         title: String,
         detail: String,
@@ -548,7 +411,6 @@ class MenuBarController: NSObject, ObservableObject {
         pairingState = connectionManager.pairingState
         connectionState = connectionManager.connectionState
         pairingProgressMessage = connectionManager.pairingProgressMessage
-        refreshPermissionState()
     }
 }
 
@@ -648,8 +510,6 @@ extension MenuBarController: NSWindowDelegate {
         if let window = notification.object as? NSWindow {
             if window === pairingWindow {
                 pairingWindow = nil
-            } else if window === permissionsWindow {
-                permissionsWindow = nil
             } else if window === statusWindow {
                 statusWindow = nil
             } else if window === onboardingWindow {
