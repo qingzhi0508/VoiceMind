@@ -122,7 +122,7 @@ impl BonjourService {
 | 音频 | PCM 数据帧 (base64) | 识别结果/中间结果 |
 | 结束 | `{"type": "finish"}` | `{"type": "finished"}` |
 
-**接口**：
+**接口**（使用 channel-based 结果传递）：
 ```rust
 pub struct VeAnchorConfig {
     pub app_id: String,
@@ -134,16 +134,41 @@ pub struct VeAnchorConfig {
 
 pub struct AsrResult {
     pub text: String,
-    pub is_final: bool,
+    pub is_final: bool,        // true=最终结果, false=中间结果
     pub timestamp: i64,
 }
 
-pub trait AsrProvider: Send + Sync {
-    fn start(&self, config: &VeAnchorConfig) -> Result<Box<dyn AudioStream>, String>;
-    fn send_audio(&self, audio_data: &[u8]) -> Result<(), String>;
-    fn finish(&self) -> Result<(), String>;
+pub type AsrResultCallback = Box<dyn Fn(AsrResult) + Send + Sync>;
+
+pub struct AsrSession {
+    result_tx: Arc<Mutex<Option<AsrResultCallback>>>,
+}
+
+impl AsrSession {
+    /// 创建新的 ASR 会话
+    pub fn new(callback: AsrResultCallback) -> Self;
+
+    /// 发送音频数据（来自 iPhone）
+    pub fn send_audio(&self, audio_data: &[u8]) -> Result<(), String>;
+
+    /// 结束当前识别会话
+    pub fn finish(&self) -> Result<(), String>;
+}
+
+pub struct VeAnchorProvider {
+    config: VeAnchorConfig,
+}
+
+impl VeAnchorProvider {
+    /// 创建 ASR 会话（每次识别创建一个新会话）
+    pub fn create_session(&self, callback: AsrResultCallback) -> Result<AsrSession, String>;
 }
 ```
+
+**会话生命周期**：
+1. `create_session()` - 创建会话，传入结果回调
+2. 多次 `send_audio()` - 发送音频帧
+3. `finish()` - 结束会话
 
 **音频格式要求**：
 - 采样率：16000 Hz
@@ -217,35 +242,83 @@ pub trait AsrProvider: Send + Sync {
 
 ### 5.2 配对流程
 
+**配对码格式**：6位数字（如 `123456`），有效期120秒
+
+**详细流程**：
 ```
-1. iPhone 扫描 Bonjour 服务发现 Windows
+1. Windows 端：用户点击"刷新配对码"，生成随机6位数字，显示二维码
           ↓
-2. iPhone 连接 WebSocket
+   二维码内容：voicemind://pair?port={PORT}&code={CODE}
           ↓
-3. Windows 发送配对码验证
+2. iPhone 扫描二维码，解析出 port 和 code
           ↓
-4. 配对成功，保存设备信息
+3. iPhone 连接 WebSocket (ws://{IP}:{port})
+          ↓
+4. iPhone 发送：
+   {
+     "id": "xxx",
+     "type": "pairRequest",
+     "payload": {
+       "short_code": "123456",
+       "mac_name": "DESKTOP-XXX",
+       "mac_id": "{设备ID}"
+     }
+   }
+          ↓
+5. Windows 验证 short_code 是否匹配：
+   - 匹配：生成共享密钥，返回 pairConfirm
+   - 不匹配：返回 error，记录失败次数
+          ↓
+6. iPhone 收到确认后，发送 pairSuccess
+          ↓
+7. 配对成功，保存设备信息到 paired_devices.json
 ```
+
+**速率限制**：
+- 最多连续失败5次
+- 失败5次后锁定5分钟
+- 锁定期间无法发起新的配对请求
 
 ### 5.3 语音识别流程
 
+**时序说明**：iPhone 发送音频 → Windows 接收 → 转发到火山引擎 → 返回结果 → 注入
+
 ```
-1. iPhone 开始录音，发送 audioStart
+1. iPhone 用户按住按钮开始说话
           ↓
-2. Windows 收到后调用 asr.start()
+2. iPhone 发送：
+   {
+     "id": "xxx",
+     "type": "audioStart",
+     "payload": { "session_id": "xxx", "language": "zh-CN", ... }
+   }
           ↓
-3. iPhone 发送音频数据 (audioData)
+3. Windows 创建 ASR 会话，连接到火山引擎
           ↓
-4. Windows 转发到火山引擎 WebSocket
+4. iPhone 持续发送音频帧：
+   {
+     "type": "audioData",
+     "payload": { "session_id": "xxx", "audio_data": "<base64>", "sequence_number": 1 }
+   }
           ↓
-5. 火山引擎返回识别结果
+5. Windows 实时转发到火山引擎 (send_audio)
           ↓
-6. Windows 调用 injection.inject() 注入文字
+6. 火山引擎返回识别结果（中间结果）→ 通过 callback 回调
           ↓
-7. iPhone 发送 audioEnd
+7. Windows 收到最终结果后：
+   - 调用 injection.inject(text) 注入文字
+   - 保存到历史记录
           ↓
-8. Windows 调用 asr.finish()
+8. iPhone 松开按钮，发送：
+   {
+     "type": "audioEnd",
+     "payload": { "session_id": "xxx" }
+   }
+          ↓
+9. Windows 调用 asr_session.finish() 结束会话
 ```
+
+**INJECTING 状态进入条件**：收到火山引擎最终结果（is_final=true）
 
 ---
 
@@ -257,7 +330,20 @@ pub trait AsrProvider: Send + Sync {
 | ASR 识别失败 | 重试 2 次，仍失败则返回错误给 iPhone |
 | Bonjour 广播失败 | 降级：显示手动连接 IP:端口 |
 | 火山引擎认证失败 | 提示用户检查 API Key 配置 |
-| 文本注入失败 | 回退到剪贴板方式注入 |
+| 键盘注入失败 | 自动回退到剪贴板方式注入 |
+
+**文本注入 Fallback 逻辑**：
+```
+1. 优先使用键盘模拟（SendInput）注入文字
+2. 如果键盘注入失败（返回错误）：
+   - 保存当前剪贴板内容
+   - 复制识别结果到剪贴板
+   - 模拟 Ctrl+V 粘贴
+   - 延迟1秒后恢复原剪贴板内容
+3. 如果剪贴板方式也失败：
+   - 记录错误日志
+   - 通知前端显示错误提示
+```
 
 ---
 
