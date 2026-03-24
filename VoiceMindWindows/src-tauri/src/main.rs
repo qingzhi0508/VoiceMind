@@ -9,22 +9,29 @@ mod pairing;
 mod settings;
 mod speech;
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Manager, WindowEvent,
 };
-use tokio::sync::Mutex;
 use tracing::{error, info};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+fn get_hostname() -> String {
+    hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "Unknown".to_string())
+}
 
 pub struct AppState {
     pub pairing_manager: Arc<Mutex<pairing::PairingManager>>,
     pub connection_manager: Arc<Mutex<network::ConnectionManager>>,
     pub history_store: Arc<Mutex<speech::HistoryStore>>,
     pub settings_store: Arc<Mutex<settings::SettingsStore>>,
+    pub bonjour_service: Arc<Mutex<Option<bonjour::BonjourService>>>,
+    pub asr_provider: Arc<Mutex<Option<asr::VeAnchorProvider>>>,
 }
 
 fn setup_logging() {
@@ -62,9 +69,44 @@ fn main() {
                 connection_manager: Arc::new(Mutex::new(network::ConnectionManager::new())),
                 history_store: Arc::new(Mutex::new(speech::HistoryStore::new())),
                 settings_store: Arc::new(Mutex::new(settings::SettingsStore::new())),
+                bonjour_service: Arc::new(Mutex::new(None)),
+                asr_provider: Arc::new(Mutex::new(None)),
             };
 
             app.manage(state);
+
+            // Get settings for initialization
+            let settings = state.settings_store.lock().unwrap().get();
+            let hostname = get_hostname();
+
+            // Initialize Bonjour service if enabled
+            if settings.bonjour.enabled {
+                let port = settings.server_port;
+                let mut service = bonjour::BonjourService::new(&hostname, port);
+                tokio::spawn(async move {
+                    if let Err(e) = service.start().await {
+                        error!("Failed to start Bonjour: {}", e);
+                    } else {
+                        info!("Bonjour service started on port {}", port);
+                    }
+                });
+                let mut bonjour = state.bonjour_service.lock().unwrap();
+                *bonjour = Some(service);
+            }
+
+            // Initialize ASR provider if configured
+            if !settings.asr.access_key_id.is_empty() {
+                let provider = asr::VeAnchorProvider::new(asr::VeAnchorConfig {
+                    app_id: settings.asr.app_id.clone(),
+                    access_key_id: settings.asr.access_key_id.clone(),
+                    access_key_secret: settings.asr.access_key_secret.clone(),
+                    cluster: settings.asr.cluster.clone(),
+                    language: settings.asr.asr_language.clone(),
+                });
+                let mut asr = state.asr_provider.lock().unwrap();
+                *asr = Some(provider);
+                info!("ASR provider initialized");
+            }
 
             // Setup system tray
             let quit_item = MenuItem::with_id(app, "quit", "Quit VoiceMind", true, None::<&str>)?;
