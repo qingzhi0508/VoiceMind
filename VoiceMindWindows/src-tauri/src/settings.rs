@@ -18,6 +18,7 @@ pub struct BonjourSettings {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AsrSettings {
+    pub provider: String,
     pub app_id: String,
     pub access_key_id: String,
     pub access_key_secret: String,
@@ -34,6 +35,7 @@ impl Default for Settings {
             hotkey: "".to_string(),
             bonjour: BonjourSettings { enabled: true },
             asr: AsrSettings {
+                provider: "".to_string(),
                 app_id: "".to_string(),
                 access_key_id: "".to_string(),
                 access_key_secret: "".to_string(),

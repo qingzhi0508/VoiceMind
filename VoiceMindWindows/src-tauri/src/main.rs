@@ -184,6 +184,8 @@ fn main() {
             commands::save_settings,
             commands::get_server_port,
             commands::set_server_port,
+            commands::get_asr_config,
+            commands::save_asr_config,
         ])
         .run(tauri::generate_context!());
 
