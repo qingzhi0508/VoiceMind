@@ -1,5 +1,16 @@
 import SwiftUI
 
+private enum OnboardingPalette {
+    static let pageBackgroundTop = Color(red: 0.91, green: 0.95, blue: 1.0)
+    static let pageBackgroundMid = Color(red: 0.96, green: 0.98, blue: 1.0)
+    static let pageBackgroundBottom = Color(red: 0.99, green: 0.995, blue: 1.0)
+    static let primaryText = Color(red: 0.08, green: 0.12, blue: 0.20)
+    static let secondaryText = Color(red: 0.33, green: 0.39, blue: 0.48)
+    static let panelFill = Color.white.opacity(0.96)
+    static let panelStroke = Color(red: 0.84, green: 0.89, blue: 0.98)
+    static let subtleFill = Color(red: 0.92, green: 0.95, blue: 1.0)
+}
+
 struct OnboardingView: View {
     @State private var currentPage = 0
 
@@ -9,9 +20,9 @@ struct OnboardingView: View {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color(red: 0.95, green: 0.97, blue: 1.0),
-                    Color(red: 0.98, green: 0.99, blue: 1.0),
-                    Color.white
+                    OnboardingPalette.pageBackgroundTop,
+                    OnboardingPalette.pageBackgroundMid,
+                    OnboardingPalette.pageBackgroundBottom
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -53,7 +64,7 @@ struct OnboardingView: View {
                             }) {
                                 Text(String(localized: "onboarding_back"))
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(OnboardingPalette.secondaryText)
                             }
                         } else {
                             Color.clear.frame(width: 44, height: 24)
@@ -100,11 +111,11 @@ struct BrandPromisePage: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(String(localized: "onboarding_welcome_title"))
                         .font(.system(size: 34, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.primary)
+                        .foregroundStyle(OnboardingPalette.primaryText)
 
                     Text(String(localized: "onboarding_welcome_subtitle"))
                         .font(.title3.weight(.medium))
-                        .foregroundStyle(Color.secondary)
+                        .foregroundStyle(OnboardingPalette.secondaryText)
                 }
 
                 GlassPanel {
@@ -151,7 +162,7 @@ struct IPhoneFirstPage: View {
 
                     Text(String(localized: "onboarding_how_it_works_subtitle"))
                         .font(.title3.weight(.medium))
-                        .foregroundStyle(Color.secondary)
+                        .foregroundStyle(OnboardingPalette.secondaryText)
                 }
 
                 GlassPanel {
@@ -173,12 +184,12 @@ struct IPhoneFirstPage: View {
                             VStack(spacing: 16) {
                                 Image(systemName: "waveform.circle.fill")
                                     .font(.system(size: 42))
-                                    .foregroundStyle(.white.opacity(0.95))
+                                    .foregroundStyle(Color(red: 0.90, green: 0.96, blue: 1.0))
                                     .modifier(FloatAnimationModifier())
 
                                 Text(String(localized: "onboarding_input_visual"))
                                     .font(.headline.weight(.semibold))
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(OnboardingPalette.primaryText.opacity(0.92))
 
                                 HStack(spacing: 6) {
                                     Capsule().fill(.white.opacity(0.95)).frame(width: 18, height: 6)
@@ -228,7 +239,7 @@ struct MacCollaborationPage: View {
 
                     Text(String(localized: "onboarding_pairing_subtitle"))
                         .font(.title3.weight(.medium))
-                        .foregroundStyle(Color.secondary)
+                        .foregroundStyle(OnboardingPalette.secondaryText)
                 }
 
                 GlassPanel {
@@ -317,7 +328,7 @@ struct StartNowPage: View {
 
                     Text(String(localized: "onboarding_ready_subtitle"))
                         .font(.title3.weight(.medium))
-                        .foregroundStyle(Color.secondary)
+                        .foregroundStyle(OnboardingPalette.secondaryText)
                 }
 
                 GlassPanel {
@@ -339,7 +350,7 @@ struct StartNowPage: View {
                 Button(action: onStart) {
                     Text(String(localized: "onboarding_skip"))
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.secondary)
+                        .foregroundStyle(OnboardingPalette.secondaryText)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -377,7 +388,7 @@ struct OnboardingBadge: View {
             .foregroundStyle(Color.accentColor)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
-            .background(Color.accentColor.opacity(0.1), in: Capsule())
+            .background(OnboardingPalette.subtleFill, in: Capsule())
     }
 }
 
@@ -392,13 +403,13 @@ struct GlassPanel<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(.white.opacity(0.82))
+                .fill(OnboardingPalette.panelFill)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(Color.white.opacity(0.85), lineWidth: 1)
+                .stroke(OnboardingPalette.panelStroke, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.05), radius: 24, x: 0, y: 12)
+        .shadow(color: Color.black.opacity(0.08), radius: 24, x: 0, y: 12)
     }
 }
 
@@ -426,7 +437,7 @@ struct FeatureRow: View {
 
                 Text(detail)
                     .font(.subheadline)
-                    .foregroundStyle(Color.secondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
             }
 
             Spacer()
@@ -452,7 +463,7 @@ struct StepCallout: View {
 
             Text(text)
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(Color.primary)
+                .foregroundStyle(OnboardingPalette.primaryText)
 
             Spacer()
         }
@@ -472,20 +483,21 @@ struct MetricChip: View {
 
             Text(title)
                 .font(.caption.weight(.medium))
-                .foregroundStyle(Color.secondary)
+                .foregroundStyle(OnboardingPalette.secondaryText)
 
             Text(value)
                 .font(.headline)
+                .foregroundStyle(OnboardingPalette.primaryText)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(.white.opacity(0.88))
+                .fill(OnboardingPalette.panelFill)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                .stroke(OnboardingPalette.panelStroke, lineWidth: 1)
         )
     }
 }
@@ -509,6 +521,7 @@ struct DeviceNode: View {
 
             Text(title)
                 .font(.subheadline.weight(.semibold))
+                .foregroundStyle(OnboardingPalette.primaryText)
         }
         .frame(maxWidth: .infinity)
     }
@@ -537,7 +550,7 @@ struct CollaborationBridge: View {
 
             Text(String(localized: "onboarding_collaboration_bridge"))
                 .font(.caption.weight(.medium))
-                .foregroundStyle(Color.secondary)
+                .foregroundStyle(OnboardingPalette.secondaryText)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
@@ -563,7 +576,7 @@ struct PairingStepCard: View {
 
                 Text(step)
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(OnboardingPalette.primaryText)
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -576,7 +589,7 @@ struct PairingStepCard: View {
 
                 Text(description)
                     .font(.subheadline)
-                    .foregroundStyle(Color.secondary)
+                    .foregroundStyle(OnboardingPalette.secondaryText)
             }
 
             Spacer()
@@ -584,7 +597,7 @@ struct PairingStepCard: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.primary.opacity(0.04))
+                .fill(OnboardingPalette.subtleFill)
         )
     }
 }
@@ -602,7 +615,7 @@ struct TipRow: View {
 
             Text(text)
                 .font(.subheadline)
-                .foregroundStyle(Color.secondary)
+                .foregroundStyle(OnboardingPalette.secondaryText)
 
             Spacer()
         }
