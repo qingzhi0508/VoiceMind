@@ -81,17 +81,19 @@ fn main() {
 
             // Initialize Bonjour service if enabled
             if settings.bonjour.enabled {
+                let hostname = hostname.clone();
                 let port = settings.server_port;
-                let mut service = bonjour::BonjourService::new(&hostname, port);
+                let bonjour_service_arc = state.bonjour_service.clone();
                 tokio::spawn(async move {
+                    let mut service = bonjour::BonjourService::new(&hostname, port);
                     if let Err(e) = service.start().await {
                         error!("Failed to start Bonjour: {}", e);
                     } else {
                         info!("Bonjour service started on port {}", port);
+                        let mut bonjour = bonjour_service_arc.lock().unwrap();
+                        *bonjour = Some(service);
                     }
                 });
-                let mut bonjour = state.bonjour_service.lock().unwrap();
-                *bonjour = Some(service);
             }
 
             // Initialize ASR provider if configured
