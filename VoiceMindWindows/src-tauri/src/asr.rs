@@ -8,6 +8,7 @@ use sha2::Sha256;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream};
 use uuid::Uuid;
+use tracing::info;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -138,8 +139,11 @@ impl AsrSession {
         Ok(format!("{}.{}.{}", config.app_id, timestamp, signature))
     }
 
-    fn send_start_request(&self, config: &VeAnchorConfig) -> impl std::future::Future<Output = Result<(), String>> {
-        let _payload = serde_json::json!({
+    async fn send_start_request(&mut self, config: &VeAnchorConfig) -> Result<(), String> {
+        let writer = self.ws_writer.as_mut()
+            .ok_or("Not connected")?;
+
+        let payload = serde_json::json!({
             "type": "start",
             "payload": {
                 "appid": config.app_id,
@@ -150,10 +154,12 @@ impl AsrSession {
             }
         });
 
-        // 注意：这需要 writer 可用，实际应该在 connect 后调用
-        async move {
-            Ok(())
-        }
+        writer.send(Message::Text(payload.to_string()))
+            .await
+            .map_err(|e| format!("Failed to send start request: {}", e))?;
+
+        info!("ASR start request sent");
+        Ok(())
     }
 
     fn parse_response(text: &str) -> Option<AsrResult> {
