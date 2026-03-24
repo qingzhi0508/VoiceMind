@@ -1,6 +1,7 @@
 use crate::pairing::PairingManager;
 use crate::commands::ConnectionStatus;
 use crate::asr::{AsrSession, AsrResult, VeAnchorProvider};
+use crate::injection;
 use futures_util::{SinkExt, StreamExt};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
@@ -758,8 +759,24 @@ async fn handle_audio_start(
         if let Some(provider) = asr_provider {
             let callback = {
                 move |result: AsrResult| {
-                    info!("ASR result: {} (final={})", result.text, result.is_final);
-                    // TODO: Call injection when result.is_final
+                    if result.is_final && !result.text.is_empty() {
+                        info!("ASR final result: {}", result.text);
+
+                        // Create injector based on settings (default to keyboard)
+                        let injector = injection::TextInjector::new(injection::InjectionMethod::Keyboard);
+
+                        // Perform text injection
+                        if let Err(e) = injector.inject(&result.text) {
+                            error!("Text injection failed: {}", e);
+                            // Fallback to clipboard if keyboard fails
+                            let clipboard_injector = injection::TextInjector::new(injection::InjectionMethod::Clipboard);
+                            if let Err(e2) = clipboard_injector.inject(&result.text) {
+                                error!("Clipboard injection also failed: {}", e2);
+                            }
+                        } else {
+                            info!("Text injected successfully");
+                        }
+                    }
                 }
             };
 
