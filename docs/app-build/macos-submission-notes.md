@@ -1,10 +1,10 @@
-# 语灵 macOS Submission Notes
+# VoiceMind macOS Submission Notes
 
 Last updated: 2026-03-22
 
 ## Current Product Shape
 
-Yuling (语灵) for macOS is a menu bar app that connects to the companion iPhone app over the local network.
+VoiceMind for macOS is a menu bar app that connects to the companion iPhone app over the local network.
 The Mac app receives transcribed text from iPhone and displays it inside the app.
 The Mac app also supports local speech recognition using Apple's built-in Speech framework.
 
@@ -42,7 +42,7 @@ Why it is needed:
 
 You can paste and adapt the following into App Store Connect review notes:
 
-Yuling (语灵) is a Mac companion app for an iPhone speech input workflow.
+VoiceMind is a Mac companion app for an iPhone speech input workflow.
 
 How to review:
 

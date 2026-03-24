@@ -36,7 +36,7 @@
 "menu_quit" = "Quit";
 
 "window_title_main" = "VoiceMind";
-"window_title_onboarding" = "Welcome to VoiceMind";
+"window_title_onboarding" = "VoiceMind for Mac";
 "window_title_qr_pairing" = "QR Pairing";
 
 "unpair_alert_title" = "Unpair?";
@@ -220,3 +220,60 @@
 "pairing_progress_connecting_format" = "Pairing completed. Establishing a connection with %@.";
 "pairing_progress_waiting_reconnect_format" = "Pairing completed. Waiting for %@ to reconnect.";
 "pairing_progress_connection_error_format" = "Pairing completed, but the connection to %@ encountered an error.";
+
+"mac_onboarding_product_name" = "VoiceMind";
+"mac_onboarding_continue" = "Continue";
+"mac_onboarding_back" = "Back";
+"mac_onboarding_fetching_ip" = "Detecting local address...";
+"mac_onboarding_results_location" = "Transcripts stay inside VoiceMind on Mac";
+
+"mac_onboarding_brand_badge" = "VOICEMIND FOR MAC";
+"mac_onboarding_welcome_title" = "Capture ideas fast. Review them with room to think.";
+"mac_onboarding_welcome_subtitle" = "VoiceMind for Mac gives your voice a focused desktop space the moment you are ready to keep going.";
+"mac_onboarding_brand_panel_title" = "Built for a desktop voice workflow";
+"mac_onboarding_brand_panel_point1" = "See transcripts land in one clear workspace instead of chasing them across windows.";
+"mac_onboarding_brand_panel_point2" = "Review, refine, and continue the thought while momentum is still there.";
+"mac_onboarding_brand_panel_point3" = "Pair with iPhone when you want capture and desktop review to move as one.";
+"mac_onboarding_brand_feature1_title" = "A bigger canvas for voice";
+"mac_onboarding_brand_feature1_desc" = "Move from a quick spoken note into real review without leaving VoiceMind.";
+"mac_onboarding_brand_feature2_title" = "Made for your Mac flow";
+"mac_onboarding_brand_feature2_desc" = "Keep results visible, organized, and ready for the next step on desktop.";
+
+"mac_onboarding_capture_badge" = "CAPTURE AND REVIEW";
+"mac_onboarding_capture_title" = "Your Mac becomes the place where voice turns into work.";
+"mac_onboarding_capture_subtitle" = "VoiceMind keeps incoming text easy to scan, revisit, and shape before you move on.";
+"mac_onboarding_capture_panel_title" = "What happens on Mac";
+"mac_onboarding_capture_panel_point1" = "Incoming transcripts stay visible in one focused workspace.";
+"mac_onboarding_capture_panel_point2" = "Review the latest text while the context is still fresh.";
+"mac_onboarding_capture_panel_point3" = "Keep your desktop session ready for the next spoken idea.";
+"mac_onboarding_capture_feature1_title" = "Read with context";
+"mac_onboarding_capture_feature1_desc" = "See each result clearly so edits and follow-up decisions feel immediate.";
+"mac_onboarding_capture_feature2_title" = "Stay organized";
+"mac_onboarding_capture_feature2_desc" = "Use VoiceMind as the review layer between capture and whatever comes next.";
+
+"mac_onboarding_connect_badge" = "CONNECT IPHONE";
+"mac_onboarding_connect_title" = "Pair iPhone and Mac once, then let the flow feel seamless.";
+"mac_onboarding_connect_subtitle" = "Start on iPhone, keep the desktop view on Mac, and stay in sync over your local network.";
+"mac_onboarding_device_iphone" = "iPhone";
+"mac_onboarding_device_mac" = "Mac";
+"mac_onboarding_connect_bridge" = "Secure link";
+"mac_onboarding_connect_step1_title" = "Keep both devices on the same network";
+"mac_onboarding_connect_step1_desc" = "Make sure iPhone and Mac can see each other locally before you pair.";
+"mac_onboarding_connect_step2_title" = "Start pairing from Mac";
+"mac_onboarding_connect_step2_desc" = "VoiceMind will show a QR code and pairing code for your iPhone.";
+"mac_onboarding_connect_step3_title" = "Confirm on iPhone";
+"mac_onboarding_connect_step3_desc" = "Scan the code, approve the session, and let VoiceMind keep both sides in sync.";
+
+"mac_onboarding_start_badge" = "START VOICEMIND";
+"mac_onboarding_start_title" = "Turn on VoiceMind for Mac and get ready for your first session.";
+"mac_onboarding_start_subtitle" = "Starting the network service makes this Mac discoverable for pairing, review, and the running state that follows.";
+"mac_onboarding_start_button" = "Start VoiceMind";
+"mac_onboarding_start_continue" = "Open Status";
+"mac_onboarding_start_ip_title" = "Local Network Address";
+"mac_onboarding_start_mode_title" = "Workspace";
+"mac_onboarding_start_mode_value" = "Capture on iPhone, review on Mac";
+"mac_onboarding_start_steps_title" = "What happens next";
+"mac_onboarding_start_step1" = "Start the VoiceMind service on this Mac.";
+"mac_onboarding_start_step1_running" = "VoiceMind is already running on this Mac.";
+"mac_onboarding_start_step2" = "Open VoiceMind on iPhone and enter the pairing flow when you are ready.";
+"mac_onboarding_start_step3" = "Once connected, speak on iPhone and keep reviewing the transcript on Mac.";

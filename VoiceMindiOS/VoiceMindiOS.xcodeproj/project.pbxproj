@@ -224,7 +224,7 @@
 			mainGroup = B919E28A2F68598F002A347A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				B919E3502F6861CF002A347A /* XCLocalSwiftPackageReference "SharedCore" */,
+				B919E3502F6861CF002A347A /* XCLocalSwiftPackageReference "../SharedCore" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = B919E2942F68598F002A347A /* Products */;
@@ -503,7 +503,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7C7627YUTV;
 				GENERATE_INFOPLIST_FILE = YES;
-					IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -533,7 +533,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7C7627YUTV;
 				GENERATE_INFOPLIST_FILE = YES;
-					IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -637,7 +637,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		B919E3502F6861CF002A347A /* XCLocalSwiftPackageReference "SharedCore" */ = {
+		B919E3502F6861CF002A347A /* XCLocalSwiftPackageReference "../SharedCore" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedCore;
 		};
@@ -646,7 +646,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		B919E34E2F6861CF002A347A /* SharedCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B919E3502F6861CF002A347A /* XCLocalSwiftPackageReference "SharedCore" */;
+			package = B919E3502F6861CF002A347A /* XCLocalSwiftPackageReference "../SharedCore" */;
 			productName = SharedCore;
 		};
 /* End XCSwiftPackageProductDependency section */

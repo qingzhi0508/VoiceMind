@@ -1,9 +1,9 @@
-"app_title" = "语灵";
+"app_title" = "VoiceMind";
 "tab_home_title" = "首页";
 "tab_data_title" = "记录";
 
-"CFBundleDisplayName" = "语灵";
-"CFBundleName" = "语灵";
+"CFBundleDisplayName" = "VoiceMind";
+"CFBundleName" = "VoiceMind";
 "ok_button" = "确定";
 "cancel_button" = "取消";
 "reconnect_button" = "重连";
@@ -155,7 +155,7 @@
 "settings_permission_microphone" = "麦克风";
 "settings_permission_speech" = "语音识别";
 "settings_request_permissions" = "请求权限";
-"settings_permissions_footer" = "语灵 需要麦克风和语音识别权限才能正常工作";
+"settings_permissions_footer" = "VoiceMind 需要麦克风和语音识别权限才能正常工作";
 "settings_send_to_mac_header" = "Mac 协同";
 "settings_send_to_mac_title" = "将转写结果同步到 Mac";
 "settings_send_to_mac_footer" = "默认只在本机录音转文字。打开后，如果已连接到 Mac，会额外把转写结果同步过去。";
@@ -325,32 +325,48 @@
 // MARK: - Onboarding
 "onboarding_back" = "上一步";
 "onboarding_next" = "下一步";
-"onboarding_skip" = "跳过";
+"onboarding_skip" = "稍后再说";
 
-"onboarding_welcome_title" = "欢迎使用语灵";
-"onboarding_welcome_subtitle" = "通过 iPhone 为 Mac 提供强大的语音输入功能";
+"onboarding_brand_badge" = "重新定义语音输入";
+"onboarding_welcome_title" = "VoiceMind，让想法持续向前。";
+"onboarding_welcome_subtitle" = "先用 iPhone 捕捉灵感，再把节奏延续到 Mac。";
+"onboarding_brand_point1_title" = "想到就说";
+"onboarding_brand_point1_desc" = "把转瞬即逝的语音灵感，快速整理成可用文字。";
+"onboarding_brand_point2_title" = "为现代工作流而生";
+"onboarding_brand_point2_desc" = "围绕 iPhone 与 Mac 协同打造，更轻、更快、更顺手。";
+"onboarding_brand_point3_title" = "节奏由你掌控";
+"onboarding_brand_point3_desc" = "先从 iPhone 开始，准备好时再加入 Mac 协同。";
 
-"onboarding_how_it_works_title" = "工作原理";
-"onboarding_how_it_works_subtitle" = "简单三步，实现语音输入";
+"onboarding_input_badge" = "IPHONE 优先";
+"onboarding_how_it_works_title" = "最快的输入设备，其实一直就在你手里。";
+"onboarding_how_it_works_subtitle" = "按住、开口、交给 VoiceMind 生成第一版。";
 "onboarding_device_iphone" = "iPhone";
 "onboarding_device_mac" = "Mac";
-"onboarding_step1" = "在 iPhone 上按住麦克风说话";
-"onboarding_step2" = "语音实时传输到 Mac";
-"onboarding_step3" = "识别结果自动输入到光标位置";
+"onboarding_input_visual" = "实时采集";
+"onboarding_step1" = "灵感出现时，按住就能立刻开始记录。";
+"onboarding_step2" = "转写内容会在 iPhone 上实时生成。";
+"onboarding_step3" = "需要时再把结果继续流转出去。";
+"onboarding_input_chip1_title" = "输入方式";
+"onboarding_input_chip1_value" = "语音优先";
+"onboarding_input_chip2_title" = "操作方式";
+"onboarding_input_chip2_value" = "按住即说";
 
-"onboarding_pairing_title" = "配对教程";
-"onboarding_pairing_subtitle" = "首次使用需要与 Mac 配对";
-"onboarding_pairing_step1_title" = "在 Mac 上打开语灵";
-"onboarding_pairing_step1_desc" = "确保 Mac 已安装并运行语灵应用";
-"onboarding_pairing_step2_title" = "扫描二维码";
-"onboarding_pairing_step2_desc" = "在 Mac 上点击配对新设备，显示二维码后用 iPhone 扫描";
-"onboarding_pairing_step3_title" = "完成配对";
-"onboarding_pairing_step3_desc" = "输入 Mac 上显示的 6 位配对码即可";
+"onboarding_collaboration_badge" = "MAC 协同";
+"onboarding_pairing_title" = "需要更大工作台时，把 VoiceMind 带到 Mac。";
+"onboarding_pairing_subtitle" = "完成一次连接后，就能把 iPhone 的语音采集延续到桌面端。";
+"onboarding_pairing_step1_title" = "在 Mac 上打开 VoiceMind";
+"onboarding_pairing_step1_desc" = "启动 Mac 端应用，准备接入新的 iPhone。";
+"onboarding_pairing_step2_title" = "扫码连接";
+"onboarding_pairing_step2_desc" = "用 iPhone 扫描二维码，并确认这次连接。";
+"onboarding_pairing_step3_title" = "保持同步";
+"onboarding_pairing_step3_desc" = "在需要协同时，把转写结果发送到 Mac 继续处理。";
+"onboarding_collaboration_bridge" = "安全连接";
 
-"onboarding_ready_title" = "准备就绪";
-"onboarding_ready_subtitle" = "配对完成后，在 iPhone 上按住麦克风开始说话即可";
-"onboarding_tip1" = "确保 iPhone 和 Mac 处于同一网络";
-"onboarding_tip2" = "配对信息会保存在设备中，下次无需重新配对";
+"onboarding_ready_badge" = "现在开始";
+"onboarding_ready_title" = "先从 iPhone 开始，准备好再连上 Mac。";
+"onboarding_ready_subtitle" = "VoiceMind 从第一次开口就能发挥价值，而设备协同会让它更强。";
+"onboarding_tip1" = "只用 iPhone，也能随时完成快速语音捕捉。";
+"onboarding_tip2" = "之后再连接 Mac，用更大的界面继续整理与推进。";
 
-"onboarding_start_using" = "开始使用";
+"onboarding_start_using" = "开始使用 VoiceMind";
 "onboarding_menu_guide" = "使用指南";

@@ -1,10 +1,10 @@
-# 语灵 macOS App Store Metadata Draft
+# VoiceMind macOS App Store Metadata Draft
 
 Last updated: 2026-03-22
 
 ## Positioning
 
-- Product name: `语灵`
+- Product name: `VoiceMind`
 - Narrative strategy: Mac-first voice-to-text utility, with iPhone collaboration as an enhancement
 - Core value: a fast and lightweight voice-to-text tool that also works with iPhone to improve productivity
 
@@ -12,7 +12,7 @@ Last updated: 2026-03-22
 
 ### App Name
 
-`语灵`
+`VoiceMind`
 
 ### Subtitle
 
@@ -24,11 +24,11 @@ Last updated: 2026-03-22
 
 ### Description
 
-`语灵 是一款轻量的 Mac 语音转文字工具。你可以直接在 Mac 上进行本地语音识别，也可以与 iPhone 配合使用，将语音转写结果同步到 Mac 中查看与整理。`
+`VoiceMind 是一款轻量的 Mac 语音转文字工具。你可以直接在 Mac 上进行本地语音识别，也可以与 iPhone 配合使用，将语音转写结果同步到 Mac 中查看与整理。`
 
-`无论是记录灵感、整理会议内容，还是快速输入短文本，语灵 都能帮助你减少打字负担，把注意力放回内容本身。`
+`无论是记录灵感、整理会议内容，还是快速输入短文本，VoiceMind 都能帮助你减少打字负担，把注意力放回内容本身。`
 
-`你可以用 语灵：`
+`你可以用 VoiceMind：`
 
 - `在 Mac 上直接开始语音识别，快速查看转写结果`
 - `通过局域网与 iPhone 配对，让 iPhone 成为更灵活的语音输入端`
@@ -43,7 +43,7 @@ Last updated: 2026-03-22
 - `集中查看和整理最近的语音转写内容`
 - `适合记录、输入与轻量生产力场景`
 
-`语灵 需要以下权限以提供完整功能：`
+`VoiceMind 需要以下权限以提供完整功能：`
 
 - `麦克风权限：用于 Mac 本地语音输入`
 - `语音识别权限：用于将语音转换为文本`
@@ -84,7 +84,7 @@ Last updated: 2026-03-22
 
 Use the English version below in App Store Connect review notes:
 
-`Yuling (语灵) is a lightweight macOS voice-to-text utility.`
+`VoiceMind is a lightweight macOS voice-to-text utility.`
 
 `The macOS app supports two usage modes:`
 

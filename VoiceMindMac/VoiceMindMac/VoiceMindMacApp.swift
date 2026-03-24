@@ -11,7 +11,7 @@ struct VoiceMindMacApp: App {
         }
         .commands {
             CommandGroup(replacing: .appInfo) {
-                Button("关于 语灵") {
+                Button("关于 VoiceMind") {
                     // Show about window
                 }
             }

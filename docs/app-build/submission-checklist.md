@@ -1,4 +1,4 @@
-# 语灵 Submission Checklist
+# VoiceMind Submission Checklist
 
 Last updated: 2026-03-23
 
