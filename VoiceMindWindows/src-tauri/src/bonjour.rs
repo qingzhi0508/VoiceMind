@@ -56,12 +56,12 @@ impl BonjourService {
     }
 
     /// 更新端口
-    pub async fn update(&mut self, port: u16) {
+    pub async fn update(&mut self, port: u16) -> Result<(), String> {
         // 停止旧服务
         self.stop().await;
         // 启动新端口
         self.port = port;
-        self.start().await?;
+        self.start().await
     }
 
     /// 查找 dns-sd.exe 路径
