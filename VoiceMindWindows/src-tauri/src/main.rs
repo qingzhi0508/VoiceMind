@@ -9,11 +9,12 @@ mod pairing;
 mod settings;
 mod speech;
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager, WindowEvent,
+    Emitter, Manager, WindowEvent,
 };
 use tracing::{error, info};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
@@ -64,6 +65,10 @@ fn main() {
         .setup(|app| {
             info!("Setting up VoiceMind...");
 
+            // Create temporary settings for initialization
+            let init_settings = settings::SettingsStore::new().get();
+            let hostname = get_hostname();
+
             let state = AppState {
                 pairing_manager: Arc::new(Mutex::new(pairing::PairingManager::new())),
                 connection_manager: Arc::new(Mutex::new(network::ConnectionManager::new())),
@@ -75,38 +80,37 @@ fn main() {
 
             app.manage(state);
 
-            // Get settings for initialization
-            let settings = state.settings_store.lock().unwrap().get();
-            let hostname = get_hostname();
-
             // Initialize Bonjour service if enabled
-            if settings.bonjour.enabled {
+            if init_settings.bonjour.enabled {
                 let hostname = hostname.clone();
-                let port = settings.server_port;
-                let bonjour_service_arc = state.bonjour_service.clone();
-                tokio::spawn(async move {
+                let port = init_settings.server_port;
+                let bonjour_service_arc = app.state::<AppState>().bonjour_service.clone();
+                tauri::async_runtime::spawn(async move {
                     let mut service = bonjour::BonjourService::new(&hostname, port);
                     if let Err(e) = service.start().await {
                         error!("Failed to start Bonjour: {}", e);
                     } else {
                         info!("Bonjour service started on port {}", port);
-                        let mut bonjour = bonjour_service_arc.lock().unwrap();
+                        let mut bonjour = bonjour_service_arc.lock().await;
                         *bonjour = Some(service);
                     }
                 });
             }
 
             // Initialize ASR provider if configured
-            if !settings.asr.access_key_id.is_empty() {
+            if !init_settings.asr.access_key_id.is_empty() {
                 let provider = asr::VeAnchorProvider::new(asr::VeAnchorConfig {
-                    app_id: settings.asr.app_id.clone(),
-                    access_key_id: settings.asr.access_key_id.clone(),
-                    access_key_secret: settings.asr.access_key_secret.clone(),
-                    cluster: settings.asr.cluster.clone(),
-                    language: settings.asr.asr_language.clone(),
+                    app_id: init_settings.asr.app_id.clone(),
+                    access_key_id: init_settings.asr.access_key_id.clone(),
+                    access_key_secret: init_settings.asr.access_key_secret.clone(),
+                    cluster: init_settings.asr.cluster.clone(),
+                    language: init_settings.asr.asr_language.clone(),
                 });
-                let mut asr = state.asr_provider.lock().unwrap();
-                *asr = Some(provider);
+                let asr_provider_arc = app.state::<AppState>().asr_provider.clone();
+                tauri::async_runtime::spawn(async move {
+                    let mut asr = asr_provider_arc.lock().await;
+                    *asr = Some(provider);
+                });
                 info!("ASR provider initialized");
             }
 

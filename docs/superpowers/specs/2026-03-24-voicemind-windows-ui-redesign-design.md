@@ -70,33 +70,27 @@ Primary items (1-5) are in the top group. Secondary items (6-7) are at the botto
 
 ### Color Palette
 
-| Token                  | Dark Mode Value | Light Mode Value | Usage                           |
-|------------------------|-----------------|-----------------|----------------------------------|
+| Token                  | Dark Mode Value             | Light Mode Value         | Usage                           |
+|------------------------|-----------------------------|--------------------------|----------------------------------|
 | `$pageBackground`      | `#1a1a2e` → `#141828` gradient | `#F2F4FA` → `#E8ECF5` gradient | Page background |
-| `$sidebarBgTop`        | `#19222E`       | `#F6F7FC`       | Sidebar top gradient             |
-| `$sidebarBgBottom`      | `#141C28`       | `#ECEEF7`       | Sidebar bottom gradient          |
-| `$sidebarSelectedFill`  | `#2E3D56`       | `#DDE4F2`       | Selected sidebar item background |
-| `$sidebarSelectedBorder`| `#619FAF`       | `#5B9AB5`       | Selected sidebar item border     |
-| `$sidebarText`         | `#9EB2C8`       | `#4D5C78`       | Sidebar default text             |
-| `$sidebarTextSelected`  | `#EEEEFF`       | `#17203A`       | Sidebar selected text            |
-| `$canvasBackground`    | `#1C2130`       | `#FFFFFF`       | Content area background          |
-| `$canvasBorder`        | `#2A3448`       | `rgba(0,0,0,0.08)` | Content area border           |
-| `$cardSurface`         | `#212840`       | `#FFFFFF`       | Card backgrounds                 |
-| `$cardBorder`          | `#3A4860`       | `rgba(0,0,0,0.10)` | Card borders                 |
-| `$softSurface`         | `#1E2636`       | `#F5F6FA`       | Inner surface elements           |
-| `$title`               | `#EEEEFF`       | `#17203A`       | Section/card titles              |
-| `$primaryText`         | `#D0D8EE`       | `#2E3A52`       | Body text                        |
-| `$secondaryText`       | `#9EB2C8`       | `#6B7A96`       | Secondary/caption text           |
-| `$accent`              | `#00D4FF`       | `#00B4DD`       | Brand accent (keep existing)     |
-| `$accentOrange`        | `#FF8C42`       | `#E07830`       | Dashboard stat accent            |
-| `$accentGreen`         | `#4ADE80`       | `#22C55E`       | Success/connected states        |
-| `$accentRed`           | `#F87171`       | `#EF4444`       | Error/disconnected states       |#EEEEFF`       | Primary text                     |
-| `$primaryText`         | `#D4DAE8`       | Body text                        |
-| `$secondaryText`       | `#9EB2C8`       | Secondary/muted text             |
-| `$accent`              | `#00D4FF`       | Brand accent (keep existing)     |
-| `$accentOrange`        | `#FF8C42`       | Dashboard stat accent            |
-| `$accentGreen`         | `#4ADE80`       | Success/connected states        |
-| `$accentRed`           | `#F87171`       | Error/disconnected states       |
+| `$sidebarBgTop`        | `#19222E`                   | `#F6F7FC`                | Sidebar top gradient             |
+| `$sidebarBgBottom`     | `#141C28`                   | `#ECEEF7`                | Sidebar bottom gradient          |
+| `$sidebarSelectedFill` | `#2E3D56`                   | `#DDE4F2`                | Selected sidebar item background |
+| `$sidebarSelectedBorder` | `#619FAF`                 | `#5B9AB5`                | Selected sidebar item border     |
+| `$sidebarText`         | `#9EB2C8`                   | `#4D5C78`                | Sidebar default text             |
+| `$sidebarTextSelected` | `#EEEEFF`                   | `#17203A`                | Sidebar selected text            |
+| `$canvasBackground`    | `#1C2130`                   | `#FFFFFF`                | Content area background          |
+| `$canvasBorder`        | `#2A3448`                   | `rgba(0,0,0,0.08)`       | Content area border              |
+| `$cardSurface`         | `#212840`                   | `#FFFFFF`                | Card backgrounds                 |
+| `$cardBorder`          | `#3A4860`                   | `rgba(0,0,0,0.10)`       | Card borders                     |
+| `$softSurface`         | `#1E2636`                   | `#F5F6FA`                | Inner surface elements           |
+| `$title`               | `#EEEEFF`                   | `#17203A`                | Section/card titles              |
+| `$primaryText`         | `#D0D8EE`                   | `#2E3A52`                | Body text                        |
+| `$secondaryText`       | `#9EB2C8`                   | `#6B7A96`                | Secondary/caption text           |
+| `$accent`              | `#00D4FF`                   | `#00B4DD`                | Brand accent (keep existing)     |
+| `$accentOrange`        | `#FF8C42`                   | `#E07830`                | Dashboard stat accent            |
+| `$accentGreen`         | `#4ADE80`                   | `#22C55E`                | Success/connected states         |
+| `$accentRed`           | `#F87171`                   | `#EF4444`                | Error/disconnected states        |
 
 ### Typography
 
@@ -287,20 +281,18 @@ Primary items (1-5) are in the top group. Secondary items (6-7) are at the botto
 │                                                         │
 │ Status: ✓ Granted                                       │
 │                                                         │
-│ OR (if not granted):                                    │
-│ Status: ✗ Not Granted                                   │
-│ Text explaining why accessibility is needed              │
+│ Windows keyboard injection via SendInput does not        │
+│ require a separate accessibility grant.                  │
 │                                                         │
-│ [Check Status] [Request Permission] [Open Settings]     │
+│ [Check Status] [Open Settings]                          │
 └──────────────────────────────────────────────────────────┘
 ```
 
 **Features:**
 - Display current accessibility permission status
 - Check Status: re-checks permission state
-- Request Permission: triggers Windows UAC dialog for accessibility
 - Open Settings: opens Windows Ease of Access settings page
-- Status shown with colored icon (green checkmark / red x)
+- Status is always shown as granted on Windows for keyboard injection via SendInput
 
 ### 4.6 Settings
 
@@ -379,7 +371,7 @@ Primary items (1-5) are in the top group. Secondary items (6-7) are at the botto
 // start_service: binds TcpListener on configured port, spawns accept loop task,
 // stores JoinHandle in state.server_handle. If server already running, returns Ok(()) silently.
 #[tauri::command]
-async fn start_service(state: State<'_, AppState>) -> Result<(), String>;
+async fn start_service(state: State<'_, AppState>, app: tauri::AppHandle) -> Result<(), String>;
 
 // stop_service: aborts the stored JoinHandle (handle.abort()), sets server_handle to None.
 // Tauri's app_handle is needed to emit 'service-state-changed' event.
@@ -547,12 +539,12 @@ Language preference persisted in `localStorage` and reflected in settings.
 - `index.html` — Complete rewrite: new HTML structure, CSS, JS
 
 ### Backend (`VoiceMindWindows/src-tauri/src/`)
-- `main.rs` — Add `server_handle` + `inbound_data_records` to `AppState`, new command registrations, event emission on connection/pairing state change
+- `main.rs` — Add `server_handle` + `inbound_data_records` to `AppState`, new command registrations
 - `commands.rs` — Add new Tauri commands: `start_service`, `stop_service`, `get_service_status`, `get_inbound_data_records`, `clear_inbound_data_records`, `get_accessibility_status`, `open_accessibility_settings`
-- `network.rs` — Emit Tauri events on connection/pairing state changes, append to inbound data records on each significant event
+- `network.rs` — Emit Tauri events on connection/pairing state changes and service start/stop, append to inbound data records on each significant event
 - `settings.rs` — Add `theme` field to `Settings` struct (default: `"system"`)
 
 ### Notes
 - No new `service.rs` file needed: service start/stop will be handled by starting/stopping the WebSocket server task in `network.rs`
 - `hotkey` field already exists in `Settings` — no change needed, it can remain unused in UI for now
-- Accessibility on Windows is always effectively "granted" for keyboard injection, but the UI should show the status based on whether the injection method actually works
+- Accessibility on Windows is always treated as `granted` for keyboard injection via SendInput; Permissions page is informational (status check + settings link)

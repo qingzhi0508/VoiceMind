@@ -1,6 +1,6 @@
 use std::process::Stdio;
 use tokio::process::Command;
-use tracing::{info, error};
+use tracing::info;
 
 pub struct BonjourService {
     service_name: String,
@@ -70,6 +70,7 @@ impl BonjourService {
         let paths = [
             "C:\\Program Files\\Bonjour\\dns-sd.exe",
             "C:\\Program Files (x86)\\Bonjour\\dns-sd.exe",
+            "C:\\Windows\\System32\\dns-sd.exe",
         ];
         for path in &paths {
             if std::path::Path::new(path).exists() {

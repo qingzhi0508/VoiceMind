@@ -209,7 +209,7 @@ pub struct Connection {
     pub device_id: Option<String>,
     pub device_name: Option<String>,
     pub state: ConnectionState,
-    pub writer: Option<futures_util::stream::SplitSink<TokioWebSocket, Message>>,
+    pub writer: Arc<Mutex<Option<futures_util::stream::SplitSink<TokioWebSocket, Message>>>>,
     pub last_pong: Option<Instant>,
     pub secret_key: Option<String>,
     pub asr_session: Option<AsrSession>,
@@ -254,7 +254,8 @@ impl ConnectionManager {
         tokio::spawn(async move {
             while running.load(std::sync::atomic::Ordering::Relaxed) {
                 let listener = listener_arc.clone();
-                match listener.lock().await.accept().await {
+                let listener_guard = listener.lock().await;
+                match listener_guard.accept().await {
                     Ok((stream, peer_addr)) => {
                         info!("New connection from: {}", peer_addr);
 
@@ -312,6 +313,7 @@ impl ConnectionManager {
                 return Some(ConnectionStatus {
                     connected: true,
                     name: conn.device_name.clone(),
+                    device_id: conn.device_id.clone(),
                 });
             }
         }
@@ -321,7 +323,7 @@ impl ConnectionManager {
     pub async fn broadcast(&self, message: &str) -> Result<(), String> {
         let connections = self.connections.read().await;
         for conn in connections.values() {
-            if let Some(writer) = &conn.writer {
+            if let Some(ref mut writer) = *conn.writer.lock().await {
                 writer.send(Message::Text(message.to_string())).await.ok();
             }
         }
@@ -331,7 +333,7 @@ impl ConnectionManager {
     pub async fn send_to_device(&self, device_id: &str, message: &str) -> Result<(), String> {
         let connections = self.connections.read().await;
         if let Some(conn) = connections.get(device_id) {
-            if let Some(writer) = &conn.writer {
+            if let Some(ref mut writer) = *conn.writer.lock().await {
                 writer.send(Message::Text(message.to_string())).await.map_err(|e| e.to_string())?;
             }
         }
@@ -341,11 +343,8 @@ impl ConnectionManager {
     pub async fn disconnect_device(&self, device_id: &str) {
         let mut connections = self.connections.write().await;
         if let Some(conn) = connections.get_mut(device_id) {
-            if let Some(writer) = &conn.writer {
-                let close_msg = Message::Close(Some(tokio_tungstenite::tungstenite::protocol::CloseFrame {
-                    code: tokio_tungstenite::tungstenite::protocol::close_code::NORMAL,
-                    reason: "Device disconnected".into(),
-                }));
+            if let Some(ref mut writer) = *conn.writer.lock().await {
+                let close_msg = Message::Close(None);
                 writer.send(close_msg).await.ok();
             }
         }
@@ -379,7 +378,7 @@ async fn handle_connection(
             device_id: None,
             device_name: None,
             state: ConnectionState::Pending,
-            writer: Some(writer),
+            writer: Arc::new(Mutex::new(Some(writer))),
             last_pong: None,
             secret_key: None,
             asr_session: None,
@@ -392,6 +391,7 @@ async fn handle_connection(
     let heartbeat_conn_id = conn_id.clone();
     let heartbeat_connections = connections.clone();
     let heartbeat_running = Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let heartbeat_running_cleanup = heartbeat_running.clone();
 
     let heartbeat_handle = tokio::spawn(async move {
         while heartbeat_running.load(std::sync::atomic::Ordering::Relaxed) {
@@ -419,7 +419,12 @@ async fn handle_connection(
                     "payload": { "nonce": Uuid::new_v4().to_string() }
                 });
 
-                if let Some(writer) = &conn.writer {
+                // Get writer Arc clone first to release conn borrow
+                let writer_arc = conn.writer.clone();
+                drop(conns);
+                // Then lock and send
+                let mut writer_lock = writer_arc.lock().await;
+                if let Some(ref mut writer) = *writer_lock {
                     writer.send(Message::Text(ping_msg.to_string())).await.ok();
                 }
             } else {
@@ -449,7 +454,10 @@ async fn handle_connection(
                 // Auto-respond to ping with pong
                 let conns = connections.read().await;
                 if let Some(conn) = conns.get(&conn_id) {
-                    if let Some(writer) = &conn.writer {
+                    let writer_arc = conn.writer.clone();
+                    drop(conns);
+                    let mut writer_lock = writer_arc.lock().await;
+                    if let Some(ref mut writer) = *writer_lock {
                         writer.send(Message::Pong(data)).await.ok();
                     }
                 }
@@ -476,7 +484,7 @@ async fn handle_connection(
     }
 
     // Cleanup
-    heartbeat_running.store(false, std::sync::atomic::Ordering::Relaxed);
+    heartbeat_running_cleanup.store(false, std::sync::atomic::Ordering::Relaxed);
     heartbeat_handle.abort();
 
     {
@@ -578,7 +586,7 @@ async fn handle_pair_request(
 
     info!("Pair request: device={}, code={}", payload.mac_id, payload.short_code);
 
-    let manager = pairing_manager.lock().await;
+    let mut manager = pairing_manager.lock().await;
 
     // Check if pairing is locked due to failed attempts
     if manager.is_locked() {
@@ -880,7 +888,7 @@ async fn send_to_connection(
 ) {
     let conns = connections.read().await;
     if let Some(conn) = conns.get(conn_id) {
-        if let Some(writer) = &conn.writer {
+        if let Some(ref mut writer) = *conn.writer.lock().await {
             writer.send(Message::Text(message.to_string())).await.ok();
         }
     }

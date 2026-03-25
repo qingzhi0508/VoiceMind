@@ -112,7 +112,7 @@ pub async fn stop_pairing(state: State<'_, AppState>) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn get_pairing_status(state: State<'_, AppState>) -> Result<PairingStatus, String> {
-    let manager = state.pairing_manager.lock().await;
+    let mut manager = state.pairing_manager.lock().await;
 
     Ok(PairingStatus {
         is_pairing_mode: manager.is_pairing_mode(),
@@ -152,7 +152,7 @@ pub async fn remove_paired_device(state: State<'_, AppState>, id: String) -> Res
 #[tauri::command]
 pub async fn get_connection_status(state: State<'_, AppState>) -> Result<Option<ConnectionStatus>, String> {
     let manager = state.connection_manager.lock().await;
-    Ok(manager.get_connected_device())
+    Ok(manager.get_connected_device().await)
 }
 
 #[tauri::command]
@@ -226,12 +226,19 @@ pub async fn save_asr_config(state: State<'_, AppState>, config: AsrConfig) -> R
     let mut settings = state.settings_store.lock().await;
     let mut s = settings.get();
 
+    // Clone values before moving into s.asr
+    let app_id = config.app_id.clone();
+    let access_key_id = config.access_key_id.clone();
+    let access_key_secret = config.access_key_secret.clone();
+    let cluster = config.cluster.clone();
+    let asr_language = config.asr_language.clone();
+
     s.asr.provider = config.provider;
-    s.asr.app_id = config.app_id;
-    s.asr.access_key_id = config.access_key_id;
-    s.asr.access_key_secret = config.access_key_secret;
-    s.asr.cluster = config.cluster;
-    s.asr.asr_language = config.asr_language;
+    s.asr.app_id = app_id.clone();
+    s.asr.access_key_id = access_key_id.clone();
+    s.asr.access_key_secret = access_key_secret.clone();
+    s.asr.cluster = cluster.clone();
+    s.asr.asr_language = asr_language.clone();
 
     settings.update(s)?;
     tracing::info!("ASR config saved");
@@ -240,11 +247,11 @@ pub async fn save_asr_config(state: State<'_, AppState>, config: AsrConfig) -> R
     drop(settings);
     let mut asr_provider = state.asr_provider.lock().await;
     *asr_provider = Some(asr::VeAnchorProvider::new(asr::VeAnchorConfig {
-        app_id: config.app_id,
-        access_key_id: config.access_key_id,
-        access_key_secret: config.access_key_secret,
-        cluster: config.cluster,
-        language: config.asr_language,
+        app_id,
+        access_key_id,
+        access_key_secret,
+        cluster,
+        language: asr_language,
     }));
 
     Ok(())
