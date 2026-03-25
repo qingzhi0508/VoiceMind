@@ -12,3 +12,4 @@
 # Xcode user state
 *.xcuserstate
 xcuserdata/
+/VoiceMindWindows/node_modules
