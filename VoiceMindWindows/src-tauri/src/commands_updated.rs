@@ -1,13 +1,8 @@
+// 更新的commands模块 - 添加发送控制消息的命令
+
 use crate::{asr, AppState, speech::HistoryItem};
 use serde::{Deserialize, Serialize};
 use tauri::State;
-use std::net::UdpSocket;
-
-fn get_local_ip() -> Option<String> {
-    let socket = UdpSocket::bind("0.0.0.0:0").ok()?;
-    socket.connect("8.8.8.8:80").ok()?;
-    socket.local_addr().ok()?.ip().to_string().into()
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AsrConfig {
@@ -24,8 +19,6 @@ pub struct PairingQRCode {
     pub qr_content: String,
     pub pairing_code: String,
     pub expires_in: u64,
-    pub ip: Option<String>,
-    pub port: u16,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -57,8 +50,19 @@ pub struct StartPairingResult {
     pub pairing_code: String,
     pub qr_content: String,
     pub message: Option<String>,
-    pub ip: Option<String>,
-    pub port: u16,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StartListeningResult {
+    pub success: bool,
+    pub session_id: Option<String>,
+    pub message: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StopListeningResult {
+    pub success: bool,
+    pub message: Option<String>,
 }
 
 #[tauri::command]
@@ -74,34 +78,13 @@ pub async fn get_pairing_qr_code(state: State<'_, AppState>) -> Result<PairingQR
     let code = manager.get_current_code();
     let port = manager.get_port();
     let expires_in = 120u64;
-    let ip = get_local_ip();
-    
-    let qr_content = match &ip {
-        Some(ip_addr) => format!("voicemind://pair?ip={}&port={}&code={}", ip_addr, port, code),
-        None => format!("voicemind://pair?port={}&code={}", port, code),
-    };
 
-    use qrcode::QrCode;
-    use qrcode::render::svg;
-    
-    let qr_code = QrCode::new(qr_content.as_bytes())
-        .map_err(|e| format!("Failed to generate QR code: {}", e))?;
-    
-    let svg_string = qr_code.render::<svg::Color>()
-        .min_dimensions(200, 200)
-        .build();
-    
-    let base64_image = base64::Engine::encode(
-        &base64::engine::general_purpose::STANDARD,
-        svg_string.as_bytes()
-    );
+    let qr_content = format!("voicemind://pair?port={}&code={}", port, code);
 
     Ok(PairingQRCode {
-        qr_content: format!("data:image/svg+xml;base64,{}", base64_image),
+        qr_content,
         pairing_code: code,
         expires_in,
-        ip: ip.clone(),
-        port,
     })
 }
 
@@ -116,8 +99,6 @@ pub async fn start_pairing(state: State<'_, AppState>) -> Result<StartPairingRes
             pairing_code: String::new(),
             qr_content: String::new(),
             message: Some(format!("Too many failed attempts. Try again in {} seconds.", remaining)),
-            ip: None,
-            port: 0,
         });
     }
 
@@ -125,35 +106,13 @@ pub async fn start_pairing(state: State<'_, AppState>) -> Result<StartPairingRes
 
     let code = manager.get_current_code();
     let port = manager.get_port();
-    let ip = get_local_ip();
-    
-    let qr_content = match &ip {
-        Some(ip_addr) => format!("voicemind://pair?ip={}&port={}&code={}", ip_addr, port, code),
-        None => format!("voicemind://pair?port={}&code={}", port, code),
-    };
-
-    use qrcode::QrCode;
-    use qrcode::render::svg;
-    
-    let qr_code = QrCode::new(qr_content.as_bytes())
-        .map_err(|e| format!("Failed to generate QR code: {}", e))?;
-    
-    let svg_string = qr_code.render::<svg::Color>()
-        .min_dimensions(200, 200)
-        .build();
-    
-    let base64_image = base64::Engine::encode(
-        &base64::engine::general_purpose::STANDARD,
-        svg_string.as_bytes()
-    );
+    let qr_content = format!("voicemind://pair?port={}&code={}", port, code);
 
     Ok(StartPairingResult {
         success: true,
         pairing_code: code,
-        qr_content: format!("data:image/svg+xml;base64,{}", base64_image),
+        qr_content,
         message: None,
-        ip: ip.clone(),
-        port,
     })
 }
 
@@ -162,36 +121,6 @@ pub async fn stop_pairing(state: State<'_, AppState>) -> Result<(), String> {
     let mut manager = state.pairing_manager.lock().await;
     manager.stop_pairing_mode();
     Ok(())
-}
-
-#[tauri::command]
-pub async fn start_listening(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    // Placeholder - requires network enhancements
-    // In the meantime, return a success message
-    let session_id = uuid::Uuid::new_v4().to_string();
-    tracing::info!("Start listening requested, session: {}", session_id);
-    Ok(serde_json::json!({
-        "success": true,
-        "session_id": session_id,
-        "message": null
-    }))
-}
-
-#[tauri::command]
-pub async fn stop_listening(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    // Placeholder - requires network enhancements
-    tracing::info!("Stop listening requested");
-    Ok(serde_json::json!({
-        "success": true,
-        "message": null
-    }))
-}
-
-#[tauri::command]
-pub async fn get_listening_status(state: State<'_, AppState>) -> Result<bool, String> {
-    let manager = state.connection_manager.lock().await;
-    let status = manager.get_connected_device().await;
-    Ok(status.is_some())
 }
 
 #[tauri::command]
@@ -211,7 +140,6 @@ pub async fn get_pairing_status(state: State<'_, AppState>) -> Result<PairingSta
 pub async fn confirm_pairing(state: State<'_, AppState>, device_id: String, device_name: String) -> Result<bool, String> {
     let mut manager = state.pairing_manager.lock().await;
 
-    // Verify there's a pending device
     if !manager.is_pairing_mode() {
         return Err("Not in pairing mode".to_string());
     }
@@ -310,7 +238,6 @@ pub async fn save_asr_config(state: State<'_, AppState>, config: AsrConfig) -> R
     let mut settings = state.settings_store.lock().await;
     let mut s = settings.get();
 
-    // Clone values before moving into s.asr
     let app_id = config.app_id.clone();
     let access_key_id = config.access_key_id.clone();
     let access_key_secret = config.access_key_secret.clone();
@@ -327,7 +254,6 @@ pub async fn save_asr_config(state: State<'_, AppState>, config: AsrConfig) -> R
     settings.update(s)?;
     tracing::info!("ASR config saved");
 
-    // Update runtime ASR provider
     drop(settings);
     let mut asr_provider = state.asr_provider.lock().await;
     *asr_provider = Some(asr::VeAnchorProvider::new(asr::VeAnchorConfig {
@@ -339,4 +265,63 @@ pub async fn save_asr_config(state: State<'_, AppState>, config: AsrConfig) -> R
     }));
 
     Ok(())
+}
+
+// 新增：开始聆听命令
+#[tauri::command]
+pub async fn start_listening(state: State<'_, AppState>) -> Result<StartListeningResult, String> {
+    let session_id = uuid::Uuid::new_v4().to_string();
+    let manager = state.connection_manager.lock().await;
+    
+    match manager.start_listening(session_id.clone()).await {
+        Ok(_) => {
+            tracing::info!("Started listening with session: {}", session_id);
+            Ok(StartListeningResult {
+                success: true,
+                session_id: Some(session_id),
+                message: None,
+            })
+        }
+        Err(e) => {
+            tracing::warn!("Failed to start listening: {}", e);
+            Ok(StartListeningResult {
+                success: false,
+                session_id: None,
+                message: Some(e),
+            })
+        }
+    }
+}
+
+// 新增：停止聆听命令
+#[tauri::command]
+pub async fn stop_listening(state: State<'_, AppState>) -> Result<StopListeningResult, String> {
+    let manager = state.connection_manager.lock().await;
+    
+    match manager.stop_listening().await {
+        Ok(_) => {
+            tracing::info!("Stopped listening");
+            Ok(StopListeningResult {
+                success: true,
+                message: None,
+            })
+        }
+        Err(e) => {
+            tracing::warn!("Failed to stop listening: {}", e);
+            Ok(StopListeningResult {
+                success: false,
+                message: Some(e),
+            })
+        }
+    }
+}
+
+// 新增：获取当前聆听状态
+#[tauri::command]
+pub async fn get_listening_status(state: State<'_, AppState>) -> Result<bool, String> {
+    let manager = state.connection_manager.lock().await;
+    let status = manager.get_connected_device().await;
+    
+    // 如果有连接的设备，返回true（简化实现）
+    Ok(status.is_some())
 }

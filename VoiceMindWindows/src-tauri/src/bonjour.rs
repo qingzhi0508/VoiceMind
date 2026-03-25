@@ -1,12 +1,12 @@
-use std::process::Stdio;
-use tokio::process::Command;
-use tracing::info;
+use mdns_sd::{ServiceDaemon, ServiceInfo};
+use tracing::{info, error, warn};
 
 pub struct BonjourService {
     service_name: String,
     port: u16,
     instance_name: String,
-    child: Option<tokio::process::Child>,
+    daemon: Option<ServiceDaemon>,
+    registered: bool,
 }
 
 impl BonjourService {
@@ -15,44 +15,57 @@ impl BonjourService {
             service_name: "VoiceMind".to_string(),
             port,
             instance_name: instance_name.to_string(),
-            child: None,
+            daemon: None,
+            registered: false,
         }
     }
 
     /// 启动 Bonjour 广播
-    /// 使用 dns-sd.exe - 苹果提供的 Windows Bonjour 工具
-    /// 命令: dns-sd.exe -r "VoiceMind-{hostname}" _voicemind._tcp local. {port}
+    /// 使用原生 mDNS 实现，无需外部依赖
     pub async fn start(&mut self) -> Result<(), String> {
         let instance_name = format!("{}-{}", self.service_name, self.instance_name);
 
         info!("Starting Bonjour broadcast: {} on port {}", instance_name, self.port);
 
-        // 检查 dns-sd.exe 是否存在
-        let dns_sd_path = self.find_dns_sd().ok_or("dns-sd.exe not found")?;
+        // 创建 mDNS 守护进程
+        let daemon = ServiceDaemon::new()
+            .map_err(|e| format!("Failed to create mDNS daemon: {}", e))?;
 
-        // 启动 dns-sd 进程
-        let child = Command::new(&dns_sd_path)
-            .args(&[
-                "-r", &instance_name,
-                "_voicemind._tcp", "local.",
-                &self.port.to_string(),
-            ])
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()
-            .map_err(|e| format!("Failed to start dns-sd: {}", e))?;
+        // 创建服务信息
+        let service_type = "_voicemind._tcp.local.";
+        let host_ipv4 = self.get_local_ip()?;
+        
+        let service_info = ServiceInfo::new(
+            service_type,
+            &instance_name,
+            &format!("{}.local.", instance_name),
+            host_ipv4,
+            self.port,
+            None, // 不需要额外的 TXT 记录
+        )
+        .map_err(|e| format!("Failed to create service info: {}", e))?;
 
-        self.child = Some(child);
+        // 注册服务
+        daemon.register(service_info)
+            .map_err(|e| format!("Failed to register service: {}", e))?;
+
+        self.daemon = Some(daemon);
+        self.registered = true;
+        
         info!("Bonjour broadcast started successfully");
         Ok(())
     }
 
     /// 停止 Bonjour 广播
     pub async fn stop(&mut self) {
-        if let Some(mut child) = self.child.take() {
+        if let Some(daemon) = self.daemon.take() {
             info!("Stopping Bonjour broadcast");
-            child.kill().await.ok();
+            // 优雅关闭
+            if let Err(e) = daemon.shutdown() {
+                error!("Error shutting down mDNS daemon: {}", e);
+            }
         }
+        self.registered = false;
     }
 
     /// 更新端口
@@ -64,28 +77,30 @@ impl BonjourService {
         self.start().await
     }
 
-    /// 查找 dns-sd.exe 路径
-    fn find_dns_sd(&self) -> Option<String> {
-        // Windows 上通常在以下位置
-        let paths = [
-            "C:\\Program Files\\Bonjour\\dns-sd.exe",
-            "C:\\Program Files (x86)\\Bonjour\\dns-sd.exe",
-            "C:\\Windows\\System32\\dns-sd.exe",
-        ];
-        for path in &paths {
-            if std::path::Path::new(path).exists() {
-                return Some(path.to_string());
+    /// 获取本地 IP 地址
+    fn get_local_ip(&self) -> Result<String, String> {
+        // 尝试获取本机 IP
+        match local_ip_address::local_ip() {
+            Ok(ip) => Ok(ip.to_string()),
+            Err(_) => {
+                // 如果获取失败，使用 127.0.0.1 作为后备
+                warn!("Could not determine local IP, using localhost");
+                Ok("127.0.0.1".to_string())
             }
         }
-        None
+    }
+
+    /// 检查服务是否正在运行
+    pub fn is_running(&self) -> bool {
+        self.registered && self.daemon.is_some()
     }
 }
 
 impl Drop for BonjourService {
     fn drop(&mut self) {
-        // 确保进程被清理
-        if let Some(mut child) = self.child.take() {
-            let _ = child.kill();
+        // 确保服务被清理
+        if let Some(daemon) = self.daemon.take() {
+            let _ = daemon.shutdown();
         }
     }
 }

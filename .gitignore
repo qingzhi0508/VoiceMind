@@ -13,3 +13,4 @@
 *.xcuserstate
 xcuserdata/
 /VoiceMindWindows/node_modules
+/VoiceMindWindows/src-tauri/target/

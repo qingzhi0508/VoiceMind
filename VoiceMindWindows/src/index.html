@@ -1,1243 +1,1288 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VoiceMind</title>
+  <title>VoiceMind - iPhone语音输入Mac</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --primary: #667eea;
+      --primary-dark: #5568d3;
+      --primary-light: #818cf8;
+      --secondary: #764ba2;
+      --accent: #f093fb;
+      --text-primary: #1a202c;
+      --text-secondary: #4a5568;
+      --text-light: #718096;
+      --bg-primary: #ffffff;
+      --bg-secondary: #f0f4f8;
+      --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --status-connected: #10b981;
+      --status-listening: #ef4444;
+      --status-connecting: #f59e0b;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --sidebar-width: 260px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --text-light: #64748b;
+        --bg-primary: #1e293b;
+        --bg-secondary: #0f172a;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.5);
+      }
+    }
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #1a1a2e;
-      color: #eee;
+      font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      color: var(--text-primary);
+      background: var(--bg-secondary);
       min-height: 100vh;
+      display: flex;
     }
-    .container {
-      max-width: 420px;
-      margin: 0 auto;
-      padding: 16px;
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--bg-primary);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 2px 0 20px rgba(0, 0, 0, 0.06);
+      z-index: 100;
+      border-right: 1px solid rgba(0, 0, 0, 0.06);
     }
-    header {
-      text-align: center;
-      padding: 16px 0;
+
+    .sidebar-header {
+      padding: 28px 24px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     }
-    header h1 {
-      font-size: 24px;
-      color: #00d4ff;
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-    .status-bar {
-      background: #16213e;
-      border-radius: 10px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
+
+    .logo-icon {
+      font-size: 32px;
+      filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3));
+    }
+
+    .logo-text {
+      font-size: 22px;
+      font-weight: 700;
+      background: var(--bg-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 20px 16px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 15px;
+      transition: var(--transition);
+      cursor: pointer;
+      margin-bottom: 6px;
+    }
+
+    .nav-item:hover {
+      background: rgba(102, 126, 234, 0.08);
+      color: var(--primary);
+    }
+
+    .nav-item.active {
+      background: var(--bg-gradient);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+    }
+
+    .nav-icon {
+      font-size: 20px;
+    }
+
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .status-dot.connected {
+      background: var(--status-connected);
+    }
+
+    .status-dot.listening {
+      background: var(--status-listening);
+    }
+
+    .status-dot.connecting {
+      background: var(--status-connecting);
+    }
+
+    .status-dot.connected::after,
+    .status-dot.listening::after,
+    .status-dot.connecting::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.connected::after {
+      background: rgba(16, 185, 129, 0.4);
+    }
+
+    .status-dot.listening::after {
+      background: rgba(239, 68, 68, 0.4);
+    }
+
+    .status-dot.connecting::after {
+      background: rgba(245, 158, 11, 0.4);
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(2);
+        opacity: 0;
+      }
+    }
+
+    .status-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+      flex: 1;
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: 40px;
+      min-height: 100vh;
+      background: linear-gradient(180deg, var(--bg-secondary) 0%, #e8f0fe 100%);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .main-content {
+        background: linear-gradient(180deg, var(--bg-secondary) 0%, #0c1222 100%);
+      }
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .page-header {
+      margin-bottom: 36px;
+    }
+
+    .page-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .page-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+    }
+
+    .card {
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
       gap: 10px;
     }
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #666;
-      flex-shrink: 0;
-    }
-    .status-dot.connected {
-      background: #00ff88;
-    }
-    .status-dot.listening {
-      background: #ff6b6b;
-      animation: pulse 1s infinite;
-    }
-    .status-dot.connecting {
-      background: #ffaa00;
-      animation: pulse 0.5s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-    .nav-tabs {
+
+    .status-card {
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 28px;
       display: flex;
-      background: #16213e;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-    .nav-tab {
-      flex: 1;
-      padding: 10px 4px;
-      text-align: center;
-      cursor: pointer;
-      transition: background 0.2s;
-      font-size: 13px;
-    }
-    .nav-tab:hover {
-      background: #1a1a2e;
-    }
-    .nav-tab.active {
-      background: #00d4ff;
-      color: #1a1a2e;
-    }
-    .section {
-      display: none;
-    }
-    .section.active {
-      display: block;
-    }
-    .card {
-      background: #16213e;
-      border-radius: 10px;
-      padding: 16px;
-      margin-bottom: 12px;
-    }
-    .card h3 {
-      margin-bottom: 10px;
-      color: #00d4ff;
-      font-size: 15px;
-    }
-    .btn {
-      background: #00d4ff;
-      color: #1a1a2e;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-      width: 100%;
-      font-size: 14px;
-    }
-    .btn:hover {
-      background: #00b8e6;
-    }
-    .btn:active {
-      transform: scale(0.98);
-    }
-    .btn-secondary {
-      background: #333;
-      color: #fff;
-    }
-    .btn-secondary:hover {
-      background: #444;
-    }
-    .btn-danger {
-      background: #e74c3c;
-      color: #fff;
-    }
-    .btn-danger:hover {
-      background: #c0392b;
-    }
-    .btn-small {
-      padding: 6px 12px;
-      font-size: 12px;
-      width: auto;
-    }
-    .qr-container {
-      text-align: center;
-    }
-    #qr-code {
-      margin: 16px auto;
-      display: block;
-    }
-    .pairing-code {
-      font-size: 28px;
-      font-weight: bold;
-      letter-spacing: 6px;
-      text-align: center;
-      color: #00d4ff;
-      margin: 16px 0;
-      font-family: monospace;
-    }
-    .device-item {
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 12px;
-      background: #1a1a2e;
-      border-radius: 6px;
-      margin-bottom: 8px;
+      gap: 24px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
-    .device-item:last-child {
-      margin-bottom: 0;
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 14px;
     }
+
+    .status-indicator.connected .status-dot {
+      background: var(--status-connected);
+    }
+
+    .status-indicator.listening .status-dot {
+      background: var(--status-listening);
+    }
+
+    .status-indicator.disconnected .status-dot {
+      background: #cbd5e1;
+    }
+
     .device-info {
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex: 1;
-      min-width: 0;
+      gap: 18px;
     }
+
     .device-icon {
-      font-size: 24px;
-      flex-shrink: 0;
+      font-size: 52px;
     }
-    .device-details {
-      flex: 1;
-      min-width: 0;
+
+    .device-details h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
     }
-    .device-name {
-      font-weight: bold;
+
+    .device-details p {
       font-size: 14px;
-      white-space: nowrap;
+      color: var(--text-light);
+    }
+
+    .control-card {
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      padding: 48px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 28px;
+      text-align: center;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .mic-button {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: var(--bg-gradient);
+      border: none;
+      cursor: pointer;
+      font-size: 56px;
+      color: white;
+      transition: var(--transition);
+      box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mic-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 12px 48px rgba(102, 126, 234, 0.5);
+    }
+
+    .mic-button.listening {
+      animation: pulse-ring 1.5s infinite;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      box-shadow: 0 8px 32px rgba(239, 68, 68, 0.4);
+    }
+
+    @keyframes pulse-ring {
+      0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 24px rgba(239, 68, 68, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+      }
+    }
+
+    .control-hint {
+      margin-top: 24px;
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    .subtitle-card {
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 28px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .subtitle-content {
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .subtitle-text {
+      font-size: 20px;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    .subtitle-text.active {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .subtitle-text.highlight {
+      animation: textHighlight 0.5s ease;
+    }
+
+    @keyframes textHighlight {
+      0%, 100% {
+        background: transparent;
+      }
+      50% {
+        background: rgba(102, 126, 234, 0.15);
+      }
+    }
+
+    .recent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .recent-item {
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
       overflow: hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .device-status {
-      font-size: 11px;
-      color: #888;
-      margin-top: 2px;
+
+    .recent-item:hover {
+      background: rgba(102, 126, 234, 0.1);
+      color: var(--primary);
     }
-    .device-status.connected {
-      color: #00ff88;
+
+    .recent-item-time {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 6px;
     }
-    .device-status.connecting {
-      color: #ffaa00;
-    }
-    .device-status.disconnected {
-      color: #888;
-    }
-    .history-item {
-      padding: 12px;
-      background: #1a1a2e;
-      border-radius: 6px;
-      margin-bottom: 8px;
-    }
-    .history-item:last-child {
-      margin-bottom: 0;
-    }
-    .history-text {
-      margin-bottom: 6px;
-      font-size: 14px;
-      line-height: 1.4;
-      word-break: break-word;
-    }
-    .history-meta {
-      font-size: 11px;
-      color: #888;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .history-source {
+
+    .device-card {
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 18px;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 18px;
+      transition: var(--transition);
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
-    .search-box {
-      position: relative;
-      margin-bottom: 12px;
+
+    .device-card:hover {
+      box-shadow: var(--shadow-md);
     }
-    .search-box input {
-      width: 100%;
-      background: #1a1a2e;
-      color: #fff;
-      border: 1px solid #333;
-      padding: 10px 12px 10px 36px;
-      border-radius: 6px;
+
+    .device-card-icon {
+      font-size: 44px;
+    }
+
+    .device-card-info {
+      flex: 1;
+    }
+
+    .device-card-info h4 {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .device-card-info p {
       font-size: 14px;
+      color: var(--text-light);
     }
-    .search-box input:focus {
-      outline: none;
-      border-color: #00d4ff;
+
+    .status-badge {
+      padding: 8px 16px;
+      border-radius: var(--radius-xl);
+      font-size: 13px;
+      font-weight: 600;
     }
-    .search-box::before {
-      content: "🔍";
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
+
+    .status-badge.connected {
+      background: rgba(16, 185, 129, 0.12);
+      color: #059669;
+    }
+
+    .status-badge.disconnected {
+      background: rgba(0, 0, 0, 0.05);
+      color: var(--text-light);
+    }
+
+    .qr-container {
+      text-align: center;
+      padding: 28px;
+    }
+
+    #qr-code {
+      margin: 0 auto 24px;
+      display: block;
+    }
+
+    .pairing-code {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: 10px;
+      background: var(--bg-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 24px 0;
+      font-family: 'Inter', monospace;
+    }
+
+    .pairing-hint {
       font-size: 14px;
+      color: var(--text-light);
+      margin-top: 14px;
     }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--bg-gradient);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+    }
+
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 2px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: rgba(102, 126, 234, 0.08);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: #dc2626;
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    .settings-group {
+      margin-bottom: 36px;
+    }
+
+    .settings-group h3 {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+    }
+
     .setting-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid #333;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
+
     .setting-row:last-child {
       border-bottom: none;
     }
+
     .setting-label {
-      font-size: 14px;
+      font-size: 15px;
+      color: var(--text-primary);
     }
+
+    .setting-value {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
     select, input[type="text"], input[type="number"] {
-      background: #1a1a2e;
-      color: #fff;
-      border: 1px solid #333;
-      padding: 8px 12px;
-      border-radius: 5px;
-      font-size: 14px;
+      padding: 10px 16px;
+      border: 2px solid rgba(0, 0, 0, 0.08);
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      min-width: 160px;
+      transition: var(--transition);
     }
+
     select:focus, input:focus {
       outline: none;
-      border-color: #00d4ff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
     }
-    .empty-state {
-      color: #888;
-      text-align: center;
-      padding: 24px;
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .history-item {
+      background: var(--bg-primary);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .history-item:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .history-item-text {
+      font-size: 15px;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+
+    .history-item-meta {
+      display: flex;
+      justify-content: space-between;
       font-size: 13px;
-    }
-    .empty-state-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-    .hidden {
-      display: none !important;
-    }
-    .actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    .actions .btn {
-      flex: 1;
+      color: var(--text-light);
     }
 
-    /* Guide Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 20px;
-    }
-    .modal-overlay.hidden {
-      display: none;
-    }
-    .modal {
-      background: #16213e;
-      border-radius: 12px;
-      padding: 24px;
-      max-width: 360px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-    .modal h2 {
-      color: #00d4ff;
-      margin-bottom: 16px;
+    .empty-state {
       text-align: center;
-    }
-    .modal-step {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
-      align-items: flex-start;
-    }
-    .step-number {
-      width: 28px;
-      height: 28px;
-      background: #00d4ff;
-      color: #1a1a2e;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      flex-shrink: 0;
-    }
-    .step-content {
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .step-content strong {
-      color: #00d4ff;
-    }
-    .modal-footer {
-      margin-top: 20px;
+      padding: 56px 28px;
+      color: var(--text-light);
     }
 
-    /* i18n text */
-    [data-i18n] {
-      display: inline;
+    .empty-state-icon {
+      font-size: 56px;
+      margin-bottom: 18px;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 15px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--bg-primary);
+      padding: 18px 28px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      animation: slideIn 0.3s ease;
+      z-index: 1000;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .toast.fade-out {
+      animation: fadeOut 0.3s ease forwards;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeOut {
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+
+    .about-info {
+      text-align: center;
+      padding: 28px;
+    }
+
+    .about-info p {
+      margin-bottom: 10px;
+      color: var(--text-secondary);
+    }
+
+    .about-version {
+      font-size: 20px;
+      font-weight: 600;
+      background: var(--bg-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: fixed;
+        bottom: 0;
+        top: auto;
+        left: 0;
+        flex-direction: row;
+      }
+
+      .sidebar-header, .sidebar-footer {
+        display: none;
+      }
+
+      .sidebar-nav {
+        display: flex;
+        padding: 10px;
+        width: 100%;
+        justify-content: space-around;
+      }
+
+      .nav-item {
+        flex-direction: column;
+        padding: 10px;
+        font-size: 12px;
+        gap: 6px;
+        flex: 1;
+        margin-bottom: 0;
+      }
+
+      .main-content {
+        margin-left: 0;
+        margin-bottom: 90px;
+        padding: 20px;
+      }
     }
   </style>
 </head>
 <body>
-  <!-- First-time Guide Modal -->
-  <div class="modal-overlay" id="guide-modal">
-    <div class="modal">
-      <h2 data-i18n="guide_title">Welcome to VoiceMind</h2>
-      <div class="modal-step">
-        <div class="step-number">1</div>
-        <div class="step-content" data-i18n="guide_step1">Download the <strong>VoiceMind iOS app</strong> on your iPhone from the App Store</div>
-      </div>
-      <div class="modal-step">
-        <div class="step-number">2</div>
-        <div class="step-content" data-i18n="guide_step2">Open the iOS app and tap <strong>Scan QR Code</strong>, or enter the pairing code shown on your computer</div>
-      </div>
-      <div class="modal-step">
-        <div class="step-number">3</div>
-        <div class="step-content" data-i18n="guide_step3">Make sure your iPhone and computer are on the <strong>same Wi-Fi network</strong></div>
-      </div>
-      <div class="modal-step">
-        <div class="step-number">4</div>
-        <div class="step-content" data-i18n="guide_step4">Start speaking - your iPhone becomes a <strong>wireless microphone</strong>!</div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" id="btn-start-using" data-i18n="guide_start">Start Using VoiceMind</button>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">🎙️</span>
+        <span class="logo-text">VoiceMind</span>
       </div>
     </div>
-  </div>
 
-  <div class="container">
-    <header>
-      <h1>VoiceMind</h1>
-      <p style="color: #888; margin-top: 5px; font-size: 13px;" data-i18n="subtitle">iPhone as Wireless Microphone</p>
-    </header>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-page="home">
+        <span class="nav-icon">📱</span>
+        <span>首页</span>
+      </a>
+      <a class="nav-item" data-page="devices">
+        <span class="nav-icon">📡</span>
+        <span>设备</span>
+      </a>
+      <a class="nav-item" data-page="history">
+        <span class="nav-icon">📝</span>
+        <span>历史</span>
+      </a>
+      <a class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span>
+        <span>设置</span>
+      </a>
+    </nav>
 
-    <div class="status-bar">
-      <div class="status-dot" id="status-dot"></div>
-      <span id="status-text" data-i18n="status_disconnected">Disconnected</span>
+    <div class="sidebar-footer">
+      <div class="connection-status">
+        <span class="status-dot" id="sidebar-status-dot"></span>
+        <span class="status-text" id="sidebar-status-text">未连接</span>
+      </div>
     </div>
+  </aside>
 
-    <div class="nav-tabs">
-      <div class="nav-tab active" data-tab="pairing" data-i18n="tab_pairing">Pairing</div>
-      <div class="nav-tab" data-tab="devices" data-i18n="tab_devices">Devices</div>
-      <div class="nav-tab" data-tab="history" data-i18n="tab_history">History</div>
-      <div class="nav-tab" data-tab="settings" data-i18n="tab_settings">Settings</div>
-    </div>
+  <main class="main-content">
+    <section id="home" class="page active">
+      <div class="page-header">
+        <h1 class="page-title">控制中心</h1>
+        <p class="page-subtitle">使用iPhone进行语音输入</p>
+      </div>
 
-    <!-- Pairing Section -->
-    <div class="section active" id="section-pairing">
-      <div class="card">
-        <h3 data-i18n="pairing_title">Pair with iPhone</h3>
-        <p style="color: #888; margin-bottom: 12px; font-size: 13px;" data-i18n="pairing_desc">Scan QR code or enter pairing code on your iPhone</p>
-        <div class="qr-container">
-          <canvas id="qr-code" width="200" height="200"></canvas>
+      <div class="status-card" id="connection-card">
+        <div class="status-indicator disconnected" id="status-indicator">
+          <span class="status-dot" id="main-status-dot"></span>
+          <span id="status-label">未连接</span>
         </div>
-        <div class="pairing-code" id="pairing-code">------</div>
-        <button class="btn" id="btn-refresh-pairing" data-i18n="btn_refresh">Refresh Pairing Code</button>
-      </div>
-    </div>
-
-    <!-- Devices Section -->
-    <div class="section" id="section-devices">
-      <div class="card">
-        <h3 data-i18n="devices_connected">Connected Device</h3>
-        <div id="device-list">
-          <div class="empty-state">
-            <div class="empty-state-icon">📡</div>
-            <div data-i18n="devices_no_connected">No devices connected</div>
+        <div class="device-info" id="device-info" style="display: none;">
+          <span class="device-icon">📱</span>
+          <div class="device-details">
+            <h3 id="device-name">iPhone</h3>
+            <p id="device-status">等待连接</p>
           </div>
         </div>
       </div>
-      <div class="card">
-        <h3 data-i18n="devices_paired">Paired Devices</h3>
-        <div id="paired-list">
-          <div class="empty-state">
-            <div class="empty-state-icon">📱</div>
-            <div data-i18n="devices_no_paired">No paired devices</div>
-          </div>
+
+      <div class="control-card">
+        <button class="mic-button" id="mic-button">🎤</button>
+        <p class="control-hint" id="control-hint">点击开始聆听</p>
+      </div>
+
+      <div class="subtitle-card">
+        <div class="card-title">
+          <span>🔊</span>
+          <span>实时字幕</span>
+        </div>
+        <div class="subtitle-content">
+          <p class="subtitle-text" id="subtitle-text">等待开始说话...</p>
         </div>
       </div>
-    </div>
 
-    <!-- History Section -->
-    <div class="section" id="section-history">
       <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <h3 style="margin: 0;" data-i18n="history_title">Recognition History</h3>
-          <button class="btn btn-danger btn-small" id="btn-clear-history" data-i18n="btn_clear_all">Clear All</button>
+        <div class="card-title">
+          <span>📋</span>
+          <span>最近的识别</span>
         </div>
-        <div class="search-box">
-          <input type="text" id="history-search" placeholder="" data-i18n-placeholder="history_search_placeholder">
-        </div>
-        <div id="history-list">
+        <div class="recent-list" id="recent-list">
           <div class="empty-state">
             <div class="empty-state-icon">📝</div>
-            <div data-i18n="history_empty">No history yet</div>
+            <p class="empty-state-text">暂无识别记录</p>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Settings Section -->
-    <div class="section" id="section-settings">
-      <div class="card">
-        <h3 data-i18n="settings_title">Settings</h3>
-        <div class="setting-row">
-          <span class="setting-label" data-i18n="settings_language">Language</span>
-          <select id="setting-language">
-            <option value="zh-CN">简体中文</option>
-            <option value="en-US">English</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <span class="setting-label" data-i18n="settings_injection">Text Injection</span>
-          <select id="setting-injection">
-            <option value="keyboard" data-i18n="settings_keyboard">Keyboard Simulation</option>
-            <option value="clipboard" data-i18n="settings_clipboard">Clipboard</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <span class="setting-label" data-i18n="settings_port">Server Port</span>
-          <input type="number" id="setting-port" value="8765" min="1024" max="65535" style="width: 80px;">
-        </div>
-        <button class="btn" id="btn-save-settings" style="margin-top: 16px;" data-i18n="btn_save">Save Settings</button>
+    <section id="devices" class="page">
+      <div class="page-header">
+        <h1 class="page-title">已配对设备</h1>
+        <p class="page-subtitle">管理您的iPhone设备</p>
       </div>
-      <div class="card" id="asr-config-card">
-        <h3 data-i18n="asr_config_title">火山引擎 ASR 配置</h3>
-        <div class="setting-row">
-          <span class="setting-label" data-i18n="asr_app_id">App ID</span>
-          <input type="text" id="asr-app-id" placeholder="" style="width: 150px;">
-        </div>
-        <div class="setting-row">
-          <span class="setting-label" data-i18n="asr_access_key_id">Access Key ID</span>
-          <input type="text" id="asr-access-key-id" placeholder="" style="width: 150px;">
-        </div>
-        <div class="setting-row">
-          <span class="setting-label" data-i18n="asr_access_key_secret">Access Key Secret</span>
-          <input type="password" id="asr-access-key-secret" placeholder="" style="width: 150px;">
-        </div>
-        <div class="setting-row">
-          <span class="setting-label" data-i18n="asr_cluster">Cluster</span>
-          <input type="text" id="asr-cluster" value="volcengine_streaming_common" style="width: 150px;">
-        </div>
-        <div class="setting-row">
-          <span class="setting-label" data-i18n="asr_language">识别语言</span>
-          <select id="asr-language">
-            <option value="zh-CN">中文</option>
-            <option value="en-US">English</option>
-          </select>
-        </div>
-        <button class="btn" id="btn-save-asr" data-i18n="btn_save_asr">保存 ASR 配置</button>
-      </div>
-      <div class="card">
-        <h3 data-i18n="settings_about">About</h3>
-        <div class="setting-row">
-          <span class="setting-label" data-i18n="settings_version">Version</span>
-          <span style="color: #888;">1.0.0</span>
-        </div>
-      </div>
-    </div>
-  </div>
 
+      <div id="paired-devices">
+        <div class="device-card connected" id="current-device" style="display: none;">
+          <span class="device-card-icon">📱</span>
+          <div class="device-card-info">
+            <h4 id="current-device-name">iPhone</h4>
+            <p id="current-device-info">已连接</p>
+          </div>
+          <span class="status-badge connected">已连接</span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 24px;">
+        <div class="card-title">
+          <span>🔗</span>
+          <span>配对新设备</span>
+        </div>
+        <div class="qr-container" id="qr-container">
+          <div id="qr-code" style="display: inline-block;"></div>
+          <div class="pairing-code" id="pairing-code">------</div>
+          <p class="pairing-hint">使用VoiceMind iOS应用扫描二维码或输入配对码</p>
+          <div class="connection-info" id="connection-info" style="margin-top: 16px; padding: 12px; background: var(--bg-secondary); border-radius: var(--radius-md);">
+            <p style="font-size: 12px; color: var(--text-light); margin-bottom: 4px;">连接信息</p>
+            <p style="font-size: 14px; color: var(--text-primary); font-family: monospace;">
+              <span id="server-ip">--</span>:<span id="server-port">--</span>
+            </p>
+          </div>
+          <button class="btn btn-secondary" id="btn-refresh-qr" style="margin-top: 16px;">刷新配对码</button>
+        </div>
+      </div>
+
+      <div id="paired-devices-list" style="margin-top: 24px;">
+        <div class="empty-state">
+          <div class="empty-state-icon">📱</div>
+          <p class="empty-state-text">暂无已配对设备</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="history" class="page">
+      <div class="page-header">
+        <h1 class="page-title">识别历史</h1>
+        <p class="page-subtitle">查看您的语音输入记录</p>
+      </div>
+
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="history-list" id="history-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <p class="empty-state-text">暂无识别历史</p>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-danger" id="btn-clear-history">清空历史记录</button>
+    </section>
+
+    <section id="settings" class="page">
+      <div class="page-header">
+        <h1 class="page-title">设置</h1>
+        <p class="page-subtitle">配置VoiceMind应用</p>
+      </div>
+
+      <div class="settings-group">
+        <h3>服务器设置</h3>
+        <div class="setting-row">
+          <span class="setting-label">服务端口</span>
+          <div class="setting-value">
+            <input type="number" id="setting-port" value="8765" min="1024" max="65535">
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>语音识别</h3>
+        <div class="setting-row">
+          <span class="setting-label">识别语言</span>
+          <div class="setting-value">
+            <select id="setting-language">
+              <option value="zh-CN">中文（普通话）</option>
+              <option value="en-US">English</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>文本注入</h3>
+        <div class="setting-row">
+          <span class="setting-label">注入方式</span>
+          <div class="setting-value">
+            <select id="setting-injection">
+              <option value="auto">自动选择</option>
+              <option value="keyboard">键盘模拟</option>
+              <option value="clipboard">剪贴板</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>关于</h3>
+        <div class="about-info">
+          <p class="about-version">VoiceMind Windows v1.0.0</p>
+          <p>使用iPhone作为Mac的无线麦克风</p>
+          <p style="margin-top: 12px; font-size: 12px;">🎙️ VoiceMind - 让语音输入更简单</p>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="btn-save-settings" style="margin-top: 24px;">保存设置</button>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
   <script>
-    const { invoke } = window.__TAURI__.core;
-
-    // ==================== i18n ====================
-    const i18n = {
-      'en-US': {
-        guide_title: 'Welcome to VoiceMind',
-        guide_step1: 'Download the <strong>VoiceMind iOS app</strong> on your iPhone from the App Store',
-        guide_step2: 'Open the iOS app and tap <strong>Scan QR Code</strong>, or enter the pairing code shown on your computer',
-        guide_step3: 'Make sure your iPhone and computer are on the <strong>same Wi-Fi network</strong>',
-        guide_step4: 'Start speaking - your iPhone becomes a <strong>wireless microphone</strong>!',
-        guide_start: 'Start Using VoiceMind',
-        subtitle: 'iPhone as Wireless Microphone',
-        status_disconnected: 'Disconnected',
-        status_connected: 'Connected',
-        status_listening: 'Listening...',
-        status_connecting: 'Connecting...',
-        tab_pairing: 'Pairing',
-        tab_devices: 'Devices',
-        tab_history: 'History',
-        tab_settings: 'Settings',
-        pairing_title: 'Pair with iPhone',
-        pairing_desc: 'Scan QR code or enter pairing code on your iPhone',
-        btn_refresh: 'Refresh Pairing Code',
-        devices_connected: 'Connected Device',
-        devices_no_connected: 'No devices connected',
-        devices_paired: 'Paired Devices',
-        devices_no_paired: 'No paired devices',
-        devices_forget: 'Forget',
-        devices_last_seen: 'Last seen',
-        history_title: 'Recognition History',
-        btn_clear_all: 'Clear All',
-        history_search_placeholder: 'Search history...',
-        history_empty: 'No history yet',
-        history_delete: 'Delete',
-        history_source_ios: 'iOS',
-        history_source_local: 'Local',
-        settings_title: 'Settings',
-        settings_language: 'Language',
-        settings_injection: 'Text Injection',
-        settings_keyboard: 'Keyboard Simulation',
-        settings_clipboard: 'Clipboard',
-        settings_port: 'Server Port',
-        btn_save: 'Save Settings',
-        settings_saved: 'Settings saved!',
-        settings_about: 'About',
-        settings_version: 'Version',
-        confirm_clear_history: 'Are you sure you want to clear all history?',
-        confirm_forget_device: 'Are you sure you want to forget this device?',
-        yes: 'Yes',
-        no: 'No',
-        asr_config_title: 'Volcengine ASR Config',
-        asr_app_id: 'App ID',
-        asr_access_key_id: 'Access Key ID',
-        asr_access_key_secret: 'Access Key Secret',
-        asr_cluster: 'Cluster',
-        asr_language: 'Language',
-        btn_save_asr: 'Save ASR Config'
-      },
-      'zh-CN': {
-        guide_title: '欢迎使用 VoiceMind',
-        guide_step1: '在 iPhone 上从 App Store 下载 <strong>VoiceMind iOS 应用</strong>',
-        guide_step2: '打开 iOS 应用，点击<strong>扫描二维码</strong>，或输入电脑上显示的配对码',
-        guide_step3: '确保您的 iPhone 和电脑在<strong>同一个 Wi-Fi 网络</strong>上',
-        guide_step4: '开始说话 - 您的 iPhone 就变成了<strong>无线麦克风</strong>！',
-        guide_start: '开始使用 VoiceMind',
-        subtitle: 'iPhone 作为无线麦克风',
-        status_disconnected: '未连接',
-        status_connected: '已连接',
-        status_listening: '正在聆听...',
-        status_connecting: '连接中...',
-        tab_pairing: '配对',
-        tab_devices: '设备',
-        tab_history: '历史',
-        tab_settings: '设置',
-        pairing_title: '与 iPhone 配对',
-        pairing_desc: '在 iPhone 上扫描二维码或输入配对码',
-        btn_refresh: '刷新配对码',
-        devices_connected: '已连接设备',
-        devices_no_connected: '没有已连接设备',
-        devices_paired: '已配对设备',
-        devices_no_paired: '没有已配对设备',
-        devices_forget: '忘记',
-        devices_last_seen: '最后在线',
-        history_title: '识别历史',
-        btn_clear_all: '清空全部',
-        history_search_placeholder: '搜索历史...',
-        history_empty: '暂无历史记录',
-        history_delete: '删除',
-        history_source_ios: 'iOS',
-        history_source_local: '本地',
-        settings_title: '设置',
-        settings_language: '语言',
-        settings_injection: '文本注入方式',
-        settings_keyboard: '键盘模拟',
-        settings_clipboard: '剪贴板',
-        settings_port: '服务器端口',
-        btn_save: '保存设置',
-        settings_saved: '设置已保存！',
-        settings_about: '关于',
-        settings_version: '版本',
-        confirm_clear_history: '确定要清空所有历史记录吗？',
-        confirm_forget_device: '确定要忘记此设备吗？',
-        yes: '是',
-        no: '否',
-        asr_config_title: '火山引擎 ASR 配置',
-        asr_app_id: 'App ID',
-        asr_access_key_id: 'Access Key ID',
-        asr_access_key_secret: 'Access Key Secret',
-        asr_cluster: 'Cluster',
-        asr_language: '识别语言',
-        btn_save_asr: '保存 ASR 配置'
-      }
-    };
-
-    let currentLang = 'en-US';
-
-    function t(key) {
-      return i18n[currentLang][key] || key;
-    }
-
-    function applyI18n() {
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (i18n[currentLang][key]) {
-          el.innerHTML = i18n[currentLang][key];
-        }
-      });
-      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-i18n-placeholder');
-        if (i18n[currentLang][key]) {
-          el.placeholder = i18n[currentLang][key];
-        }
-      });
-    }
-
-    // ==================== Settings Storage ====================
-    const SETTINGS_KEY = 'voicemind_settings';
-
-    function loadSettingsFromStorage() {
-      try {
-        const saved = localStorage.getItem(SETTINGS_KEY);
-        if (saved) {
-          return JSON.parse(saved);
-        }
-      } catch (e) {}
-      return null;
-    }
-
-    function saveSettingsToStorage(settings) {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    }
-
-    // ==================== QR Code Generator ====================
-    // Simple QR Code generator (minimal implementation for Data URL support)
-    function generateQRCodeDataURL(text, options = {}) {
-      const size = options.size || 200;
-      const darkColor = options.color || '#00d4ff';
-      const lightColor = options.light || '#16213e';
-
-      // Use a simple canvas-based approach with a QR library
-      // We'll create an HTML Image that renders the QR code
-      // For now, use an inline SVG-based QR code generator
-
-      const qr = createQRMatrix(text);
-      const cellSize = Math.floor(size / qr.length);
-      const canvasSize = cellSize * qr.length;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = canvasSize;
-      canvas.height = canvasSize;
-      const ctx = canvas.getContext('2d');
-
-      // Background
-      ctx.fillStyle = lightColor;
-      ctx.fillRect(0, 0, canvasSize, canvasSize);
-
-      // Modules
-      ctx.fillStyle = darkColor;
-      for (let row = 0; row < qr.length; row++) {
-        for (let col = 0; col < qr[row].length; col++) {
-          if (qr[row][col]) {
-            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
-          }
-        }
-      }
-
-      return canvas.toDataURL('image/png');
-    }
-
-    // Simplified QR Code matrix generator (only supports byte mode, numeric, alphanumeric)
-    function createQRMatrix(text) {
-      // This is a simplified QR generator - for production, use a proper library
-      // We'll use a minimal approach that works for our use case
-      const size = Math.max(21, Math.ceil(text.length / 2) + 17);
-      const matrix = Array(size).fill(null).map(() => Array(size).fill(false));
-
-      // Add finder patterns
-      addFinderPattern(matrix, 0, 0);
-      addFinderPattern(matrix, size - 7, 0);
-      addFinderPattern(matrix, 0, size - 7);
-
-      // Add timing patterns
-      for (let i = 8; i < size - 8; i++) {
-        matrix[6][i] = i % 2 === 0;
-        matrix[i][6] = i % 2 === 0;
-      }
-
-      // Add alignment pattern for larger QR codes
-      if (size >= 25) {
-        const alignPos = size - 9;
-        addAlignmentPattern(matrix, alignPos, alignPos);
-      }
-
-      // Encode text using a simple byte mode approach
-      let idx = 0;
-      const encoded = encodeData(text);
-
-      // Fill remaining data with padding
-      const totalBits = size * size - countFunctionModules(matrix);
-      const dataBits = Math.min(encoded.length * 8, totalBits - 160); // Reserve space for error correction
-
-      let bitIdx = 0;
-      for (let col = size - 1; col > 0; col -= 2) {
-        if (col === 6) col--;
-        for (let row = 0; row < size; row++) {
-          for (let c = 0; c < 2; c++) {
-            const x = col - c;
-            const y = row;
-            if (!isFunctionModule(x, y, size)) {
-              if (bitIdx < encoded.length * 8 && bitIdx < dataBits) {
-                const byteIdx = Math.floor(bitIdx / 8);
-                const bitPos = 7 - (bitIdx % 8);
-                matrix[y][x] = ((encoded[byteIdx] >> bitPos) & 1) === 1;
-                bitIdx++;
-              } else {
-                matrix[y][x] = false;
-              }
-            }
-          }
-        }
-      }
-
-      return matrix;
-    }
-
-    function addFinderPattern(matrix, row, col) {
-      for (let r = 0; r < 7; r++) {
-        for (let c = 0; c < 7; c++) {
-          if (r === 0 || r === 6 || c === 0 || c === 6 ||
-              (r >= 2 && r <= 4 && c >= 2 && c <= 4)) {
-            matrix[row + r][col + c] = true;
-          }
-        }
-      }
-      // Separator
-      for (let i = 0; i < 8; i++) {
-        if (row + 7 < matrix.length) matrix[row + 7][col + i] = true;
-        if (col + 7 < matrix.length) matrix[row + i][col + 7] = true;
-        if (row - 1 >= 0 && col + i < matrix.length) matrix[row - 1][col + i] = true;
-        if (row + i < matrix.length && col - 1 >= 0) matrix[row + i][col - 1] = true;
-      }
-    }
-
-    function addAlignmentPattern(matrix, row, col) {
-      for (let r = -2; r <= 2; r++) {
-        for (let c = -2; c <= 2; c++) {
-          const y = row + r;
-          const x = col + c;
-          if (y >= 0 && y < matrix.length && x >= 0 && x < matrix.length) {
-            matrix[y][x] = Math.abs(r) === 2 || Math.abs(c) === 2 || (r === 0 && c === 0);
-          }
-        }
-      }
-    }
-
-    function isFunctionModule(x, y, size) {
-      // Finder patterns
-      if (x < 9 && y < 9) return true;
-      if (x < 9 && y >= size - 8) return true;
-      if (x >= size - 8 && y < 9) return true;
-      // Timing patterns
-      if (x === 6 || y === 6) return true;
-      return false;
-    }
-
-    function countFunctionModules(matrix) {
-      let count = 0;
-      const size = matrix.length;
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          if (isFunctionModule(x, y, size)) count++;
-        }
-      }
-      return count;
-    }
-
-    function encodeData(text) {
-      const bytes = [];
-      bytes.push(0x40); // Byte mode indicator
-
-      const length = text.length;
-      if (length > 127) {
-        bytes.push((length >> 8) & 0xFF);
-      }
-      bytes.push(length & 0xFF);
-
-      for (let i = 0; i < text.length; i++) {
-        bytes.push(text.charCodeAt(i) & 0xFF);
-      }
-
-      // Pad to fill capacity
-      const capacity = 128;
-      while (bytes.length < capacity - 2) {
-        bytes.push(0xEC);
-        if (bytes.length < capacity - 2) bytes.push(0x11);
-      }
-      bytes.push(0x00);
-
-      return bytes;
-    }
-
-    // ==================== Tab Navigation ====================
-    document.querySelectorAll('.nav-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(`section-${tab.dataset.tab}`).classList.add('active');
-
-        // Refresh data when switching tabs
-        if (tab.dataset.tab === 'devices') {
-          loadDevices();
-        } else if (tab.dataset.tab === 'history') {
-          loadHistory();
-        } else if (tab.dataset.tab === 'settings') {
-          loadSettings();
-        }
+    // Simple router
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const page = item.dataset.page;
+        
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(page).classList.add('active');
       });
     });
 
-    // ==================== QR Code Generation ====================
-    async function generateQRCode() {
-      try {
-        const data = await invoke('get_pairing_qr_code');
-        const canvas = document.getElementById('qr-code');
-        const code = document.getElementById('pairing-code');
+    // Mic button
+    const micButton = document.getElementById('mic-button');
+    let isListening = false;
 
-        // Generate QR code using our simple generator
-        const dataURL = generateQRCodeDataURL(data.qr_content, {
-          size: 200,
-          color: '#00d4ff',
-          light: '#16213e'
-        });
-
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
-        img.onload = () => {
-          ctx.drawImage(img, 0, 0, 200, 200);
-        };
-        img.src = dataURL;
-
-        code.textContent = data.pairing_code;
-      } catch (e) {
-        console.error('Failed to generate QR code:', e);
-        // Fallback: show error state
-        const code = document.getElementById('pairing-code');
-        code.textContent = 'ERROR';
-      }
-    }
-
-    document.getElementById('btn-refresh-pairing').addEventListener('click', generateQRCode);
-
-    // ==================== Device List ====================
-    async function loadDevices() {
-      try {
-        const paired = await invoke('get_paired_devices');
-        const connected = await invoke('get_connection_status');
-
-        const pairedList = document.getElementById('paired-list');
-        const deviceList = document.getElementById('device-list');
-
-        // Render connected device
-        if (connected && connected.connected) {
-          deviceList.innerHTML = `
-            <div class="device-item">
-              <div class="device-info">
-                <span class="device-icon">📱</span>
-                <div class="device-details">
-                  <div class="device-name">${escapeHtml(connected.name || 'iPhone')}</div>
-                  <div class="device-status connected" data-i18n="status_connected">${t('status_connected')}</div>
-                </div>
-              </div>
-              <span style="color: #00ff88; font-size: 18px;">●</span>
-            </div>
-          `;
-          updateStatus('connected', t('status_connected') + ' ' + (connected.name || ''));
-        } else {
-          deviceList.innerHTML = `
-            <div class="empty-state">
-              <div class="empty-state-icon">📡</div>
-              <div data-i18n="devices_no_connected">${t('devices_no_connected')}</div>
-            </div>
-          `;
-          updateStatus('disconnected', t('status_disconnected'));
-        }
-
-        // Render paired devices
-        if (paired.length === 0) {
-          pairedList.innerHTML = `
-            <div class="empty-state">
-              <div class="empty-state-icon">📱</div>
-              <div data-i18n="devices_no_paired">${t('devices_no_paired')}</div>
-            </div>
-          `;
-        } else {
-          pairedList.innerHTML = paired.map(d => `
-            <div class="device-item">
-              <div class="device-info">
-                <span class="device-icon">📱</span>
-                <div class="device-details">
-                  <div class="device-name">${escapeHtml(d.name)}</div>
-                  <div class="device-status disconnected">${t('devices_last_seen')}: ${d.last_seen || 'Unknown'}</div>
-                </div>
-              </div>
-              <button class="btn btn-secondary btn-small" onclick="removeDevice('${escapeHtml(d.id)}')" data-i18n="devices_forget">${t('devices_forget')}</button>
-            </div>
-          `).join('');
-        }
-      } catch (e) {
-        console.error('Failed to load devices:', e);
-      }
-    }
-
-    async function removeDevice(id) {
-      if (confirm(t('confirm_forget_device'))) {
+    micButton.addEventListener('click', async () => {
+      if (!window.__TAURI__) return;
+      
+      const { invoke } = window.__TAURI__.core;
+      
+      if (!isListening) {
         try {
-          await invoke('remove_paired_device', { id });
-          loadDevices();
+          const result = await invoke('start_listening');
+          if (result.success) {
+            isListening = true;
+            micButton.classList.add('listening');
+            micButton.textContent = '🔴';
+            document.getElementById('control-hint').textContent = '点击停止聆听';
+            showToast('开始聆听', '正在等待语音输入...');
+          }
         } catch (e) {
-          console.error('Failed to remove device:', e);
+          console.error('Failed to start listening:', e);
+          showToast('错误', '无法开始聆听: ' + e);
+        }
+      } else {
+        try {
+          const result = await invoke('stop_listening');
+          if (result.success) {
+            isListening = false;
+            micButton.classList.remove('listening');
+            micButton.textContent = '🎤';
+            document.getElementById('control-hint').textContent = '点击开始聆听';
+            showToast('停止聆听', '聆听已停止');
+          }
+        } catch (e) {
+          console.error('Failed to stop listening:', e);
         }
       }
+    });
+
+    // Toast notification
+    function showToast(title, message) {
+      const existing = document.querySelector('.toast');
+      if (existing) existing.remove();
+      
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<strong>${title}</strong><span>${message}</span>`;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
     }
 
-    // ==================== History ====================
-    let allHistory = [];
+    // Listen for events from backend
+    if (window.__TAURI__) {
+      const { listen } = window.__TAURI__.core;
+      
+      listen('connection-changed', (event) => {
+        const { connected, name } = event.payload;
+        updateConnectionStatus(connected, name);
+      });
+      
+      listen('listening-started', (event) => {
+        const { device_name } = event.payload;
+        isListening = true;
+        micButton.classList.add('listening');
+        micButton.textContent = '🔴';
+        document.getElementById('control-hint').textContent = '点击停止聆听';
+      });
+      
+      listen('listening-stopped', () => {
+        isListening = false;
+        micButton.classList.remove('listening');
+        micButton.textContent = '🎤';
+        document.getElementById('control-hint').textContent = '点击开始聆听';
+      });
+      
+      listen('recognition-result', (event) => {
+        const { text } = event.payload;
+        document.getElementById('subtitle-text').textContent = text;
+        document.getElementById('subtitle-text').classList.add('active', 'highlight');
+        setTimeout(() => {
+          document.getElementById('subtitle-text').classList.remove('highlight');
+        }, 500);
+        addRecentItem(text);
+      });
+      
+      listen('partial-result', (event) => {
+        const { text } = event.payload;
+        document.getElementById('subtitle-text').textContent = text;
+      });
+    }
 
-    async function loadHistory() {
+    function updateConnectionStatus(connected, deviceName) {
+      const indicator = document.getElementById('status-indicator');
+      const dot = document.getElementById('main-status-dot');
+      const label = document.getElementById('status-label');
+      const sidebarDot = document.getElementById('sidebar-status-dot');
+      const sidebarText = document.getElementById('sidebar-status-text');
+      const deviceInfo = document.getElementById('device-info');
+      const currentDevice = document.getElementById('current-device');
+      
+      if (connected) {
+        indicator.className = 'status-indicator connected';
+        dot.className = 'status-dot connected';
+        label.textContent = '已连接';
+        sidebarDot.className = 'status-dot connected';
+        sidebarText.textContent = deviceName || '已连接';
+        
+        if (deviceName) {
+          deviceInfo.style.display = 'flex';
+          document.getElementById('device-name').textContent = deviceName;
+          document.getElementById('device-status').textContent = '准备就绪';
+          
+          currentDevice.style.display = 'flex';
+          document.getElementById('current-device-name').textContent = deviceName;
+          document.getElementById('current-device-info').textContent = '已连接';
+        }
+      } else {
+        indicator.className = 'status-indicator disconnected';
+        dot.className = 'status-dot';
+        label.textContent = '未连接';
+        sidebarDot.className = 'status-dot';
+        sidebarText.textContent = '未连接';
+        deviceInfo.style.display = 'none';
+        currentDevice.style.display = 'none';
+      }
+    }
+
+    function addRecentItem(text) {
+      const list = document.getElementById('recent-list');
+      const empty = list.querySelector('.empty-state');
+      if (empty) empty.remove();
+      
+      const item = document.createElement('div');
+      item.className = 'recent-item';
+      item.textContent = text;
+      list.insertBefore(item, list.firstChild);
+      
+      if (list.children.length > 10) {
+        list.lastChild.remove();
+      }
+    }
+
+    // Refresh QR code
+    document.getElementById('btn-refresh-qr').addEventListener('click', async () => {
+      if (!window.__TAURI__) return;
+      
       try {
-        const history = await invoke('get_history');
-        allHistory = history || [];
-        renderHistory(allHistory);
+        const { invoke } = window.__TAURI__.core;
+        const result = await invoke('start_pairing');
+        if (result.success) {
+          document.getElementById('pairing-code').textContent = result.pairing_code;
+          generateQRCode(result.qr_content);
+          if (result.ip) {
+            document.getElementById('server-ip').textContent = result.ip;
+          }
+          document.getElementById('server-port').textContent = result.port;
+          showToast('配对模式', '显示新的配对码');
+        }
       } catch (e) {
-        console.error('Failed to load history:', e);
+        console.error('Failed to start pairing:', e);
       }
-    }
+    });
 
-    function renderHistory(history) {
-      const historyList = document.getElementById('history-list');
-      const searchQuery = document.getElementById('history-search').value.toLowerCase();
-
-      let filtered = history;
-      if (searchQuery) {
-        filtered = history.filter(h => h.text.toLowerCase().includes(searchQuery));
-      }
-
-      if (filtered.length === 0) {
-        historyList.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">📝</div>
-            <div data-i18n="history_empty">${t('history_empty')}</div>
+    // Generate QR code
+    function generateQRCode(content) {
+      const qrCodeElement = document.getElementById('qr-code');
+      
+      // Check if content is a data URL (base64 image)
+      if (content.startsWith('data:image/')) {
+        // Create an image element to display the QR code
+        qrCodeElement.innerHTML = `<img src="${content}" alt="QR Code" style="width: 200px; height: 200px; border-radius: 8px;">`;
+      } else {
+        // Fallback: create a simple placeholder
+        qrCodeElement.innerHTML = `
+          <div style="width: 200px; height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                      display: flex; align-items: center; justify-content: center; border-radius: 8px; color: white; font-family: Inter, sans-serif;">
+            <div style="text-align: center;">
+              <div style="font-size: 24px; margin-bottom: 8px;">🎙️</div>
+              <div style="font-size: 14px; font-weight: 600;">VoiceMind</div>
+              <div style="font-size: 12px; opacity: 0.8;">Pairing</div>
+            </div>
           </div>
         `;
+      }
+    }
+
+    // Clear history
+    document.getElementById('btn-clear-history').addEventListener('click', async () => {
+      if (!window.__TAURI__) return;
+      
+      try {
+        const { invoke } = window.__TAURI__.core;
+        await invoke('clear_history');
+        document.getElementById('history-list').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <p class="empty-state-text">暂无识别历史</p>
+          </div>
+        `;
+        showToast('历史已清空', '所有识别记录已被删除');
+      } catch (e) {
+        console.error('Failed to clear history:', e);
+      }
+    });
+
+    // Save settings
+    document.getElementById('btn-save-settings').addEventListener('click', async () => {
+      if (!window.__TAURI__) return;
+      
+      const port = document.getElementById('setting-port').value;
+      
+      try {
+        const { invoke } = window.__TAURI__.core;
+        await invoke('set_server_port', { port: parseInt(port) });
+        showToast('设置已保存', '配置已成功更新');
+      } catch (e) {
+        console.error('Failed to save settings:', e);
+        showToast('保存失败', '无法保存设置: ' + e);
+      }
+    });
+
+    // Initialize
+    async function init() {
+      if (!window.__TAURI__) {
+        console.log('Not running in Tauri environment');
         return;
       }
-
-      historyList.innerHTML = filtered.map(h => `
-        <div class="history-item" data-id="${escapeHtml(h.id)}">
-          <div class="history-text">${escapeHtml(h.text)}</div>
-          <div class="history-meta">
-            <span class="history-source">
-              ${h.source === 'ios' ? '📱' : '💻'} ${h.source === 'ios' ? t('history_source_ios') : t('history_source_local')}
-              •
-              ${escapeHtml(h.timestamp)}
-            </span>
-            <button class="btn btn-secondary btn-small" onclick="deleteHistoryItem('${escapeHtml(h.id)}')" data-i18n="history_delete">${t('history_delete')}</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    async function deleteHistoryItem(id) {
+      
       try {
-        await invoke('delete_history_item', { id });
-        loadHistory();
-      } catch (e) {
-        console.error('Failed to delete history item:', e);
-      }
-    }
-
-    document.getElementById('btn-clear-history').addEventListener('click', async () => {
-      if (confirm(t('confirm_clear_history'))) {
-        try {
-          await invoke('clear_history');
-          loadHistory();
-        } catch (e) {
-          console.error('Failed to clear history:', e);
+        const { invoke } = window.__TAURI__.core;
+        
+        // Get current connection status
+        const status = await invoke('get_connection_status');
+        if (status && status.connected) {
+          updateConnectionStatus(true, status.name);
         }
-      }
-    });
-
-    document.getElementById('history-search').addEventListener('input', () => {
-      renderHistory(allHistory);
-    });
-
-    // ==================== Settings ====================
-    function loadSettings() {
-      const saved = loadSettingsFromStorage();
-      if (saved) {
-        currentLang = saved.language || 'en-US';
-        document.getElementById('setting-language').value = currentLang;
-        document.getElementById('setting-injection').value = saved.injection_method || 'keyboard';
-        document.getElementById('setting-port').value = saved.server_port || 8765;
-      } else {
-        // Try to load from Rust side
-        invoke('get_settings').then(settings => {
-          currentLang = settings.language || 'en-US';
-          document.getElementById('setting-language').value = currentLang;
-          document.getElementById('setting-injection').value = settings.injection_method || 'keyboard';
-          document.getElementById('setting-port').value = settings.server_port || 8765;
-        }).catch(() => {});
-      }
-      applyI18n();
-    }
-
-    document.getElementById('btn-save-settings').addEventListener('click', async () => {
-      const settings = {
-        language: document.getElementById('setting-language').value,
-        injection_method: document.getElementById('setting-injection').value,
-        server_port: parseInt(document.getElementById('setting-port').value) || 8765
-      };
-
-      // Save to localStorage for persistence
-      saveSettingsToStorage(settings);
-      currentLang = settings.language;
-      applyI18n();
-
-      // Also save to Rust side
-      try {
-        await invoke('save_settings', { settings });
-      } catch (e) {
-        console.error('Failed to save settings to Rust:', e);
-      }
-
-      // Show feedback
-      showToast(t('settings_saved'));
-    });
-
-    document.getElementById('setting-language').addEventListener('change', () => {
-      currentLang = document.getElementById('setting-language').value;
-      applyI18n();
-    });
-
-    // ==================== ASR Config ====================
-    async function loadAsrConfig() {
-      try {
-        const config = await invoke('get_asr_config');
-        if (config) {
-          document.getElementById('asr-app-id').value = config.app_id || '';
-          document.getElementById('asr-access-key-id').value = config.access_key_id || '';
-          document.getElementById('asr-access-key-secret').value = config.access_key_secret || '';
-          document.getElementById('asr-cluster').value = config.cluster || 'volcengine_streaming_common';
-          document.getElementById('asr-language').value = config.asr_language || 'zh-CN';
+        
+        // Start pairing mode
+        const result = await invoke('start_pairing');
+        if (result.success) {
+          document.getElementById('pairing-code').textContent = result.pairing_code;
+          generateQRCode(result.qr_content);
+          if (result.ip) {
+            document.getElementById('server-ip').textContent = result.ip;
+          }
+          document.getElementById('server-port').textContent = result.port;
+        }
+        
+        // Get history
+        const history = await invoke('get_history');
+        if (history && history.length > 0) {
+          const list = document.getElementById('recent-list');
+          list.innerHTML = '';
+          history.slice(0, 10).forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'recent-item';
+            div.textContent = item.text;
+            list.appendChild(div);
+          });
         }
       } catch (e) {
-        console.error('Failed to load ASR config:', e);
+        console.error('Initialization error:', e);
       }
     }
 
-    document.getElementById('btn-save-asr')?.addEventListener('click', async () => {
-      const config = {
-        provider: 'veanchor',
-        app_id: document.getElementById('asr-app-id').value,
-        access_key_id: document.getElementById('asr-access-key-id').value,
-        access_key_secret: document.getElementById('asr-access-key-secret').value,
-        cluster: document.getElementById('asr-cluster').value,
-        asr_language: document.getElementById('asr-language').value,
-      };
-
-      try {
-        await invoke('save_asr_config', { config });
-        showToast(t('settings_saved'));
-      } catch (e) {
-        console.error('Failed to save ASR config:', e);
-      }
-    });
-
-    function showToast(message) {
-      const toast = document.createElement('div');
-      toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #00d4ff;
-        color: #1a1a2e;
-        padding: 10px 20px;
-        border-radius: 5px;
-        font-weight: bold;
-        z-index: 1000;
-        animation: fadeIn 0.3s;
-      `;
-      toast.textContent = message;
-      document.body.appendChild(toast);
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.3s';
-        setTimeout(() => toast.remove(), 300);
-      }, 2000);
-    }
-
-    // ==================== Status Updates ====================
-    function updateStatus(status, text) {
-      const dot = document.getElementById('status-dot');
-      const statusText = document.getElementById('status-text');
-
-      dot.className = 'status-dot';
-      if (status === 'connected') {
-        dot.classList.add('connected');
-      } else if (status === 'listening') {
-        dot.classList.add('listening');
-      } else if (status === 'connecting') {
-        dot.classList.add('connecting');
-      }
-
-      statusText.textContent = text;
-      if (text) {
-        statusText.setAttribute('data-i18n', '');
-      }
-    }
-
-    // ==================== Tray Events ====================
-    window.__TAURI__.core.listen('start-pairing', () => {
-      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      document.querySelector('[data-tab="pairing"]').classList.add('active');
-      document.getElementById('section-pairing').classList.add('active');
-      generateQRCode();
-    });
-
-    // Listen for connection status changes from Rust
-    window.__TAURI__.core.listen('connection-changed', (event) => {
-      const { connected, name, listening } = event.payload;
-      if (listening) {
-        updateStatus('listening', t('status_listening'));
-      } else if (connected) {
-        updateStatus('connected', t('status_connected') + ' ' + (name || ''));
-      } else {
-        updateStatus('disconnected', t('status_disconnected'));
-      }
-      loadDevices();
-    });
-
-    // Listen for new recognition results
-    window.__TAURI__.core.listen('recognition-result', () => {
-      loadHistory();
-    });
-
-    // ==================== Guide Modal ====================
-    function checkFirstTime() {
-      const visited = localStorage.getItem('voicemind_visited');
-      if (!visited) {
-        document.getElementById('guide-modal').classList.remove('hidden');
-      } else {
-        document.getElementById('guide-modal').classList.add('hidden');
-      }
-    }
-
-    document.getElementById('btn-start-using').addEventListener('click', () => {
-      localStorage.setItem('voicemind_visited', 'true');
-      document.getElementById('guide-modal').classList.add('hidden');
-    });
-
-    // ==================== Utilities ====================
-    function escapeHtml(str) {
-      if (!str) return '';
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    }
-
-    // ==================== Initialize ====================
-    function init() {
-      checkFirstTime();
-      loadSettings();
-      loadAsrConfig();
-      generateQRCode();
-      loadDevices();
-      loadHistory();
-
-      // Refresh devices periodically
-      setInterval(loadDevices, 5000);
-
-      // Refresh QR code periodically
-      setInterval(generateQRCode, 60000);
-    }
-
-    // Wait for Tauri to be ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', init);
-    } else {
-      init();
-    }
+    init();
   </script>
 </body>
 </html>

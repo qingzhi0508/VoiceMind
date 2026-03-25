@@ -2,12 +2,14 @@ use crate::pairing::PairingManager;
 use crate::commands::ConnectionStatus;
 use crate::asr::{AsrSession, AsrResult, VeAnchorProvider};
 use crate::injection;
+use crate::events::EventEmitter;
 use futures_util::{SinkExt, StreamExt};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tauri::AppHandle;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{Mutex, RwLock};
 use tokio_tungstenite::{accept_async, tungstenite::Message};
@@ -20,7 +22,7 @@ const HEARTBEAT_INTERVAL_SECS: u64 = 30;
 const CONNECTION_TIMEOUT_SECS: u64 = 60;
 
 /// Message types matching iOS protocol
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum MessageType {
     PairRequest,
     PairConfirm,
@@ -213,6 +215,7 @@ pub struct Connection {
     pub last_pong: Option<Instant>,
     pub secret_key: Option<String>,
     pub asr_session: Option<AsrSession>,
+    pub event_emitter: Arc<Mutex<EventEmitter>>,
 }
 
 pub type TokioWebSocket = tokio_tungstenite::WebSocketStream<TcpStream>;
@@ -222,6 +225,7 @@ pub struct ConnectionManager {
     connections: Arc<RwLock<HashMap<String, Connection>>>,
     listener: Option<Arc<Mutex<TcpListener>>>,
     running: bool,
+    event_emitter: Arc<Mutex<EventEmitter>>,
 }
 
 impl ConnectionManager {
@@ -231,6 +235,21 @@ impl ConnectionManager {
             connections: Arc::new(RwLock::new(HashMap::new())),
             listener: None,
             running: false,
+            event_emitter: Arc::new(Mutex::new(EventEmitter::new())),
+        }
+    }
+
+    pub fn set_app_handle(&self, handle: AppHandle) {
+        // Use try_lock to avoid blocking in async context
+        if let Ok(mut emitter_guard) = self.event_emitter.try_lock() {
+            emitter_guard.set_app_handle(handle);
+        } else {
+            // If we can't get the lock immediately, spawn a task to do it
+            let emitter = self.event_emitter.clone();
+            tokio::spawn(async move {
+                let mut emitter_guard = emitter.lock().await;
+                emitter_guard.set_app_handle(handle);
+            });
         }
     }
 
@@ -382,6 +401,7 @@ async fn handle_connection(
             last_pong: None,
             secret_key: None,
             asr_session: None,
+            event_emitter: Arc::new(Mutex::new(EventEmitter::new())),
         });
     }
 
@@ -489,9 +509,24 @@ async fn handle_connection(
 
     {
         let mut conns = connections.write().await;
-        if let Some(conn) = conns.get(&conn_id) {
-            info!("Connection {} ({}) disconnected", conn_id, conn.device_name.as_deref().unwrap_or("unknown"));
+        let should_emit = {
+            if let Some(conn) = conns.get(&conn_id) {
+                info!("Connection {} ({}) disconnected", conn_id, conn.device_name.as_deref().unwrap_or("unknown"));
+                matches!(conn.state, ConnectionState::Paired | ConnectionState::Listening)
+            } else {
+                false
+            }
+        };
+        
+        if should_emit {
+            if let Some(conn) = conns.get(&conn_id) {
+                let emitter = conn.event_emitter.clone();
+                let device_name = conn.device_name.clone();
+                let emitter_guard = emitter.lock().await;
+                emitter_guard.emit_connection_changed(false, device_name, None);
+            }
         }
+        
         conns.remove(&conn_id);
     }
 
@@ -545,6 +580,33 @@ async fn process_message(
         MessageType::Result | MessageType::PartialResult => {
             // Forward results to the frontend via event
             info!("Received {:?} from device", msg_type);
+            
+            // Extract result data
+            if let Some(obj) = msg.payload.as_object() {
+                let text = obj.get("text").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                let language = obj.get("language").and_then(|v| v.as_str()).unwrap_or("zh-CN").to_string();
+                let session_id = obj.get("session_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                
+                // Get device name
+                let device_name = {
+                    let conns = connections.read().await;
+                    conns.get(conn_id).and_then(|c| c.device_name.clone())
+                };
+                
+                // Emit appropriate event
+                let conns = connections.read().await;
+                if let Some(conn) = conns.get(conn_id) {
+                    let emitter = conn.event_emitter.clone();
+                    drop(conns);
+                    
+                    let emitter_guard = emitter.lock().await;
+                    if msg_type == MessageType::Result {
+                        emitter_guard.emit_recognition_result(text, language, session_id, device_name);
+                    } else {
+                        emitter_guard.emit_partial_result(text, language, session_id);
+                    }
+                }
+            }
         }
         MessageType::Error => {
             if let Some(payload) = msg.payload.as_object() {
@@ -659,11 +721,20 @@ async fn handle_pair_confirm(
     let secret_key = manager.confirm_pairing(&payload.ios_id, &payload.ios_name);
 
     // Update connection with secret key
+    let device_name = payload.ios_name.clone();
     {
         let mut conns = connections.write().await;
         if let Some(conn) = conns.get_mut(conn_id) {
             conn.secret_key = Some(secret_key.clone());
             conn.state = ConnectionState::Paired;
+            conn.device_name = Some(device_name.clone());
+            
+            // Emit connection-changed event
+            let emitter = conn.event_emitter.clone();
+            drop(conns);
+            
+            let emitter_guard = emitter.lock().await;
+            emitter_guard.emit_connection_changed(true, Some(device_name.clone()), Some(payload.ios_id.clone()));
         }
     }
 
@@ -713,13 +784,19 @@ async fn handle_start_listen(
     let payload: StartListenPayload = serde_json::from_value(msg.payload.clone())
         .map_err(|e| format!("Invalid startListen payload: {}", e))?;
 
-    {
-        let mut conns = connections.write().await;
-        if let Some(conn) = conns.get_mut(conn_id) {
-            if matches!(conn.state, ConnectionState::Paired) {
-                conn.state = ConnectionState::Listening;
-                info!("Device {} started listening, session: {}", conn.device_name.as_deref().unwrap_or("?"), payload.session_id);
-            }
+    let session_id = payload.session_id.clone();
+    let mut conns = connections.write().await;
+    if let Some(conn) = conns.get_mut(conn_id) {
+        if matches!(conn.state, ConnectionState::Paired) {
+            conn.state = ConnectionState::Listening;
+            info!("Device {} started listening, session: {}", conn.device_name.as_deref().unwrap_or("?"), session_id);
+            
+            // Emit listening-started event
+            let emitter = conn.event_emitter.clone();
+            let device_name = conn.device_name.clone();
+            
+            let emitter_guard = emitter.lock().await;
+            emitter_guard.emit_listening_started(session_id.clone(), device_name);
         }
     }
 
@@ -734,12 +811,20 @@ async fn handle_stop_listen(
     let payload: StopListenPayload = serde_json::from_value(msg.payload.clone())
         .map_err(|e| format!("Invalid stopListen payload: {}", e))?;
 
+    let session_id = payload.session_id.clone();
     {
         let mut conns = connections.write().await;
         if let Some(conn) = conns.get_mut(conn_id) {
             if matches!(conn.state, ConnectionState::Listening) {
                 conn.state = ConnectionState::Paired;
-                info!("Device {} stopped listening, session: {}", conn.device_name.as_deref().unwrap_or("?"), payload.session_id);
+                info!("Device {} stopped listening, session: {}", conn.device_name.as_deref().unwrap_or("?"), session_id);
+                
+                // Emit listening-stopped event
+                let emitter = conn.event_emitter.clone();
+                drop(conns);
+                
+                let emitter_guard = emitter.lock().await;
+                emitter_guard.emit_listening_stopped(session_id);
             }
         }
     }

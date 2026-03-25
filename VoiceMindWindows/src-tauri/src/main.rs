@@ -3,6 +3,7 @@
 mod asr;
 mod bonjour;
 mod commands;
+mod events;
 mod injection;
 mod network;
 mod pairing;
@@ -41,18 +42,21 @@ fn setup_logging() {
         .join("VoiceMind")
         .join("logs");
 
-    std::fs::create_dir_all(&log_dir).ok();
+    // Try to create log directory, but don't fail if it doesn't work
+    if let Err(e) = std::fs::create_dir_all(&log_dir) {
+        eprintln!("Warning: Could not create log directory: {}", e);
+    }
 
-    let file_appender = RollingFileAppender::new(Rotation::DAILY, log_dir, "voicemind.log");
-    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+    let file_appender = RollingFileAppender::new(Rotation::DAILY, &log_dir, "voicemind.log");
+    let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
         .with(tracing_subscriber::EnvFilter::new("info"))
         .init();
 
-    // Keep guard alive
-    std::mem::forget(_guard);
+    // Keep guard alive for the lifetime of the program
+    Box::leak(Box::new(guard));
 }
 
 fn main() {
@@ -78,7 +82,33 @@ fn main() {
                 asr_provider: Arc::new(Mutex::new(None)),
             };
 
+            // Manage state first before accessing it
             app.manage(state);
+
+            // Set app handle for connection manager and start WebSocket server
+            let conn_mgr = app.state::<AppState>().connection_manager.clone();
+            let pairing_mgr = app.state::<AppState>().pairing_manager.clone();
+            let app_handle = app.handle().clone();
+            let server_port = init_settings.server_port;
+            
+            tauri::async_runtime::spawn(async move {
+                // Set app handle first
+                {
+                    let conn_guard = conn_mgr.lock().await;
+                    conn_guard.set_app_handle(app_handle);
+                }
+                
+                // Start WebSocket server
+                let mut conn_mgr_guard = conn_mgr.lock().await;
+                match conn_mgr_guard.start_server(server_port, pairing_mgr).await {
+                    Ok(_) => {
+                        info!("WebSocket server started on port {}", server_port);
+                    }
+                    Err(e) => {
+                        error!("Failed to start WebSocket server: {}", e);
+                    }
+                }
+            });
 
             // Initialize Bonjour service if enabled
             if init_settings.bonjour.enabled {
@@ -190,6 +220,9 @@ fn main() {
             commands::set_server_port,
             commands::get_asr_config,
             commands::save_asr_config,
+            commands::start_listening,
+            commands::stop_listening,
+            commands::get_listening_status,
         ])
         .run(tauri::generate_context!());
 
