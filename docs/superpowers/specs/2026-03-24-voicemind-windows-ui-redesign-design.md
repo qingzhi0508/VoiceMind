@@ -70,21 +70,27 @@ Primary items (1-5) are in the top group. Secondary items (6-7) are at the botto
 
 ### Color Palette
 
-| Token                  | Dark Mode Value | Usage                           |
-|------------------------|-----------------|----------------------------------|
-| `$pageBackground`      | `#1a1a2e` → `#141828` gradient | Page background              |
-| `$sidebarBgTop`        | `#19222E`       | Sidebar top gradient             |
-| `$sidebarBgBottom`      | `#141C28`       | Sidebar bottom gradient          |
-| `$sidebarSelectedFill`  | `#2E3D56`       | Selected sidebar item background |
-| `$sidebarSelectedBorder`| `#619FAF`       | Selected sidebar item border     |
-| `$sidebarText`         | `#9EB2C8`       | Sidebar default text             |
-| `$sidebarTextSelected`  | `#EEEEFF`       | Sidebar selected text            |
-| `$canvasBackground`    | `#1C2130`       | Content area background          |
-| `$canvasBorder`        | `#2A3448`       | Content area border              |
-| `$cardSurface`         | `#212840`       | Card backgrounds                 |
-| `$cardBorder`          | `#3A4860`       | Card borders                     |
-| `$softSurface`         | `#1E2636`       | Inner surface elements           |
-| `$title`               | `#EEEEFF`       | Primary text                     |
+| Token                  | Dark Mode Value | Light Mode Value | Usage                           |
+|------------------------|-----------------|-----------------|----------------------------------|
+| `$pageBackground`      | `#1a1a2e` → `#141828` gradient | `#F2F4FA` → `#E8ECF5` gradient | Page background |
+| `$sidebarBgTop`        | `#19222E`       | `#F6F7FC`       | Sidebar top gradient             |
+| `$sidebarBgBottom`      | `#141C28`       | `#ECEEF7`       | Sidebar bottom gradient          |
+| `$sidebarSelectedFill`  | `#2E3D56`       | `#DDE4F2`       | Selected sidebar item background |
+| `$sidebarSelectedBorder`| `#619FAF`       | `#5B9AB5`       | Selected sidebar item border     |
+| `$sidebarText`         | `#9EB2C8`       | `#4D5C78`       | Sidebar default text             |
+| `$sidebarTextSelected`  | `#EEEEFF`       | `#17203A`       | Sidebar selected text            |
+| `$canvasBackground`    | `#1C2130`       | `#FFFFFF`       | Content area background          |
+| `$canvasBorder`        | `#2A3448`       | `rgba(0,0,0,0.08)` | Content area border           |
+| `$cardSurface`         | `#212840`       | `#FFFFFF`       | Card backgrounds                 |
+| `$cardBorder`          | `#3A4860`       | `rgba(0,0,0,0.10)` | Card borders                 |
+| `$softSurface`         | `#1E2636`       | `#F5F6FA`       | Inner surface elements           |
+| `$title`               | `#EEEEFF`       | `#17203A`       | Section/card titles              |
+| `$primaryText`         | `#D0D8EE`       | `#2E3A52`       | Body text                        |
+| `$secondaryText`       | `#9EB2C8`       | `#6B7A96`       | Secondary/caption text           |
+| `$accent`              | `#00D4FF`       | `#00B4DD`       | Brand accent (keep existing)     |
+| `$accentOrange`        | `#FF8C42`       | `#E07830`       | Dashboard stat accent            |
+| `$accentGreen`         | `#4ADE80`       | `#22C55E`       | Success/connected states        |
+| `$accentRed`           | `#F87171`       | `#EF4444`       | Error/disconnected states       |#EEEEFF`       | Primary text                     |
 | `$primaryText`         | `#D4DAE8`       | Body text                        |
 | `$secondaryText`       | `#9EB2C8`       | Secondary/muted text             |
 | `$accent`              | `#00D4FF`       | Brand accent (keep existing)     |
@@ -370,26 +376,33 @@ Primary items (1-5) are in the top group. Secondary items (6-7) are at the botto
 
 ```rust
 // Service control
+// start_service: binds TcpListener on configured port, spawns accept loop task,
+// stores JoinHandle in state.server_handle. If server already running, returns Ok(()) silently.
 #[tauri::command]
 async fn start_service(state: State<'_, AppState>) -> Result<(), String>;
 
+// stop_service: aborts the stored JoinHandle (handle.abort()), sets server_handle to None.
+// Tauri's app_handle is needed to emit 'service-state-changed' event.
 #[tauri::command]
-async fn stop_service(state: State<'_, AppState>) -> Result<(), String>;
+async fn stop_service(state: State<'_, AppState>, app: tauri::AppHandle) -> Result<(), String>;
 
+// Returns true if server_handle is Some (task not yet finished or aborted)
 #[tauri::command]
-fn get_service_status(state: State<'_, AppState>) -> Result<bool, String>;
+async fn get_service_status(state: State<'_, AppState>) -> Result<bool, String>;
 
 // Inbound data records
 #[tauri::command]
-fn get_inbound_data_records(state: State<'_, AppState>) -> Result<Vec<InboundDataRecord>, String>;
+async fn get_inbound_data_records(state: State<'_, AppState>) -> Result<Vec<InboundDataRecord>, String>;
 
 #[tauri::command]
-fn clear_inbound_data_records(state: State<'_, AppState>) -> Result<(), String>;
+async fn clear_inbound_data_records(state: State<'_, AppState>) -> Result<(), String>;
 
-// Accessibility
+// Accessibility: on Windows, keyboard injection via SendInput always works without special permissions.
+// Returns "granted" always. Opens Ease of Access settings page via shell command.
 #[tauri::command]
-fn get_accessibility_status() -> Result<String, String>;  // returns "granted" | "denied"
+fn get_accessibility_status() -> Result<String, String>;  // always returns "granted" on Windows
 
+// Opens Windows Ease of Access settings: ms-settings:easeofaccess-keyboard
 #[tauri::command]
 fn open_accessibility_settings() -> Result<(), String>;
 ```
@@ -400,31 +413,62 @@ The Rust backend emits events via Tauri's event system for real-time UI updates:
 
 | Event Name              | Payload                                    | Trigger                          |
 |-------------------------|--------------------------------------------|----------------------------------|
-| `connection-state-changed` | `ConnectionState` JSON                   | Device connects/disconnects       |
-| `pairing-state-changed`   | `PairingState` JSON                      | Pairing starts/completes/fails   |
+| `connection-state-changed` | `{ connected: bool, name: string\|null, device_id: string\|null }` | Device connects/disconnects |
+| `pairing-state-changed`   | `{ is_pairing_mode: bool, current_code: string\|null }` | Pairing starts/completes/fails |
 | `service-state-changed`   | `{ running: bool }`                      | Service starts/stops             |
-| `new-history-record`      | `VoiceRecognitionRecord` JSON              | New ASR result received          |
+| `new-history-record`      | `{ id: string, text: string, source: string, timestamp: string, session_id: string\|null }` | New ASR result received |
 | `new-inbound-data`        | `InboundDataRecord` JSON                 | Any inbound data event          |
+
+Events are emitted using `app_handle.emit(event_name, payload)` from within network.rs handlers.
+The `app_handle` is passed into `start_server()` and stored for event emission.
 
 ### 5.3 AppState Changes
 
 Add to existing `AppState` in `main.rs`:
-- `server_handle: Arc<Mutex<Option<tokio::task::JoinHandle<()>>>>` — tracks running WebSocket server task handle for stop/start control
-- `inbound_data_records: Arc<Mutex<Vec<InboundDataRecord>>>` — circular buffer of 200 entries, shared with network layer
+- `server_handle: Arc<Mutex<Option<tokio::task::JoinHandle<()>>>>` — task handle for the running WebSocket accept loop; `abort()` to stop
+- `inbound_data_records: Arc<Mutex<VecDeque<InboundDataRecord>>>` — use `VecDeque` capped at 200 entries (pop_front when full)
 
 ---
 
 ## 6. Data Structures
 
-### InboundDataRecord (Frontend Model)
+### InboundDataRecord
+
+**Rust struct** (add to `commands.rs` or a new `src/inbound.rs`):
+```rust
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboundDataRecord {
+    pub id: String,
+    pub timestamp: String,  // format: "%Y-%m-%d %H:%M:%S" (matching HistoryRecord)
+    pub title: String,
+    pub detail: String,
+    pub category: String,  // "voice" | "pairing"
+    pub severity: String,  // "info" | "warning" | "error"
+}
+```
+
+**TypeScript interface** (frontend):
 ```typescript
 interface InboundDataRecord {
   id: string;
-  timestamp: string;  // ISO 8601
+  timestamp: string;  // "%Y-%m-%d %H:%M:%S" format
   title: string;
   detail: string;
-  category: 'voice' | 'pairing';  // 'pairing' for connection-related events
+  category: 'voice' | 'pairing';
   severity: 'info' | 'warning' | 'error';
+}
+```
+
+### VoiceRecognitionRecord (for `new-history-record` event payload)
+
+Matches the existing `HistoryItem` struct from `speech.rs`:
+```typescript
+interface VoiceRecognitionRecord {
+  id: string;
+  text: string;
+  source: string;        // e.g. "asr" or device name
+  timestamp: string;     // "%Y-%m-%d %H:%M:%S"
+  session_id: string | null;
 }
 ```
 
