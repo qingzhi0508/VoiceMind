@@ -147,6 +147,8 @@ pub async fn start_pairing(state: State<'_, AppState>) -> Result<StartPairingRes
         svg_string.as_bytes()
     );
 
+    tracing::info!("Start pairing - generated code: {}, ip: {:?}, port: {}", code, ip, port);
+
     Ok(StartPairingResult {
         success: true,
         pairing_code: code,

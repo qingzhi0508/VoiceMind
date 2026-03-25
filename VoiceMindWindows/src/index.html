@@ -533,12 +533,15 @@
       font-size: 36px;
       font-weight: 700;
       letter-spacing: 10px;
-      background: var(--bg-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--primary);
       margin: 24px 0;
       font-family: 'Inter', monospace;
+      text-align: center;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
     }
 
     .pairing-hint {
@@ -1165,29 +1168,45 @@
       
       try {
         const { invoke } = window.__TAURI__.core;
+        console.log('Calling start_pairing...');
         const result = await invoke('start_pairing');
+        console.log('start_pairing result:', result);
         if (result.success) {
-          document.getElementById('pairing-code').textContent = result.pairing_code;
+          console.log('Pairing code received:', result.pairing_code);
+          const pairingCodeElement = document.getElementById('pairing-code');
+          console.log('Pairing code element:', pairingCodeElement);
+          if (pairingCodeElement) {
+            pairingCodeElement.textContent = result.pairing_code;
+            console.log('Pairing code updated to:', result.pairing_code);
+          } else {
+            console.error('Pairing code element not found!');
+          }
           generateQRCode(result.qr_content);
           if (result.ip) {
             document.getElementById('server-ip').textContent = result.ip;
           }
           document.getElementById('server-port').textContent = result.port;
-          showToast('配对模式', '显示新的配对码');
+          showToast('配对模式', '显示新的配对码: ' + result.pairing_code);
+        } else {
+          console.log('start_pairing failed:', result.message);
+          showToast('错误', result.message || '生成配对码失败');
         }
       } catch (e) {
         console.error('Failed to start pairing:', e);
+        showToast('错误', '生成配对码失败: ' + e);
       }
     });
 
     // Generate QR code
     function generateQRCode(content) {
       const qrCodeElement = document.getElementById('qr-code');
+      console.log('Generating QR code with content:', content);
       
       // Check if content is a data URL (base64 image)
-      if (content.startsWith('data:image/')) {
+      if (content && content.startsWith('data:image/')) {
         // Create an image element to display the QR code
         qrCodeElement.innerHTML = `<img src="${content}" alt="QR Code" style="width: 200px; height: 200px; border-radius: 8px;">`;
+        console.log('QR code image generated');
       } else {
         // Fallback: create a simple placeholder
         qrCodeElement.innerHTML = `
@@ -1200,6 +1219,7 @@
             </div>
           </div>
         `;
+        console.log('QR code placeholder generated');
       }
     }
 
@@ -1255,14 +1275,19 @@
         }
         
         // Start pairing mode
+        console.log('Initializing pairing mode...');
         const result = await invoke('start_pairing');
+        console.log('Initial pairing result:', result);
         if (result.success) {
+          console.log('Initial pairing code:', result.pairing_code);
           document.getElementById('pairing-code').textContent = result.pairing_code;
           generateQRCode(result.qr_content);
           if (result.ip) {
             document.getElementById('server-ip').textContent = result.ip;
           }
           document.getElementById('server-port').textContent = result.port;
+        } else {
+          console.log('Initial pairing failed:', result.message);
         }
         
         // Get history
