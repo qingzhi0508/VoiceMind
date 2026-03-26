@@ -37,10 +37,7 @@ pub struct AppState {
 }
 
 fn setup_logging() {
-    let log_dir = dirs::data_local_dir()
-        .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("VoiceMind")
-        .join("logs");
+    let log_dir = std::path::PathBuf::from(".").join("logs");
 
     // Try to create log directory, but don't fail if it doesn't work
     if let Err(e) = std::fs::create_dir_all(&log_dir) {

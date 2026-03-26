@@ -52,10 +52,7 @@ pub struct SettingsStore {
 
 impl SettingsStore {
     pub fn new() -> Self {
-        let storage_path = dirs::data_local_dir()
-            .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join("VoiceMind")
-            .join("settings.json");
+        let storage_path = std::path::PathBuf::from(".").join("settings.json");
 
         let mut store = Self {
             settings: Settings::default(),

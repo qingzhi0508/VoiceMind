@@ -42,10 +42,7 @@ pub struct HistoryStore {
 
 impl HistoryStore {
     pub fn new() -> Self {
-        let storage_path = dirs::data_local_dir()
-            .unwrap_or_else(|| std::path::PathBuf::from("."))
-            .join("VoiceMind")
-            .join("history.json");
+        let storage_path = std::path::PathBuf::from(".").join("history.json");
 
         let mut store = Self {
             records: Vec::new(),
