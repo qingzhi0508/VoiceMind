@@ -38,6 +38,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Resources/VoiceMind.storekit,
 			);
 			target = B919E25A2F685937002A347A /* VoiceMindMac */;
 		};

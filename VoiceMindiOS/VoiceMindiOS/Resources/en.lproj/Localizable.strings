@@ -144,6 +144,8 @@
 "qr_pairing_code_placeholder" = "Pairing Code";
 
 "settings_title" = "Settings";
+"settings_account_membership_title" = "Account & Membership";
+"settings_account_membership_subtitle" = "Manage plan, status, and restore options.";
 "settings_guide_header" = "Help";
 "settings_theme_header" = "Appearance";
 "settings_theme_system" = "System";
@@ -158,7 +160,7 @@
 "settings_permission_speech" = "Speech Recognition";
 "settings_request_permissions" = "Request Permissions";
 "settings_permissions_footer" = "VoiceMind needs microphone and speech recognition permissions to work properly.";
-"settings_send_to_mac_header" = "Mac Sync";
+"settings_send_to_mac_header" = "Two-Device Sync";
 "settings_send_to_mac_title" = "Send transcription results to Mac";
 "settings_send_to_mac_footer" = "By default, recording stays on this iPhone for local speech-to-text. Turn this on to also sync results when a Mac is connected.";
 "settings_paired_device" = "Paired Device";
@@ -371,3 +373,19 @@ Sample rate: %@ Hz";
 
 "onboarding_start_using" = "Start with VoiceMind";
 "onboarding_menu_guide" = "User Guide";
+"billing_two_device_sync_header" = "Two-Device Sync";
+"billing_two_device_sync_footer" = "Free users can start up to 50 two-device sync sessions per day. Upgrade to unlock unlimited sync on iPhone and Mac.";
+"billing_two_device_sync_restore_button" = "Restore Purchases";
+"billing_two_device_sync_monthly_button" = "Monthly Unlimited %@";
+"billing_two_device_sync_yearly_button" = "Yearly Unlimited %@";
+"billing_two_device_sync_lifetime_button" = "Lifetime Unlock %@";
+"billing_two_device_sync_monthly_fallback" = "Monthly Unlimited";
+"billing_two_device_sync_yearly_fallback" = "Yearly Unlimited";
+"billing_two_device_sync_lifetime_fallback" = "Lifetime Unlock";
+"billing_two_device_sync_status_unlimited" = "Unlimited two-device sync is active.";
+"billing_two_device_sync_status_limited_format" = "%d free sync sessions left today.";
+"billing_two_device_sync_status_blocked_format" = "Today's %d free sync sessions are used up.";
+"billing_two_device_sync_detail_unlimited" = "Your current purchase unlocks unlimited two-device sync on iPhone and Mac.";
+"billing_two_device_sync_detail_limited_format" = "You've used %d of %d free sync sessions today.";
+"billing_two_device_sync_detail_blocked_format" = "Upgrade to keep syncing after %d free sessions per day.";
+"billing_two_device_sync_limit_reached" = "Today's free two-device sync limit has been reached. Upgrade to continue.";

@@ -142,6 +142,8 @@
 "qr_pairing_code_placeholder" = "配对码";
 
 "settings_title" = "设置";
+"settings_account_membership_title" = "账户与会员";
+"settings_account_membership_subtitle" = "管理套餐、状态与恢复购买选项。";
 "settings_guide_header" = "帮助";
 "settings_theme_header" = "外观";
 "settings_theme_system" = "跟随系统";
@@ -156,7 +158,7 @@
 "settings_permission_speech" = "语音识别";
 "settings_request_permissions" = "请求权限";
 "settings_permissions_footer" = "VoiceMind 需要麦克风和语音识别权限才能正常工作";
-"settings_send_to_mac_header" = "Mac 协同";
+"settings_send_to_mac_header" = "双端协同";
 "settings_send_to_mac_title" = "将转写结果同步到 Mac";
 "settings_send_to_mac_footer" = "默认只在本机录音转文字。打开后，如果已连接到 Mac，会额外把转写结果同步过去。";
 "settings_paired_device" = "已配对设备";
@@ -370,3 +372,19 @@
 
 "onboarding_start_using" = "开始使用 VoiceMind";
 "onboarding_menu_guide" = "使用指南";
+"billing_two_device_sync_header" = "双端协同";
+"billing_two_device_sync_footer" = "免费用户每天最多可发起 50 次双端协同会话。升级后可在 iPhone 和 Mac 上无限次使用。";
+"billing_two_device_sync_restore_button" = "恢复购买";
+"billing_two_device_sync_monthly_button" = "月度无限次 %@";
+"billing_two_device_sync_yearly_button" = "年度无限次 %@";
+"billing_two_device_sync_lifetime_button" = "终身解锁 %@";
+"billing_two_device_sync_monthly_fallback" = "月度无限次";
+"billing_two_device_sync_yearly_fallback" = "年度无限次";
+"billing_two_device_sync_lifetime_fallback" = "终身解锁";
+"billing_two_device_sync_status_unlimited" = "已解锁无限次双端协同。";
+"billing_two_device_sync_status_limited_format" = "今日还可发起 %d 次免费双端协同。";
+"billing_two_device_sync_status_blocked_format" = "今日 %d 次免费双端协同已用完。";
+"billing_two_device_sync_detail_unlimited" = "你当前的购买已在 iPhone 和 Mac 上解锁无限次双端协同。";
+"billing_two_device_sync_detail_limited_format" = "你今天已使用 %d / %d 次免费双端协同。";
+"billing_two_device_sync_detail_blocked_format" = "升级后可突破每天 %d 次免费限制，继续双端协同。";
+"billing_two_device_sync_limit_reached" = "今日免费双端协同次数已用完，升级后可继续使用。";

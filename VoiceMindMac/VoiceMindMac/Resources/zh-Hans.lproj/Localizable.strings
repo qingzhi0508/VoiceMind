@@ -267,6 +267,21 @@
 
 "mac_onboarding_start_badge" = "启动 VOICEMIND";
 "mac_onboarding_start_title" = "启动 Mac 端 VoiceMind，准备开始第一段协同。";
+"billing_two_device_sync_header" = "双端协同";
+"billing_two_device_sync_actions_title" = "解锁方式";
+"billing_two_device_sync_restore_button" = "恢复购买";
+"billing_two_device_sync_monthly_button" = "月度无限次 %@";
+"billing_two_device_sync_yearly_button" = "年度无限次 %@";
+"billing_two_device_sync_lifetime_button" = "终身解锁 %@";
+"billing_two_device_sync_monthly_fallback" = "月度无限次";
+"billing_two_device_sync_yearly_fallback" = "年度无限次";
+"billing_two_device_sync_lifetime_fallback" = "终身解锁";
+"billing_two_device_sync_status_unlimited" = "已解锁无限次双端协同。";
+"billing_two_device_sync_status_free_mac" = "当前为免费方案。";
+"billing_two_device_sync_mac_detail_free" = "免费用户可从 iPhone 每天发起最多 50 次双端协同。你可以在这里升级，在 iPhone 和 Mac 上解锁无限次。";
+"billing_two_device_sync_mac_detail_monthly" = "你的月度方案已在 iPhone 和 Mac 上解锁无限次双端协同。";
+"billing_two_device_sync_mac_detail_yearly" = "你的年度方案已在 iPhone 和 Mac 上解锁无限次双端协同。";
+"billing_two_device_sync_mac_detail_lifetime" = "你的终身购买已在 iPhone 和 Mac 上永久解锁当前双端协同功能。";
 "mac_onboarding_start_subtitle" = "启动网络服务后，这台 Mac 就能被发现、完成配对，并进入后续运行状态。";
 "mac_onboarding_start_button" = "启动 VoiceMind";
 "mac_onboarding_start_continue" = "查看运行状态";

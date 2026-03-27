@@ -84,6 +84,54 @@ public class KeychainManager {
         UserDefaults.standard.removeObject(forKey: fallbackKey(service: service, account: account))
     }
 
+    public static func saveData(
+        _ data: Data,
+        service: String,
+        account: String
+    ) throws {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecValueData as String: data
+        ]
+
+        SecItemDelete(query as CFDictionary)
+
+        let status = SecItemAdd(query as CFDictionary, nil)
+        guard status == errSecSuccess else {
+            try savePairingFallback(data, service: service, account: account)
+            return
+        }
+
+        UserDefaults.standard.removeObject(forKey: fallbackKey(service: service, account: account))
+    }
+
+    public static func retrieveData(
+        service: String,
+        account: String
+    ) throws -> Data {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true
+        ]
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        guard status == errSecSuccess else {
+            return try retrievePairingFallbackData(service: service, account: account)
+        }
+
+        guard let data = result as? Data else {
+            throw KeychainError.invalidData
+        }
+
+        return data
+    }
+
     private static func savePairingFallback(
         _ data: Data,
         service: String,
@@ -96,12 +144,19 @@ public class KeychainManager {
         service: String,
         account: String
     ) throws -> PairingData {
+        let data = try retrievePairingFallbackData(service: service, account: account)
+        let decoder = JSONDecoder()
+        return try decoder.decode(PairingData.self, from: data)
+    }
+
+    private static func retrievePairingFallbackData(
+        service: String,
+        account: String
+    ) throws -> Data {
         let key = fallbackKey(service: service, account: account)
         guard let data = UserDefaults.standard.data(forKey: key) else {
             throw KeychainError.itemNotFound
         }
-
-        let decoder = JSONDecoder()
-        return try decoder.decode(PairingData.self, from: data)
+        return data
     }
 }
