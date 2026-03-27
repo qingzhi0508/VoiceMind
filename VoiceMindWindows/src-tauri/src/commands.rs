@@ -9,6 +9,27 @@ fn get_local_ip() -> Option<String> {
     socket.local_addr().ok()?.ip().to_string().into()
 }
 
+fn get_hostname() -> String {
+    hostname::get()
+        .map(|h| h.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "VoiceMind Windows".to_string())
+}
+
+fn build_pairing_qr_payload(ip: Option<&str>, port: u16, code: &str) -> Result<String, String> {
+    let ip = ip.ok_or_else(|| "Unable to determine local IP address".to_string())?;
+    let device_name = get_hostname();
+    let device_id = format!("windows-{}", device_name.to_lowercase().replace(' ', "-"));
+
+    serde_json::to_string(&serde_json::json!({
+        "ip": ip,
+        "port": port,
+        "deviceId": device_id,
+        "deviceName": device_name,
+        "pairingCode": code
+    }))
+    .map_err(|e| format!("Failed to serialize QR payload: {}", e))
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AsrConfig {
     pub provider: String,
@@ -76,10 +97,7 @@ pub async fn get_pairing_qr_code(state: State<'_, AppState>) -> Result<PairingQR
     let expires_in = 120u64;
     let ip = get_local_ip();
     
-    let qr_content = match &ip {
-        Some(ip_addr) => format!("voicemind://pair?ip={}&port={}&code={}", ip_addr, port, code),
-        None => format!("voicemind://pair?port={}&code={}", port, code),
-    };
+    let qr_content = build_pairing_qr_payload(ip.as_deref(), port, &code)?;
 
     use qrcode::QrCode;
     use qrcode::render::svg;
@@ -127,10 +145,7 @@ pub async fn start_pairing(state: State<'_, AppState>) -> Result<StartPairingRes
     let port = manager.get_port();
     let ip = get_local_ip();
     
-    let qr_content = match &ip {
-        Some(ip_addr) => format!("voicemind://pair?ip={}&port={}&code={}", ip_addr, port, code),
-        None => format!("voicemind://pair?port={}&code={}", port, code),
-    };
+    let qr_content = build_pairing_qr_payload(ip.as_deref(), port, &code)?;
 
     use qrcode::QrCode;
     use qrcode::render::svg;
@@ -148,6 +163,7 @@ pub async fn start_pairing(state: State<'_, AppState>) -> Result<StartPairingRes
     );
 
     tracing::info!("Start pairing - generated code: {}, ip: {:?}, port: {}", code, ip, port);
+    tracing::info!("QR content length: {}", qr_content.len());
 
     Ok(StartPairingResult {
         success: true,
@@ -168,9 +184,8 @@ pub async fn stop_pairing(state: State<'_, AppState>) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn start_listening(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    // Placeholder - requires network enhancements
-    // In the meantime, return a success message
-    let session_id = uuid::Uuid::new_v4().to_string();
+    let conn_mgr = state.connection_manager.lock().await;
+    let session_id = conn_mgr.start_listening().await?;
     tracing::info!("Start listening requested, session: {}", session_id);
     Ok(serde_json::json!({
         "success": true,
@@ -181,10 +196,12 @@ pub async fn start_listening(state: State<'_, AppState>) -> Result<serde_json::V
 
 #[tauri::command]
 pub async fn stop_listening(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    // Placeholder - requires network enhancements
-    tracing::info!("Stop listening requested");
+    let conn_mgr = state.connection_manager.lock().await;
+    let session_id = conn_mgr.stop_listening().await?;
+    tracing::info!("Stop listening requested, session: {}", session_id);
     Ok(serde_json::json!({
         "success": true,
+        "session_id": session_id,
         "message": null
     }))
 }

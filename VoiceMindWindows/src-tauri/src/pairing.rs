@@ -211,6 +211,10 @@ impl PairingManager {
         self.paired_devices.get(device_id).map(|d| d.secret_key.clone())
     }
 
+    pub fn get_device_name(&self, device_id: &str) -> Option<String> {
+        self.paired_devices.get(device_id).map(|d| d.name.clone())
+    }
+
     /// Check if a device is paired
     pub fn is_device_paired(&self, device_id: &str) -> bool {
         self.paired_devices.contains_key(device_id)

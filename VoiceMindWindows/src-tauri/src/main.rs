@@ -61,6 +61,9 @@ fn main() {
 
     info!("VoiceMind Windows starting...");
 
+    // Wait a bit for system to be ready
+    std::thread::sleep(std::time::Duration::from_millis(500));
+
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
@@ -190,6 +193,21 @@ fn main() {
                 .build(app)?;
 
             info!("VoiceMind setup complete");
+
+            // Try to show main window after setup
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    info!("Attempting to show main window...");
+                    match window.show() {
+                        Ok(_) => info!("Main window shown successfully"),
+                        Err(e) => error!("Failed to show main window: {}", e),
+                    }
+                    let _ = window.set_focus();
+                }
+            });
+
             Ok(())
         })
         .on_window_event(|window, event| {
