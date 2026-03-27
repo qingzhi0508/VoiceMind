@@ -20,7 +20,7 @@
           "locale" : "en_US"
         }
       ],
-      "productID" : "com.voicemind.twodevice.lifetime",
+      "productID" : "com.voicemind.twodevice.alllifetime",
       "referenceName" : "Two-Device Sync Lifetime",
       "type" : "NonConsumable"
     }

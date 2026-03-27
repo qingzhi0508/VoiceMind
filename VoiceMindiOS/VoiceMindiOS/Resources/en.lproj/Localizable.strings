@@ -389,3 +389,7 @@ Sample rate: %@ Hz";
 "billing_two_device_sync_detail_limited_format" = "You've used %d of %d free sync sessions today.";
 "billing_two_device_sync_detail_blocked_format" = "Upgrade to keep syncing after %d free sessions per day.";
 "billing_two_device_sync_limit_reached" = "Today's free two-device sync limit has been reached. Upgrade to continue.";
+"billing_two_device_sync_validity_label" = "Valid Until";
+"billing_two_device_sync_validity_until_format" = "%@";
+"billing_two_device_sync_validity_lifetime" = "Lifetime";
+"billing_two_device_sync_current_plan" = "Current Plan";

@@ -388,3 +388,7 @@
 "billing_two_device_sync_detail_limited_format" = "你今天已使用 %d / %d 次免费双端协同。";
 "billing_two_device_sync_detail_blocked_format" = "升级后可突破每天 %d 次免费限制，继续双端协同。";
 "billing_two_device_sync_limit_reached" = "今日免费双端协同次数已用完，升级后可继续使用。";
+"billing_two_device_sync_validity_label" = "有效期";
+"billing_two_device_sync_validity_until_format" = "%@ 到期";
+"billing_two_device_sync_validity_lifetime" = "永久有效";
+"billing_two_device_sync_current_plan" = "当前方案";

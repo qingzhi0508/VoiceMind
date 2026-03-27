@@ -1526,9 +1526,7 @@ struct SettingsTab: View {
     }
 
     private func billingTitle(for kind: TwoDeviceSyncProductKind) -> String {
-        let prices = Dictionary(uniqueKeysWithValues: purchaseStore.products.map { ($0.id, $0.displayPrice) })
-
-        if let price = prices[kind.rawValue] {
+        if let price = purchaseStore.displayPrice(for: kind) {
             switch kind {
             case .monthly:
                 return String(format: String(localized: "billing_two_device_sync_monthly_button"), price)

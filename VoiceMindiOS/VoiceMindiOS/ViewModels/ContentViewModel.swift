@@ -678,8 +678,40 @@ class ContentViewModel: ObservableObject {
         purchaseStore.entitlement
     }
 
+    var activeTwoDeviceSyncExpirationDate: Date? {
+        purchaseStore.entitlementExpirationDate
+    }
+
+    var twoDeviceSyncValidityText: String? {
+        let key = SettingsMembershipValidityPolicy.description(
+            entitlement: activeTwoDeviceSyncEntitlement,
+            expirationDate: activeTwoDeviceSyncExpirationDate,
+            formattedDate: formattedTwoDeviceSyncExpirationDate
+        )
+
+        guard let key else { return nil }
+
+        switch key {
+        case "billing_two_device_sync_validity_lifetime":
+            return localized(key)
+        case "billing_two_device_sync_validity_until_format":
+            guard let formattedTwoDeviceSyncExpirationDate else { return nil }
+            return localized(key, formattedTwoDeviceSyncExpirationDate)
+        default:
+            return nil
+        }
+    }
+
     var twoDeviceSyncProducts: [String: String] {
-        Dictionary(uniqueKeysWithValues: purchaseStore.products.map { ($0.id, $0.displayPrice) })
+        Dictionary(
+            uniqueKeysWithValues: TwoDeviceSyncProductKind.allCases.compactMap { kind in
+                guard let price = purchaseStore.displayPrice(for: kind) else {
+                    return nil
+                }
+
+                return (kind.rawValue, price)
+            }
+        )
     }
 
     var isPurchasingTwoDeviceSync: Bool {
@@ -696,6 +728,13 @@ class ContentViewModel: ObservableObject {
 
     var purchaseErrorMessage: String? {
         purchaseStore.lastErrorMessage
+    }
+
+    private var formattedTwoDeviceSyncExpirationDate: String? {
+        guard let activeTwoDeviceSyncExpirationDate else { return nil }
+        return activeTwoDeviceSyncExpirationDate.formatted(
+            Date.FormatStyle(date: .numeric, time: .omitted)
+        )
     }
 
     private func appendLocalTranscriptRecord(text: String, language: String) {

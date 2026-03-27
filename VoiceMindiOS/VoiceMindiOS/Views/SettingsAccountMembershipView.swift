@@ -3,6 +3,8 @@ import SharedCore
 
 struct SettingsAccountMembershipView: View {
     @ObservedObject var viewModel: ContentViewModel
+    @State private var locallyPendingProductID: String?
+    @State private var isLocallyRestoringPurchases = false
 
     var body: some View {
         List {
@@ -12,44 +14,40 @@ struct SettingsAccountMembershipView: View {
             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             .listRowSeparator(.hidden)
 
+            if let validityText = viewModel.twoDeviceSyncValidityText {
+                Section {
+                    HStack {
+                        Text(String(localized: "billing_two_device_sync_validity_label"))
+                        Spacer()
+                        Text(validityText)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
             Section {
-                billingButton(
-                    title: billingTitle(for: .monthly),
-                    isLoading: viewModel.isPurchasingTwoDeviceSync &&
-                        viewModel.activeTwoDeviceSyncPurchaseProductID == TwoDeviceSyncProductKind.monthly.rawValue
-                ) {
-                    Task {
-                        await viewModel.purchaseTwoDeviceSync(.monthly)
-                    }
-                }
-
-                billingButton(
-                    title: billingTitle(for: .yearly),
-                    isLoading: viewModel.isPurchasingTwoDeviceSync &&
-                        viewModel.activeTwoDeviceSyncPurchaseProductID == TwoDeviceSyncProductKind.yearly.rawValue
-                ) {
-                    Task {
-                        await viewModel.purchaseTwoDeviceSync(.yearly)
-                    }
-                }
-
-                billingButton(
-                    title: billingTitle(for: .lifetime),
-                    isLoading: viewModel.isPurchasingTwoDeviceSync &&
-                        viewModel.activeTwoDeviceSyncPurchaseProductID == TwoDeviceSyncProductKind.lifetime.rawValue
-                ) {
-                    Task {
-                        await viewModel.purchaseTwoDeviceSync(.lifetime)
+                ForEach(
+                    SettingsMembershipPurchasePolicy.visibleProductKinds(
+                        for: viewModel.activeTwoDeviceSyncEntitlement,
+                        availableProductIDs: Array(viewModel.twoDeviceSyncProducts.keys)
+                    ),
+                    id: \.rawValue
+                ) { kind in
+                    billingButton(
+                        title: billingTitle(for: kind),
+                        isLoading: purchaseLoadingState(for: kind),
+                        isDisabled: purchaseDisabledState(for: kind)
+                    ) {
+                        purchase(kind)
                     }
                 }
 
                 billingButton(
                     title: String(localized: "billing_two_device_sync_restore_button"),
-                    isLoading: viewModel.isRestoringTwoDeviceSyncPurchases
+                    isLoading: viewModel.isRestoringTwoDeviceSyncPurchases || isLocallyRestoringPurchases,
+                    isDisabled: restoreDisabledState
                 ) {
-                    Task {
-                        await viewModel.restoreTwoDeviceSyncPurchases()
-                    }
+                    restorePurchases()
                 }
 
                 if let purchaseErrorMessage = viewModel.purchaseErrorMessage, !purchaseErrorMessage.isEmpty {
@@ -84,6 +82,13 @@ struct SettingsAccountMembershipView: View {
     }
 
     private func billingTitle(for kind: TwoDeviceSyncProductKind) -> String {
+        if let ownedTitleKey = SettingsMembershipPurchasePolicy.buttonTitleKey(
+            for: kind,
+            activeEntitlement: viewModel.activeTwoDeviceSyncEntitlement
+        ) {
+            return String(localized: .init(ownedTitleKey))
+        }
+
         let prices = viewModel.twoDeviceSyncProducts
         if let price = prices[kind.rawValue] {
             switch kind {
@@ -109,6 +114,7 @@ struct SettingsAccountMembershipView: View {
     private func billingButton(
         title: String,
         isLoading: Bool,
+        isDisabled: Bool,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -121,6 +127,54 @@ struct SettingsAccountMembershipView: View {
                 Spacer()
             }
         }
-        .disabled(viewModel.isPurchasingTwoDeviceSync || viewModel.isRestoringTwoDeviceSyncPurchases)
+        .disabled(isDisabled)
+    }
+
+    private func purchaseLoadingState(for kind: TwoDeviceSyncProductKind) -> Bool {
+        viewModel.activeTwoDeviceSyncPurchaseProductID == kind.rawValue ||
+        locallyPendingProductID == kind.rawValue
+    }
+
+    private func purchaseDisabledState(for kind: TwoDeviceSyncProductKind) -> Bool {
+        SettingsMembershipPurchasePolicy.isPurchaseDisabled(
+            productKind: kind,
+            activeEntitlement: viewModel.activeTwoDeviceSyncEntitlement,
+            activePurchaseProductID: viewModel.activeTwoDeviceSyncPurchaseProductID,
+            locallyPendingProductID: locallyPendingProductID,
+            isRestoringPurchases: viewModel.isRestoringTwoDeviceSyncPurchases || isLocallyRestoringPurchases
+        )
+    }
+
+    private var restoreDisabledState: Bool {
+        SettingsMembershipPurchasePolicy.isRestoreDisabled(
+            activePurchaseProductID: viewModel.activeTwoDeviceSyncPurchaseProductID,
+            locallyPendingProductID: locallyPendingProductID,
+            isRestoringPurchases: viewModel.isRestoringTwoDeviceSyncPurchases,
+            isLocallyRestoringPurchases: isLocallyRestoringPurchases
+        )
+    }
+
+    private func purchase(_ kind: TwoDeviceSyncProductKind) {
+        guard !purchaseDisabledState(for: kind) else { return }
+        locallyPendingProductID = kind.rawValue
+
+        Task {
+            await viewModel.purchaseTwoDeviceSync(kind)
+            await MainActor.run {
+                locallyPendingProductID = nil
+            }
+        }
+    }
+
+    private func restorePurchases() {
+        guard !restoreDisabledState else { return }
+        isLocallyRestoringPurchases = true
+
+        Task {
+            await viewModel.restoreTwoDeviceSyncPurchases()
+            await MainActor.run {
+                isLocallyRestoringPurchases = false
+            }
+        }
     }
 }
