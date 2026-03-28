@@ -13,6 +13,7 @@ struct SettingsAccountMembershipView: View {
             }
             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             .listRowSeparator(.hidden)
+            .modifier(AppGroupedRowSurface())
 
             if let validityText = viewModel.twoDeviceSyncValidityText {
                 Section {
@@ -23,6 +24,7 @@ struct SettingsAccountMembershipView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .modifier(AppGroupedRowSurface())
             }
 
             Section {
@@ -60,9 +62,12 @@ struct SettingsAccountMembershipView: View {
             } footer: {
                 Text(String(localized: "billing_two_device_sync_footer"))
             }
+            .modifier(AppGroupedRowSurface())
         }
+        .modifier(AppListChrome())
         .navigationTitle(String(localized: .init(SettingsMembershipPresentationPolicy.accountDestinationTitleKey)))
         .navigationBarTitleDisplayMode(.inline)
+        .modifier(AppPageCanvas())
         .task {
             await viewModel.refreshTwoDeviceSyncBillingState()
         }

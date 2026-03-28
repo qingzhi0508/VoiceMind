@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var showOnboarding = false
     @AppStorage("app_language") private var appLanguage: String = AppLanguageManager.defaultLanguageCode()
     @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
 
     private let languages = [
         ("zh-CN", String(localized: "language_zh")),
@@ -31,10 +32,10 @@ struct SettingsView: View {
                 rootSection(for: section, hasPermissions: hasPermissions)
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(Color.clear)
+        .modifier(AppListChrome())
         .contentMargins(.top, 8, for: .scrollContent)
         .modifier(SettingsNavigationTitleModifier(isVisible: showsNavigationTitle))
+        .modifier(AppPageCanvas())
         .alert(String(localized: "settings_permission_alert_title"), isPresented: $showPermissionAlert) {
             Button(String(localized: "ok_button"), role: .cancel) { }
         } message: {
@@ -85,6 +86,7 @@ struct SettingsView: View {
         case .appearance:
             SettingsAppearanceLanguageSection(
                 appTheme: $appTheme,
+                lightThemeBackgroundHex: $lightThemeBackgroundHex,
                 appLanguage: $appLanguage,
                 themes: themes,
                 languages: languages,
@@ -131,6 +133,7 @@ private struct SettingsPairingConnectionSection: View {
         } footer: {
             Text(String(localized: "settings_pairing_footer"))
         }
+        .modifier(AppGroupedRowSurface())
     }
 
     @ViewBuilder
@@ -291,6 +294,7 @@ private struct SettingsPairingConnectionSection: View {
 
 private struct SettingsAppearanceLanguageSection: View {
     @Binding var appTheme: String
+    @Binding var lightThemeBackgroundHex: String
     @Binding var appLanguage: String
     let themes: [(String, String)]
     let languages: [(String, String)]
@@ -298,12 +302,13 @@ private struct SettingsAppearanceLanguageSection: View {
 
     var body: some View {
         Section {
-            ForEach(SettingsInformationHierarchyPolicy.appearanceItems, id: \.self) { item in
+            ForEach(SettingsAppearancePresentationPolicy.visibleItems(appTheme: appTheme), id: \.self) { item in
                 appearanceItem(item)
             }
         } header: {
             Text(String(localized: "settings_theme_header"))
         }
+        .modifier(AppGroupedRowSurface())
     }
 
     @ViewBuilder
@@ -316,6 +321,19 @@ private struct SettingsAppearanceLanguageSection: View {
                 }
             }
             .pickerStyle(.segmented)
+        case .lightBackgroundColor:
+            ColorPicker(
+                selection: AppLightBackgroundTintPolicy.colorBinding(storedHex: $lightThemeBackgroundHex),
+                supportsOpacity: false
+            ) {
+                HStack {
+                    Text(String(localized: "settings_theme_background_color"))
+                    Spacer()
+                    Text(AppLightBackgroundTintPolicy.normalizedHex(storedHex: lightThemeBackgroundHex))
+                        .font(.system(.subheadline, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+            }
         case .language:
             Text(String(localized: "settings_language_header"))
                 .font(.caption)
@@ -357,6 +375,7 @@ private struct SettingsPermissionsSupportSection: View {
         } footer: {
             Text(String(localized: "settings_permissions_footer"))
         }
+        .modifier(AppGroupedRowSurface())
     }
 
     @ViewBuilder
@@ -500,8 +519,10 @@ struct IOSDataLogsView: View {
                 }
             }
         }
+        .modifier(AppListChrome())
         .navigationTitle(String(localized: "logs_title"))
         .navigationBarTitleDisplayMode(.inline)
+        .modifier(AppPageCanvas())
     }
 
     private var filteredRecords: [InboundDataRecord] {

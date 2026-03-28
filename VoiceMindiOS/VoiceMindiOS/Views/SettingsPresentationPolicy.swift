@@ -118,6 +118,7 @@ enum SettingsInformationHierarchyPolicy {
 
     enum AppearanceItem: Hashable {
         case theme
+        case lightBackgroundColor
         case language
     }
 
@@ -142,6 +143,7 @@ enum SettingsInformationHierarchyPolicy {
 
     static let appearanceItems: [AppearanceItem] = [
         .theme,
+        .lightBackgroundColor,
         .language
     ]
 
@@ -151,4 +153,21 @@ enum SettingsInformationHierarchyPolicy {
         .logs,
         .version
     ]
+}
+
+enum SettingsAppearancePresentationPolicy {
+    static func showsLightBackgroundColor(appTheme: String) -> Bool {
+        appTheme == "light"
+    }
+
+    static func visibleItems(appTheme: String) -> [SettingsInformationHierarchyPolicy.AppearanceItem] {
+        SettingsInformationHierarchyPolicy.appearanceItems.filter { item in
+            switch item {
+            case .lightBackgroundColor:
+                return showsLightBackgroundColor(appTheme: appTheme)
+            case .theme, .language:
+                return true
+            }
+        }
+    }
 }

@@ -39,10 +39,7 @@ struct SettingsAccountStatusCard: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-        )
+        .modifier(AppCardSurface())
     }
 
     private var symbolName: String {

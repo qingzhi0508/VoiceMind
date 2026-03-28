@@ -41,6 +41,9 @@ struct PairingStepItem: Identifiable {
 }
 
 struct PairingProgressView: View {
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+    @Environment(\.colorScheme) private var colorScheme
     let title: String
     let steps: [PairingStepItem]
 
@@ -82,8 +85,35 @@ struct PairingProgressView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color.gray.opacity(0.08))
-        .cornerRadius(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(
+                    AppSurfaceStylePolicy.softPanelFill(
+                        appTheme: appTheme,
+                        colorScheme: colorScheme,
+                        lightBackgroundHex: lightThemeBackgroundHex
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(
+                    AppSurfaceStylePolicy.softPanelStroke(
+                        appTheme: appTheme,
+                        colorScheme: colorScheme,
+                        lightBackgroundHex: lightThemeBackgroundHex
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .shadow(
+            color: AppSurfaceStylePolicy.visualStyle(appTheme: appTheme, colorScheme: colorScheme) == .skyPopLight
+            ? Color(red: 0.35, green: 0.50, blue: 0.60).opacity(0.06)
+            : Color.clear,
+            radius: 12,
+            x: 0,
+            y: 6
+        )
     }
 
     private func connectorColor(after state: PairingStepState) -> Color {

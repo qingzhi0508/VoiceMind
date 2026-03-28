@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Foundation
 
 enum ContentTab: Int, CaseIterable {
     case home
@@ -47,7 +48,352 @@ private enum AppPageLayout {
     static let bottomPadding: CGFloat = 6
 }
 
-private struct AppCardSurface: ViewModifier {
+enum HomePageLayoutPolicy {
+    static func usesOuterPagePadding(for tab: ContentTab) -> Bool {
+        false
+    }
+}
+
+enum ThemedPrimaryTabPolicy {
+    static func usesCanvasBackground(for tab: ContentTab) -> Bool {
+        switch tab {
+        case .home, .data, .settings:
+            return true
+        }
+    }
+}
+
+enum AppBackgroundVisualStyle: Equatable {
+    case mutedMistLight
+    case skyPopLight
+    case darkSystem
+}
+
+enum AppSurfaceVisualStyle: Equatable {
+    case defaultLight
+    case skyPopLight
+    case darkSystem
+}
+
+private struct AppTintColor: Equatable {
+    let red: Double
+    let green: Double
+    let blue: Double
+
+    static let white = AppTintColor(red: 1, green: 1, blue: 1)
+    static let skyPopDefault = AppTintColor(red: 0x66 / 255.0, green: 0xBD / 255.0, blue: 0xC9 / 255.0)
+
+    init(red: Double, green: Double, blue: Double) {
+        self.red = red
+        self.green = green
+        self.blue = blue
+    }
+
+    init?(hex: String?) {
+        guard let hex else { return nil }
+        let sanitized = hex
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "#", with: "")
+
+        guard sanitized.count == 6, let value = Int(sanitized, radix: 16) else {
+            return nil
+        }
+
+        self.init(
+            red: Double((value >> 16) & 0xFF) / 255.0,
+            green: Double((value >> 8) & 0xFF) / 255.0,
+            blue: Double(value & 0xFF) / 255.0
+        )
+    }
+
+    var hexString: String {
+        String(
+            format: "#%02X%02X%02X",
+            Int((red * 255.0).rounded()),
+            Int((green * 255.0).rounded()),
+            Int((blue * 255.0).rounded())
+        )
+    }
+
+    func mixed(with other: AppTintColor, amount: Double) -> AppTintColor {
+        let clampedAmount = min(max(amount, 0), 1)
+        let inverse = 1 - clampedAmount
+
+        return AppTintColor(
+            red: (red * inverse) + (other.red * clampedAmount),
+            green: (green * inverse) + (other.green * clampedAmount),
+            blue: (blue * inverse) + (other.blue * clampedAmount)
+        )
+    }
+
+    func color(opacity: Double = 1) -> Color {
+        Color(red: red, green: green, blue: blue).opacity(opacity)
+    }
+}
+
+enum AppLightBackgroundTintPolicy {
+    static let storageKey = "light_theme_background_hex"
+    static let defaultHex = "#66BDC9"
+
+    static func effectiveHex(
+        appTheme: String,
+        colorScheme: ColorScheme,
+        storedHex: String?
+    ) -> String? {
+        guard AppBackgroundStylePolicy.visualStyle(appTheme: appTheme, colorScheme: colorScheme) == .skyPopLight else {
+            return nil
+        }
+
+        return normalizedHex(storedHex: storedHex)
+    }
+
+    static func normalizedHex(storedHex: String?) -> String {
+        AppTintColor(hex: storedHex)?.hexString ?? defaultHex
+    }
+
+    static func color(storedHex: String?) -> Color {
+        tint(storedHex: storedHex).color()
+    }
+
+    static func colorBinding(storedHex: Binding<String>) -> Binding<Color> {
+        Binding(
+            get: {
+                color(storedHex: storedHex.wrappedValue)
+            },
+            set: { newColor in
+                storedHex.wrappedValue = hex(from: newColor)
+            }
+        )
+    }
+
+    static func hex(from color: Color) -> String {
+        hex(from: UIColor(color)) ?? defaultHex
+    }
+
+    fileprivate static func tint(storedHex: String?) -> AppTintColor {
+        AppTintColor(hex: storedHex) ?? .skyPopDefault
+    }
+
+    private static func hex(from uiColor: UIColor) -> String? {
+        let resolvedColor = uiColor.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+
+        guard resolvedColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+            return nil
+        }
+
+        return AppTintColor(
+            red: Double(red),
+            green: Double(green),
+            blue: Double(blue)
+        ).hexString
+    }
+}
+
+private enum AppSkyPopPalettePolicy {
+    static func pageGradient(storedHex: String?) -> [Color] {
+        let tint = AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+        return [
+            tint.mixed(with: .white, amount: 0.52).color(),
+            tint.mixed(with: .white, amount: 0.66).color(),
+            tint.mixed(with: .white, amount: 0.82).color()
+        ]
+    }
+
+    static func verticalGlow(storedHex: String?) -> [Color] {
+        let tint = AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+        return [
+            Color.white.opacity(0.20),
+            Color.clear,
+            tint.mixed(with: .white, amount: 0.42).color(opacity: 0.26)
+        ]
+    }
+
+    static func mistFill(storedHex: String?) -> Color {
+        AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+            .mixed(with: .white, amount: 0.54)
+            .color(opacity: 0.20)
+    }
+
+    static func canvasWash(storedHex: String?) -> Color {
+        AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+            .mixed(with: .white, amount: 0.32)
+            .color(opacity: 0.12)
+    }
+
+    static func screenHighlight(storedHex: String?) -> [Color] {
+        let tint = AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+        return [
+            Color.white.opacity(0.12),
+            tint.mixed(with: .white, amount: 0.78).color(opacity: 0.04)
+        ]
+    }
+
+    static func coolBubble(storedHex: String?) -> Color {
+        AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+            .mixed(with: .white, amount: 0.18)
+            .color(opacity: 0.24)
+    }
+
+    static func tabBarFill(storedHex: String?) -> Color {
+        AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+            .mixed(with: .white, amount: 0.58)
+            .color(opacity: 0.96)
+    }
+
+    static func groupedRowBackground(storedHex: String?) -> Color {
+        AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+            .mixed(with: .white, amount: 0.87)
+            .color(opacity: 0.76)
+    }
+
+    static func softPanelFill(storedHex: String?) -> Color {
+        AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+            .mixed(with: .white, amount: 0.85)
+            .color(opacity: 0.72)
+    }
+
+    static func softPanelStroke(storedHex: String?) -> Color {
+        AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+            .mixed(with: .white, amount: 0.60)
+            .color(opacity: 0.62)
+    }
+
+    static func bottomBarFill(storedHex: String?) -> Color {
+        AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+            .mixed(with: .white, amount: 0.83)
+            .color(opacity: 0.84)
+    }
+
+    static func cardGradient(storedHex: String?) -> [Color] {
+        let tint = AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+        return [
+            tint.mixed(with: .white, amount: 0.80).color(opacity: 0.82),
+            tint.mixed(with: .white, amount: 0.88).color(opacity: 0.80),
+            tint.mixed(with: .white, amount: 0.92).color(opacity: 0.76)
+        ]
+    }
+
+    static func cardBorder(storedHex: String?) -> Color {
+        AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+            .mixed(with: .white, amount: 0.58)
+            .color(opacity: 0.68)
+    }
+
+    static func cardShadow(storedHex: String?) -> Color {
+        AppLightBackgroundTintPolicy.tint(storedHex: storedHex)
+            .mixed(with: AppTintColor(red: 0.30, green: 0.40, blue: 0.50), amount: 0.26)
+            .color(opacity: 0.12)
+    }
+}
+
+enum AppChromeStylePolicy {
+    static func barBackgroundHex(
+        appTheme: String,
+        colorScheme: ColorScheme,
+        storedHex: String?
+    ) -> String? {
+        AppLightBackgroundTintPolicy.effectiveHex(
+            appTheme: appTheme,
+            colorScheme: colorScheme,
+            storedHex: storedHex
+        )
+    }
+
+    static func tabBarFill(
+        appTheme: String,
+        colorScheme: ColorScheme,
+        storedHex: String?
+    ) -> Color? {
+        guard barBackgroundHex(
+            appTheme: appTheme,
+            colorScheme: colorScheme,
+            storedHex: storedHex
+        ) != nil else {
+            return nil
+        }
+
+        return AppSkyPopPalettePolicy.tabBarFill(storedHex: storedHex)
+    }
+}
+
+enum AppCanvasStylePolicy {
+    static func backgroundHex(
+        appTheme: String,
+        colorScheme: ColorScheme,
+        storedHex: String?
+    ) -> String? {
+        AppLightBackgroundTintPolicy.effectiveHex(
+            appTheme: appTheme,
+            colorScheme: colorScheme,
+            storedHex: storedHex
+        )
+    }
+}
+
+enum AppSurfaceStylePolicy {
+    static func visualStyle(appTheme: String, colorScheme: ColorScheme) -> AppSurfaceVisualStyle {
+        switch AppBackgroundStylePolicy.visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .mutedMistLight:
+            return .defaultLight
+        case .skyPopLight:
+            return .skyPopLight
+        case .darkSystem:
+            return .darkSystem
+        }
+    }
+
+    static func groupedRowBackground(appTheme: String, colorScheme: ColorScheme, lightBackgroundHex: String? = nil) -> Color {
+        switch visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .darkSystem:
+            return Color(uiColor: .secondarySystemBackground)
+        case .defaultLight:
+            return Color(uiColor: .secondarySystemBackground)
+        case .skyPopLight:
+            return AppSkyPopPalettePolicy.groupedRowBackground(storedHex: lightBackgroundHex)
+        }
+    }
+
+    static func softPanelFill(appTheme: String, colorScheme: ColorScheme, lightBackgroundHex: String? = nil) -> Color {
+        switch visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .darkSystem:
+            return Color(uiColor: .secondarySystemBackground)
+        case .defaultLight:
+            return Color.gray.opacity(0.10)
+        case .skyPopLight:
+            return AppSkyPopPalettePolicy.softPanelFill(storedHex: lightBackgroundHex)
+        }
+    }
+
+    static func softPanelStroke(appTheme: String, colorScheme: ColorScheme, lightBackgroundHex: String? = nil) -> Color {
+        switch visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .darkSystem:
+            return Color.white.opacity(0.06)
+        case .defaultLight:
+            return Color.white.opacity(0.22)
+        case .skyPopLight:
+            return AppSkyPopPalettePolicy.softPanelStroke(storedHex: lightBackgroundHex)
+        }
+    }
+
+    static func bottomBarFill(appTheme: String, colorScheme: ColorScheme, lightBackgroundHex: String? = nil) -> Color {
+        switch visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .darkSystem:
+            return Color(uiColor: .secondarySystemBackground).opacity(0.96)
+        case .defaultLight:
+            return Color.white.opacity(0.90)
+        case .skyPopLight:
+            return AppSkyPopPalettePolicy.bottomBarFill(storedHex: lightBackgroundHex)
+        }
+    }
+}
+
+struct AppCardSurface: ViewModifier {
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
     @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
@@ -66,28 +412,51 @@ private struct AppCardSurface: ViewModifier {
     }
 
     private var cardBackground: AnyShapeStyle {
-        if colorScheme == .dark {
+        switch AppBackgroundStylePolicy.visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .darkSystem:
             return AnyShapeStyle(Color(uiColor: .secondarySystemBackground))
-        }
-
-        return AnyShapeStyle(
-            LinearGradient(
-                colors: [
-                    Color.white.opacity(0.88),
-                    Color(red: 0.95, green: 0.96, blue: 0.98).opacity(0.94)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+        case .mutedMistLight:
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.88),
+                        Color(red: 0.95, green: 0.96, blue: 0.98).opacity(0.94)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
             )
-        )
+        case .skyPopLight:
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: AppSkyPopPalettePolicy.cardGradient(storedHex: lightThemeBackgroundHex),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        }
     }
 
     private var cardBorder: Color {
-        colorScheme == .dark ? Color.white.opacity(0.06) : Color.white.opacity(0.72)
+        switch AppBackgroundStylePolicy.visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .darkSystem:
+            return Color.white.opacity(0.06)
+        case .mutedMistLight:
+            return Color.white.opacity(0.72)
+        case .skyPopLight:
+            return AppSkyPopPalettePolicy.cardBorder(storedHex: lightThemeBackgroundHex)
+        }
     }
 
     private var cardShadow: Color {
-        colorScheme == .dark ? Color.black.opacity(0.18) : Color.black.opacity(0.08)
+        switch AppBackgroundStylePolicy.visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .darkSystem:
+            return Color.black.opacity(0.18)
+        case .mutedMistLight:
+            return Color.black.opacity(0.08)
+        case .skyPopLight:
+            return AppSkyPopPalettePolicy.cardShadow(storedHex: lightThemeBackgroundHex)
+        }
     }
 }
 
@@ -114,13 +483,161 @@ enum HomeModeTogglePlacementPolicy {
     }
 }
 
+struct AppCanvasBackgroundLayer: View {
+    let appTheme: String
+    let lightBackgroundHex: String
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        switch AppBackgroundStylePolicy.visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .mutedMistLight:
+            LinearGradient(
+                colors: [
+                    Color(red: 0.93, green: 0.94, blue: 0.96),
+                    Color(red: 0.88, green: 0.91, blue: 0.95),
+                    Color(red: 0.92, green: 0.93, blue: 0.96)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .skyPopLight:
+            ZStack {
+                LinearGradient(
+                    colors: AppSkyPopPalettePolicy.pageGradient(storedHex: lightBackgroundHex),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                LinearGradient(
+                    colors: AppSkyPopPalettePolicy.verticalGlow(storedHex: lightBackgroundHex),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                Rectangle()
+                    .fill(AppSkyPopPalettePolicy.mistFill(storedHex: lightBackgroundHex))
+                    .blur(radius: 72)
+
+                Rectangle()
+                    .fill(AppSkyPopPalettePolicy.canvasWash(storedHex: lightBackgroundHex))
+            }
+        case .darkSystem:
+            LinearGradient(
+                colors: [
+                    Color(UIColor.systemGroupedBackground),
+                    Color(UIColor.secondarySystemGroupedBackground)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+}
+
+struct AppListChrome: ViewModifier {
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+
+    func body(content: Content) -> some View {
+        content
+            .scrollContentBackground(.hidden)
+            .background(
+                AppCanvasBackgroundLayer(
+                    appTheme: appTheme,
+                    lightBackgroundHex: lightThemeBackgroundHex
+                )
+            )
+    }
+}
+
+struct AppGroupedRowSurface: ViewModifier {
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        content.listRowBackground(
+            AppSurfaceStylePolicy.groupedRowBackground(
+                appTheme: appTheme,
+                colorScheme: colorScheme,
+                lightBackgroundHex: lightThemeBackgroundHex
+            )
+        )
+    }
+}
+
+struct AppTabBarChrome: ViewModifier {
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+    @Environment(\.colorScheme) private var colorScheme
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let fill = AppChromeStylePolicy.tabBarFill(
+            appTheme: appTheme,
+            colorScheme: colorScheme,
+            storedHex: lightThemeBackgroundHex
+        ) {
+            content
+                .toolbarBackground(fill, for: .tabBar)
+                .toolbarBackground(.visible, for: .tabBar)
+        } else {
+            content
+        }
+    }
+}
+
+struct AppNavigationCanvas: ViewModifier {
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                AppCanvasBackgroundLayer(
+                    appTheme: appTheme,
+                    lightBackgroundHex: lightThemeBackgroundHex
+                )
+                .ignoresSafeArea()
+            )
+    }
+}
+
+struct AppPageCanvas: ViewModifier {
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+
+    func body(content: Content) -> some View {
+        content.background(
+            AppCanvasBackgroundLayer(
+                appTheme: appTheme,
+                lightBackgroundHex: lightThemeBackgroundHex
+            )
+            .ignoresSafeArea()
+        )
+    }
+}
+
 enum AppBackgroundStylePolicy {
-    static func usesMutedMistBackground(forDarkMode: Bool) -> Bool {
-        !forDarkMode
+    static func visualStyle(appTheme: String, colorScheme: ColorScheme) -> AppBackgroundVisualStyle {
+        if colorScheme == .dark {
+            return .darkSystem
+        }
+
+        if appTheme == "light" {
+            return .skyPopLight
+        }
+
+        return .mutedMistLight
     }
 
-    static func showsRainbowBubbles(forDarkMode: Bool) -> Bool {
-        !forDarkMode
+    static func showsRainbowBubbles(appTheme: String, colorScheme: ColorScheme) -> Bool {
+        switch visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .darkSystem:
+            return false
+        case .mutedMistLight, .skyPopLight:
+            return true
+        }
     }
 
     static let usesModernGlassSurfaces = true
@@ -184,6 +701,8 @@ struct ContentView: View {
 
     @State private var showOnboarding = false
     @State private var selectedTab = ContentTab.defaultTab
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
     @FocusState private var focusedField: FocusField?
     @Environment(\.colorScheme) private var colorScheme
 
@@ -194,7 +713,10 @@ struct ContentView: View {
             // Decorative Elements
             GeometryReader { geometry in
                 ZStack {
-                    if AppBackgroundStylePolicy.showsRainbowBubbles(forDarkMode: colorScheme == .dark) {
+                    if AppBackgroundStylePolicy.showsRainbowBubbles(
+                        appTheme: appTheme,
+                        colorScheme: colorScheme
+                    ) {
                         Circle()
                             .fill(
                                 RadialGradient(
@@ -214,7 +736,9 @@ struct ContentView: View {
                             .fill(
                                 RadialGradient(
                                     colors: [
-                                        Color(red: 0.48, green: 0.78, blue: 1.00).opacity(0.24),
+                                        AppBackgroundStylePolicy.visualStyle(appTheme: appTheme, colorScheme: colorScheme) == .skyPopLight
+                                        ? AppSkyPopPalettePolicy.coolBubble(storedHex: lightThemeBackgroundHex)
+                                        : Color(red: 0.48, green: 0.78, blue: 1.00).opacity(0.24),
                                         Color.clear
                                     ],
                                     center: .center,
@@ -277,11 +801,14 @@ struct ContentView: View {
                         ),
                         onDismissKeyboard: dismissKeyboard
                     )
-                    .padding(.horizontal, AppPageLayout.horizontalPadding)
-                    .padding(.top, AppPageLayout.topPadding)
-                    .padding(.bottom, AppPageLayout.bottomPadding)
+                    .modifier(
+                        AppOuterPagePadding(
+                            isEnabled: HomePageLayoutPolicy.usesOuterPagePadding(for: .home)
+                        )
+                    )
                     .toolbar(.hidden, for: .navigationBar)
                 }
+                .modifier(AppNavigationCanvas())
                 .tabItem {
                     Label(String(localized: ContentTab.home.titleKey), systemImage: ContentTab.home.systemImage)
                 }
@@ -307,11 +834,14 @@ struct ContentView: View {
                         },
                         onDismissKeyboard: dismissKeyboard
                     )
-                    .padding(.horizontal, AppPageLayout.horizontalPadding)
-                    .padding(.top, AppPageLayout.topPadding)
-                    .padding(.bottom, AppPageLayout.bottomPadding)
+                    .modifier(
+                        AppOuterPagePadding(
+                            isEnabled: HomePageLayoutPolicy.usesOuterPagePadding(for: .data)
+                        )
+                    )
                     .toolbar(.hidden, for: .navigationBar)
                 }
+                .modifier(AppNavigationCanvas())
                 .tabItem {
                     Label(String(localized: ContentTab.data.titleKey), systemImage: ContentTab.data.systemImage)
                 }
@@ -320,11 +850,13 @@ struct ContentView: View {
                 NavigationStack {
                     SettingsView(viewModel: viewModel, showsNavigationTitle: false)
                 }
+                .modifier(AppNavigationCanvas())
                 .tabItem {
                     Label(String(localized: ContentTab.settings.titleKey), systemImage: ContentTab.settings.systemImage)
                 }
                 .tag(ContentTab.settings)
             }
+            .modifier(AppTabBarChrome())
             .overlay(alignment: .bottomTrailing) {
                 if HomeModeTogglePlacementPolicy.shouldShowBottomToggle(
                     sendToMacEnabled: viewModel.sendResultsToMacEnabled
@@ -411,7 +943,8 @@ struct ContentView: View {
 
     @ViewBuilder
     private var backgroundLayer: some View {
-        if AppBackgroundStylePolicy.usesMutedMistBackground(forDarkMode: colorScheme == .dark) {
+        switch AppBackgroundStylePolicy.visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .mutedMistLight:
             ZStack {
                 LinearGradient(
                     colors: [
@@ -451,7 +984,36 @@ struct ContentView: View {
                     .blendMode(.screen)
             }
             .ignoresSafeArea()
-        } else {
+        case .skyPopLight:
+            ZStack {
+                LinearGradient(
+                    colors: AppSkyPopPalettePolicy.pageGradient(storedHex: lightThemeBackgroundHex),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                LinearGradient(
+                    colors: AppSkyPopPalettePolicy.verticalGlow(storedHex: lightThemeBackgroundHex),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                Rectangle()
+                    .fill(AppSkyPopPalettePolicy.mistFill(storedHex: lightThemeBackgroundHex))
+                    .blur(radius: 72)
+
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: AppSkyPopPalettePolicy.screenHighlight(storedHex: lightThemeBackgroundHex),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .blendMode(.screen)
+            }
+            .ignoresSafeArea()
+        case .darkSystem:
             LinearGradient(
                 colors: [
                     Color(UIColor.systemGroupedBackground),
@@ -469,7 +1031,24 @@ struct ContentView: View {
     }
 }
 
+struct AppOuterPagePadding: ViewModifier {
+    let isEnabled: Bool
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content
+                .padding(.horizontal, AppPageLayout.horizontalPadding)
+                .padding(.top, AppPageLayout.topPadding)
+                .padding(.bottom, AppPageLayout.bottomPadding)
+        } else {
+            content
+        }
+    }
+}
+
 struct TranscriptCard: View {
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var transcriptText: String
     @Binding var isFocused: Bool
     let autoScrollVersion: Int
@@ -512,23 +1091,60 @@ struct TranscriptCard: View {
         .padding(18)
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(uiColor: .secondarySystemBackground),
-                            Color(uiColor: .tertiarySystemBackground)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .fill(transcriptCardBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(Color.white.opacity(0.55), lineWidth: 1)
+                .stroke(transcriptCardBorder, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.06), radius: 18, x: 0, y: 10)
+        .shadow(color: transcriptCardShadow, radius: 18, x: 0, y: 10)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var transcriptCardBackground: AnyShapeStyle {
+        switch AppBackgroundStylePolicy.visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .darkSystem, .mutedMistLight:
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [
+                        Color(uiColor: .secondarySystemBackground),
+                        Color(uiColor: .tertiarySystemBackground)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        case .skyPopLight:
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.76),
+                        Color(red: 0.96, green: 0.98, blue: 1.00).opacity(0.74),
+                        Color(red: 0.94, green: 0.97, blue: 1.00).opacity(0.70)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        }
+    }
+
+    private var transcriptCardBorder: Color {
+        switch AppBackgroundStylePolicy.visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .darkSystem, .mutedMistLight:
+            return Color.white.opacity(0.55)
+        case .skyPopLight:
+            return Color.white.opacity(0.60)
+        }
+    }
+
+    private var transcriptCardShadow: Color {
+        switch AppBackgroundStylePolicy.visualStyle(appTheme: appTheme, colorScheme: colorScheme) {
+        case .darkSystem, .mutedMistLight:
+            return Color.black.opacity(0.06)
+        case .skyPopLight:
+            return Color(red: 0.35, green: 0.50, blue: 0.60).opacity(0.10)
+        }
     }
 }
 
@@ -536,6 +1152,8 @@ struct PrimaryRecognitionPage: View {
     @ObservedObject var viewModel: ContentViewModel
     @Binding var isTranscriptFocused: Bool
     let onDismissKeyboard: () -> Void
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
     @State private var showsMacActionAlert = false
 
     var body: some View {
@@ -594,6 +1212,13 @@ struct PrimaryRecognitionPage: View {
 
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            AppCanvasBackgroundLayer(
+                appTheme: appTheme,
+                lightBackgroundHex: lightThemeBackgroundHex
+            )
+            .ignoresSafeArea()
+        )
         .animation(.spring(response: 0.42, dampingFraction: 0.88), value: viewModel.shouldShowTranscriptPreviewOnHome)
         .alert(
             String(localized: "home_mac_action_alert_title"),
@@ -613,6 +1238,9 @@ struct PrimaryRecognitionPage: View {
 }
 
 struct TranscriptHistoryPage: View {
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+    @Environment(\.colorScheme) private var colorScheme
     let canSendToMac: (LocalTranscriptRecord) -> Bool
     let onSendToMac: (LocalTranscriptRecord) -> Void
     let history: [LocalTranscriptRecord]
@@ -642,6 +1270,7 @@ struct TranscriptHistoryPage: View {
             Text(String(localized: "transcript_history_swipe_hint"))
                 .font(.caption)
                 .foregroundColor(.secondary)
+                .padding(.horizontal, AppPageLayout.horizontalPadding)
 
             if editMode == .active {
                 batchDeleteBar
@@ -679,6 +1308,7 @@ struct TranscriptHistoryPage: View {
         .onDisappear {
             saveEditingIfNeeded()
         }
+        .modifier(AppPageCanvas())
     }
 
     private var emptyHistoryView: some View {
@@ -691,8 +1321,8 @@ struct TranscriptHistoryPage: View {
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding()
-        .modifier(AppCardSurface())
+        .padding(.horizontal, AppPageLayout.horizontalPadding)
+        .padding(.top, 12)
     }
 
     private var historyListView: some View {
@@ -721,13 +1351,25 @@ struct TranscriptHistoryPage: View {
                 isFocused: $isEditingFocused
             )
             .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
-            .listRowBackground(Color(uiColor: .secondarySystemBackground))
+            .listRowBackground(
+                AppSurfaceStylePolicy.groupedRowBackground(
+                    appTheme: appTheme,
+                    colorScheme: colorScheme,
+                    lightBackgroundHex: lightThemeBackgroundHex
+                )
+            )
         } else {
             TranscriptHistoryRow(record: record)
                 .tag(record.id)
                 .contentShape(Rectangle())
                 .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
-                .listRowBackground(Color(uiColor: .secondarySystemBackground))
+                .listRowBackground(
+                    AppSurfaceStylePolicy.groupedRowBackground(
+                        appTheme: appTheme,
+                        colorScheme: colorScheme,
+                        lightBackgroundHex: lightThemeBackgroundHex
+                    )
+                )
                 .swipeActions(
                     edge: TranscriptHistorySendPolicy.swipeEdge,
                     allowsFullSwipe: TranscriptHistorySendPolicy.allowsFullSwipe
@@ -783,7 +1425,7 @@ struct TranscriptHistoryPage: View {
             .font(.subheadline.weight(.semibold))
             .foregroundColor(.primary)
         }
-        .padding(.horizontal, 2)
+        .padding(.horizontal, AppPageLayout.horizontalPadding)
     }
 
     private var batchDeleteBar: some View {
@@ -801,6 +1443,7 @@ struct TranscriptHistoryPage: View {
         .buttonStyle(.borderedProminent)
         .tint(.red)
         .disabled(!canDeleteSelectedRecords)
+        .padding(.horizontal, AppPageLayout.horizontalPadding)
     }
 
     private func beginEditing(_ record: LocalTranscriptRecord) {
@@ -918,6 +1561,10 @@ enum TranscriptHistoryBatchDeletePolicy {
     static func selectedDeleteCount(selectedRecordIDs: [String]) -> Int {
         selectedRecordIDs.count
     }
+}
+
+enum TranscriptHistoryEmptyStateLayoutPolicy {
+    static let usesCardSurface = false
 }
 
 struct TranscriptHistoryRow: View {

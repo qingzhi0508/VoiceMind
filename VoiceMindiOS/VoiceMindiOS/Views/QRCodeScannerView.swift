@@ -15,6 +15,9 @@ enum QRCodeScannerPresentationPolicy {
 struct QRCodeScannerView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: ContentViewModel
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+    @Environment(\.colorScheme) private var colorScheme
 
     @StateObject private var scanner = QRCodeScannerController()
     @State private var showManualInput = false
@@ -256,11 +259,26 @@ struct QRCodeScannerView: View {
         .frame(maxWidth: .infinity, minHeight: 300, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.secondarySystemBackground))
+                .fill(
+                    AppSurfaceStylePolicy.softPanelFill(
+                        appTheme: appTheme,
+                        colorScheme: colorScheme,
+                        lightBackgroundHex: lightThemeBackgroundHex
+                    )
+                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(heroState == .pairing ? Color.green.opacity(0.35) : Color.blue.opacity(0.35), lineWidth: 1)
+                .stroke(
+                    heroState == .pairing
+                    ? Color.green.opacity(0.35)
+                    : AppSurfaceStylePolicy.softPanelStroke(
+                        appTheme: appTheme,
+                        colorScheme: colorScheme,
+                        lightBackgroundHex: lightThemeBackgroundHex
+                    ),
+                    lineWidth: 1
+                )
         )
     }
 
@@ -488,6 +506,9 @@ struct PairingCodeInputView: View {
 
     @State private var pairingCode = ""
     @Environment(\.dismiss) var dismiss
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+    @Environment(\.colorScheme) private var colorScheme
     @FocusState private var isPairingCodeFocused: Bool
 
     var body: some View {
@@ -509,8 +530,7 @@ struct PairingCodeInputView: View {
                             .foregroundColor(.secondary)
                     }
                     .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
+                    .background(inputPanelSurface)
                 }
 
                 VStack(spacing: 10) {
@@ -525,8 +545,7 @@ struct PairingCodeInputView: View {
                         .font(.system(size: 36, design: .monospaced))
                         .multilineTextAlignment(.center)
                         .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
+                        .background(inputPanelSurface)
                         .focused($isPairingCodeFocused)
                         .onChange(of: pairingCode) { _, newValue in
                             let digitsOnly = newValue.filter(\.isNumber)
@@ -583,7 +602,35 @@ struct PairingCodeInputView: View {
             .padding(.horizontal)
             .padding(.top, 12)
             .padding(.bottom, 8)
-            .background(.regularMaterial)
+            .background(
+                AppSurfaceStylePolicy.bottomBarFill(
+                    appTheme: appTheme,
+                    colorScheme: colorScheme,
+                    lightBackgroundHex: lightThemeBackgroundHex
+                )
+            )
         }
+    }
+
+    private var inputPanelSurface: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(
+                AppSurfaceStylePolicy.softPanelFill(
+                    appTheme: appTheme,
+                    colorScheme: colorScheme,
+                    lightBackgroundHex: lightThemeBackgroundHex
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(
+                        AppSurfaceStylePolicy.softPanelStroke(
+                            appTheme: appTheme,
+                            colorScheme: colorScheme,
+                            lightBackgroundHex: lightThemeBackgroundHex
+                        ),
+                        lineWidth: 1
+                    )
+            )
     }
 }

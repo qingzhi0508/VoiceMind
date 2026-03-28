@@ -151,6 +151,7 @@
 "settings_theme_system" = "System";
 "settings_theme_light" = "Light";
 "settings_theme_dark" = "Dark";
+"settings_theme_background_color" = "Background Color";
 "settings_language_header" = "App Language";
 "settings_language_restart_title" = "Relaunch Needed";
 "settings_language_restart_message" = "Close and reopen the app to apply the new language.";

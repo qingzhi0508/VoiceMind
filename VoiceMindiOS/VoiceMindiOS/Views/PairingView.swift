@@ -3,6 +3,9 @@ import SwiftUI
 struct PairingView: View {
     @ObservedObject var viewModel: ContentViewModel
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var pairingCode = ""
     @State private var selectedService: DiscoveredService?
@@ -70,13 +73,14 @@ struct PairingView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(12)
+                            .background(searchingSurface)
                         } else {
                             ForEach(viewModel.discoveredServices) { service in
                                 ServiceRow(
                                     service: service,
-                                    isSelected: selectedService?.id == service.id
+                                    isSelected: selectedService?.id == service.id,
+                                    appTheme: appTheme,
+                                    lightThemeBackgroundHex: lightThemeBackgroundHex
                                 )
                                 .onTapGesture {
                                     selectedService = service
@@ -97,8 +101,7 @@ struct PairingView: View {
                             .font(.system(size: 24, weight: .medium, design: .monospaced))
                             .multilineTextAlignment(.center)
                             .padding()
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(12)
+                            .background(inputSurface)
                             .focused($isPairingCodeFocused)
                             .onChange(of: pairingCode) { _, newValue in
                                 let digitsOnly = newValue.filter(\.isNumber)
@@ -278,8 +281,60 @@ struct PairingView: View {
             .padding(.horizontal)
             .padding(.top, 12)
             .padding(.bottom, 8)
-            .background(.regularMaterial)
+            .background(bottomBarSurface)
         }
+    }
+
+    private var searchingSurface: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(
+                AppSurfaceStylePolicy.softPanelFill(
+                    appTheme: appTheme,
+                    colorScheme: colorScheme,
+                    lightBackgroundHex: lightThemeBackgroundHex
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(
+                        AppSurfaceStylePolicy.softPanelStroke(
+                            appTheme: appTheme,
+                            colorScheme: colorScheme,
+                            lightBackgroundHex: lightThemeBackgroundHex
+                        ),
+                        lineWidth: 1
+                    )
+            )
+    }
+
+    private var inputSurface: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(
+                AppSurfaceStylePolicy.softPanelFill(
+                    appTheme: appTheme,
+                    colorScheme: colorScheme,
+                    lightBackgroundHex: lightThemeBackgroundHex
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(
+                        AppSurfaceStylePolicy.softPanelStroke(
+                            appTheme: appTheme,
+                            colorScheme: colorScheme,
+                            lightBackgroundHex: lightThemeBackgroundHex
+                        ),
+                        lineWidth: 1
+                    )
+            )
+    }
+
+    private var bottomBarSurface: some View {
+        AppSurfaceStylePolicy.bottomBarFill(
+            appTheme: appTheme,
+            colorScheme: colorScheme,
+            lightBackgroundHex: lightThemeBackgroundHex
+        )
     }
 
     private func startPairing() {
@@ -375,6 +430,9 @@ struct PairingView: View {
 struct ServiceRow: View {
     let service: DiscoveredService
     let isSelected: Bool
+    let appTheme: String
+    let lightThemeBackgroundHex: String
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack {
@@ -399,7 +457,30 @@ struct ServiceRow: View {
             }
         }
         .padding()
-        .background(isSelected ? Color.blue.opacity(0.1) : Color.gray.opacity(0.1))
-        .cornerRadius(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(
+                    isSelected
+                    ? Color.blue.opacity(0.12)
+                    : AppSurfaceStylePolicy.softPanelFill(
+                        appTheme: appTheme,
+                        colorScheme: colorScheme,
+                        lightBackgroundHex: lightThemeBackgroundHex
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(
+                    isSelected
+                    ? Color.blue.opacity(0.24)
+                    : AppSurfaceStylePolicy.softPanelStroke(
+                        appTheme: appTheme,
+                        colorScheme: colorScheme,
+                        lightBackgroundHex: lightThemeBackgroundHex
+                    ),
+                    lineWidth: 1
+                )
+        )
     }
 }
