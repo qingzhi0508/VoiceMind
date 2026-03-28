@@ -31,6 +31,16 @@ enum ContentTab: Int, CaseIterable {
     }
 }
 
+enum PairingSuccessNavigationPolicy {
+    static func destinationTab(currentTab: ContentTab, pairingState: PairingState) -> ContentTab {
+        if case .paired = pairingState {
+            return .home
+        }
+
+        return currentTab
+    }
+}
+
 private enum AppPageLayout {
     static let horizontalPadding: CGFloat = 16
     static let topPadding: CGFloat = 10
@@ -373,6 +383,12 @@ struct ContentView: View {
             }
             .sheet(isPresented: $viewModel.showPairingView) {
                 PairingView(viewModel: viewModel)
+            }
+            .onChange(of: viewModel.pairingState) { _, newValue in
+                selectedTab = PairingSuccessNavigationPolicy.destinationTab(
+                    currentTab: selectedTab,
+                    pairingState: newValue
+                )
             }
             .fullScreenCover(isPresented: $showOnboarding) {
                 OnboardingView(onComplete: {

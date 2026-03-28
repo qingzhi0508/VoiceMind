@@ -228,6 +228,7 @@
 "pairing_not_in_pairing_mode" = "Mac response: not in pairing mode.";
 "pairing_save_failed" = "Mac response: failed to save pairing info.";
 "pairing_mac_error_format" = "Mac response: %@";
+"pairing_repair_required" = "The Mac is not paired yet. Please pair the devices again.";
 
 "ptt_warming_up" = "Warming up microphone...";
 "ptt_capturing" = "Capturing audio. Release to send to Mac.";

@@ -304,6 +304,7 @@ class ContentViewModel: ObservableObject {
             hasPermissions: checkPermissions(),
             sendToMacEnabled: sendResultsToMacEnabled,
             preferredMode: preferredHomeTranscriptionMode,
+            pairingState: pairingState,
             connectionState: connectionState
         )
     }
@@ -385,6 +386,7 @@ class ContentViewModel: ObservableObject {
         LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
             sendToMacEnabled: sendResultsToMacEnabled,
             preferredMode: preferredHomeTranscriptionMode,
+            pairingState: pairingState,
             connectionState: connectionState
         )
     }
@@ -413,6 +415,7 @@ class ContentViewModel: ObservableObject {
         guard effectiveHomeTranscriptionMode == .local else { return false }
         return LocalTranscriptionPolicy.canManuallyForwardTextToMac(
             sendToMacEnabled: sendResultsToMacEnabled,
+            pairingState: pairingState,
             connectionState: connectionState,
             transcriptText: localTranscriptText
         )
@@ -444,6 +447,7 @@ class ContentViewModel: ObservableObject {
     func canSendTranscriptRecordToMac(_ record: LocalTranscriptRecord) -> Bool {
         LocalTranscriptionPolicy.canManuallyForwardTextToMac(
             sendToMacEnabled: sendResultsToMacEnabled,
+            pairingState: pairingState,
             connectionState: connectionState,
             transcriptText: record.text
         )
@@ -628,6 +632,7 @@ class ContentViewModel: ObservableObject {
             hasPermissions: checkPermissions(),
             sendToMacEnabled: sendResultsToMacEnabled,
             preferredMode: preferredHomeTranscriptionMode,
+            pairingState: pairingState,
             connectionState: connectionState
         )
         pushToTalkStatusMessage = localized(key)
@@ -938,19 +943,28 @@ extension ContentViewModel: ConnectionManagerDelegate {
             return
         }
 
+        let requiresRePairing = PairingErrorRecoveryPolicy.requiresRePairing(for: payload.code)
         let message: String
-        switch payload.code {
-        case "invalid_code":
+        if let dedicatedMessageKey = PairingErrorRecoveryPolicy.messageKey(for: payload.code) {
+            message = localized(dedicatedMessageKey)
+        } else {
+            switch payload.code {
+            case "invalid_code":
             message = localized("pairing_code_incorrect")
-        case "not_pairing":
+            case "not_pairing":
             message = localized("pairing_not_in_pairing_mode")
-        case "pairing_failed":
+            case "pairing_failed":
             message = localized("pairing_save_failed")
-        default:
-            message = localized("pairing_mac_error_format", payload.message)
+            default:
+                message = localized("pairing_mac_error_format", payload.message)
+            }
         }
 
         DispatchQueue.main.async {
+            if requiresRePairing {
+                self.connectionManager.unpair()
+                self.showPairingView = true
+            }
             self.latestPairingFeedback = message
             self.appendInboundDataRecord(
                 title: self.localized("log_error_from_mac_title"),

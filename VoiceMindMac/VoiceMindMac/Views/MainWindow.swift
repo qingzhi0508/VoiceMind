@@ -265,6 +265,28 @@ struct CollaborationControlsPolicy {
     }
 }
 
+enum MacConnectionPresentationPolicy {
+    static func displayState(
+        pairingState: PairingState,
+        connectionState: ConnectionState
+    ) -> ConnectionState {
+        switch pairingState {
+        case .paired:
+            return connectionState
+        case .pairing:
+            if case .error = connectionState {
+                return connectionState
+            }
+            return .connecting
+        case .unpaired:
+            if case .error = connectionState {
+                return connectionState
+            }
+            return .disconnected
+        }
+    }
+}
+
 struct MainWindow: View {
     @ObservedObject var controller: MenuBarController
     @ObservedObject var settings = AppSettings.shared
@@ -994,7 +1016,10 @@ private struct HomeDashboardView: View {
     }
 
     private var connectionSummaryValue: String {
-        switch controller.connectionState {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
         case .connected:
             return String(localized: "status_connection_connected")
         case .connecting:
@@ -1025,7 +1050,10 @@ private struct HomeDashboardView: View {
     }
 
     private var spotlightTint: Color {
-        switch controller.connectionState {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
         case .connected:
             return .green
         case .connecting:
@@ -1196,7 +1224,10 @@ struct StatusTab: View {
 
     @ViewBuilder
     private var connectionStatusView: some View {
-        switch controller.connectionState {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
         case .disconnected:
             Label(String(localized: "status_connection_disconnected"), systemImage: "circle")
                 .foregroundColor(MainWindowColors.secondaryText)

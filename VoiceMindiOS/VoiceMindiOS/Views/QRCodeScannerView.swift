@@ -2,6 +2,16 @@ import SwiftUI
 import AVFoundation
 import SharedCore
 
+enum QRCodeScannerPresentationPolicy {
+    static func showsPreview(previewLayerAvailable: Bool) -> Bool {
+        previewLayerAvailable
+    }
+
+    static func showsStartupOverlay(isScanning: Bool) -> Bool {
+        !isScanning
+    }
+}
+
 struct QRCodeScannerView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: ContentViewModel
@@ -155,23 +165,37 @@ struct QRCodeScannerView: View {
     @ViewBuilder
     private var scanningHeroView: some View {
         ZStack {
-            if scanner.isPreviewReady, let previewLayer = scanner.previewLayer {
+            if QRCodeScannerPresentationPolicy.showsPreview(
+                previewLayerAvailable: scanner.previewLayer != nil
+            ), let previewLayer = scanner.previewLayer {
                 CameraPreview(previewLayer: previewLayer)
                     .frame(height: 300)
                     .cornerRadius(12)
-            } else {
-                Rectangle()
-                    .fill(Color.black)
+            }
+
+            Rectangle()
+                .fill(Color.black)
+                .frame(height: 300)
+                .cornerRadius(12)
+                .opacity(scanner.previewLayer == nil ? 1 : 0)
+
+            if QRCodeScannerPresentationPolicy.showsStartupOverlay(isScanning: scanner.isScanning) {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.black.opacity(scanner.previewLayer == nil ? 0.0 : 0.36))
                     .frame(height: 300)
-                    .cornerRadius(12)
                     .overlay(
-                        VStack {
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 60))
-                                .foregroundColor(.white)
+                        VStack(spacing: 10) {
+                            if scanner.previewLayer == nil {
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 60))
+                                    .foregroundColor(.white)
+                            } else {
+                                ProgressView()
+                                    .tint(.white)
+                                    .controlSize(.regular)
+                            }
                             Text(String(localized: "qr_camera_starting"))
                                 .foregroundColor(.white)
-                                .padding(.top)
                         }
                     )
             }

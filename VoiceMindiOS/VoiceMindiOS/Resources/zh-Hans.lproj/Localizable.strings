@@ -226,6 +226,7 @@
 "pairing_not_in_pairing_mode" = "Mac 返回：当前不在配对模式。";
 "pairing_save_failed" = "Mac 返回：保存配对信息失败。";
 "pairing_mac_error_format" = "Mac 返回：%@";
+"pairing_repair_required" = "Mac 端尚未完成配对，请重新进行配对。";
 
 "ptt_warming_up" = "正在准备麦克风...";
 "ptt_capturing" = "正在采集语音，松开后发送到 Mac 识别。";
