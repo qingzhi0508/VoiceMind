@@ -108,6 +108,12 @@ enum SettingsSurfaceStylePolicy {
     static let secondaryTextColor = MainWindowColors.secondaryText
 }
 
+enum MacBillingPresentationPolicy {
+    static func showsUnlockOptions(for entitlement: TwoDeviceSyncEntitlement) -> Bool {
+        entitlement != .lifetime
+    }
+}
+
 enum MainWindowSection: String, CaseIterable, Identifiable {
     case home
     case records
@@ -1295,52 +1301,54 @@ struct SettingsTab: View {
                             detail: macBillingStatusDetail
                         )
 
-                        settingsPickerRow(
-                            title: String(localized: "billing_two_device_sync_actions_title")
-                        ) {
-                            VStack(alignment: .leading, spacing: 10) {
-                                billingActionButton(
-                                    title: billingTitle(for: .monthly),
-                                    isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.monthly.rawValue
-                                ) {
-                                    Task {
-                                        _ = await purchaseStore.purchase(.monthly)
+                        if MacBillingPresentationPolicy.showsUnlockOptions(for: purchaseStore.entitlement) {
+                            settingsPickerRow(
+                                title: String(localized: "billing_two_device_sync_actions_title")
+                            ) {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    billingActionButton(
+                                        title: billingTitle(for: .monthly),
+                                        isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.monthly.rawValue
+                                    ) {
+                                        Task {
+                                            _ = await purchaseStore.purchase(.monthly)
+                                        }
                                     }
-                                }
 
-                                billingActionButton(
-                                    title: billingTitle(for: .yearly),
-                                    isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.yearly.rawValue
-                                ) {
-                                    Task {
-                                        _ = await purchaseStore.purchase(.yearly)
+                                    billingActionButton(
+                                        title: billingTitle(for: .yearly),
+                                        isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.yearly.rawValue
+                                    ) {
+                                        Task {
+                                            _ = await purchaseStore.purchase(.yearly)
+                                        }
                                     }
-                                }
 
-                                billingActionButton(
-                                    title: billingTitle(for: .lifetime),
-                                    isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.lifetime.rawValue
-                                ) {
-                                    Task {
-                                        _ = await purchaseStore.purchase(.lifetime)
+                                    billingActionButton(
+                                        title: billingTitle(for: .lifetime),
+                                        isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.lifetime.rawValue
+                                    ) {
+                                        Task {
+                                            _ = await purchaseStore.purchase(.lifetime)
+                                        }
                                     }
-                                }
-
-                                billingActionButton(
-                                    title: String(localized: "billing_two_device_sync_restore_button"),
-                                    isLoading: purchaseStore.isRestoringPurchases
-                                ) {
-                                    Task {
-                                        await purchaseStore.restorePurchases()
-                                    }
-                                }
-
-                                if let lastErrorMessage = purchaseStore.lastErrorMessage, !lastErrorMessage.isEmpty {
-                                    Text(lastErrorMessage)
-                                        .font(.caption)
-                                        .foregroundColor(.red)
                                 }
                             }
+                        }
+
+                        billingActionButton(
+                            title: String(localized: "billing_two_device_sync_restore_button"),
+                            isLoading: purchaseStore.isRestoringPurchases
+                        ) {
+                            Task {
+                                await purchaseStore.restorePurchases()
+                            }
+                        }
+
+                        if let lastErrorMessage = purchaseStore.lastErrorMessage, !lastErrorMessage.isEmpty {
+                            Text(lastErrorMessage)
+                                .font(.caption)
+                                .foregroundColor(.red)
                         }
                     }
                 }

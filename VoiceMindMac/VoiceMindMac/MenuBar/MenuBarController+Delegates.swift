@@ -2,6 +2,19 @@ import Cocoa
 import Foundation
 import SharedCore
 
+enum VoiceInboundLogPolicy {
+    static func shouldAppendInboundRecord(for messageType: MessageType) -> Bool {
+        switch messageType {
+        case .result:
+            return false
+        case .textMessage:
+            return true
+        default:
+            return false
+        }
+    }
+}
+
 // MARK: - ConnectionManagerDelegate
 extension MenuBarController: ConnectionManagerDelegate {
     func connectionManager(_ manager: ConnectionManager, didChangePairingState state: PairingState) {
@@ -65,11 +78,13 @@ extension MenuBarController: ConnectionManagerDelegate {
 
         print("📝 解码成功 - 文本: \(payload.text), sessionId: \(payload.sessionId)")
 
-        appendInboundDataRecord(
-            title: "收到识别文本",
-            detail: "Session: \(payload.sessionId)\n语言: \(payload.language)\n内容: \(payload.text)",
-            category: .voice
-        )
+        if VoiceInboundLogPolicy.shouldAppendInboundRecord(for: .result) {
+            appendInboundDataRecord(
+                title: "收到识别文本",
+                detail: "Session: \(payload.sessionId)\n语言: \(payload.language)\n内容: \(payload.text)",
+                category: .voice
+            )
+        }
 
         if let currentSessionId, payload.sessionId != currentSessionId {
             print("Ignoring result with mismatched session ID")
@@ -99,11 +114,13 @@ extension MenuBarController: ConnectionManagerDelegate {
             return
         }
 
-        appendInboundDataRecord(
-            title: "收到文本消息",
-            detail: "Session: \(payload.sessionId)\n语言: \(payload.language)\n内容: \(payload.text)",
-            category: .voice
-        )
+        if VoiceInboundLogPolicy.shouldAppendInboundRecord(for: .textMessage) {
+            appendInboundDataRecord(
+                title: "收到文本消息",
+                detail: "Session: \(payload.sessionId)\n语言: \(payload.language)\n内容: \(payload.text)",
+                category: .voice
+            )
+        }
 
         DispatchQueue.main.async {
             self.noteText = payload.text
