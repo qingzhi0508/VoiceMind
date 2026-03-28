@@ -2,27 +2,20 @@ import XCTest
 @testable import SharedCore
 
 final class TwoDeviceSyncProductCatalogTests: XCTestCase {
-    func testAllKnownProductIDsIncludeIOSAndMacAliases() {
+    func testAllKnownProductIDsUseSingleUniversalCatalog() {
         XCTAssertEqual(
             Set(TwoDeviceSyncProductKind.allProductIDs),
             Set([
                 "com.voicemind.twodevice.monthly",
-                "com.voicemind.twodevice.monthly.mac",
                 "com.voicemind.twodevice.yearly",
-                "com.voicemind.twodevice.yearly.mac",
                 "com.voicemind.twodevice.alllifetime",
-                "com.voicemind.twodevice.alllifetime.mac",
             ])
         )
     }
 
-    func testKindResolutionAcceptsBothIOSAndMacProductIDs() {
+    func testKindResolutionAcceptsOnlyUniversalProductIDs() {
         XCTAssertEqual(
             TwoDeviceSyncProductKind.kind(for: "com.voicemind.twodevice.monthly"),
-            .monthly
-        )
-        XCTAssertEqual(
-            TwoDeviceSyncProductKind.kind(for: "com.voicemind.twodevice.monthly.mac"),
             .monthly
         )
         XCTAssertEqual(
@@ -30,54 +23,25 @@ final class TwoDeviceSyncProductCatalogTests: XCTestCase {
             .yearly
         )
         XCTAssertEqual(
-            TwoDeviceSyncProductKind.kind(for: "com.voicemind.twodevice.yearly.mac"),
-            .yearly
-        )
-        XCTAssertEqual(
             TwoDeviceSyncProductKind.kind(for: "com.voicemind.twodevice.alllifetime"),
             .lifetime
         )
-        XCTAssertEqual(
-            TwoDeviceSyncProductKind.kind(for: "com.voicemind.twodevice.alllifetime.mac"),
-            .lifetime
-        )
+        XCTAssertNil(TwoDeviceSyncProductKind.kind(for: "com.voicemind.twodevice.monthly.mac"))
+        XCTAssertNil(TwoDeviceSyncProductKind.kind(for: "com.voicemind.twodevice.yearly.mac"))
+        XCTAssertNil(TwoDeviceSyncProductKind.kind(for: "com.voicemind.twodevice.alllifetime.mac"))
     }
 
-    func testPreferredProductIDMatchesCurrentPlatform() {
-        #if os(macOS)
-        XCTAssertEqual(TwoDeviceSyncProductKind.monthly.rawValue, "com.voicemind.twodevice.monthly.mac")
-        XCTAssertEqual(TwoDeviceSyncProductKind.yearly.rawValue, "com.voicemind.twodevice.yearly.mac")
-        XCTAssertEqual(TwoDeviceSyncProductKind.lifetime.rawValue, "com.voicemind.twodevice.alllifetime.mac")
-        #else
+    func testPreferredProductIDIsTheSameOnEveryPlatform() {
         XCTAssertEqual(TwoDeviceSyncProductKind.monthly.rawValue, "com.voicemind.twodevice.monthly")
         XCTAssertEqual(TwoDeviceSyncProductKind.yearly.rawValue, "com.voicemind.twodevice.yearly")
         XCTAssertEqual(TwoDeviceSyncProductKind.lifetime.rawValue, "com.voicemind.twodevice.alllifetime")
-        #endif
     }
 
-    func testBestAvailableProductIDPrefersCurrentPlatformAndFallsBackToAlias() {
-        #if os(macOS)
+    func testBestAvailableProductIDReturnsOnlyUniversalCatalogMatches() {
         XCTAssertEqual(
             TwoDeviceSyncProductKind.monthly.bestAvailableProductID(
                 in: [
                     "com.voicemind.twodevice.monthly",
-                    "com.voicemind.twodevice.monthly.mac",
-                ]
-            ),
-            "com.voicemind.twodevice.monthly.mac"
-        )
-        XCTAssertEqual(
-            TwoDeviceSyncProductKind.monthly.bestAvailableProductID(
-                in: ["com.voicemind.twodevice.monthly"]
-            ),
-            "com.voicemind.twodevice.monthly"
-        )
-        #else
-        XCTAssertEqual(
-            TwoDeviceSyncProductKind.monthly.bestAvailableProductID(
-                in: [
-                    "com.voicemind.twodevice.monthly",
-                    "com.voicemind.twodevice.monthly.mac",
                 ]
             ),
             "com.voicemind.twodevice.monthly"
@@ -86,8 +50,13 @@ final class TwoDeviceSyncProductCatalogTests: XCTestCase {
             TwoDeviceSyncProductKind.monthly.bestAvailableProductID(
                 in: ["com.voicemind.twodevice.monthly.mac"]
             ),
-            "com.voicemind.twodevice.monthly.mac"
+            nil
         )
-        #endif
+        XCTAssertEqual(
+            TwoDeviceSyncProductKind.lifetime.bestAvailableProductID(
+                in: ["com.voicemind.twodevice.alllifetime"]
+            ),
+            "com.voicemind.twodevice.alllifetime"
+        )
     }
 }

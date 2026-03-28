@@ -20,7 +20,7 @@
           "locale" : "en_US"
         }
       ],
-      "productID" : "com.voicemind.twodevice.alllifetime.mac",
+      "productID" : "com.voicemind.twodevice.alllifetime",
       "referenceName" : "Two-Device Sync Lifetime",
       "type" : "NonConsumable"
     }
@@ -109,7 +109,7 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "com.voicemind.twodevice.monthly.mac",
+          "productID" : "com.voicemind.twodevice.monthly",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Two-Device Sync Monthly",
           "subscriptionGroupID" : "4F8B1A10",
@@ -139,7 +139,7 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "com.voicemind.twodevice.yearly.mac",
+          "productID" : "com.voicemind.twodevice.yearly",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Two-Device Sync Yearly",
           "subscriptionGroupID" : "4F8B1A10",

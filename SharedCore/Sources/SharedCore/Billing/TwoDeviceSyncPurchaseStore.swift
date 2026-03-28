@@ -3,66 +3,25 @@ import Foundation
 import StoreKit
 
 public enum TwoDeviceSyncProductKind: String, CaseIterable {
-    #if os(macOS)
-    case monthly = "com.voicemind.twodevice.monthly.mac"
-    case yearly = "com.voicemind.twodevice.yearly.mac"
-    case lifetime = "com.voicemind.twodevice.alllifetime.mac"
-    #else
     case monthly = "com.voicemind.twodevice.monthly"
     case yearly = "com.voicemind.twodevice.yearly"
     case lifetime = "com.voicemind.twodevice.alllifetime"
-    #endif
-
-    public var iOSProductID: String {
-        switch self {
-        case .monthly:
-            return "com.voicemind.twodevice.monthly"
-        case .yearly:
-            return "com.voicemind.twodevice.yearly"
-        case .lifetime:
-            return "com.voicemind.twodevice.alllifetime"
-        }
-    }
-
-    public var macProductID: String {
-        switch self {
-        case .monthly:
-            return "com.voicemind.twodevice.monthly.mac"
-        case .yearly:
-            return "com.voicemind.twodevice.yearly.mac"
-        case .lifetime:
-            return "com.voicemind.twodevice.alllifetime.mac"
-        }
-    }
 
     public var productIDs: [String] {
-        [rawValue, iOSProductID, macProductID]
-            .reduce(into: [String]()) { ids, productID in
-                guard !ids.contains(productID) else { return }
-                ids.append(productID)
-            }
+        [rawValue]
     }
 
     public static var allProductIDs: [String] {
-        allCases.reduce(into: [String]()) { ids, kind in
-            for productID in kind.productIDs where !ids.contains(productID) {
-                ids.append(productID)
-            }
-        }
+        allCases.map(\.rawValue)
     }
 
     public static func kind(for productID: String) -> Self? {
-        allCases.first(where: { $0.productIDs.contains(productID) })
+        Self(rawValue: productID)
     }
 
     public func bestAvailableProductID<S: Sequence>(in productIDs: S) -> String? where S.Element == String {
         let availableProductIDs = Set(productIDs)
-
-        if availableProductIDs.contains(rawValue) {
-            return rawValue
-        }
-
-        return self.productIDs.first(where: availableProductIDs.contains)
+        return availableProductIDs.contains(rawValue) ? rawValue : nil
     }
 }
 
