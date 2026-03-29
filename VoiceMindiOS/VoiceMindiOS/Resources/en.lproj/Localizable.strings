@@ -172,12 +172,16 @@
 "settings_pairing_footer" = "Connecting a Mac is optional and does not affect local speech-to-text on iPhone.";
 "settings_open_pairing" = "Connect or Pair a Mac";
 "settings_debug_header" = "Debug";
+"settings_contact_support" = "Contact Support";
 "settings_view_logs" = "View Data Logs";
+"settings_privacy_policy" = "Privacy Policy";
 "settings_about_header" = "About";
 "settings_version" = "Version";
 "settings_permission_alert_title" = "Permission Request";
 "settings_permission_alert_message" = "Please grant microphone and speech recognition permissions in Settings.";
 "settings_connection_status_error" = "Error";
+"settings_support_mail_unavailable_title" = "Mail Unavailable";
+"settings_support_mail_unavailable_message" = "Mail is not available on this device right now.";
 
 "language_zh" = "Chinese (Mandarin)";
 "language_en" = "English (US)";

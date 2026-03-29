@@ -63,6 +63,22 @@ struct SettingsAccountMembershipView: View {
                 Text(String(localized: "billing_two_device_sync_footer"))
             }
             .modifier(AppGroupedRowSurface())
+
+            if let privacyPolicyURL = SettingsMembershipLinkPolicy.privacyPolicyURL {
+                Section {
+                    Link(destination: privacyPolicyURL) {
+                        HStack {
+                            Text(String(localized: "settings_privacy_policy"))
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+                .modifier(AppGroupedRowSurface())
+            }
         }
         .modifier(AppListChrome())
         .navigationTitle(String(localized: .init(SettingsMembershipPresentationPolicy.accountDestinationTitleKey)))

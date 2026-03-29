@@ -23,6 +23,7 @@ struct SettingsInformationHierarchyPolicyTests {
             SettingsInformationHierarchyPolicy.supportItems == [
                 .permissions,
                 .help,
+                .supportEmail,
                 .logs,
                 .version
             ]

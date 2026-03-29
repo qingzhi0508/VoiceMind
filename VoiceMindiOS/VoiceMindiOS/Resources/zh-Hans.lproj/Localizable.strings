@@ -170,12 +170,16 @@
 "settings_pairing_footer" = "连接 Mac 是可选增强功能，不影响本机录音转文字。";
 "settings_open_pairing" = "连接或配对 Mac";
 "settings_debug_header" = "调试";
+"settings_contact_support" = "联系支持";
 "settings_view_logs" = "查看数据日志";
+"settings_privacy_policy" = "隐私政策";
 "settings_about_header" = "关于";
 "settings_version" = "版本";
 "settings_permission_alert_title" = "权限请求";
 "settings_permission_alert_message" = "请在系统设置中授予麦克风和语音识别权限";
 "settings_connection_status_error" = "错误";
+"settings_support_mail_unavailable_title" = "邮件不可用";
+"settings_support_mail_unavailable_message" = "当前设备暂时无法打开邮件。";
 
 "language_zh" = "中文（普通话）";
 "language_en" = "English (US)";

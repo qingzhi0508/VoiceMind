@@ -125,6 +125,7 @@ enum SettingsInformationHierarchyPolicy {
     enum SupportItem: Hashable {
         case permissions
         case help
+        case supportEmail
         case logs
         case version
     }
@@ -150,6 +151,7 @@ enum SettingsInformationHierarchyPolicy {
     static let supportItems: [SupportItem] = [
         .permissions,
         .help,
+        .supportEmail,
         .logs,
         .version
     ]
@@ -170,4 +172,23 @@ enum SettingsAppearancePresentationPolicy {
             }
         }
     }
+}
+
+enum SettingsMembershipLinkPolicy {
+    static let privacyPolicyURL = URL(string: "https://voicemind.top-list.top/privacy.html")
+}
+
+enum SettingsSupportLinkPolicy {
+    static let supportEmailRecipient = "voicemind@top-list.top"
+    static let supportEmailSubject = "voicemind 支持"
+
+    static let supportEmailURL: URL? = {
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = supportEmailRecipient
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: supportEmailSubject)
+        ]
+        return components.url
+    }()
 }

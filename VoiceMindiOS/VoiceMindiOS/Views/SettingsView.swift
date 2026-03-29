@@ -5,9 +5,11 @@ struct SettingsView: View {
     @ObservedObject var viewModel: ContentViewModel
     var showsNavigationTitle = true
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
     @State private var showPermissionAlert = false
     @State private var showLanguageRestartAlert = false
+    @State private var showSupportMailUnavailableAlert = false
     @State private var showOnboarding = false
     @AppStorage("app_language") private var appLanguage: String = AppLanguageManager.defaultLanguageCode()
     @AppStorage("app_theme") private var appTheme: String = "system"
@@ -45,6 +47,11 @@ struct SettingsView: View {
             Button(String(localized: "settings_language_restart_button"), role: .cancel) { }
         } message: {
             Text(String(localized: "settings_language_restart_message"))
+        }
+        .alert(String(localized: "settings_support_mail_unavailable_title"), isPresented: $showSupportMailUnavailableAlert) {
+            Button(String(localized: "ok_button"), role: .cancel) { }
+        } message: {
+            Text(String(localized: "settings_support_mail_unavailable_message"))
         }
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView(onComplete: {
@@ -98,7 +105,8 @@ struct SettingsView: View {
                 hasPermissions: hasPermissions,
                 versionText: "1.0.0",
                 requestPermissions: requestPermissions,
-                showOnboarding: { showOnboarding = true }
+                showOnboarding: { showOnboarding = true },
+                contactSupport: contactSupport
             )
         }
     }
@@ -116,6 +124,19 @@ struct SettingsView: View {
         AppLanguageManager.setLanguage(code)
         viewModel.updateLanguage(code)
         showLanguageRestartAlert = true
+    }
+
+    private func contactSupport() {
+        guard let supportEmailURL = SettingsSupportLinkPolicy.supportEmailURL else {
+            showSupportMailUnavailableAlert = true
+            return
+        }
+
+        openURL(supportEmailURL) { accepted in
+            if !accepted {
+                showSupportMailUnavailableAlert = true
+            }
+        }
     }
 }
 
@@ -366,6 +387,7 @@ private struct SettingsPermissionsSupportSection: View {
     let versionText: String
     let requestPermissions: () -> Void
     let showOnboarding: () -> Void
+    let contactSupport: () -> Void
 
     var body: some View {
         Section {
@@ -417,6 +439,23 @@ private struct SettingsPermissionsSupportSection: View {
                     Spacer()
 
                     Image(systemName: "chevron.right")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                }
+            }
+        case .supportEmail:
+            Button(action: contactSupport) {
+                HStack {
+                    Image(systemName: "envelope.fill")
+                        .foregroundColor(.blue)
+                        .frame(width: 30)
+
+                    Text(String(localized: "settings_contact_support"))
+                        .foregroundColor(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "arrow.up.right.square")
                         .foregroundColor(.secondary)
                         .font(.caption)
                 }
