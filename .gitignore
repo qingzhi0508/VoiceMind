@@ -14,3 +14,5 @@
 xcuserdata/
 /VoiceMindWindows/node_modules
 /VoiceMindWindows/src-tauri/target/
+VoiceMindWindows/src-tauri/logs/voicemind.log.2026-03-27
+VoiceMindWindows/dist/index.html
