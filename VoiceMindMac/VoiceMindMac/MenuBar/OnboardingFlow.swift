@@ -1,6 +1,10 @@
 import SwiftUI
 import SharedCore
 
+private func L(_ key: String) -> String {
+    NSLocalizedString(key, comment: "")
+}
+
 // MARK: - Main Window Coordinator
 
 struct OnboardingFlowView: View {
@@ -9,7 +13,8 @@ struct OnboardingFlowView: View {
 
     enum OnboardingStep {
         case welcome
-        case permissions
+        case captureReview
+        case connectDevices
         case ready
         case running
     }
@@ -19,11 +24,22 @@ struct OnboardingFlowView: View {
             switch currentStep {
             case .welcome:
                 WelcomeView(onContinue: {
-                    currentStep = .permissions
+                    currentStep = .captureReview
                 })
-            case .permissions:
-                PermissionsCheckView(
-                    controller: controller,
+            case .captureReview:
+                CaptureReviewView(
+                    onBack: {
+                        currentStep = .welcome
+                    },
+                    onComplete: {
+                        currentStep = .connectDevices
+                    }
+                )
+            case .connectDevices:
+                ConnectDevicesView(
+                    onBack: {
+                        currentStep = .captureReview
+                    },
                     onComplete: {
                         currentStep = .ready
                     }
@@ -31,6 +47,9 @@ struct OnboardingFlowView: View {
             case .ready:
                 ReadyView(
                     controller: controller,
+                    onBack: {
+                        currentStep = .connectDevices
+                    },
                     onStart: {
                         controller.startNetworkServices()
                         currentStep = .running
@@ -44,277 +63,405 @@ struct OnboardingFlowView: View {
     }
 }
 
+// MARK: - Shared Onboarding Chrome
+
+struct OnboardingScaffold<Content: View>: View {
+    let step: Int
+    let badgeKey: String
+    let titleKey: String
+    let subtitleKey: String
+    let primaryButtonKey: String
+    let secondaryButtonKey: String?
+    let onPrimary: () -> Void
+    let onSecondary: (() -> Void)?
+    @ViewBuilder let content: Content
+
+    private let totalSteps = 4
+
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.95, green: 0.97, blue: 1.0),
+                    Color(red: 0.98, green: 0.99, blue: 1.0),
+                    Color.white
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            Circle()
+                .fill(Color.blue.opacity(0.10))
+                .frame(width: 280, height: 280)
+                .offset(x: 210, y: -250)
+
+            Circle()
+                .fill(Color.cyan.opacity(0.08))
+                .frame(width: 240, height: 240)
+                .offset(x: -220, y: 230)
+
+            VStack(alignment: .leading, spacing: 24) {
+                HStack {
+                    Text("\(step)/\(totalSteps)")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    HStack(spacing: 8) {
+                        ForEach(1...totalSteps, id: \.self) { index in
+                            Capsule()
+                                .fill(index == step ? Color.accentColor : Color.primary.opacity(0.14))
+                                .frame(width: index == step ? 28 : 10, height: 8)
+                        }
+                    }
+                }
+
+                Text(L(badgeKey))
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .tracking(1.0)
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.accentColor.opacity(0.10))
+                    .clipShape(Capsule())
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(L(titleKey))
+                        .font(.system(size: 33, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.primary)
+
+                    Text(L(subtitleKey))
+                        .font(.title3.weight(.medium))
+                        .foregroundStyle(Color.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                content
+
+                Spacer(minLength: 0)
+
+                HStack(spacing: 14) {
+                    if let secondaryButtonKey, let onSecondary {
+                        Button(action: onSecondary) {
+                            Text(L(secondaryButtonKey))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                    }
+
+                    Button(action: onPrimary) {
+                        Text(L(primaryButtonKey))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                }
+            }
+            .padding(32)
+        }
+    }
+}
+
+struct HeroFeatureCard: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(iconColor)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.headline)
+
+                Text(detail)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer()
+        }
+        .padding(18)
+        .background(.white.opacity(0.72))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.85), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.04), radius: 16, x: 0, y: 10)
+    }
+}
+
+struct SignalPanel: View {
+    let title: String
+    let details: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(title)
+                        .font(.headline)
+
+                    HStack(spacing: 6) {
+                        Capsule().fill(Color.accentColor).frame(width: 22, height: 6)
+                        Capsule().fill(Color.accentColor.opacity(0.45)).frame(width: 34, height: 6)
+                        Capsule().fill(Color.accentColor.opacity(0.75)).frame(width: 16, height: 6)
+                    }
+                }
+
+                Spacer()
+
+                Image(systemName: "waveform.path.ecg")
+                    .font(.system(size: 34))
+                    .foregroundStyle(Color.accentColor)
+            }
+
+            ForEach(details, id: \.self) { detail in
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color.green)
+                    Text(detail)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(22)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+}
+
+struct DeviceBridgePanel: View {
+    var body: some View {
+        HStack(spacing: 18) {
+            DeviceNode(systemName: "iphone.gen3", title: L("mac_onboarding_device_iphone"), tint: Color(red: 0.18, green: 0.44, blue: 0.95))
+
+            VStack(spacing: 10) {
+                Image(systemName: "dot.radiowaves.left.and.right")
+                    .font(.title2)
+                    .foregroundStyle(Color.accentColor)
+
+                Text(L("mac_onboarding_connect_bridge"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+
+            DeviceNode(systemName: "laptopcomputer", title: L("mac_onboarding_device_mac"), tint: Color(red: 0.06, green: 0.70, blue: 0.62))
+        }
+        .padding(22)
+        .frame(maxWidth: .infinity)
+        .background(.white.opacity(0.76))
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.white.opacity(0.85), lineWidth: 1)
+        )
+    }
+}
+
+struct DeviceNode: View {
+    let systemName: String
+    let title: String
+    let tint: Color
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Image(systemName: systemName)
+                .font(.system(size: 28))
+                .foregroundStyle(.white)
+                .frame(width: 62, height: 62)
+                .background(tint)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct PairingStepCard: View {
+    let index: Int
+    let title: String
+    let detail: String
+    let icon: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Text("\(index)")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(width: 26, height: 26)
+                .background(Color.accentColor)
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Image(systemName: icon)
+                        .foregroundStyle(Color.accentColor)
+                    Text(title)
+                        .font(.headline)
+                }
+
+                Text(detail)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer()
+        }
+        .padding(18)
+        .background(Color.gray.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+}
+
 // MARK: - Welcome View
 
 struct WelcomeView: View {
     let onContinue: () -> Void
 
     var body: some View {
-        VStack(spacing: 30) {
-            Spacer()
-
-            // App Icon
-            Image(systemName: "mic.circle.fill")
-                .font(.system(size: 80))
-                .foregroundColor(.blue)
-
-            // Title
-            Text("欢迎使用 语灵")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-
-            // Subtitle
-            Text("通过 iPhone 为 Mac 提供强大的语音输入功能")
-                .font(.title3)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-
-            Spacer()
-
-            // Features
-            VStack(alignment: .leading, spacing: 16) {
-                FeatureRow(
-                    icon: "text.cursor",
-                    title: "光标自动输入",
-                    description: "识别结果会自动尝试输入到当前聚焦的文本框"
+        OnboardingScaffold(
+            step: 1,
+            badgeKey: "mac_onboarding_brand_badge",
+            titleKey: "mac_onboarding_welcome_title",
+            subtitleKey: "mac_onboarding_welcome_subtitle",
+            primaryButtonKey: "mac_onboarding_continue",
+            secondaryButtonKey: nil,
+            onPrimary: onContinue,
+            onSecondary: nil
+        ) {
+            VStack(spacing: 18) {
+                SignalPanel(
+                    title: L("mac_onboarding_brand_panel_title"),
+                    details: [
+                        L("mac_onboarding_brand_panel_point1"),
+                        L("mac_onboarding_brand_panel_point2"),
+                        L("mac_onboarding_brand_panel_point3")
+                    ]
                 )
 
-                FeatureRow(
-                    icon: "iphone.and.arrow.forward",
-                    title: "无缝连接",
-                    description: "通过本地网络安全连接 iPhone 和 Mac"
-                )
+                VStack(spacing: 14) {
+                    HeroFeatureCard(
+                        icon: "sparkles.rectangle.stack",
+                        iconColor: Color(red: 0.18, green: 0.44, blue: 0.95),
+                        title: L("mac_onboarding_brand_feature1_title"),
+                        detail: L("mac_onboarding_brand_feature1_desc")
+                    )
 
-                FeatureRow(
-                    icon: "waveform",
-                    title: "高精度识别",
-                    description: "使用 Apple 原生语音识别引擎"
-                )
-            }
-            .padding(.horizontal, 40)
-
-            Spacer()
-
-            // Continue Button
-            Button(action: onContinue) {
-                Text("开始使用")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .padding(.horizontal, 40)
-            .padding(.bottom, 40)
-        }
-    }
-}
-
-struct FeatureRow: View {
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(.blue)
-                .frame(width: 30)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.headline)
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    HeroFeatureCard(
+                        icon: "desktopcomputer.and.macbook",
+                        iconColor: Color(red: 0.06, green: 0.70, blue: 0.62),
+                        title: L("mac_onboarding_brand_feature2_title"),
+                        detail: L("mac_onboarding_brand_feature2_desc")
+                    )
+                }
             }
         }
     }
 }
 
-// MARK: - Permissions Check View
-
-struct PermissionsCheckView: View {
-    @ObservedObject var controller: MenuBarController
+struct CaptureReviewView: View {
+    let onBack: () -> Void
     let onComplete: () -> Void
 
-    @State private var isCheckingPermissions = false
-
     var body: some View {
-        VStack(spacing: 30) {
-            // Header
-            VStack(spacing: 12) {
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 60))
-                    .foregroundColor(.orange)
-
-                Text("权限设置")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-
-                Text("语灵 需要以下权限才能正常工作")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.top, 40)
-
-            Spacer()
-
-            // Permission Items
-            VStack(spacing: 20) {
-                PermissionItem(
-                    icon: "lock.shield",
-                    title: "辅助功能权限",
-                    description: "用于识别当前焦点并将转写结果输入到当前应用",
-                    status: controller.accessibilityStatus,
-                    onRequest: {
-                        controller.requestAccessibilityPermissionFromUI()
-                    }
+        OnboardingScaffold(
+            step: 2,
+            badgeKey: "mac_onboarding_capture_badge",
+            titleKey: "mac_onboarding_capture_title",
+            subtitleKey: "mac_onboarding_capture_subtitle",
+            primaryButtonKey: "mac_onboarding_continue",
+            secondaryButtonKey: "mac_onboarding_back",
+            onPrimary: onComplete,
+            onSecondary: onBack
+        ) {
+            VStack(spacing: 18) {
+                SignalPanel(
+                    title: L("mac_onboarding_capture_panel_title"),
+                    details: [
+                        L("mac_onboarding_capture_panel_point1"),
+                        L("mac_onboarding_capture_panel_point2"),
+                        L("mac_onboarding_capture_panel_point3")
+                    ]
                 )
-            }
-            .padding(.horizontal, 40)
 
-            Spacer()
+                VStack(spacing: 14) {
+                    HeroFeatureCard(
+                        icon: "text.page.badge.magnifyingglass",
+                        iconColor: Color(red: 0.18, green: 0.44, blue: 0.95),
+                        title: L("mac_onboarding_capture_feature1_title"),
+                        detail: L("mac_onboarding_capture_feature1_desc")
+                    )
 
-            // Status Message
-            if allPermissionsGranted {
-                HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                    Text("所有权限已授予")
-                        .foregroundColor(.green)
-                        .fontWeight(.medium)
+                    HeroFeatureCard(
+                        icon: "checklist.checked",
+                        iconColor: Color(red: 0.96, green: 0.53, blue: 0.23),
+                        title: L("mac_onboarding_capture_feature2_title"),
+                        detail: L("mac_onboarding_capture_feature2_desc")
+                    )
                 }
-                .padding()
-                .background(Color.green.opacity(0.1))
-                .cornerRadius(8)
-            } else {
-                Text("请点击上方按钮授予权限")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
             }
-
-            // Continue Button
-            Button(action: {
-                if allPermissionsGranted {
-                    onComplete()
-                } else {
-                    // Show alert
-                }
-            }) {
-                Text(allPermissionsGranted ? "继续" : "稍后设置")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .padding(.horizontal, 40)
-            .padding(.bottom, 40)
         }
-        .onAppear {
-            // Refresh permissions status
-            controller.refreshPermissionState()
-        }
-    }
-
-    private var allPermissionsGranted: Bool {
-        controller.accessibilityStatus == .granted
     }
 }
 
-struct PermissionItem: View {
-    let icon: String
-    let title: String
-    let description: String
-    let status: PermissionStatus
-    let onRequest: () -> Void
+struct ConnectDevicesView: View {
+    let onBack: () -> Void
+    let onComplete: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // Icon
-            Image(systemName: icon)
-                .font(.title)
-                .foregroundColor(status == .granted ? .green : .orange)
-                .frame(width: 40)
+        OnboardingScaffold(
+            step: 3,
+            badgeKey: "mac_onboarding_connect_badge",
+            titleKey: "mac_onboarding_connect_title",
+            subtitleKey: "mac_onboarding_connect_subtitle",
+            primaryButtonKey: "mac_onboarding_continue",
+            secondaryButtonKey: "mac_onboarding_back",
+            onPrimary: onComplete,
+            onSecondary: onBack
+        ) {
+            VStack(spacing: 18) {
+                DeviceBridgePanel()
 
-            // Content
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(title)
-                        .font(.headline)
+                VStack(spacing: 14) {
+                    PairingStepCard(
+                        index: 1,
+                        title: L("mac_onboarding_connect_step1_title"),
+                        detail: L("mac_onboarding_connect_step1_desc"),
+                        icon: "wifi"
+                    )
 
-                    Spacer()
+                    PairingStepCard(
+                        index: 2,
+                        title: L("mac_onboarding_connect_step2_title"),
+                        detail: L("mac_onboarding_connect_step2_desc"),
+                        icon: "qrcode.viewfinder"
+                    )
 
-                    // Status Badge
-                    StatusBadge(status: status)
-                }
-
-                Text(description)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if status != .granted {
-                    Button(action: onRequest) {
-                        Text("授予权限")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                    .padding(.top, 4)
+                    PairingStepCard(
+                        index: 3,
+                        title: L("mac_onboarding_connect_step3_title"),
+                        detail: L("mac_onboarding_connect_step3_desc"),
+                        icon: "arrow.triangle.branch"
+                    )
                 }
             }
-        }
-        .padding()
-        .background(Color.gray.opacity(0.05))
-        .cornerRadius(12)
-    }
-}
-
-struct StatusBadge: View {
-    let status: PermissionStatus
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: statusIcon)
-                .font(.caption)
-            Text(statusText)
-                .font(.caption)
-                .fontWeight(.medium)
-        }
-        .foregroundColor(statusColor)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(statusColor.opacity(0.1))
-        .cornerRadius(6)
-    }
-
-    private var statusIcon: String {
-        switch status {
-        case .granted: return "checkmark.circle.fill"
-        case .denied: return "xmark.circle.fill"
-        case .notDetermined: return "exclamationmark.circle.fill"
-        }
-    }
-
-    private var statusText: String {
-        switch status {
-        case .granted: return "已授予"
-        case .denied: return "已拒绝"
-        case .notDetermined: return "未授予"
-        }
-    }
-
-    private var statusColor: Color {
-        switch status {
-        case .granted: return .green
-        case .denied: return .red
-        case .notDetermined: return .orange
         }
     }
 }
@@ -323,81 +470,52 @@ struct StatusBadge: View {
 
 struct ReadyView: View {
     @ObservedObject var controller: MenuBarController
+    let onBack: () -> Void
     let onStart: () -> Void
 
-    @State private var localIPAddress: String = "获取中..."
+    @State private var localIPAddress: String = L("mac_onboarding_fetching_ip")
 
     var body: some View {
-        VStack(spacing: 30) {
-            Spacer()
-
-            // Ready Icon
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 80))
-                .foregroundColor(.green)
-
-            // Title
-            Text("准备就绪")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-
-                Text("所有设置已完成，可以开始使用了")
-                .font(.title3)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-
-            Spacer()
-
-            // System Info
+        OnboardingScaffold(
+            step: 4,
+            badgeKey: "mac_onboarding_start_badge",
+            titleKey: "mac_onboarding_start_title",
+            subtitleKey: "mac_onboarding_start_subtitle",
+            primaryButtonKey: controller.isServiceRunning ? "mac_onboarding_start_continue" : "mac_onboarding_start_button",
+            secondaryButtonKey: controller.isServiceRunning ? nil : "mac_onboarding_back",
+            onPrimary: onStart,
+            onSecondary: controller.isServiceRunning ? nil : onBack
+        ) {
             VStack(spacing: 16) {
                 InfoCard(
                     icon: "network",
-                    title: "本机 IP 地址",
+                    title: L("mac_onboarding_start_ip_title"),
                     value: localIPAddress,
                     color: .blue
                 )
 
                 InfoCard(
-                    icon: "text.cursor",
-                    title: "输入方式",
-                    value: "iPhone 按住说话，Mac 自动转写并输入",
+                    icon: "bolt.horizontal.circle",
+                    title: L("mac_onboarding_start_mode_title"),
+                    value: L("mac_onboarding_start_mode_value"),
                     color: .purple
                 )
-            }
-            .padding(.horizontal, 40)
 
-            Spacer()
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(L("mac_onboarding_start_steps_title"))
+                        .font(.headline)
 
-            // Instructions
-            VStack(alignment: .leading, spacing: 12) {
-                Text("使用说明")
-                    .font(.headline)
-
-                InstructionStep(number: 1, text: controller.isServiceRunning ? "网络服务已自动启动" : "点击下方按钮启动网络服务")
-                InstructionStep(number: 2, text: "在 iPhone 上打开 语灵 应用")
-                InstructionStep(number: 3, text: "完成配对后，在 iPhone 上按住麦克风开始说话")
-            }
-            .padding()
-            .background(Color.blue.opacity(0.05))
-            .cornerRadius(12)
-            .padding(.horizontal, 40)
-
-            Spacer()
-
-            // Start Button
-            Button(action: onStart) {
-                HStack {
-                    Image(systemName: controller.isServiceRunning ? "arrow.right.circle.fill" : "power")
-                    Text(controller.isServiceRunning ? "继续" : "启动服务")
+                    InstructionStep(
+                        number: 1,
+                        text: controller.isServiceRunning ? L("mac_onboarding_start_step1_running") : L("mac_onboarding_start_step1")
+                    )
+                    InstructionStep(number: 2, text: L("mac_onboarding_start_step2"))
+                    InstructionStep(number: 3, text: L("mac_onboarding_start_step3"))
                 }
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+                .padding(18)
+                .background(Color.accentColor.opacity(0.06))
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .padding(.horizontal, 40)
-            .padding(.bottom, 40)
         }
         .onAppear {
             fetchLocalIPAddress()
@@ -408,7 +526,7 @@ struct ReadyView: View {
     }
 
     private func fetchLocalIPAddress() {
-        localIPAddress = getLocalIPAddress() ?? "未获取到"
+        localIPAddress = getLocalIPAddress() ?? L("status_unavailable")
     }
 
     private func getLocalIPAddress() -> String? {
@@ -472,7 +590,7 @@ struct InstructionStep: View {
 
 struct RunningStatusView: View {
     @ObservedObject var controller: MenuBarController
-    @State private var localIPAddress: String = "获取中..."
+    @State private var localIPAddress: String = L("status_loading")
     @State private var refreshTimer: Timer?
 
     var body: some View {
@@ -486,8 +604,7 @@ struct RunningStatusView: View {
 
                 // System Info
                 SystemInfoCard(
-                    localIP: localIPAddress,
-                    accessibilityStatus: controller.accessibilityStatus
+                    localIP: localIPAddress
                 )
 
                 // Device Connection
@@ -534,7 +651,7 @@ struct RunningStatusView: View {
     }
 
     private func fetchLocalIPAddress() {
-        localIPAddress = getLocalIPAddress() ?? "未获取到"
+        localIPAddress = getLocalIPAddress() ?? L("status_unavailable")
     }
 
     private func getLocalIPAddress() -> String? {
@@ -553,7 +670,7 @@ struct StatusHeader: View {
                 .foregroundColor(statusColor)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("语灵")
+                Text(L("mac_onboarding_product_name"))
                     .font(.title)
                     .fontWeight(.bold)
 
@@ -593,29 +710,27 @@ struct StatusHeader: View {
 
     private var statusText: String {
         switch (pairingState, connectionState) {
-        case (.paired, .connected): return "已连接 - 可以使用语音输入"
-        case (.paired, .connecting): return "正在连接到 iPhone..."
-        case (.paired, .disconnected): return "已配对但未连接"
-        case (.pairing, _): return "正在配对..."
-        case (.unpaired, _): return "未配对 - 请先与 iPhone 配对"
-        default: return "未知状态"
+        case (.paired, .connected): return L("status_connected_ready")
+        case (.paired, .connecting): return L("status_connecting_iphone")
+        case (.paired, .disconnected): return L("status_paired_not_connected")
+        case (.pairing, _): return L("status_pairing")
+        case (.unpaired, _): return L("status_unpaired_need_pair")
+        default: return L("status_unknown")
         }
     }
 }
 
 struct SystemInfoCard: View {
     let localIP: String
-    let accessibilityStatus: PermissionStatus
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("系统信息")
+            Text(L("system_info_title"))
                 .font(.headline)
 
             VStack(spacing: 8) {
-                SimpleInfoRow(icon: "network", title: "本机 IP", value: localIP, color: .blue)
-                SimpleInfoRow(icon: "text.cursor", title: "输入方式", value: "iPhone 语音直传 Mac 转写", color: .purple)
-                SimpleInfoRow(icon: "lock.shield", title: "辅助功能", value: accessibilityStatus.displayText, color: accessibilityStatus.color)
+                SimpleInfoRow(icon: "network", title: L("system_ip_title"), value: localIP, color: .blue)
+                SimpleInfoRow(icon: "doc.text", title: L("mac_onboarding_start_mode_title"), value: L("mac_onboarding_results_location"), color: .purple)
             }
         }
         .padding()
@@ -630,17 +745,17 @@ struct DeviceConnectionCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("设备连接")
+            Text(L("device_connection_title"))
                 .font(.headline)
 
             VStack(spacing: 8) {
-                SimpleInfoRow(icon: "iphone", title: "配对状态", value: pairingStatusText, color: pairingStatusColor)
+                SimpleInfoRow(icon: "iphone", title: L("device_pairing_status"), value: pairingStatusText, color: pairingStatusColor)
 
                 if case .paired(_, let deviceName) = pairingState {
-                    SimpleInfoRow(icon: "person.circle", title: "设备名称", value: deviceName, color: .blue)
+                    SimpleInfoRow(icon: "person.circle", title: L("device_name"), value: deviceName, color: .blue)
                 }
 
-                SimpleInfoRow(icon: "wifi", title: "连接状态", value: connectionStatusText, color: connectionStatusColor)
+                SimpleInfoRow(icon: "wifi", title: L("device_connection_status"), value: connectionStatusText, color: connectionStatusColor)
             }
         }
         .padding()
@@ -650,9 +765,9 @@ struct DeviceConnectionCard: View {
 
     private var pairingStatusText: String {
         switch pairingState {
-        case .unpaired: return "未配对"
-        case .pairing: return "配对中..."
-        case .paired: return "已配对"
+        case .unpaired: return L("pairing_status_unpaired")
+        case .pairing: return L("pairing_status_pairing")
+        case .paired: return L("pairing_status_paired")
         }
     }
 
@@ -666,10 +781,10 @@ struct DeviceConnectionCard: View {
 
     private var connectionStatusText: String {
         switch connectionState {
-        case .disconnected: return "未连接"
-        case .connecting: return "连接中..."
-        case .connected: return "已连接"
-        case .error: return "连接错误"
+        case .disconnected: return L("connection_status_disconnected")
+        case .connecting: return L("connection_status_connecting")
+        case .connected: return L("connection_status_connected")
+        case .error: return L("status_connection_error")
         }
     }
 
@@ -695,7 +810,7 @@ struct QuickActionsCard: View {
                 Button(action: onStartPairing) {
                     HStack {
                         Image(systemName: "link")
-                        Text("开始配对")
+                        Text(L("status_action_start_pairing"))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
@@ -708,7 +823,7 @@ struct QuickActionsCard: View {
                     Button(action: onUnpair) {
                         HStack {
                             Image(systemName: "link.badge.minus")
-                            Text("解除配对")
+                            Text(L("status_action_unpair"))
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -720,7 +835,7 @@ struct QuickActionsCard: View {
             Button(action: onStopService) {
                 HStack {
                     Image(systemName: "stop.circle")
-                    Text("停止服务")
+                    Text(L("status_action_stop_service"))
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
@@ -751,26 +866,6 @@ struct SimpleInfoRow: View {
             Text(value)
                 .fontWeight(.medium)
                 .foregroundColor(color)
-        }
-    }
-}
-
-// MARK: - PermissionStatus Extension
-
-extension PermissionStatus {
-    var displayText: String {
-        switch self {
-        case .granted: return "已授予"
-        case .denied: return "已拒绝"
-        case .notDetermined: return "未授予"
-        }
-    }
-
-    var color: Color {
-        switch self {
-        case .granted: return .green
-        case .denied: return .red
-        case .notDetermined: return .orange
         }
     }
 }

@@ -4,8 +4,6 @@ import SharedCore
 
 // MARK: - ConnectionManagerDelegate
 extension MenuBarController: ConnectionManagerDelegate {
-    private static let executeCommandKeyword = "执行"
-
     func connectionManager(_ manager: ConnectionManager, didChangePairingState state: PairingState) {
         DispatchQueue.main.async {
             self.refreshPublishedState()
@@ -88,41 +86,7 @@ extension MenuBarController: ConnectionManagerDelegate {
         sessionTimer?.invalidate()
         sessionTimer = nil
 
-        restoreInjectionTargetApplicationIfNeeded { [weak self] in
-            guard let self else { return }
-
-            print("🔍 检查是否需要执行回车命令")
-            if self.shouldTriggerEnterCommand(for: payload.text) {
-                print("✅ 检测到执行命令，触发回车")
-                do {
-                    try self.triggerReturnKey()
-                    self.appendInboundDataRecord(
-                        title: "执行回车命令",
-                        detail: "识别到命令词\"\(Self.executeCommandKeyword)\"，已触发一次 Enter。",
-                        category: .voice
-                    )
-                } catch TextInjectionError.accessibilityPermissionDenied {
-                    self.appendInboundDataRecord(
-                        title: "执行回车失败",
-                        detail: "缺少辅助功能权限，无法发送 Enter 键事件。",
-                        category: .connection,
-                        severity: .warning
-                    )
-                    self.showTextInjectionPermissionError(with: payload.text)
-                } catch {
-                    self.appendInboundDataRecord(
-                        title: "执行回车失败",
-                        detail: "发送 Enter 键事件失败：\(error.localizedDescription)",
-                        category: .connection,
-                        severity: .warning
-                    )
-                }
-                return
-            }
-
-            self.injectText(payload.text, missingTargetTitle: "未找到可输入控件")
-
-            // 更新笔记显示最新识别结果
+        DispatchQueue.main.async {
             self.noteText = payload.text
             self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
         }
@@ -141,9 +105,7 @@ extension MenuBarController: ConnectionManagerDelegate {
             category: .voice
         )
 
-        restoreInjectionTargetApplicationIfNeeded { [weak self] in
-            guard let self else { return }
-            self.injectText(payload.text, missingTargetTitle: "未找到可粘贴控件")
+        DispatchQueue.main.async {
             self.noteText = payload.text
             self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
         }
@@ -177,61 +139,6 @@ extension MenuBarController: ConnectionManagerDelegate {
         connectionManager.send(pongEnvelope)
     }
 
-    private func shouldTriggerEnterCommand(for text: String) -> Bool {
-        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
-        return normalized == Self.executeCommandKeyword
-    }
-
-    private func triggerReturnKey() throws {
-        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false]
-        guard AXIsProcessTrustedWithOptions(options) else {
-            throw TextInjectionError.accessibilityPermissionDenied
-        }
-
-        let keyCode = CGKeyCode(36)
-
-        guard let keyDownEvent = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: true),
-              let keyUpEvent = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: false) else {
-            throw TextInjectionError.injectionFailed("Failed to create Return key event")
-        }
-
-        keyDownEvent.post(tap: .cghidEventTap)
-        keyUpEvent.post(tap: .cghidEventTap)
-    }
-
-    private func injectText(_ text: String, missingTargetTitle: String) {
-        print("💉 开始注入文本: \(text)")
-        do {
-            try self.textInjector.inject(text)
-            print("✅ 文本注入成功")
-        } catch TextInjectionError.noFocusedInputTarget {
-            let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
-            self.appendInboundDataRecord(
-                title: missingTargetTitle,
-                detail: "当前没有检测到可写输入框，本次文本未自动输入。\n内容: \(text)\n\n\(focusedElementSummary)",
-                category: .connection,
-                severity: .warning
-            )
-        } catch TextInjectionError.accessibilityPermissionDenied {
-            self.appendInboundDataRecord(
-                title: "文本注入权限不足",
-                detail: "缺少辅助功能权限，无法直接注入文本。\n已提示用户授权或复制文本。\n内容: \(text)",
-                category: .connection,
-                severity: .warning
-            )
-            self.showTextInjectionPermissionError(with: text)
-        } catch {
-            let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
-            self.appendInboundDataRecord(
-                title: "文本注入失败，已降级为复制",
-                detail: "注入错误: \(error.localizedDescription)\n内容: \(text)\n\n\(focusedElementSummary)",
-                category: .connection,
-                severity: .warning
-            )
-            self.showTextCopyAlert(text, error: error.localizedDescription)
-        }
-    }
-    
     private func recordConnectionStateChange(_ state: ConnectionState) {
         switch state {
         case .disconnected:

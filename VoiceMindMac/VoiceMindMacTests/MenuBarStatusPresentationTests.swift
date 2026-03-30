@@ -19,7 +19,7 @@ final class MenuBarStatusPresentationTests: XCTestCase {
             connectionState: .disconnected
         )
 
-        XCTAssertEqual(presentation.buttonTitle, "语灵")
+        XCTAssertEqual(presentation.buttonTitle, "VoiceMind")
         XCTAssertEqual(presentation.menuStatusTitle, "已配对但未连接")
         XCTAssertTrue(presentation.showsUnpairAction)
     }
@@ -30,7 +30,7 @@ final class MenuBarStatusPresentationTests: XCTestCase {
             connectionState: .connecting
         )
 
-        XCTAssertEqual(presentation.buttonTitle, "语灵")
+        XCTAssertEqual(presentation.buttonTitle, "VoiceMind")
         XCTAssertEqual(presentation.menuStatusTitle, "配对中...")
         XCTAssertFalse(presentation.showsUnpairAction)
     }

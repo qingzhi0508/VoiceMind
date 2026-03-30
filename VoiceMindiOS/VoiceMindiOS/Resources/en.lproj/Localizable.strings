@@ -326,32 +326,48 @@ Sample rate: %@ Hz";
 // MARK: - Onboarding
 "onboarding_back" = "Back";
 "onboarding_next" = "Next";
-"onboarding_skip" = "Skip";
+"onboarding_skip" = "Maybe later";
 
-"onboarding_welcome_title" = "Welcome to VoiceMind";
-"onboarding_welcome_subtitle" = "Powerful voice input for your Mac via iPhone";
+"onboarding_brand_badge" = "VOICE INPUT, REFRAMED";
+"onboarding_welcome_title" = "VoiceMind keeps your thoughts in motion.";
+"onboarding_welcome_subtitle" = "Capture ideas on iPhone and keep your Mac workflow moving.";
+"onboarding_brand_point1_title" = "Speak at the speed of thought";
+"onboarding_brand_point1_desc" = "Turn quick voice moments into clean text without breaking focus.";
+"onboarding_brand_point2_title" = "Built for modern capture";
+"onboarding_brand_point2_desc" = "A polished, product-led voice flow designed around iPhone and Mac.";
+"onboarding_brand_point3_title" = "Stay in control";
+"onboarding_brand_point3_desc" = "Start on iPhone first, then bring Mac collaboration in when you want it.";
 
-"onboarding_how_it_works_title" = "How It Works";
-"onboarding_how_it_works_subtitle" = "Three simple steps for voice input";
+"onboarding_input_badge" = "IPHONE-FIRST";
+"onboarding_how_it_works_title" = "Your fastest capture device is already in your hand.";
+"onboarding_how_it_works_subtitle" = "Press, speak, and let VoiceMind shape the first draft.";
 "onboarding_device_iphone" = "iPhone";
 "onboarding_device_mac" = "Mac";
-"onboarding_step1" = "Hold mic on iPhone to speak";
-"onboarding_step2" = "Audio streams to Mac in real-time";
-"onboarding_step3" = "Recognition auto-typed at cursor";
+"onboarding_input_visual" = "Live Capture";
+"onboarding_step1" = "Hold to capture a thought the moment it lands.";
+"onboarding_step2" = "See the transcript build on iPhone in real time.";
+"onboarding_step3" = "Send the result forward when you are ready.";
+"onboarding_input_chip1_title" = "Input";
+"onboarding_input_chip1_value" = "Voice-first";
+"onboarding_input_chip2_title" = "Interaction";
+"onboarding_input_chip2_value" = "Hold to talk";
 
-"onboarding_pairing_title" = "Pairing Guide";
-"onboarding_pairing_subtitle" = "First-time pairing with Mac is required";
+"onboarding_collaboration_badge" = "MAC COLLABORATION";
+"onboarding_pairing_title" = "Bring VoiceMind to your Mac when you want a bigger canvas.";
+"onboarding_pairing_subtitle" = "Pair once, then move voice capture from iPhone into your desktop flow.";
 "onboarding_pairing_step1_title" = "Open VoiceMind on Mac";
-"onboarding_pairing_step1_desc" = "Make sure VoiceMind is installed and running on your Mac";
-"onboarding_pairing_step2_title" = "Scan QR Code";
-"onboarding_pairing_step2_desc" = "Click Pair New Device on Mac, then scan the QR code with iPhone";
-"onboarding_pairing_step3_title" = "Complete Pairing";
-"onboarding_pairing_step3_desc" = "Enter the 6-digit code shown on Mac to finish";
+"onboarding_pairing_step1_desc" = "Launch the Mac app and get it ready for a new device.";
+"onboarding_pairing_step2_title" = "Scan and connect";
+"onboarding_pairing_step2_desc" = "Use iPhone to scan the QR code and confirm the session.";
+"onboarding_pairing_step3_title" = "Stay in sync";
+"onboarding_pairing_step3_desc" = "Send transcripts to Mac whenever collaboration makes sense.";
+"onboarding_collaboration_bridge" = "Secure link";
 
-"onboarding_ready_title" = "Ready to Go";
-"onboarding_ready_subtitle" = "After pairing, hold mic on iPhone to start speaking";
-"onboarding_tip1" = "Ensure iPhone and Mac are on the same network";
-"onboarding_tip2" = "Pairing info is saved; no need to pair again next time";
+"onboarding_ready_badge" = "START NOW";
+"onboarding_ready_title" = "Start with iPhone. Add Mac whenever you are ready.";
+"onboarding_ready_subtitle" = "VoiceMind is useful from the first capture, and even better once your devices work together.";
+"onboarding_tip1" = "Use iPhone on its own for quick capture anywhere.";
+"onboarding_tip2" = "Connect your Mac later to review, continue, and keep momentum.";
 
-"onboarding_start_using" = "Start Using";
+"onboarding_start_using" = "Start with VoiceMind";
 "onboarding_menu_guide" = "User Guide";

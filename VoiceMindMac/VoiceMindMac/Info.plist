@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -42,6 +44,6 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>VoiceMind 需要使用系统语音识别将 Mac 本地或来自 iPhone 的语音转换为文字并输入到当前光标位置。</string>
+	<string>VoiceMind 需要使用系统语音识别将 Mac 本地或来自 iPhone 的语音转换为文字并显示在应用内。</string>
 </dict>
 </plist>
