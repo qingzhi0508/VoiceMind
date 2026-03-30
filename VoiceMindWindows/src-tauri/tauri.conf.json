@@ -4,10 +4,10 @@
   "identifier": "com.voicemind.voiceinput",
   "version": "0.1.0",
   "build": {
-    "beforeBuildCommand": "",
-    "beforeDevCommand": "",
-    "devUrl": "http://localhost:5173",
-    "frontendDist": "../src"
+    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "npm run dev -- --host 127.0.0.1 --strictPort",
+    "devUrl": "http://127.0.0.1:5173",
+    "frontendDist": "../dist"
   },
   "app": {
     "withGlobalTauri": true,
@@ -18,8 +18,8 @@
         "width": 400,
         "height": 600,
         "resizable": true,
-        "visible": true,
-        "center": true
+        "center": true,
+        "dataDirectory": "main"
       }
     ],
     "trayIcon": {
@@ -39,7 +39,10 @@
     ],
     "windows": {
       "webviewInstallMode": {
-        "type": "embedBootstrapper"
+        "type": "offlineInstaller"
+      },
+      "wix": {
+        "language": "zh-CN"
       }
     }
   }

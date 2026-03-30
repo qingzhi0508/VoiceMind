@@ -32,7 +32,7 @@ impl BonjourService {
             .map_err(|e| format!("Failed to create mDNS daemon: {}", e))?;
 
         // 创建服务信息
-        let service_type = "_voicemind._tcp.local.";
+        let service_type = "_voicerelay._tcp.local.";
         let host_ipv4 = self.get_local_ip()?;
         
         let service_info = ServiceInfo::new(

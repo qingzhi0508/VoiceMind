@@ -18,7 +18,9 @@ class ConnectionManager: NSObject {
 
     private let keychainService = "com.voicerelay.ios"
     private let keychainAccount = "pairing"
-    let deviceId = UUID().uuidString
+    private let deviceIdentifierAccount = "device-identifier"
+    private let deviceIdentifierDefaultsKey = "voicemind.ios.deviceIdentifier"
+    let deviceId: String
     private var pendingPairingDeviceName: String?
 
     private(set) var pairingState: PairingState = .unpaired {
@@ -34,6 +36,12 @@ class ConnectionManager: NSObject {
     private var isConnectionValidated = false
 
     override init() {
+        deviceId = ConnectionManager.resolveDeviceIdentifier(
+            service: keychainService,
+            account: deviceIdentifierAccount,
+            legacyDefaultsKey: deviceIdentifierDefaultsKey
+        )
+
         super.init()
         client.delegate = self
         loadPairing()
@@ -80,6 +88,38 @@ class ConnectionManager: NSObject {
 
     func send(_ envelope: MessageEnvelope) {
         client.send(envelope)
+    }
+
+    private static func resolveDeviceIdentifier(
+        service: String,
+        account: String,
+        legacyDefaultsKey: String
+    ) -> String {
+        if let storedIdentifier = try? KeychainManager.retrieveString(service: service, account: account),
+           !storedIdentifier.isEmpty {
+            UserDefaults.standard.removeObject(forKey: legacyDefaultsKey)
+            return storedIdentifier
+        }
+
+        if let legacyIdentifier = UserDefaults.standard.string(forKey: legacyDefaultsKey),
+           !legacyIdentifier.isEmpty {
+            do {
+                try KeychainManager.saveString(legacyIdentifier, service: service, account: account)
+                UserDefaults.standard.removeObject(forKey: legacyDefaultsKey)
+            } catch {
+                UserDefaults.standard.set(legacyIdentifier, forKey: legacyDefaultsKey)
+            }
+            return legacyIdentifier
+        }
+
+        let generatedIdentifier = UUID().uuidString
+        do {
+            try KeychainManager.saveString(generatedIdentifier, service: service, account: account)
+            UserDefaults.standard.removeObject(forKey: legacyDefaultsKey)
+        } catch {
+            UserDefaults.standard.set(generatedIdentifier, forKey: legacyDefaultsKey)
+        }
+        return generatedIdentifier
     }
 
     private func loadPairing() {
