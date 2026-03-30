@@ -11,6 +11,7 @@
 "main_nav_logs" = "日誌";
 "main_records_subtitle" = "查詢最近 30 天的語音識別文字，包含 Mac 本機與 iPhone 同步結果。";
 "main_collaboration_subtitle" = "管理服务、配对状态，并查看最近的双端协同活动。";
+"main_speech_subtitle" = "管理辨識設定和語言偏好。";
 
 "pair_with_iphone_title" = "与 iPhone 配对";
 "pair_with_iphone_instruction" = "在 iPhone 上输入此代码：";
@@ -201,7 +202,7 @@
 "records_clear_all_confirm_title" = "清空全部記錄";
 "records_clear_all_confirm_message" = "將清空最近 30 天的全部語音記錄。";
 
-"about_version" = "版本 1.0.0";
+"about_version" = "版本 1.0";
 "about_title" = "语音输入助手";
 "about_description" = "通过设备进行语音识别，并在 Mac 应用内即时查看结果";
 "about_help_link" = "查看帮助文档";

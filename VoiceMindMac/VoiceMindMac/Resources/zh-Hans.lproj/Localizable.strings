@@ -19,7 +19,7 @@
 "main_home_open_notes" = "查看笔记";
 "main_home_note_count_format" = "%d 字符";
 "main_collaboration_subtitle" = "管理服务、配对状态，并查看最近的双端协同活动。";
-"main_speech_subtitle" = "切换识别引擎、模型和语言偏好。";
+"main_speech_subtitle" = "管理识别设置和语言偏好。";
 "main_records_subtitle" = "查询最近 30 天的语音识别文本，包含 Mac 本地和 iPhone 同步结果。";
 "main_notes_subtitle" = "集中查看最近的文本结果，并进行本地录音输入。";
 "main_settings_subtitle" = "管理语言、界面主题与网络服务参数。";
@@ -204,7 +204,7 @@
 "records_clear_all_confirm_title" = "清空全部记录";
 "records_clear_all_confirm_message" = "将清空最近 30 天的全部语音记录。";
 
-"about_version" = "版本 1.0.0";
+"about_version" = "版本 1.0";
 "about_title" = "语音输入助手";
 "about_description" = "通过设备进行语音识别，并在 Mac 应用内实时查看结果";
 "about_help_link" = "查看帮助文档";

@@ -1,0 +1,3 @@
+"NSLocalNetworkUsageDescription" = "VoiceMind 需要存取本地網路來與 iPhone 建立連線並提供語音輸入服務。";
+"NSMicrophoneUsageDescription" = "VoiceMind 需要使用麥克風進行 Mac 本地語音錄音與辨識。";
+"NSSpeechRecognitionUsageDescription" = "VoiceMind 需要使用系統語音辨識將 Mac 本地或來自 iPhone 的語音轉換為文字並顯示在應用內。";
