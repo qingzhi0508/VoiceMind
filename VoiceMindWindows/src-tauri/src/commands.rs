@@ -241,8 +241,11 @@ pub async fn confirm_pairing(state: State<'_, AppState>, device_id: String, devi
 
 #[tauri::command]
 pub async fn get_paired_devices(state: State<'_, AppState>) -> Result<Vec<PairedDevice>, String> {
-    let manager = state.pairing_manager.lock().await;
-    Ok(manager.get_paired_devices())
+    let mut manager = state.pairing_manager.lock().await;
+    manager.reload_paired_devices();
+    let devices = manager.get_paired_devices();
+    tracing::info!("Returning {} paired devices", devices.len());
+    Ok(devices)
 }
 
 #[tauri::command]

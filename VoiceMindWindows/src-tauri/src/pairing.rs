@@ -202,7 +202,12 @@ impl PairingManager {
         self.stop_pairing_mode();
         self.secret_key = Some(secret_key.clone());
 
-        tracing::info!("Device paired successfully: {}", device_name);
+        tracing::info!(
+            "Device paired successfully: {} ({}) -> {}",
+            device_name,
+            device_id,
+            Self::get_storage_path().display()
+        );
         secret_key
     }
 
@@ -234,7 +239,10 @@ impl PairingManager {
 
     /// Get list of paired devices
     pub fn get_paired_devices(&self) -> Vec<crate::commands::PairedDevice> {
-        self.paired_devices.values()
+        let mut devices: Vec<_> = self.paired_devices.values().collect();
+        devices.sort_by(|a, b| b.paired_at.cmp(&a.paired_at));
+
+        devices.into_iter()
             .map(|d| {
                 let last_seen = d.last_seen.map(|ts| {
                     let duration = UNIX_EPOCH + Duration::from_secs(ts);
@@ -250,6 +258,14 @@ impl PairingManager {
                 }
             })
             .collect()
+    }
+
+    pub fn reload_paired_devices(&mut self) {
+        self.load_paired_devices();
+    }
+
+    pub fn paired_device_count(&self) -> usize {
+        self.paired_devices.len()
     }
 
     /// Remove a paired device
@@ -288,6 +304,7 @@ impl PairingManager {
 
     fn load_paired_devices(&mut self) {
         let path = Self::get_storage_path();
+        tracing::info!("Loading paired devices from {}", path.display());
         if let Ok(data) = std::fs::read_to_string(&path) {
             if let Ok(devices) = serde_json::from_str::<HashMap<String, PairedDeviceData>>(&data) {
                 self.paired_devices = devices;

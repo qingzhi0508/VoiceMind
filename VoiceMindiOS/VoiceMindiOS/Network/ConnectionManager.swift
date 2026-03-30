@@ -18,7 +18,8 @@ class ConnectionManager: NSObject {
 
     private let keychainService = "com.voicerelay.ios"
     private let keychainAccount = "pairing"
-    let deviceId = UUID().uuidString
+    private let deviceIdentifierDefaultsKey = "voicemind.ios.deviceIdentifier"
+    let deviceId: String
     private var pendingPairingDeviceName: String?
 
     private(set) var pairingState: PairingState = .unpaired {
@@ -34,6 +35,15 @@ class ConnectionManager: NSObject {
     private var isConnectionValidated = false
 
     override init() {
+        if let storedIdentifier = UserDefaults.standard.string(forKey: deviceIdentifierDefaultsKey),
+           !storedIdentifier.isEmpty {
+            deviceId = storedIdentifier
+        } else {
+            let generatedIdentifier = UUID().uuidString
+            UserDefaults.standard.set(generatedIdentifier, forKey: deviceIdentifierDefaultsKey)
+            deviceId = generatedIdentifier
+        }
+
         super.init()
         client.delegate = self
         loadPairing()

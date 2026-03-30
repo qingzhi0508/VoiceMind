@@ -14,7 +14,6 @@ use tokio::sync::{Mutex, RwLock};
 use tracing::{error, info, warn};
 use uuid::Uuid;
 
-const APPLE_REFERENCE_OFFSET_SECS: f64 = 978_307_200.0;
 const HEARTBEAT_INTERVAL_SECS: u64 = 30;
 const CONNECTION_TIMEOUT_SECS: u64 = 60;
 
@@ -514,6 +513,11 @@ async fn hydrate_existing_paired_connection(
     );
 
     if envelope.hmac.as_deref() != Some(expected_hmac.as_str()) {
+        warn!(
+            "Invalid HMAC for device {} message {}",
+            envelope.device_id,
+            envelope.type_
+        );
         return Err(format!("Invalid HMAC for device {}", envelope.device_id));
     }
 
@@ -645,6 +649,12 @@ async fn handle_result(
 ) -> Result<(), String> {
     let payload: ResultPayload =
         serde_json::from_slice(&envelope.payload).map_err(|e| format!("Invalid result payload: {}", e))?;
+    info!(
+        "Received result from {} session {}: {}",
+        envelope.device_id,
+        payload.session_id,
+        payload.text
+    );
     let device_name = {
         let conns = connections.read().await;
         conns.get(conn_id).and_then(|conn| conn.device_name.clone())
@@ -664,6 +674,12 @@ async fn handle_text_message(
 ) -> Result<(), String> {
     let payload: TextMessagePayload =
         serde_json::from_slice(&envelope.payload).map_err(|e| format!("Invalid textMessage payload: {}", e))?;
+    info!(
+        "Received text message from {} session {}: {}",
+        envelope.device_id,
+        payload.session_id,
+        payload.text
+    );
     let device_name = {
         let conns = connections.read().await;
         conns.get(conn_id).and_then(|conn| conn.device_name.clone())
@@ -797,7 +813,7 @@ async fn send_envelope_to_connection<T: Serialize>(
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
 ) -> Result<(), String> {
     let payload_bytes = serde_json::to_vec(payload).map_err(|e| format!("Failed to encode payload: {}", e))?;
-    let timestamp = apple_reference_seconds_now();
+    let timestamp = unix_seconds_now();
     let hmac = secret_key.map(|secret| {
         generate_hmac_for_envelope(message_type, &payload_bytes, timestamp, device_id, secret)
     });
@@ -864,10 +880,6 @@ fn inject_text(text: &str) {
     }
 }
 
-fn apple_reference_seconds_now() -> f64 {
-    unix_seconds_now() - APPLE_REFERENCE_OFFSET_SECS
-}
-
 fn unix_seconds_now() -> f64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -878,7 +890,7 @@ fn unix_seconds_now() -> f64 {
 fn generate_hmac_for_envelope(
     message_type: MessageType,
     payload: &[u8],
-    apple_reference_timestamp: f64,
+    unix_timestamp: f64,
     device_id: &str,
     secret_key: &str,
 ) -> String {
@@ -887,7 +899,6 @@ fn generate_hmac_for_envelope(
 
     type HmacSha256 = Hmac<Sha256>;
 
-    let unix_timestamp = apple_reference_timestamp + APPLE_REFERENCE_OFFSET_SECS;
     let message = format!(
         "{}{}{}{}",
         message_type.as_str(),
