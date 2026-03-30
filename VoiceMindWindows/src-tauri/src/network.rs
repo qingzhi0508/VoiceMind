@@ -243,7 +243,11 @@ impl ConnectionManager {
         }
     }
 
-    pub async fn start_server(&mut self, port: u16, pairing_manager: Arc<Mutex<PairingManager>>) -> Result<(), String> {
+    pub async fn start_server(
+        &mut self,
+        port: u16,
+        pairing_manager: Arc<Mutex<PairingManager>>,
+    ) -> Result<(), String> {
         self.server_port = port;
         let addr = format!("0.0.0.0:{port}");
         let listener = TcpListener::bind(&addr)
@@ -265,7 +269,15 @@ impl ConnectionManager {
                         let pairing_manager = pairing_manager.clone();
                         let emitter = emitter.clone();
                         tokio::spawn(async move {
-                            if let Err(err) = handle_connection(conn_id, stream, connections, pairing_manager, emitter).await {
+                            if let Err(err) = handle_connection(
+                                conn_id,
+                                stream,
+                                connections,
+                                pairing_manager,
+                                emitter,
+                            )
+                            .await
+                            {
                                 error!("Connection handling failed: {}", err);
                             }
                         });
@@ -283,7 +295,10 @@ impl ConnectionManager {
     pub async fn get_connected_device(&self) -> Option<ConnectionStatus> {
         let connections = self.connections.read().await;
         connections.values().find_map(|conn| {
-            if matches!(conn.state, ConnectionState::Paired | ConnectionState::Listening) {
+            if matches!(
+                conn.state,
+                ConnectionState::Paired | ConnectionState::Listening
+            ) {
                 Some(ConnectionStatus {
                     connected: true,
                     name: conn.device_name.clone(),
@@ -299,7 +314,10 @@ impl ConnectionManager {
         let target = {
             let connections = self.connections.read().await;
             connections.iter().find_map(|(id, conn)| {
-                if matches!(conn.state, ConnectionState::Paired | ConnectionState::Listening) {
+                if matches!(
+                    conn.state,
+                    ConnectionState::Paired | ConnectionState::Listening
+                ) {
                     Some((id.clone(), conn.secret_key.clone()))
                 } else {
                     None
@@ -307,10 +325,14 @@ impl ConnectionManager {
             })
         };
 
-        let (conn_id, secret_key) = target.ok_or_else(|| "No paired iPhone connected".to_string())?;
-        let secret_key = secret_key.ok_or_else(|| "Missing shared secret for paired device".to_string())?;
+        let (conn_id, secret_key) =
+            target.ok_or_else(|| "No paired iPhone connected".to_string())?;
+        let secret_key =
+            secret_key.ok_or_else(|| "Missing shared secret for paired device".to_string())?;
         let session_id = Uuid::new_v4().to_string();
-        let payload = StartListenPayload { session_id: session_id.clone() };
+        let payload = StartListenPayload {
+            session_id: session_id.clone(),
+        };
 
         send_envelope_to_connection(
             &conn_id,
@@ -336,17 +358,25 @@ impl ConnectionManager {
             let connections = self.connections.read().await;
             connections.iter().find_map(|(id, conn)| {
                 if matches!(conn.state, ConnectionState::Listening) {
-                    Some((id.clone(), conn.secret_key.clone(), conn.current_session_id.clone()))
+                    Some((
+                        id.clone(),
+                        conn.secret_key.clone(),
+                        conn.current_session_id.clone(),
+                    ))
                 } else {
                     None
                 }
             })
         };
 
-        let (conn_id, secret_key, session_id) = target.ok_or_else(|| "No active listening session".to_string())?;
-        let secret_key = secret_key.ok_or_else(|| "Missing shared secret for paired device".to_string())?;
+        let (conn_id, secret_key, session_id) =
+            target.ok_or_else(|| "No active listening session".to_string())?;
+        let secret_key =
+            secret_key.ok_or_else(|| "Missing shared secret for paired device".to_string())?;
         let session_id = session_id.unwrap_or_else(|| Uuid::new_v4().to_string());
-        let payload = StopListenPayload { session_id: session_id.clone() };
+        let payload = StopListenPayload {
+            session_id: session_id.clone(),
+        };
 
         send_envelope_to_connection(
             &conn_id,
@@ -408,7 +438,14 @@ async fn handle_connection(
         heartbeat_loop(heartbeat_conn_id, heartbeat_connections, heartbeat_emitter).await;
     });
 
-    let result = read_loop(&conn_id, reader, &connections, &pairing_manager, &event_emitter).await;
+    let result = read_loop(
+        &conn_id,
+        reader,
+        &connections,
+        &pairing_manager,
+        &event_emitter,
+    )
+    .await;
 
     let disconnected = {
         let mut conns = connections.write().await;
@@ -417,7 +454,10 @@ async fn handle_connection(
 
     if let Some(conn) = disconnected {
         info!("Connection {} closed", conn.id);
-        if matches!(conn.state, ConnectionState::Paired | ConnectionState::Listening) {
+        if matches!(
+            conn.state,
+            ConnectionState::Paired | ConnectionState::Listening
+        ) {
             let emitter = event_emitter.lock().await;
             emitter.emit_connection_changed(false, conn.device_name, conn.device_id);
         }
@@ -449,9 +489,16 @@ async fn read_loop(
             .await
             .map_err(|e| format!("Failed reading frame body: {}", e))?;
 
-        let envelope: Envelope =
-            serde_json::from_slice(&payload).map_err(|e| format!("Invalid envelope JSON: {}", e))?;
-        process_message(conn_id, envelope, connections, pairing_manager, event_emitter).await?;
+        let envelope: Envelope = serde_json::from_slice(&payload)
+            .map_err(|e| format!("Invalid envelope JSON: {}", e))?;
+        process_message(
+            conn_id,
+            envelope,
+            connections,
+            pairing_manager,
+            event_emitter,
+        )
+        .await?;
     }
 }
 
@@ -462,19 +509,37 @@ async fn process_message(
     pairing_manager: &Arc<Mutex<PairingManager>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
 ) -> Result<(), String> {
-    let message_type =
-        MessageType::from_str(&envelope.type_).ok_or_else(|| format!("Unknown message type: {}", envelope.type_))?;
+    let message_type = MessageType::from_str(&envelope.type_)
+        .ok_or_else(|| format!("Unknown message type: {}", envelope.type_))?;
 
     if message_type != MessageType::PairConfirm {
-        hydrate_existing_paired_connection(conn_id, &envelope, connections, pairing_manager, event_emitter).await?;
+        hydrate_existing_paired_connection(
+            conn_id,
+            &envelope,
+            connections,
+            pairing_manager,
+            event_emitter,
+        )
+        .await?;
     }
 
     match message_type {
-        MessageType::PairConfirm => handle_pair_confirm(conn_id, envelope, connections, pairing_manager, event_emitter).await,
+        MessageType::PairConfirm => {
+            handle_pair_confirm(
+                conn_id,
+                envelope,
+                connections,
+                pairing_manager,
+                event_emitter,
+            )
+            .await
+        }
         MessageType::Ping => handle_ping(conn_id, envelope, connections).await,
         MessageType::Pong => handle_pong(conn_id, connections).await,
         MessageType::Result => handle_result(conn_id, envelope, connections, event_emitter).await,
-        MessageType::TextMessage => handle_text_message(conn_id, envelope, connections, event_emitter).await,
+        MessageType::TextMessage => {
+            handle_text_message(conn_id, envelope, connections, event_emitter).await
+        }
         MessageType::PartialResult => handle_partial_result(conn_id, envelope, event_emitter).await,
         MessageType::AudioStart => handle_audio_start(conn_id, envelope, connections).await,
         MessageType::AudioData => handle_audio_data(conn_id, envelope).await,
@@ -492,49 +557,124 @@ async fn hydrate_existing_paired_connection(
     event_emitter: &Arc<Mutex<EventEmitter>>,
 ) -> Result<(), String> {
     let device_id = envelope.device_id.clone();
-    let (secret, device_name) = {
-        let manager = pairing_manager.lock().await;
-        (
-            manager.get_device_secret(&device_id),
-            manager.get_device_name(&device_id),
-        )
+    let message_type = MessageType::from_str(&envelope.type_)
+        .ok_or_else(|| format!("Unknown message type: {}", envelope.type_))?;
+    let provided_hmac = envelope
+        .hmac
+        .as_deref()
+        .ok_or_else(|| format!("Missing HMAC for device {}", envelope.device_id))?;
+
+    let existing_connection = {
+        let conns = connections.read().await;
+        conns
+            .get(conn_id)
+            .map(|conn| (conn.secret_key.clone(), conn.device_name.clone()))
     };
 
-    let Some(secret) = secret else {
-        return Ok(());
-    };
-
-    let expected_hmac = generate_hmac_for_envelope(
-        MessageType::from_str(&envelope.type_).ok_or_else(|| format!("Unknown message type: {}", envelope.type_))?,
-        &envelope.payload,
-        envelope.timestamp,
-        &envelope.device_id,
-        &secret,
-    );
-
-    if envelope.hmac.as_deref() != Some(expected_hmac.as_str()) {
-        warn!(
-            "Invalid HMAC for device {} message {}",
-            envelope.device_id,
-            envelope.type_
+    if let Some((Some(secret), device_name)) = existing_connection {
+        let expected_hmac = generate_hmac_for_envelope(
+            message_type,
+            &envelope.payload,
+            envelope.timestamp,
+            &envelope.device_id,
+            &secret,
         );
-        return Err(format!("Invalid HMAC for device {}", envelope.device_id));
+
+        if provided_hmac != expected_hmac {
+            warn!(
+                "Invalid HMAC for already-authenticated connection {}",
+                conn_id
+            );
+            return Err(format!("Invalid HMAC for device {}", envelope.device_id));
+        }
+
+        let just_promoted = promote_authenticated_connection(
+            conn_id,
+            device_id.clone(),
+            device_name.clone(),
+            secret,
+            connections,
+        )
+        .await;
+
+        if just_promoted {
+            let emitter = event_emitter.lock().await;
+            emitter.emit_connection_changed(true, device_name, Some(device_id));
+        }
+
+        return Ok(());
     }
 
-    let mut just_promoted = false;
-    {
-        let mut conns = connections.write().await;
-        if let Some(conn) = conns.get_mut(conn_id) {
-            let was_connected = matches!(conn.state, ConnectionState::Paired | ConnectionState::Listening);
-            conn.device_id = Some(device_id.clone());
-            conn.device_name = device_name.clone();
-            conn.secret_key = Some(secret);
-            conn.last_pong = Instant::now();
-            if !matches!(conn.state, ConnectionState::Listening) {
-                conn.state = ConnectionState::Paired;
+    let (secret, device_name, migrated_from_device_id) = {
+        let mut manager = pairing_manager.lock().await;
+
+        if let Some(secret) = manager.get_device_secret(&device_id) {
+            let expected_hmac = generate_hmac_for_envelope(
+                message_type,
+                &envelope.payload,
+                envelope.timestamp,
+                &envelope.device_id,
+                &secret,
+            );
+
+            if provided_hmac != expected_hmac {
+                warn!(
+                    "Invalid HMAC for paired device {} message {}",
+                    envelope.device_id, envelope.type_
+                );
+                return Err(format!("Invalid HMAC for device {}", envelope.device_id));
             }
-            just_promoted = !was_connected;
+
+            manager.update_last_seen(&device_id);
+            (secret, manager.get_device_name(&device_id), None)
+        } else {
+            let matching_device = manager
+                .get_paired_device_records()
+                .into_iter()
+                .find(|device| {
+                    generate_hmac_for_envelope(
+                        message_type,
+                        &envelope.payload,
+                        envelope.timestamp,
+                        &envelope.device_id,
+                        &device.secret_key,
+                    ) == provided_hmac
+                });
+
+            let Some(previous_device) = matching_device else {
+                warn!(
+                    "No paired device found for incoming device id {}",
+                    device_id
+                );
+                return Err(format!("Unknown paired device {}", envelope.device_id));
+            };
+
+            let migrated_device = manager
+                .migrate_device_id(&previous_device.id, &device_id)
+                .unwrap_or_else(|| previous_device.clone());
+
+            (
+                migrated_device.secret_key,
+                Some(migrated_device.name),
+                Some(previous_device.id),
+            )
         }
+    };
+
+    let just_promoted = promote_authenticated_connection(
+        conn_id,
+        device_id.clone(),
+        device_name.clone(),
+        secret,
+        connections,
+    )
+    .await;
+
+    if let Some(previous_device_id) = migrated_from_device_id {
+        warn!(
+            "Recovered paired device {} as {} on connection {}",
+            previous_device_id, device_id, conn_id
+        );
     }
 
     if just_promoted {
@@ -545,6 +685,34 @@ async fn hydrate_existing_paired_connection(
     Ok(())
 }
 
+async fn promote_authenticated_connection(
+    conn_id: &str,
+    device_id: String,
+    device_name: Option<String>,
+    secret: String,
+    connections: &Arc<RwLock<HashMap<String, Connection>>>,
+) -> bool {
+    let mut just_promoted = false;
+
+    let mut conns = connections.write().await;
+    if let Some(conn) = conns.get_mut(conn_id) {
+        let was_connected = matches!(
+            conn.state,
+            ConnectionState::Paired | ConnectionState::Listening
+        );
+        conn.device_id = Some(device_id);
+        conn.device_name = device_name;
+        conn.secret_key = Some(secret);
+        conn.last_pong = Instant::now();
+        if !matches!(conn.state, ConnectionState::Listening) {
+            conn.state = ConnectionState::Paired;
+        }
+        just_promoted = !was_connected;
+    }
+
+    just_promoted
+}
+
 async fn handle_pair_confirm(
     conn_id: &str,
     envelope: Envelope,
@@ -552,8 +720,14 @@ async fn handle_pair_confirm(
     pairing_manager: &Arc<Mutex<PairingManager>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
 ) -> Result<(), String> {
-    let payload: PairConfirmPayload =
-        serde_json::from_slice(&envelope.payload).map_err(|e| format!("Invalid pairConfirm payload: {}", e))?;
+    info!("Handling pairConfirm message from connection {}", conn_id);
+    let payload: PairConfirmPayload = serde_json::from_slice(&envelope.payload)
+        .map_err(|e| format!("Invalid pairConfirm payload: {}", e))?;
+
+    info!(
+        "PairConfirm payload: ios_id={}, ios_name={}, short_code={}",
+        payload.ios_id, payload.ios_name, payload.short_code
+    );
 
     let mut manager = pairing_manager.lock().await;
     if manager.is_locked() {
@@ -578,6 +752,10 @@ async fn handle_pair_confirm(
     }
 
     let secret_key = manager.confirm_pairing(&payload.ios_id, &payload.ios_name);
+    info!(
+        "Pairing confirmed, secret_key generated for device {}",
+        payload.ios_name
+    );
     drop(manager);
 
     {
@@ -587,10 +765,22 @@ async fn handle_pair_confirm(
             conn.device_name = Some(payload.ios_name.clone());
             conn.secret_key = Some(secret_key.clone());
             conn.state = ConnectionState::Paired;
+            info!(
+                "Connection {} updated: device_id={:?}, device_name={:?}, state=Paired",
+                conn_id, conn.device_id, conn.device_name
+            );
+        } else {
+            warn!(
+                "Connection {} not found when updating pairing state",
+                conn_id
+            );
         }
     }
 
-    let response = PairSuccessPayload { shared_secret: secret_key };
+    let response = PairSuccessPayload {
+        shared_secret: secret_key.clone(),
+    };
+    info!("Sending PairSuccess response with shared_secret");
     send_envelope_to_connection(
         conn_id,
         MessageType::PairSuccess,
@@ -611,14 +801,16 @@ async fn handle_ping(
     envelope: Envelope,
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
 ) -> Result<(), String> {
-    let payload: PingPayload =
-        serde_json::from_slice(&envelope.payload).map_err(|e| format!("Invalid ping payload: {}", e))?;
+    let payload: PingPayload = serde_json::from_slice(&envelope.payload)
+        .map_err(|e| format!("Invalid ping payload: {}", e))?;
     let secret = {
         let conns = connections.read().await;
         conns.get(conn_id).and_then(|conn| conn.secret_key.clone())
     };
 
-    let response = PongPayload { nonce: payload.nonce };
+    let response = PongPayload {
+        nonce: payload.nonce,
+    };
     send_envelope_to_connection(
         conn_id,
         MessageType::Pong,
@@ -647,13 +839,11 @@ async fn handle_result(
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
 ) -> Result<(), String> {
-    let payload: ResultPayload =
-        serde_json::from_slice(&envelope.payload).map_err(|e| format!("Invalid result payload: {}", e))?;
+    let payload: ResultPayload = serde_json::from_slice(&envelope.payload)
+        .map_err(|e| format!("Invalid result payload: {}", e))?;
     info!(
         "Received result from {} session {}: {}",
-        envelope.device_id,
-        payload.session_id,
-        payload.text
+        envelope.device_id, payload.session_id, payload.text
     );
     let device_name = {
         let conns = connections.read().await;
@@ -662,7 +852,12 @@ async fn handle_result(
 
     inject_text(&payload.text);
     let emitter = event_emitter.lock().await;
-    emitter.emit_recognition_result(payload.text, payload.language, payload.session_id, device_name);
+    emitter.emit_recognition_result(
+        payload.text,
+        payload.language,
+        payload.session_id,
+        device_name,
+    );
     Ok(())
 }
 
@@ -672,22 +867,42 @@ async fn handle_text_message(
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
 ) -> Result<(), String> {
-    let payload: TextMessagePayload =
-        serde_json::from_slice(&envelope.payload).map_err(|e| format!("Invalid textMessage payload: {}", e))?;
+    let payload: TextMessagePayload = serde_json::from_slice(&envelope.payload)
+        .map_err(|e| format!("Invalid textMessage payload: {}", e))?;
     info!(
         "Received text message from {} session {}: {}",
-        envelope.device_id,
-        payload.session_id,
-        payload.text
+        envelope.device_id, payload.session_id, payload.text
     );
+
     let device_name = {
         let conns = connections.read().await;
-        conns.get(conn_id).and_then(|conn| conn.device_name.clone())
+        if let Some(conn) = conns.get(conn_id) {
+            info!(
+                "Connection {} state: {:?}, device_name: {:?}",
+                conn_id, conn.state, conn.device_name
+            );
+            conn.device_name.clone()
+        } else {
+            warn!(
+                "Connection {} not found when handling text message",
+                conn_id
+            );
+            None
+        }
     };
 
+    info!("Injecting text: {}", payload.text);
     inject_text(&payload.text);
+    info!("Text injection completed");
+
     let emitter = event_emitter.lock().await;
-    emitter.emit_recognition_result(payload.text, payload.language, payload.session_id, device_name);
+    emitter.emit_recognition_result(
+        payload.text,
+        payload.language,
+        payload.session_id,
+        device_name,
+    );
+    info!("Recognition result event emitted");
     Ok(())
 }
 
@@ -696,8 +911,8 @@ async fn handle_partial_result(
     envelope: Envelope,
     event_emitter: &Arc<Mutex<EventEmitter>>,
 ) -> Result<(), String> {
-    let payload: PartialResultPayload =
-        serde_json::from_slice(&envelope.payload).map_err(|e| format!("Invalid partialResult payload: {}", e))?;
+    let payload: PartialResultPayload = serde_json::from_slice(&envelope.payload)
+        .map_err(|e| format!("Invalid partialResult payload: {}", e))?;
     let emitter = event_emitter.lock().await;
     emitter.emit_partial_result(payload.text, payload.language, payload.session_id);
     Ok(())
@@ -708,8 +923,8 @@ async fn handle_audio_start(
     envelope: Envelope,
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
 ) -> Result<(), String> {
-    let payload: AudioStartPayload =
-        serde_json::from_slice(&envelope.payload).map_err(|e| format!("Invalid audioStart payload: {}", e))?;
+    let payload: AudioStartPayload = serde_json::from_slice(&envelope.payload)
+        .map_err(|e| format!("Invalid audioStart payload: {}", e))?;
     let mut conns = connections.write().await;
     if let Some(conn) = conns.get_mut(conn_id) {
         conn.state = ConnectionState::Listening;
@@ -719,8 +934,8 @@ async fn handle_audio_start(
 }
 
 async fn handle_audio_data(_conn_id: &str, envelope: Envelope) -> Result<(), String> {
-    let _payload: AudioDataPayload =
-        serde_json::from_slice(&envelope.payload).map_err(|e| format!("Invalid audioData payload: {}", e))?;
+    let _payload: AudioDataPayload = serde_json::from_slice(&envelope.payload)
+        .map_err(|e| format!("Invalid audioData payload: {}", e))?;
     Ok(())
 }
 
@@ -729,8 +944,8 @@ async fn handle_audio_end(
     envelope: Envelope,
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
 ) -> Result<(), String> {
-    let _payload: AudioEndPayload =
-        serde_json::from_slice(&envelope.payload).map_err(|e| format!("Invalid audioEnd payload: {}", e))?;
+    let _payload: AudioEndPayload = serde_json::from_slice(&envelope.payload)
+        .map_err(|e| format!("Invalid audioEnd payload: {}", e))?;
     let mut conns = connections.write().await;
     if let Some(conn) = conns.get_mut(conn_id) {
         conn.state = ConnectionState::Paired;
@@ -740,8 +955,8 @@ async fn handle_audio_end(
 }
 
 async fn handle_error(envelope: Envelope) -> Result<(), String> {
-    let payload: ErrorPayload =
-        serde_json::from_slice(&envelope.payload).map_err(|e| format!("Invalid error payload: {}", e))?;
+    let payload: ErrorPayload = serde_json::from_slice(&envelope.payload)
+        .map_err(|e| format!("Invalid error payload: {}", e))?;
     warn!("iOS error: {} - {}", payload.code, payload.message);
     Ok(())
 }
@@ -788,7 +1003,9 @@ async fn heartbeat_loop(
             continue;
         };
 
-        let payload = PingPayload { nonce: Uuid::new_v4().to_string() };
+        let payload = PingPayload {
+            nonce: Uuid::new_v4().to_string(),
+        };
         if let Err(err) = send_envelope_to_connection(
             &conn_id,
             MessageType::Ping,
@@ -812,7 +1029,8 @@ async fn send_envelope_to_connection<T: Serialize>(
     secret_key: Option<&str>,
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
 ) -> Result<(), String> {
-    let payload_bytes = serde_json::to_vec(payload).map_err(|e| format!("Failed to encode payload: {}", e))?;
+    let payload_bytes =
+        serde_json::to_vec(payload).map_err(|e| format!("Failed to encode payload: {}", e))?;
     let timestamp = unix_seconds_now();
     let hmac = secret_key.map(|secret| {
         generate_hmac_for_envelope(message_type, &payload_bytes, timestamp, device_id, secret)
@@ -826,12 +1044,14 @@ async fn send_envelope_to_connection<T: Serialize>(
         hmac,
     };
 
-    let frame = serde_json::to_vec(&envelope).map_err(|e| format!("Failed to encode envelope: {}", e))?;
+    let frame =
+        serde_json::to_vec(&envelope).map_err(|e| format!("Failed to encode envelope: {}", e))?;
     let length = (frame.len() as u32).to_be_bytes();
 
     let writer = {
         let conns = connections.read().await;
-        conns.get(conn_id)
+        conns
+            .get(conn_id)
             .map(|conn| conn.writer.clone())
             .ok_or_else(|| format!("Connection not found: {}", conn_id))?
     };
@@ -873,7 +1093,8 @@ fn inject_text(text: &str) {
     let injector = injection::TextInjector::new(injection::InjectionMethod::Keyboard);
     if let Err(err) = injector.inject(text) {
         error!("Keyboard injection failed: {}", err);
-        let clipboard_injector = injection::TextInjector::new(injection::InjectionMethod::Clipboard);
+        let clipboard_injector =
+            injection::TextInjector::new(injection::InjectionMethod::Clipboard);
         if let Err(clipboard_err) = clipboard_injector.inject(text) {
             error!("Clipboard injection failed: {}", clipboard_err);
         }
@@ -907,7 +1128,8 @@ fn generate_hmac_for_envelope(
         device_id
     );
 
-    let mut mac = HmacSha256::new_from_slice(secret_key.as_bytes()).expect("HMAC accepts any key size");
+    let mut mac =
+        HmacSha256::new_from_slice(secret_key.as_bytes()).expect("HMAC accepts any key size");
     mac.update(message.as_bytes());
     let bytes = mac.finalize().into_bytes();
     bytes.iter().map(|b| format!("{:02x}", b)).collect()

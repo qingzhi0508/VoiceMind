@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
 const MAX_FAILED_ATTEMPTS: u32 = 5;
@@ -70,7 +70,10 @@ impl PairingManager {
     }
 
     pub fn get_current_code(&self) -> String {
-        self.state.current_code.clone().unwrap_or_else(|| "------".to_string())
+        self.state
+            .current_code
+            .clone()
+            .unwrap_or_else(|| "------".to_string())
     }
 
     pub fn get_port(&self) -> u16 {
@@ -142,7 +145,9 @@ impl PairingManager {
         if self.is_locked() {
             return false;
         }
-        if let (Some(current), Some(expires)) = (&self.state.current_code, self.state.pairing_code_expires) {
+        if let (Some(current), Some(expires)) =
+            (&self.state.current_code, self.state.pairing_code_expires)
+        {
             let now = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
@@ -156,7 +161,11 @@ impl PairingManager {
     /// Record a failed pairing attempt
     pub fn record_failed_attempt(&mut self) {
         self.state.failed_attempts += 1;
-        tracing::warn!("Failed pairing attempt: {}/{}", self.state.failed_attempts, MAX_FAILED_ATTEMPTS);
+        tracing::warn!(
+            "Failed pairing attempt: {}/{}",
+            self.state.failed_attempts,
+            MAX_FAILED_ATTEMPTS
+        );
 
         if self.state.failed_attempts >= MAX_FAILED_ATTEMPTS {
             let now = SystemTime::now()
@@ -164,7 +173,10 @@ impl PairingManager {
                 .unwrap()
                 .as_secs();
             self.state.lockout_until = Some(now + LOCKOUT_DURATION_SECS);
-            tracing::warn!("Too many failed attempts. Locked for {} seconds", LOCKOUT_DURATION_SECS);
+            tracing::warn!(
+                "Too many failed attempts. Locked for {} seconds",
+                LOCKOUT_DURATION_SECS
+            );
         }
     }
 
@@ -213,11 +225,17 @@ impl PairingManager {
 
     /// Get paired device secret key
     pub fn get_device_secret(&self, device_id: &str) -> Option<String> {
-        self.paired_devices.get(device_id).map(|d| d.secret_key.clone())
+        self.paired_devices
+            .get(device_id)
+            .map(|d| d.secret_key.clone())
     }
 
     pub fn get_device_name(&self, device_id: &str) -> Option<String> {
         self.paired_devices.get(device_id).map(|d| d.name.clone())
+    }
+
+    pub fn get_paired_device_records(&self) -> Vec<PairedDeviceData> {
+        self.paired_devices.values().cloned().collect()
     }
 
     /// Check if a device is paired
@@ -237,12 +255,46 @@ impl PairingManager {
         }
     }
 
+    pub fn migrate_device_id(
+        &mut self,
+        previous_device_id: &str,
+        current_device_id: &str,
+    ) -> Option<PairedDeviceData> {
+        if previous_device_id == current_device_id {
+            self.update_last_seen(current_device_id);
+            return self.paired_devices.get(current_device_id).cloned();
+        }
+
+        let mut device = self.paired_devices.remove(previous_device_id)?;
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        device.id = current_device_id.to_string();
+        device.last_seen = Some(now);
+
+        self.paired_devices
+            .insert(current_device_id.to_string(), device.clone());
+        self.save_paired_devices();
+
+        tracing::warn!(
+            "Migrated paired device id from {} to {} for {}",
+            previous_device_id,
+            current_device_id,
+            device.name
+        );
+
+        Some(device)
+    }
+
     /// Get list of paired devices
     pub fn get_paired_devices(&self) -> Vec<crate::commands::PairedDevice> {
         let mut devices: Vec<_> = self.paired_devices.values().collect();
         devices.sort_by(|a, b| b.paired_at.cmp(&a.paired_at));
 
-        devices.into_iter()
+        devices
+            .into_iter()
             .map(|d| {
                 let last_seen = d.last_seen.map(|ts| {
                     let duration = UNIX_EPOCH + Duration::from_secs(ts);
@@ -285,7 +337,8 @@ impl PairingManager {
 
     /// Check if a device has auto-reconnect enabled
     pub fn get_auto_reconnect(&self, device_id: &str) -> bool {
-        self.paired_devices.get(device_id)
+        self.paired_devices
+            .get(device_id)
             .map(|d| d.auto_reconnect)
             .unwrap_or(false)
     }
@@ -348,5 +401,8 @@ fn generate_secret_key() -> String {
     let mut mac = HmacSha256::new_from_slice(b"voicemind-secret").unwrap();
     mac.update(Uuid::new_v4().as_bytes());
     let result = mac.finalize();
-    base64::Engine::encode(&base64::engine::general_purpose::STANDARD, result.into_bytes())
+    base64::Engine::encode(
+        &base64::engine::general_purpose::STANDARD,
+        result.into_bytes(),
+    )
 }
