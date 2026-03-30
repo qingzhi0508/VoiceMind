@@ -113,7 +113,6 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
     case collaboration
     case data
     case speech
-    case permissions
     case about
     case settings
 
@@ -131,8 +130,6 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
             return String(localized: "main_nav_logs")
         case .speech:
             return String(localized: "tab_speech")
-        case .permissions:
-            return String(localized: "tab_permissions")
         case .about:
             return String(localized: "tab_about")
         case .settings:
@@ -152,8 +149,6 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
             return String(localized: "data_subtitle")
         case .speech:
             return String(localized: "main_speech_subtitle")
-        case .permissions:
-            return String(localized: "main_permissions_subtitle")
         case .about:
             return String(localized: "about_description")
         case .settings:
@@ -173,8 +168,6 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
             return "tray.full"
         case .speech:
             return "waveform.circle"
-        case .permissions:
-            return "lock.shield"
         case .about:
             return "questionmark.circle"
         case .settings:
@@ -192,13 +185,12 @@ enum MainWindowContentSection: Equatable {
     case collaboration
     case data
     case speech
-    case permissions
     case about
     case settings
 }
 
 enum MainWindowNavigationPolicy {
-    static let primarySections: [MainWindowSection] = [.home, .records, .collaboration, .speech, .permissions]
+    static let primarySections: [MainWindowSection] = [.home, .records, .collaboration, .speech]
 
     static func contentSection(for section: MainWindowSection) -> MainWindowContentSection {
         switch section {
@@ -212,8 +204,6 @@ enum MainWindowNavigationPolicy {
             return .data
         case .speech:
             return .speech
-        case .permissions:
-            return .permissions
         case .about:
             return .about
         case .settings:
@@ -229,7 +219,6 @@ enum MainWindowPagePersistencePolicy {
         .collaboration,
         .data,
         .speech,
-        .permissions,
         .settings,
         .about
     ]
@@ -283,8 +272,9 @@ struct MainWindow: View {
                 sidebar
                 contentArea
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(width: 1220, height: 780)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .preferredColorScheme(settings.themePreference.preferredColorScheme)
     }
 
@@ -432,10 +422,6 @@ struct MainWindow: View {
         case .speech:
             WindowPageShell(section: section) {
                 SpeechRecognitionTab(controller: controller, showsInlineHeader: false)
-            }
-        case .permissions:
-            WindowPageShell(section: section) {
-                PermissionsTab(showsInlineHeader: false)
             }
         case .about:
             WindowPageShell(section: section) {
@@ -1268,15 +1254,6 @@ struct SettingsTab: View {
             }
 
                 settingsSectionCard(
-                    title: String(localized: "settings_text_injection_title")
-                ) {
-                    settingsInfoRow(
-                        title: String(localized: "settings_text_injection_clipboard_title"),
-                        detail: String(localized: "settings_text_injection_clipboard_desc")
-                    )
-                }
-
-                settingsSectionCard(
                     title: String(localized: "settings_language_title")
                 ) {
                     settingsPickerRow(
@@ -1820,76 +1797,6 @@ enum NotesTextSelectionPolicy {
     }
 }
 
-// MARK: - Permissions Tab
-
-struct PermissionsTab: View {
-    var showsInlineHeader = true
-    @State private var accessibilityGranted = false
-
-    var body: some View {
-        VStack(spacing: 20) {
-            if showsInlineHeader {
-                Text(String(localized: "permissions_tab_title"))
-                    .font(.title)
-                    .padding(.top)
-            }
-
-            GroupBox {
-                VStack(alignment: .leading, spacing: 15) {
-                    HStack {
-                        Image(systemName: accessibilityGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundColor(accessibilityGranted ? .green : .red)
-                        Text(String(localized: "permissions_tab_accessibility_title"))
-                        Spacer()
-                        Text(accessibilityGranted ? String(localized: "permissions_tab_granted") : String(localized: "permissions_tab_denied"))
-                            .foregroundColor(MainWindowColors.secondaryText)
-                    }
-
-                    Text(String(localized: "permissions_tab_accessibility_desc"))
-                        .font(.caption)
-                        .foregroundColor(MainWindowColors.secondaryText)
-                }
-                .padding()
-            }
-
-            HStack(spacing: 15) {
-                Button(AppLocalization.localizedString("permissions_tab_check")) {
-                    checkPermissions()
-                }
-                .buttonStyle(.bordered)
-
-                Button(AppLocalization.localizedString("permissions_tab_request")) {
-                    requestPermissions()
-                }
-                .buttonStyle(.borderedProminent)
-
-                Button(AppLocalization.localizedString("permissions_tab_open_settings")) {
-                    PermissionsManager.openSystemPreferences(for: .accessibility)
-                }
-                .buttonStyle(.bordered)
-            }
-
-            Spacer()
-        }
-        .padding()
-        .onAppear {
-            checkPermissions()
-        }
-    }
-
-    private func checkPermissions() {
-        accessibilityGranted = PermissionsManager.checkAccessibility() == .granted
-    }
-
-    private func requestPermissions() {
-        PermissionsManager.requestAccessibility()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            checkPermissions()
-        }
-    }
-}
-
 // MARK: - About Tab
 
 struct AboutTab: View {
@@ -1898,44 +1805,124 @@ struct AboutTab: View {
     let onRevealDebug: () -> Void
 
     var body: some View {
-        VStack {
-            Spacer()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                aboutHero
+                aboutHighlights
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding(8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
 
-            VStack(spacing: 20) {
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 60))
-                    .foregroundColor(.accentColor)
+    private var aboutHero: some View {
+        HStack(alignment: .top, spacing: 22) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.orange.opacity(0.95),
+                                Color.yellow.opacity(0.78),
+                                Color.green.opacity(0.72)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 108, height: 108)
 
+                Image(systemName: "waveform")
+                    .font(.system(size: 42, weight: .bold))
+                    .foregroundColor(.white.opacity(0.96))
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
                 if showsInlineHeader {
                     Text(String(localized: "app_title"))
-                        .font(.title)
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundColor(MainWindowColors.title)
                 }
-
-                Text(String(localized: "about_version"))
-                    .foregroundColor(MainWindowColors.secondaryText)
-                    .onTapGesture(count: 2, perform: onRevealDebug)
-
-                Divider()
-                    .frame(maxWidth: 260)
 
                 Text(String(localized: "about_title"))
-                    .font(.headline)
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(MainWindowColors.title)
 
                 Text(String(localized: "about_description"))
-                    .multilineTextAlignment(.center)
+                    .font(.body)
                     .foregroundColor(MainWindowColors.secondaryText)
-                    .frame(maxWidth: 360)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                Button(String(localized: "about_open_guide")) {
-                    onOpenGuide()
+                HStack(spacing: 12) {
+                    Label(String(localized: "about_version"), systemImage: "number.circle")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(MainWindowColors.secondaryText)
+                        .onTapGesture(count: 2, perform: onRevealDebug)
+
+                    Button(String(localized: "about_open_guide")) {
+                        onOpenGuide()
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
-                .buttonStyle(.borderedProminent)
             }
-            .frame(maxWidth: .infinity)
 
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .padding()
+        .padding(28)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(MainWindowColors.cardSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
+    }
+
+    private var aboutHighlights: some View {
+        HStack(alignment: .top, spacing: 18) {
+            aboutHighlightCard(
+                systemImage: "desktopcomputer.and.iphone",
+                title: String(localized: "main_nav_collaboration"),
+                description: String(localized: "about_description")
+            )
+
+            aboutHighlightCard(
+                systemImage: "book.pages",
+                title: String(localized: "about_open_guide"),
+                description: String(localized: "main_brand_subtitle")
+            )
+        }
+    }
+
+    private func aboutHighlightCard(systemImage: String, title: String, description: String) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Image(systemName: systemImage)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundColor(.accentColor)
+
+            Text(title)
+                .font(.headline.weight(.semibold))
+                .foregroundColor(MainWindowColors.title)
+
+            Text(description)
+                .font(.subheadline)
+                .foregroundColor(MainWindowColors.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, minHeight: 170, alignment: .topLeading)
+        .padding(22)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(MainWindowColors.softSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
     }
 }
 
