@@ -20,6 +20,7 @@ struct LocalTranscriptionPolicyTests {
                 hasPermissions: true,
                 sendToMacEnabled: true,
                 preferredMode: .local,
+                pairingState: .unpaired,
                 connectionState: .disconnected
             )
         )
@@ -30,6 +31,7 @@ struct LocalTranscriptionPolicyTests {
                 hasPermissions: true,
                 sendToMacEnabled: true,
                 preferredMode: .local,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
                 connectionState: .connected
             )
         )
@@ -40,6 +42,7 @@ struct LocalTranscriptionPolicyTests {
                 hasPermissions: true,
                 sendToMacEnabled: false,
                 preferredMode: .local,
+                pairingState: .unpaired,
                 connectionState: .disconnected
             )
         )
@@ -191,6 +194,7 @@ struct LocalTranscriptionPolicyTests {
             LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
                 sendToMacEnabled: true,
                 preferredMode: .mac,
+                pairingState: .unpaired,
                 connectionState: .disconnected
             )
         )
@@ -199,6 +203,7 @@ struct LocalTranscriptionPolicyTests {
             !LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
                 sendToMacEnabled: true,
                 preferredMode: .mac,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
                 connectionState: .connected
             )
         )
@@ -207,6 +212,7 @@ struct LocalTranscriptionPolicyTests {
             LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
                 sendToMacEnabled: true,
                 preferredMode: .local,
+                pairingState: .unpaired,
                 connectionState: .disconnected
             )
         )
@@ -215,6 +221,7 @@ struct LocalTranscriptionPolicyTests {
             !LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
                 sendToMacEnabled: false,
                 preferredMode: .local,
+                pairingState: .unpaired,
                 connectionState: .disconnected
             )
         )
@@ -257,6 +264,7 @@ struct LocalTranscriptionPolicyTests {
                 hasPermissions: true,
                 sendToMacEnabled: true,
                 preferredMode: .local,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
                 connectionState: .connected
             ) == "ptt_local_ready_and_sync"
         )
@@ -267,6 +275,7 @@ struct LocalTranscriptionPolicyTests {
         #expect(
             LocalTranscriptionPolicy.canManuallyForwardTextToMac(
                 sendToMacEnabled: true,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
                 connectionState: .connected,
                 transcriptText: "hello"
             )
@@ -275,6 +284,7 @@ struct LocalTranscriptionPolicyTests {
         #expect(
             !LocalTranscriptionPolicy.canManuallyForwardTextToMac(
                 sendToMacEnabled: false,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
                 connectionState: .connected,
                 transcriptText: "hello"
             )
@@ -283,6 +293,7 @@ struct LocalTranscriptionPolicyTests {
         #expect(
             !LocalTranscriptionPolicy.canManuallyForwardTextToMac(
                 sendToMacEnabled: true,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
                 connectionState: .disconnected,
                 transcriptText: "hello"
             )
@@ -291,9 +302,60 @@ struct LocalTranscriptionPolicyTests {
         #expect(
             !LocalTranscriptionPolicy.canManuallyForwardTextToMac(
                 sendToMacEnabled: true,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
                 connectionState: .connected,
                 transcriptText: "   "
             )
         )
+    }
+
+    @Test
+    func unpairedSocketConnectionDoesNotCountAsMacReadyState() {
+        #expect(
+            !LocalTranscriptionPolicy.canStartPrimaryCapture(
+                recognitionState: .idle,
+                hasPermissions: true,
+                sendToMacEnabled: true,
+                preferredMode: .mac,
+                pairingState: .unpaired,
+                connectionState: .connected
+            )
+        )
+
+        #expect(
+            LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
+                sendToMacEnabled: true,
+                preferredMode: .mac,
+                pairingState: .unpaired,
+                connectionState: .connected
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.canManuallyForwardTextToMac(
+                sendToMacEnabled: true,
+                pairingState: .unpaired,
+                connectionState: .connected,
+                transcriptText: "hello"
+            )
+        )
+
+        #expect(
+            LocalTranscriptionPolicy.idleStatusMessageKey(
+                hasPermissions: true,
+                sendToMacEnabled: true,
+                preferredMode: .local,
+                pairingState: .unpaired,
+                connectionState: .connected
+            ) == "ptt_local_ready"
+        )
+    }
+
+    @Test
+    func notPairedErrorsRequireRePairingRecovery() {
+        #expect(PairingErrorRecoveryPolicy.requiresRePairing(for: "not_paired"))
+        #expect(PairingErrorRecoveryPolicy.messageKey(for: "not_paired") == "pairing_repair_required")
+        #expect(!PairingErrorRecoveryPolicy.requiresRePairing(for: "invalid_code"))
+        #expect(PairingErrorRecoveryPolicy.messageKey(for: "invalid_code") == nil)
     }
 }

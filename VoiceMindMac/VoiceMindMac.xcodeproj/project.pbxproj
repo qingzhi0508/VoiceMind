@@ -38,6 +38,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Resources/VoiceMind.storekit,
 			);
 			target = B919E25A2F685937002A347A /* VoiceMindMac */;
 		};
@@ -456,7 +457,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = cayden.VoiceMindMac;
+				PRODUCT_BUNDLE_IDENTIFIER = cayden.VoiceMind;
 				PRODUCT_NAME = VoiceMind;
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
@@ -514,7 +515,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = cayden.VoiceMindMac;
+				PRODUCT_BUNDLE_IDENTIFIER = cayden.VoiceMind;
 				PRODUCT_NAME = VoiceMind;
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;

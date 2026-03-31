@@ -11,6 +11,7 @@
 "main_nav_logs" = "日誌";
 "main_records_subtitle" = "查詢最近 30 天的語音識別文字，包含 Mac 本機與 iPhone 同步結果。";
 "main_collaboration_subtitle" = "管理服务、配对状态，并查看最近的双端协同活动。";
+"main_speech_subtitle" = "管理辨識設定和語言偏好。";
 
 "pair_with_iphone_title" = "与 iPhone 配对";
 "pair_with_iphone_instruction" = "在 iPhone 上输入此代码：";
@@ -176,6 +177,21 @@
 "records_summary_count_format" = "最近 30 天共 %d 筆";
 "records_source_local_mac" = "Mac 本機";
 "records_source_ios_sync" = "iPhone 同步";
+"billing_two_device_sync_header" = "雙端協同";
+"billing_two_device_sync_actions_title" = "解鎖方式";
+"billing_two_device_sync_restore_button" = "恢復購買";
+"billing_two_device_sync_monthly_button" = "月度無限次 %@";
+"billing_two_device_sync_yearly_button" = "年度無限次 %@";
+"billing_two_device_sync_lifetime_button" = "終身解鎖 %@";
+"billing_two_device_sync_monthly_fallback" = "月度無限次";
+"billing_two_device_sync_yearly_fallback" = "年度無限次";
+"billing_two_device_sync_lifetime_fallback" = "終身解鎖";
+"billing_two_device_sync_status_unlimited" = "已解鎖無限次雙端協同。";
+"billing_two_device_sync_status_free_mac" = "目前為免費方案。";
+"billing_two_device_sync_mac_detail_free" = "免費用戶可從 iPhone 每天發起最多 50 次雙端協同。你可以在這裡升級，在 iPhone 和 Mac 上解鎖無限次。";
+"billing_two_device_sync_mac_detail_monthly" = "你的月度方案已在 iPhone 和 Mac 上解鎖無限次雙端協同。";
+"billing_two_device_sync_mac_detail_yearly" = "你的年度方案已在 iPhone 和 Mac 上解鎖無限次雙端協同。";
+"billing_two_device_sync_mac_detail_lifetime" = "你的終身購買已在 iPhone 和 Mac 上永久解鎖目前的雙端協同功能。";
 "records_action_edit" = "編輯";
 "records_action_done" = "完成";
 "records_action_select_all" = "全選";
@@ -186,7 +202,7 @@
 "records_clear_all_confirm_title" = "清空全部記錄";
 "records_clear_all_confirm_message" = "將清空最近 30 天的全部語音記錄。";
 
-"about_version" = "版本 1.0.0";
+"about_version" = "版本 1.0";
 "about_title" = "语音输入助手";
 "about_description" = "通过设备进行语音识别，并在 Mac 应用内即时查看结果";
 "about_help_link" = "查看帮助文档";

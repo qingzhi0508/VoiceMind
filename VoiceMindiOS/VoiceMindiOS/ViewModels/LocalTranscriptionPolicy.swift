@@ -6,6 +6,14 @@ enum HomeTranscriptionMode: String {
 }
 
 enum LocalTranscriptionPolicy {
+    static func isReadyForMacCollaboration(
+        pairingState: PairingState,
+        connectionState: ConnectionState
+    ) -> Bool {
+        guard case .paired = pairingState else { return false }
+        return connectionState == .connected
+    }
+
     static func effectiveHomeTranscriptionMode(
         sendToMacEnabled: Bool,
         preferredMode: HomeTranscriptionMode
@@ -30,6 +38,7 @@ enum LocalTranscriptionPolicy {
     static func shouldPromptForHomeMacAction(
         sendToMacEnabled: Bool,
         preferredMode: HomeTranscriptionMode,
+        pairingState: PairingState,
         connectionState: ConnectionState
     ) -> Bool {
         guard sendToMacEnabled else { return false }
@@ -37,7 +46,11 @@ enum LocalTranscriptionPolicy {
             sendToMacEnabled: sendToMacEnabled,
             preferredMode: preferredMode
         )
-        return (mode == .mac || mode == .local) && connectionState != .connected
+        return (mode == .mac || mode == .local) &&
+        !isReadyForMacCollaboration(
+            pairingState: pairingState,
+            connectionState: connectionState
+        )
     }
 
     static func canStartLocalRecognition(
@@ -52,11 +65,13 @@ enum LocalTranscriptionPolicy {
         hasPermissions: Bool,
         sendToMacEnabled: Bool,
         preferredMode: HomeTranscriptionMode,
+        pairingState: PairingState,
         connectionState: ConnectionState
     ) -> Bool {
         guard !shouldPromptForHomeMacAction(
             sendToMacEnabled: sendToMacEnabled,
             preferredMode: preferredMode,
+            pairingState: pairingState,
             connectionState: connectionState
         ) else {
             return false
@@ -74,7 +89,12 @@ enum LocalTranscriptionPolicy {
                 hasPermissions: hasPermissions
             )
         case .mac:
-            return hasPermissions && isIdle(recognitionState) && connectionState == .connected
+            return hasPermissions &&
+            isIdle(recognitionState) &&
+            isReadyForMacCollaboration(
+                pairingState: pairingState,
+                connectionState: connectionState
+            )
         }
     }
 
@@ -123,11 +143,17 @@ enum LocalTranscriptionPolicy {
 
     static func canManuallyForwardTextToMac(
         sendToMacEnabled: Bool,
+        pairingState: PairingState,
         connectionState: ConnectionState,
         transcriptText: String
     ) -> Bool {
         guard sendToMacEnabled else { return false }
-        guard connectionState == .connected else { return false }
+        guard isReadyForMacCollaboration(
+            pairingState: pairingState,
+            connectionState: connectionState
+        ) else {
+            return false
+        }
         return !transcriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -135,19 +161,24 @@ enum LocalTranscriptionPolicy {
         hasPermissions: Bool,
         sendToMacEnabled: Bool,
         preferredMode: HomeTranscriptionMode,
+        pairingState: PairingState,
         connectionState: ConnectionState
     ) -> String {
         guard hasPermissions else { return "ptt_local_permissions_required" }
+        let hasReadyMacConnection = isReadyForMacCollaboration(
+            pairingState: pairingState,
+            connectionState: connectionState
+        )
         switch effectiveHomeTranscriptionMode(
             sendToMacEnabled: sendToMacEnabled,
             preferredMode: preferredMode
         ) {
         case .local:
-            return sendToMacEnabled && connectionState == .connected
+            return sendToMacEnabled && hasReadyMacConnection
             ? "ptt_local_ready_and_sync"
             : "ptt_local_ready"
         case .mac:
-            return connectionState == .connected ? "ptt_hold_to_talk" : "ptt_connect_to_talk"
+            return hasReadyMacConnection ? "ptt_hold_to_talk" : "ptt_connect_to_talk"
         }
     }
 
@@ -157,6 +188,21 @@ enum LocalTranscriptionPolicy {
             return true
         case .listening, .processing, .sending:
             return false
+        }
+    }
+}
+
+enum PairingErrorRecoveryPolicy {
+    static func requiresRePairing(for errorCode: String) -> Bool {
+        errorCode == "not_paired"
+    }
+
+    static func messageKey(for errorCode: String) -> String? {
+        switch errorCode {
+        case "not_paired":
+            return "pairing_repair_required"
+        default:
+            return nil
         }
     }
 }

@@ -1,0 +1,3 @@
+"NSLocalNetworkUsageDescription" = "VoiceMind needs local network access to connect to your iPhone for local collaboration.";
+"NSMicrophoneUsageDescription" = "VoiceMind needs microphone access for local speech recognition on your Mac.";
+"NSSpeechRecognitionUsageDescription" = "VoiceMind uses speech recognition to convert local Mac audio or paired iPhone audio into text inside the app.";

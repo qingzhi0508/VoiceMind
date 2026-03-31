@@ -1,0 +1,104 @@
+<h2>设置页重构方向</h2>
+<p class="subtitle">重点解决“选项太多”和“重操作堆在一页”的问题，配对管理保持最高优先级。</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">方案 A: 设备优先首页</div>
+        <div class="mockup-body">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="padding:14px; border-radius:16px; background:linear-gradient(135deg,#eef6ff,#f8fbff); border:1px solid #d6e6ff;">
+              <div class="label">STATUS</div>
+              <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+                <div style="width:30px; height:30px; border-radius:15px; background:#dbeafe; display:flex; align-items:center; justify-content:center;">👤</div>
+                <div>
+                  <div style="font-weight:700;">普通用户</div>
+                  <div style="font-size:13px; color:#5b6472;">今日剩余 18 次双端协同</div>
+                </div>
+              </div>
+            </div>
+            <div style="padding:14px; border-radius:16px; background:#fff; border:1px solid #e5e7eb;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>已配对设备</strong>
+                <span style="font-size:12px; color:#16a34a;">已连接</span>
+              </div>
+              <div style="margin-top:8px; color:#5b6472;">MacBook Pro</div>
+              <button class="mock-button" style="margin-top:10px;">重连 / 管理配对</button>
+            </div>
+            <div style="padding:14px; border-radius:16px; background:#fff; border:1px solid #e5e7eb;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>会员与同步权益</strong>
+                <span style="color:#94a3b8;">展开</span>
+              </div>
+            </div>
+            <div style="padding:14px; border-radius:16px; background:#f8fafc; border:1px solid #e5e7eb;">外观与语言</div>
+            <div style="padding:14px; border-radius:16px; background:#f8fafc; border:1px solid #e5e7eb;">权限与帮助</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 A</h3>
+      <p>首页先看设备状态和配对操作，会员区折叠成一张摘要卡片，其他设置合并成更少分组。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">方案 B: 双区块首页</div>
+        <div class="mockup-body">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div style="padding:14px; border-radius:16px; background:#fff7ed; border:1px solid #fed7aa;">
+                <div class="label">MEMBERSHIP</div>
+                <div style="font-weight:700; margin-top:6px;">普通用户</div>
+                <div style="font-size:13px; color:#7c5b37;">免费协同额度中</div>
+              </div>
+              <div style="padding:14px; border-radius:16px; background:#eff6ff; border:1px solid #bfdbfe;">
+                <div class="label">DEVICE</div>
+                <div style="font-weight:700; margin-top:6px;">Mac 已配对</div>
+                <div style="font-size:13px; color:#4b5563;">随时可重连</div>
+              </div>
+            </div>
+            <div style="padding:14px; border-radius:16px; background:#fff; border:1px solid #e5e7eb;">配对与连接</div>
+            <div style="padding:14px; border-radius:16px; background:#fff; border:1px solid #e5e7eb;">会员权益（折叠）</div>
+            <div style="padding:14px; border-radius:16px; background:#f8fafc; border:1px solid #e5e7eb;">基础偏好</div>
+            <div style="padding:14px; border-radius:16px; background:#f8fafc; border:1px solid #e5e7eb;">支持与日志</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 B</h3>
+      <p>顶部并列展示“会员状态”和“设备状态”，视觉上更丰富，但首屏信息量略高。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">方案 C: 极简列表首页</div>
+        <div class="mockup-body">
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid #e5e7eb;">配对与连接 <span style="float:right; color:#16a34a;">已连接</span></div>
+            <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid #e5e7eb;">会员与同步权益 <span style="float:right; color:#64748b;">普通用户</span></div>
+            <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid #e5e7eb;">外观与语言</div>
+            <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid #e5e7eb;">权限</div>
+            <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid #e5e7eb;">帮助与日志</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 C</h3>
+      <p>首页只保留清晰入口，所有内容都进入二级页。最干净，但操作会多一步。</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>审核角度</h3>
+  <p class="subtitle">顶部显示“普通用户 / 会员用户”状态、并把购买内容折叠到次级层级，通常是可接受的。关键是不要做误导性文案，不要把非购买功能锁定为无理由不可用，并且购买入口要清楚标注用途、价格和恢复购买。</p>
+</div>

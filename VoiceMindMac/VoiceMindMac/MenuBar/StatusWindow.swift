@@ -238,7 +238,10 @@ struct DeviceConnectionSection: View {
     }
 
     private var connectionStatusText: String {
-        switch connectionState {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: pairingState,
+            connectionState: connectionState
+        ) {
         case .disconnected:
             return String(localized: "connection_status_disconnected")
         case .connecting:
@@ -251,7 +254,10 @@ struct DeviceConnectionSection: View {
     }
 
     private var connectionStatusColor: Color {
-        switch connectionState {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: pairingState,
+            connectionState: connectionState
+        ) {
         case .disconnected:
             return .gray
         case .connecting:

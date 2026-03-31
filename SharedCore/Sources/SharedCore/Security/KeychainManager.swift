@@ -69,7 +69,7 @@ public class KeychainManager {
         UserDefaults.standard.removeObject(forKey: fallbackKey(service: service, account: account))
     }
 
-    private static func saveData(
+    public static func saveData(
         _ data: Data,
         service: String,
         account: String
@@ -92,7 +92,7 @@ public class KeychainManager {
         UserDefaults.standard.removeObject(forKey: fallbackKey(service: service, account: account))
     }
 
-    private static func retrieveData(
+    public static func retrieveData(
         service: String,
         account: String
     ) throws -> Data {

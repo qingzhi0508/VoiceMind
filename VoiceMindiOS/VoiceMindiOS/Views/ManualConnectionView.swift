@@ -4,6 +4,9 @@ import SharedCore
 struct ManualConnectionView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: ContentViewModel
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var ipAddress = ""
     @State private var port = ""
@@ -53,12 +56,14 @@ struct ManualConnectionView: View {
                                 }
                             }
                     }
+                    .modifier(AppGroupedRowSurface())
 
                     Section(header: Text(String(localized: "manual_section_instruction"))) {
                         Text(String(localized: "manual_instruction_connect"))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
+                    .modifier(AppGroupedRowSurface())
 
                     if let error = errorMessage {
                         Section {
@@ -66,6 +71,7 @@ struct ManualConnectionView: View {
                                 .foregroundColor(.red)
                                 .font(.caption)
                         }
+                        .modifier(AppGroupedRowSurface())
                     }
 
                     if !progressMessages.isEmpty {
@@ -96,12 +102,14 @@ struct ManualConnectionView: View {
                                 }
                             }
                     }
+                    .modifier(AppGroupedRowSurface())
 
                     Section(header: Text(String(localized: "manual_section_instruction"))) {
                         Text(String(localized: "manual_instruction_pairing"))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
+                    .modifier(AppGroupedRowSurface())
 
                     if let error = errorMessage {
                         Section {
@@ -109,6 +117,7 @@ struct ManualConnectionView: View {
                                 .foregroundColor(.red)
                                 .font(.caption)
                         }
+                        .modifier(AppGroupedRowSurface())
                     }
 
                     if !progressMessages.isEmpty {
@@ -117,6 +126,7 @@ struct ManualConnectionView: View {
 
                 }
             }
+            .modifier(AppListChrome())
             .navigationTitle(isConnected ? String(localized: "manual_nav_title_pair") : String(localized: "manual_nav_title_connect"))
             .navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.interactively)
@@ -200,7 +210,13 @@ struct ManualConnectionView: View {
             .padding(.horizontal)
             .padding(.top, 12)
             .padding(.bottom, 8)
-            .background(.regularMaterial)
+            .background(
+                AppSurfaceStylePolicy.bottomBarFill(
+                    appTheme: appTheme,
+                    colorScheme: colorScheme,
+                    lightBackgroundHex: lightThemeBackgroundHex
+                )
+            )
         }
     }
 

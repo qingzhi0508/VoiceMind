@@ -780,7 +780,10 @@ struct DeviceConnectionCard: View {
     }
 
     private var connectionStatusText: String {
-        switch connectionState {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: pairingState,
+            connectionState: connectionState
+        ) {
         case .disconnected: return L("connection_status_disconnected")
         case .connecting: return L("connection_status_connecting")
         case .connected: return L("connection_status_connected")
@@ -789,7 +792,10 @@ struct DeviceConnectionCard: View {
     }
 
     private var connectionStatusColor: Color {
-        switch connectionState {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: pairingState,
+            connectionState: connectionState
+        ) {
         case .disconnected: return .gray
         case .connecting: return .orange
         case .connected: return .green

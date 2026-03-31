@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import StoreKit
 import SharedCore
 import UIKit
 
@@ -20,6 +21,10 @@ class ContentViewModel: ObservableObject {
     @Published var localTranscriptText: String = ""
     @Published var localTranscriptHistory: [LocalTranscriptRecord] = []
     @Published var transcriptAutoScrollVersion: Int = 0
+    @Published private(set) var twoDeviceSyncAccessState: TwoDeviceSyncAccessState = .limited(
+        remaining: TwoDeviceSyncPolicy.defaultFreeSessionLimit,
+        used: 0
+    )
     @Published var preferredHomeTranscriptionMode: HomeTranscriptionMode {
         didSet {
             UserDefaults.standard.set(
@@ -70,6 +75,9 @@ class ContentViewModel: ObservableObject {
     private let speechController = SpeechController()
     private let audioStreamController = AudioStreamController()
     private let bonjourBrowser = BonjourBrowser()
+    private let purchaseStore = TwoDeviceSyncPurchaseStore.shared
+    private let usageLimiter = TwoDeviceSyncUsageLimiter()
+    private var cancellables = Set<AnyCancellable>()
 
     private var currentSessionId: String?
     private var manualSessionId: String?
@@ -102,6 +110,7 @@ class ContentViewModel: ObservableObject {
 
         // Load pairing state
         pairingState = connectionManager.pairingState
+        bindTwoDeviceSyncState()
 
         if LocalTranscriptionPolicy.shouldStartBonjourBrowsing(sendToMacEnabled: sendResultsToMacEnabled) {
             bonjourBrowser.start()
@@ -115,6 +124,9 @@ class ContentViewModel: ObservableObject {
         }
 
         refreshIdleStatusMessage()
+        Task { [weak self] in
+            await self?.refreshTwoDeviceSyncBillingState()
+        }
     }
 
     func preparePrimaryExperience() {
@@ -292,6 +304,7 @@ class ContentViewModel: ObservableObject {
             hasPermissions: checkPermissions(),
             sendToMacEnabled: sendResultsToMacEnabled,
             preferredMode: preferredHomeTranscriptionMode,
+            pairingState: pairingState,
             connectionState: connectionState
         )
     }
@@ -373,6 +386,7 @@ class ContentViewModel: ObservableObject {
         LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
             sendToMacEnabled: sendResultsToMacEnabled,
             preferredMode: preferredHomeTranscriptionMode,
+            pairingState: pairingState,
             connectionState: connectionState
         )
     }
@@ -401,6 +415,7 @@ class ContentViewModel: ObservableObject {
         guard effectiveHomeTranscriptionMode == .local else { return false }
         return LocalTranscriptionPolicy.canManuallyForwardTextToMac(
             sendToMacEnabled: sendResultsToMacEnabled,
+            pairingState: pairingState,
             connectionState: connectionState,
             transcriptText: localTranscriptText
         )
@@ -432,6 +447,7 @@ class ContentViewModel: ObservableObject {
     func canSendTranscriptRecordToMac(_ record: LocalTranscriptRecord) -> Bool {
         LocalTranscriptionPolicy.canManuallyForwardTextToMac(
             sendToMacEnabled: sendResultsToMacEnabled,
+            pairingState: pairingState,
             connectionState: connectionState,
             transcriptText: record.text
         )
@@ -455,6 +471,7 @@ class ContentViewModel: ObservableObject {
     ) {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedText.isEmpty else { return }
+        guard authorizeTwoDeviceSyncSessionIfNeeded() else { return }
 
         let sessionId = UUID().uuidString
         let payload = TextMessagePayload(
@@ -482,6 +499,7 @@ class ContentViewModel: ObservableObject {
         )
 
         connectionManager.send(envelope)
+        recordSuccessfulTwoDeviceSyncSession()
         pushToTalkStatusMessage = localized("ptt_manual_send_success")
         appendInboundDataRecord(
             title: localized("log_manual_send_title"),
@@ -614,9 +632,114 @@ class ContentViewModel: ObservableObject {
             hasPermissions: checkPermissions(),
             sendToMacEnabled: sendResultsToMacEnabled,
             preferredMode: preferredHomeTranscriptionMode,
+            pairingState: pairingState,
             connectionState: connectionState
         )
         pushToTalkStatusMessage = localized(key)
+    }
+
+    func refreshTwoDeviceSyncBillingState() async {
+        await purchaseStore.prepare()
+        syncTwoDeviceSyncAccessState()
+    }
+
+    func purchaseTwoDeviceSync(_ kind: TwoDeviceSyncProductKind) async {
+        _ = await purchaseStore.purchase(kind)
+        syncTwoDeviceSyncAccessState()
+    }
+
+    func restoreTwoDeviceSyncPurchases() async {
+        await purchaseStore.restorePurchases()
+        syncTwoDeviceSyncAccessState()
+    }
+
+    var twoDeviceSyncStatusText: String {
+        switch twoDeviceSyncAccessState {
+        case .unlimited:
+            return localized("billing_two_device_sync_status_unlimited")
+        case .limited(let remaining, _):
+            return localized("billing_two_device_sync_status_limited_format", remaining)
+        case .blocked(let limit):
+            return localized("billing_two_device_sync_status_blocked_format", limit)
+        }
+    }
+
+    var twoDeviceSyncDetailText: String {
+        switch twoDeviceSyncAccessState {
+        case .unlimited:
+            return localized("billing_two_device_sync_detail_unlimited")
+        case .limited(_, let used):
+            return localized(
+                "billing_two_device_sync_detail_limited_format",
+                used,
+                TwoDeviceSyncPolicy.defaultFreeSessionLimit
+            )
+        case .blocked(let limit):
+            return localized("billing_two_device_sync_detail_blocked_format", limit)
+        }
+    }
+
+    var activeTwoDeviceSyncEntitlement: TwoDeviceSyncEntitlement {
+        purchaseStore.entitlement
+    }
+
+    var activeTwoDeviceSyncExpirationDate: Date? {
+        purchaseStore.entitlementExpirationDate
+    }
+
+    var twoDeviceSyncValidityText: String? {
+        let key = SettingsMembershipValidityPolicy.description(
+            entitlement: activeTwoDeviceSyncEntitlement,
+            expirationDate: activeTwoDeviceSyncExpirationDate,
+            formattedDate: formattedTwoDeviceSyncExpirationDate
+        )
+
+        guard let key else { return nil }
+
+        switch key {
+        case "billing_two_device_sync_validity_lifetime":
+            return localized(key)
+        case "billing_two_device_sync_validity_until_format":
+            guard let formattedTwoDeviceSyncExpirationDate else { return nil }
+            return localized(key, formattedTwoDeviceSyncExpirationDate)
+        default:
+            return nil
+        }
+    }
+
+    var twoDeviceSyncProducts: [String: String] {
+        Dictionary(
+            uniqueKeysWithValues: TwoDeviceSyncProductKind.allCases.compactMap { kind in
+                guard let price = purchaseStore.displayPrice(for: kind) else {
+                    return nil
+                }
+
+                return (kind.rawValue, price)
+            }
+        )
+    }
+
+    var isPurchasingTwoDeviceSync: Bool {
+        purchaseStore.activePurchaseProductID != nil
+    }
+
+    var activeTwoDeviceSyncPurchaseProductID: String? {
+        purchaseStore.activePurchaseProductID
+    }
+
+    var isRestoringTwoDeviceSyncPurchases: Bool {
+        purchaseStore.isRestoringPurchases
+    }
+
+    var purchaseErrorMessage: String? {
+        purchaseStore.lastErrorMessage
+    }
+
+    private var formattedTwoDeviceSyncExpirationDate: String? {
+        guard let activeTwoDeviceSyncExpirationDate else { return nil }
+        return activeTwoDeviceSyncExpirationDate.formatted(
+            Date.FormatStyle(date: .numeric, time: .omitted)
+        )
     }
 
     private func appendLocalTranscriptRecord(text: String, language: String) {
@@ -639,6 +762,39 @@ class ContentViewModel: ObservableObject {
     private static func saveLocalTranscriptHistory(_ history: [LocalTranscriptRecord], forKey key: String) {
         guard let data = try? JSONEncoder().encode(history) else { return }
         UserDefaults.standard.set(data, forKey: key)
+    }
+
+    private func bindTwoDeviceSyncState() {
+        purchaseStore.$entitlement
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.syncTwoDeviceSyncAccessState()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func syncTwoDeviceSyncAccessState() {
+        twoDeviceSyncAccessState = usageLimiter.accessState(entitlement: purchaseStore.entitlement)
+    }
+
+    private func authorizeTwoDeviceSyncSessionIfNeeded() -> Bool {
+        syncTwoDeviceSyncAccessState()
+
+        guard case .blocked = twoDeviceSyncAccessState else {
+            return true
+        }
+
+        pushToTalkStatusMessage = localized("billing_two_device_sync_limit_reached")
+        return false
+    }
+
+    private func recordSuccessfulTwoDeviceSyncSession() {
+        do {
+            _ = try usageLimiter.recordSuccessfulSession(entitlement: purchaseStore.entitlement)
+            syncTwoDeviceSyncAccessState()
+        } catch {
+            pushToTalkStatusMessage = error.localizedDescription
+        }
     }
 }
 
@@ -787,19 +943,28 @@ extension ContentViewModel: ConnectionManagerDelegate {
             return
         }
 
+        let requiresRePairing = PairingErrorRecoveryPolicy.requiresRePairing(for: payload.code)
         let message: String
-        switch payload.code {
-        case "invalid_code":
+        if let dedicatedMessageKey = PairingErrorRecoveryPolicy.messageKey(for: payload.code) {
+            message = localized(dedicatedMessageKey)
+        } else {
+            switch payload.code {
+            case "invalid_code":
             message = localized("pairing_code_incorrect")
-        case "not_pairing":
+            case "not_pairing":
             message = localized("pairing_not_in_pairing_mode")
-        case "pairing_failed":
+            case "pairing_failed":
             message = localized("pairing_save_failed")
-        default:
-            message = localized("pairing_mac_error_format", payload.message)
+            default:
+                message = localized("pairing_mac_error_format", payload.message)
+            }
         }
 
         DispatchQueue.main.async {
+            if requiresRePairing {
+                self.connectionManager.unpair()
+                self.showPairingView = true
+            }
             self.latestPairingFeedback = message
             self.appendInboundDataRecord(
                 title: self.localized("log_error_from_mac_title"),
@@ -857,7 +1022,7 @@ extension ContentViewModel: SpeechControllerDelegate {
             let shouldForward = self.shouldForwardResultToMac
             let sessionId = self.currentSessionId ?? self.manualSessionId
 
-            if shouldForward, let sessionId {
+            if shouldForward, let sessionId, self.authorizeTwoDeviceSyncSessionIfNeeded() {
                 let payload = TextMessagePayload(
                     sessionId: sessionId,
                     text: text,
@@ -883,6 +1048,7 @@ extension ContentViewModel: SpeechControllerDelegate {
                 )
 
                 self.connectionManager.send(envelope)
+                self.recordSuccessfulTwoDeviceSyncSession()
                 self.pushToTalkStatusMessage = self.localized("ptt_local_saved_and_sent")
             } else {
                 self.pushToTalkStatusMessage = self.localized("ptt_local_saved")
@@ -991,6 +1157,16 @@ extension ContentViewModel: BonjourBrowserDelegate {
 extension ContentViewModel: AudioStreamControllerDelegate {
     func audioStreamController(_ controller: AudioStreamController, didStartStream payload: AudioStartPayload) {
         print("📤 发送 audioStart 消息")
+        guard authorizeTwoDeviceSyncSessionIfNeeded() else {
+            DispatchQueue.main.async {
+                self.manualSessionId = nil
+                self.recognitionState = .idle
+                self.activeInputMode = nil
+                self.audioLevel = 0
+            }
+            controller.stopStreaming()
+            return
+        }
         DispatchQueue.main.async {
             self.recognitionState = .listening
             self.pushToTalkStatusMessage = self.localized("ptt_capturing")
@@ -1023,6 +1199,7 @@ extension ContentViewModel: AudioStreamControllerDelegate {
         )
 
         connectionManager.send(envelope)
+        recordSuccessfulTwoDeviceSyncSession()
     }
 
     func audioStreamController(_ controller: AudioStreamController, didCaptureAudio payload: AudioDataPayload) {

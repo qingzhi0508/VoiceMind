@@ -1,5 +1,6 @@
 import AppKit
 import SharedCore
+import StoreKit
 import SwiftUI
 
 private extension Color {
@@ -105,6 +106,12 @@ enum SettingsSurfaceStylePolicy {
     static let cardFillColor = MainWindowColors.cardSurface
     static let rowFillColor = MainWindowColors.softSurface
     static let secondaryTextColor = MainWindowColors.secondaryText
+}
+
+enum MacBillingPresentationPolicy {
+    static func showsUnlockOptions(for entitlement: TwoDeviceSyncEntitlement) -> Bool {
+        entitlement != .lifetime
+    }
 }
 
 enum MainWindowSection: String, CaseIterable, Identifiable {
@@ -255,6 +262,28 @@ struct CollaborationControlsPolicy {
         }
 
         return nil
+    }
+}
+
+enum MacConnectionPresentationPolicy {
+    static func displayState(
+        pairingState: PairingState,
+        connectionState: ConnectionState
+    ) -> ConnectionState {
+        switch pairingState {
+        case .paired:
+            return connectionState
+        case .pairing:
+            if case .error = connectionState {
+                return connectionState
+            }
+            return .connecting
+        case .unpaired:
+            if case .error = connectionState {
+                return connectionState
+            }
+            return .disconnected
+        }
     }
 }
 
@@ -987,7 +1016,10 @@ private struct HomeDashboardView: View {
     }
 
     private var connectionSummaryValue: String {
-        switch controller.connectionState {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
         case .connected:
             return String(localized: "status_connection_connected")
         case .connecting:
@@ -1018,7 +1050,10 @@ private struct HomeDashboardView: View {
     }
 
     private var spotlightTint: Color {
-        switch controller.connectionState {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
         case .connected:
             return .green
         case .connecting:
@@ -1189,7 +1224,10 @@ struct StatusTab: View {
 
     @ViewBuilder
     private var connectionStatusView: some View {
-        switch controller.connectionState {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
         case .disconnected:
             Label(String(localized: "status_connection_disconnected"), systemImage: "circle")
                 .foregroundColor(MainWindowColors.secondaryText)
@@ -1239,6 +1277,7 @@ struct StatusTab: View {
 struct SettingsTab: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var controller: MenuBarController
+    @StateObject private var purchaseStore = TwoDeviceSyncPurchaseStore.shared
     var showsInlineHeader = false
     @State private var serverPortText = ""
     @State private var languageSelection = "zh-CN"
@@ -1285,6 +1324,67 @@ struct SettingsTab: View {
                 }
 
                 settingsSectionCard(
+                    title: String(localized: "billing_two_device_sync_header")
+                ) {
+                    VStack(alignment: .leading, spacing: 14) {
+                        settingsInfoRow(
+                            title: macBillingStatusTitle,
+                            detail: macBillingStatusDetail
+                        )
+
+                        if MacBillingPresentationPolicy.showsUnlockOptions(for: purchaseStore.entitlement) {
+                            settingsPickerRow(
+                                title: String(localized: "billing_two_device_sync_actions_title")
+                            ) {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    billingActionButton(
+                                        title: billingTitle(for: .monthly),
+                                        isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.monthly.rawValue
+                                    ) {
+                                        Task {
+                                            _ = await purchaseStore.purchase(.monthly)
+                                        }
+                                    }
+
+                                    billingActionButton(
+                                        title: billingTitle(for: .yearly),
+                                        isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.yearly.rawValue
+                                    ) {
+                                        Task {
+                                            _ = await purchaseStore.purchase(.yearly)
+                                        }
+                                    }
+
+                                    billingActionButton(
+                                        title: billingTitle(for: .lifetime),
+                                        isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.lifetime.rawValue
+                                    ) {
+                                        Task {
+                                            _ = await purchaseStore.purchase(.lifetime)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        billingActionButton(
+                            title: String(localized: "billing_two_device_sync_restore_button"),
+                            isLoading: purchaseStore.isRestoringPurchases
+                        ) {
+                            Task {
+                                await purchaseStore.restorePurchases()
+                            }
+                        }
+
+                        if let lastErrorMessage = purchaseStore.lastErrorMessage, !lastErrorMessage.isEmpty {
+                            Text(lastErrorMessage)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
+
+                settingsSectionCard(
                     title: String(localized: "settings_network_title")
                 ) {
                     VStack(alignment: .leading, spacing: 14) {
@@ -1316,6 +1416,9 @@ struct SettingsTab: View {
         }
         .onAppear {
             syncLocalSettingsState()
+        }
+        .task {
+            await purchaseStore.prepare()
         }
         .onChange(of: languageSelection) { _, newValue in
             guard settings.language != newValue else { return }
@@ -1437,6 +1540,70 @@ struct SettingsTab: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(SettingsSurfaceStylePolicy.cardBorderColor, lineWidth: 1)
         )
+    }
+
+    private var macBillingStatusTitle: String {
+        switch purchaseStore.entitlement {
+        case .free:
+            return String(localized: "billing_two_device_sync_status_free_mac")
+        case .monthly, .yearly, .lifetime:
+            return String(localized: "billing_two_device_sync_status_unlimited")
+        }
+    }
+
+    private var macBillingStatusDetail: String {
+        switch purchaseStore.entitlement {
+        case .free:
+            return String(localized: "billing_two_device_sync_mac_detail_free")
+        case .monthly:
+            return String(localized: "billing_two_device_sync_mac_detail_monthly")
+        case .yearly:
+            return String(localized: "billing_two_device_sync_mac_detail_yearly")
+        case .lifetime:
+            return String(localized: "billing_two_device_sync_mac_detail_lifetime")
+        }
+    }
+
+    private func billingTitle(for kind: TwoDeviceSyncProductKind) -> String {
+        if let price = purchaseStore.displayPrice(for: kind) {
+            switch kind {
+            case .monthly:
+                return String(format: String(localized: "billing_two_device_sync_monthly_button"), price)
+            case .yearly:
+                return String(format: String(localized: "billing_two_device_sync_yearly_button"), price)
+            case .lifetime:
+                return String(format: String(localized: "billing_two_device_sync_lifetime_button"), price)
+            }
+        }
+
+        switch kind {
+        case .monthly:
+            return String(localized: "billing_two_device_sync_monthly_fallback")
+        case .yearly:
+            return String(localized: "billing_two_device_sync_yearly_fallback")
+        case .lifetime:
+            return String(localized: "billing_two_device_sync_lifetime_fallback")
+        }
+    }
+
+    private func billingActionButton(
+        title: String,
+        isLoading: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+
+                Text(title)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .buttonStyle(.bordered)
+        .disabled(purchaseStore.activePurchaseProductID != nil || purchaseStore.isRestoringPurchases)
     }
 }
 

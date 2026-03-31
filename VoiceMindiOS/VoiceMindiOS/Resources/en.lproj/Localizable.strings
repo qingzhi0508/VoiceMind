@@ -144,11 +144,14 @@
 "qr_pairing_code_placeholder" = "Pairing Code";
 
 "settings_title" = "Settings";
+"settings_account_membership_title" = "Account & Membership";
+"settings_account_membership_subtitle" = "Manage plan, status, and restore options.";
 "settings_guide_header" = "Help";
 "settings_theme_header" = "Appearance";
 "settings_theme_system" = "System";
 "settings_theme_light" = "Light";
 "settings_theme_dark" = "Dark";
+"settings_theme_background_color" = "Background Color";
 "settings_language_header" = "App Language";
 "settings_language_restart_title" = "Relaunch Needed";
 "settings_language_restart_message" = "Close and reopen the app to apply the new language.";
@@ -158,7 +161,7 @@
 "settings_permission_speech" = "Speech Recognition";
 "settings_request_permissions" = "Request Permissions";
 "settings_permissions_footer" = "VoiceMind needs microphone and speech recognition permissions to work properly.";
-"settings_send_to_mac_header" = "Mac Sync";
+"settings_send_to_mac_header" = "Two-Device Sync";
 "settings_send_to_mac_title" = "Send transcription results to Mac";
 "settings_send_to_mac_footer" = "By default, recording stays on this iPhone for local speech-to-text. Turn this on to also sync results when a Mac is connected.";
 "settings_paired_device" = "Paired Device";
@@ -169,12 +172,16 @@
 "settings_pairing_footer" = "Connecting a Mac is optional and does not affect local speech-to-text on iPhone.";
 "settings_open_pairing" = "Connect or Pair a Mac";
 "settings_debug_header" = "Debug";
+"settings_contact_support" = "Contact Support";
 "settings_view_logs" = "View Data Logs";
+"settings_privacy_policy" = "Privacy Policy";
 "settings_about_header" = "About";
 "settings_version" = "Version";
 "settings_permission_alert_title" = "Permission Request";
 "settings_permission_alert_message" = "Please grant microphone and speech recognition permissions in Settings.";
 "settings_connection_status_error" = "Error";
+"settings_support_mail_unavailable_title" = "Mail Unavailable";
+"settings_support_mail_unavailable_message" = "Mail is not available on this device right now.";
 
 "language_zh" = "Chinese (Mandarin)";
 "language_en" = "English (US)";
@@ -226,6 +233,7 @@
 "pairing_not_in_pairing_mode" = "Mac response: not in pairing mode.";
 "pairing_save_failed" = "Mac response: failed to save pairing info.";
 "pairing_mac_error_format" = "Mac response: %@";
+"pairing_repair_required" = "The Mac is not paired yet. Please pair the devices again.";
 
 "ptt_warming_up" = "Warming up microphone...";
 "ptt_capturing" = "Capturing audio. Release to send to Mac.";
@@ -371,3 +379,23 @@ Sample rate: %@ Hz";
 
 "onboarding_start_using" = "Start with VoiceMind";
 "onboarding_menu_guide" = "User Guide";
+"billing_two_device_sync_header" = "Two-Device Sync";
+"billing_two_device_sync_footer" = "Free users can start up to 50 two-device sync sessions per day. Upgrade to unlock unlimited sync on iPhone and Mac.";
+"billing_two_device_sync_restore_button" = "Restore Purchases";
+"billing_two_device_sync_monthly_button" = "Monthly Unlimited %@";
+"billing_two_device_sync_yearly_button" = "Yearly Unlimited %@";
+"billing_two_device_sync_lifetime_button" = "Lifetime Unlock %@";
+"billing_two_device_sync_monthly_fallback" = "Monthly Unlimited";
+"billing_two_device_sync_yearly_fallback" = "Yearly Unlimited";
+"billing_two_device_sync_lifetime_fallback" = "Lifetime Unlock";
+"billing_two_device_sync_status_unlimited" = "Unlimited two-device sync is active.";
+"billing_two_device_sync_status_limited_format" = "%d free sync sessions left today.";
+"billing_two_device_sync_status_blocked_format" = "Today's %d free sync sessions are used up.";
+"billing_two_device_sync_detail_unlimited" = "Your current purchase unlocks unlimited two-device sync on iPhone and Mac.";
+"billing_two_device_sync_detail_limited_format" = "You've used %d of %d free sync sessions today.";
+"billing_two_device_sync_detail_blocked_format" = "Upgrade to keep syncing after %d free sessions per day.";
+"billing_two_device_sync_limit_reached" = "Today's free two-device sync limit has been reached. Upgrade to continue.";
+"billing_two_device_sync_validity_label" = "Valid Until";
+"billing_two_device_sync_validity_until_format" = "%@";
+"billing_two_device_sync_validity_lifetime" = "Lifetime";
+"billing_two_device_sync_current_plan" = "Current Plan";

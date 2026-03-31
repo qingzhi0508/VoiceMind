@@ -2,9 +2,22 @@ import SwiftUI
 import AVFoundation
 import SharedCore
 
+enum QRCodeScannerPresentationPolicy {
+    static func showsPreview(previewLayerAvailable: Bool) -> Bool {
+        previewLayerAvailable
+    }
+
+    static func showsStartupOverlay(isScanning: Bool) -> Bool {
+        !isScanning
+    }
+}
+
 struct QRCodeScannerView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: ContentViewModel
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+    @Environment(\.colorScheme) private var colorScheme
 
     @StateObject private var scanner = QRCodeScannerController()
     @State private var showManualInput = false
@@ -155,23 +168,37 @@ struct QRCodeScannerView: View {
     @ViewBuilder
     private var scanningHeroView: some View {
         ZStack {
-            if scanner.isPreviewReady, let previewLayer = scanner.previewLayer {
+            if QRCodeScannerPresentationPolicy.showsPreview(
+                previewLayerAvailable: scanner.previewLayer != nil
+            ), let previewLayer = scanner.previewLayer {
                 CameraPreview(previewLayer: previewLayer)
                     .frame(height: 300)
                     .cornerRadius(12)
-            } else {
-                Rectangle()
-                    .fill(Color.black)
+            }
+
+            Rectangle()
+                .fill(Color.black)
+                .frame(height: 300)
+                .cornerRadius(12)
+                .opacity(scanner.previewLayer == nil ? 1 : 0)
+
+            if QRCodeScannerPresentationPolicy.showsStartupOverlay(isScanning: scanner.isScanning) {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.black.opacity(scanner.previewLayer == nil ? 0.0 : 0.36))
                     .frame(height: 300)
-                    .cornerRadius(12)
                     .overlay(
-                        VStack {
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 60))
-                                .foregroundColor(.white)
+                        VStack(spacing: 10) {
+                            if scanner.previewLayer == nil {
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 60))
+                                    .foregroundColor(.white)
+                            } else {
+                                ProgressView()
+                                    .tint(.white)
+                                    .controlSize(.regular)
+                            }
                             Text(String(localized: "qr_camera_starting"))
                                 .foregroundColor(.white)
-                                .padding(.top)
                         }
                     )
             }
@@ -232,11 +259,26 @@ struct QRCodeScannerView: View {
         .frame(maxWidth: .infinity, minHeight: 300, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.secondarySystemBackground))
+                .fill(
+                    AppSurfaceStylePolicy.softPanelFill(
+                        appTheme: appTheme,
+                        colorScheme: colorScheme,
+                        lightBackgroundHex: lightThemeBackgroundHex
+                    )
+                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(heroState == .pairing ? Color.green.opacity(0.35) : Color.blue.opacity(0.35), lineWidth: 1)
+                .stroke(
+                    heroState == .pairing
+                    ? Color.green.opacity(0.35)
+                    : AppSurfaceStylePolicy.softPanelStroke(
+                        appTheme: appTheme,
+                        colorScheme: colorScheme,
+                        lightBackgroundHex: lightThemeBackgroundHex
+                    ),
+                    lineWidth: 1
+                )
         )
     }
 
@@ -464,6 +506,9 @@ struct PairingCodeInputView: View {
 
     @State private var pairingCode = ""
     @Environment(\.dismiss) var dismiss
+    @AppStorage("app_theme") private var appTheme: String = "system"
+    @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+    @Environment(\.colorScheme) private var colorScheme
     @FocusState private var isPairingCodeFocused: Bool
 
     var body: some View {
@@ -485,8 +530,7 @@ struct PairingCodeInputView: View {
                             .foregroundColor(.secondary)
                     }
                     .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
+                    .background(inputPanelSurface)
                 }
 
                 VStack(spacing: 10) {
@@ -501,8 +545,7 @@ struct PairingCodeInputView: View {
                         .font(.system(size: 36, design: .monospaced))
                         .multilineTextAlignment(.center)
                         .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
+                        .background(inputPanelSurface)
                         .focused($isPairingCodeFocused)
                         .onChange(of: pairingCode) { _, newValue in
                             let digitsOnly = newValue.filter(\.isNumber)
@@ -559,7 +602,35 @@ struct PairingCodeInputView: View {
             .padding(.horizontal)
             .padding(.top, 12)
             .padding(.bottom, 8)
-            .background(.regularMaterial)
+            .background(
+                AppSurfaceStylePolicy.bottomBarFill(
+                    appTheme: appTheme,
+                    colorScheme: colorScheme,
+                    lightBackgroundHex: lightThemeBackgroundHex
+                )
+            )
         }
+    }
+
+    private var inputPanelSurface: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(
+                AppSurfaceStylePolicy.softPanelFill(
+                    appTheme: appTheme,
+                    colorScheme: colorScheme,
+                    lightBackgroundHex: lightThemeBackgroundHex
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(
+                        AppSurfaceStylePolicy.softPanelStroke(
+                            appTheme: appTheme,
+                            colorScheme: colorScheme,
+                            lightBackgroundHex: lightThemeBackgroundHex
+                        ),
+                        lineWidth: 1
+                    )
+            )
     }
 }

@@ -19,7 +19,7 @@
 "main_home_open_notes" = "查看笔记";
 "main_home_note_count_format" = "%d 字符";
 "main_collaboration_subtitle" = "管理服务、配对状态，并查看最近的双端协同活动。";
-"main_speech_subtitle" = "切换识别引擎、模型和语言偏好。";
+"main_speech_subtitle" = "管理识别设置和语言偏好。";
 "main_records_subtitle" = "查询最近 30 天的语音识别文本，包含 Mac 本地和 iPhone 同步结果。";
 "main_notes_subtitle" = "集中查看最近的文本结果，并进行本地录音输入。";
 "main_settings_subtitle" = "管理语言、界面主题与网络服务参数。";
@@ -204,7 +204,7 @@
 "records_clear_all_confirm_title" = "清空全部记录";
 "records_clear_all_confirm_message" = "将清空最近 30 天的全部语音记录。";
 
-"about_version" = "版本 1.0.0";
+"about_version" = "版本 1.0";
 "about_title" = "语音输入助手";
 "about_description" = "通过设备进行语音识别，并在 Mac 应用内实时查看结果";
 "about_help_link" = "查看帮助文档";
@@ -267,6 +267,21 @@
 
 "mac_onboarding_start_badge" = "启动 VOICEMIND";
 "mac_onboarding_start_title" = "启动 Mac 端 VoiceMind，准备开始第一段协同。";
+"billing_two_device_sync_header" = "双端协同";
+"billing_two_device_sync_actions_title" = "解锁方式";
+"billing_two_device_sync_restore_button" = "恢复购买";
+"billing_two_device_sync_monthly_button" = "月度无限次 %@";
+"billing_two_device_sync_yearly_button" = "年度无限次 %@";
+"billing_two_device_sync_lifetime_button" = "终身解锁 %@";
+"billing_two_device_sync_monthly_fallback" = "月度无限次";
+"billing_two_device_sync_yearly_fallback" = "年度无限次";
+"billing_two_device_sync_lifetime_fallback" = "终身解锁";
+"billing_two_device_sync_status_unlimited" = "已解锁无限次双端协同。";
+"billing_two_device_sync_status_free_mac" = "当前为免费方案。";
+"billing_two_device_sync_mac_detail_free" = "免费用户可从 iPhone 每天发起最多 50 次双端协同。你可以在这里升级，在 iPhone 和 Mac 上解锁无限次。";
+"billing_two_device_sync_mac_detail_monthly" = "你的月度方案已在 iPhone 和 Mac 上解锁无限次双端协同。";
+"billing_two_device_sync_mac_detail_yearly" = "你的年度方案已在 iPhone 和 Mac 上解锁无限次双端协同。";
+"billing_two_device_sync_mac_detail_lifetime" = "你的终身购买已在 iPhone 和 Mac 上永久解锁当前双端协同功能。";
 "mac_onboarding_start_subtitle" = "启动网络服务后，这台 Mac 就能被发现、完成配对，并进入后续运行状态。";
 "mac_onboarding_start_button" = "启动 VoiceMind";
 "mac_onboarding_start_continue" = "查看运行状态";

@@ -18,7 +18,7 @@
 "main_home_open_notes" = "Open notes";
 "main_home_note_count_format" = "%d chars";
 "main_collaboration_subtitle" = "Manage service, pairing status, and your latest cross-device activity.";
-"main_speech_subtitle" = "Manage recognition engines, models, and language preferences.";
+"main_speech_subtitle" = "Manage recognition settings and language preferences.";
 "main_records_subtitle" = "Browse the last 30 days of voice transcripts from local Mac capture and synced iPhone text.";
 "main_notes_subtitle" = "Review the latest text results and trigger local recording input.";
 "main_settings_subtitle" = "Adjust language, appearance, and network service settings.";
@@ -203,7 +203,7 @@
 "records_clear_all_confirm_title" = "Clear all records";
 "records_clear_all_confirm_message" = "This will remove all voice records from the last 30 days.";
 
-"about_version" = "Version 1.0.0";
+"about_version" = "Version 1.0";
 "about_title" = "Voice Input Assistant";
 "about_description" = "Use your iOS device for speech recognition and review results inside the Mac app in real time.";
 "about_help_link" = "View Help Documentation";
@@ -263,6 +263,21 @@
 "mac_onboarding_connect_step2_desc" = "VoiceMind will show a QR code and pairing code for your iPhone.";
 "mac_onboarding_connect_step3_title" = "Confirm on iPhone";
 "mac_onboarding_connect_step3_desc" = "Scan the code, approve the session, and let VoiceMind keep both sides in sync.";
+"billing_two_device_sync_header" = "Two-Device Sync";
+"billing_two_device_sync_actions_title" = "Unlock options";
+"billing_two_device_sync_restore_button" = "Restore Purchases";
+"billing_two_device_sync_monthly_button" = "Monthly Unlimited %@";
+"billing_two_device_sync_yearly_button" = "Yearly Unlimited %@";
+"billing_two_device_sync_lifetime_button" = "Lifetime Unlock %@";
+"billing_two_device_sync_monthly_fallback" = "Monthly Unlimited";
+"billing_two_device_sync_yearly_fallback" = "Yearly Unlimited";
+"billing_two_device_sync_lifetime_fallback" = "Lifetime Unlock";
+"billing_two_device_sync_status_unlimited" = "Unlimited two-device sync is active.";
+"billing_two_device_sync_status_free_mac" = "Free plan is active.";
+"billing_two_device_sync_mac_detail_free" = "Free users can start up to 50 sync sessions per day from iPhone. Upgrade here to unlock unlimited sync on both devices.";
+"billing_two_device_sync_mac_detail_monthly" = "Your monthly plan unlocks unlimited two-device sync on iPhone and Mac.";
+"billing_two_device_sync_mac_detail_yearly" = "Your yearly plan unlocks unlimited two-device sync on iPhone and Mac.";
+"billing_two_device_sync_mac_detail_lifetime" = "Your lifetime purchase unlocks the current two-device sync feature on iPhone and Mac.";
 
 "mac_onboarding_start_badge" = "START VOICEMIND";
 "mac_onboarding_start_title" = "Turn on VoiceMind for Mac and get ready for your first session.";

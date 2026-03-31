@@ -1,0 +1,155 @@
+{
+  "identifier" : "A6D7C53E",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "398.00",
+      "familyShareable" : false,
+      "internalID" : "F5C0B0E1",
+      "localizations" : [
+        {
+          "description" : "一次购买，永久解锁当前双端协同功能。终身版不包含未来新增高级功能。",
+          "displayName" : "双端协同终身版",
+          "locale" : "zh_CN"
+        },
+        {
+          "description" : "Unlock the current two-device sync feature permanently with a one-time purchase. Future premium features are not included.",
+          "displayName" : "Two-Device Sync Lifetime",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.voicemind.twodevice.alllifetime",
+      "referenceName" : "Two-Device Sync Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "zh_CN",
+    "_storefront" : "CHN",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "4F8B1A10",
+      "localizations" : [
+
+      ],
+      "name" : "Two-Device Sync",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "22.00",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "C8A4017D",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "解锁 iPhone 与 Mac 的无限次双端协同。免费用户每天最多可发起 50 次双端协同会话。",
+              "displayName" : "双端协同月度会员",
+              "locale" : "zh_CN"
+            },
+            {
+              "description" : "Unlock unlimited two-device sync between iPhone and Mac. Free users can start up to 50 sync sessions per day.",
+              "displayName" : "Two-Device Sync Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.voicemind.twodevice.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Two-Device Sync Monthly",
+          "subscriptionGroupID" : "4F8B1A10",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "168.00",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "1DBDA64B",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "解锁 iPhone 与 Mac 的无限次双端协同，按年订阅更划算。免费用户每天最多可发起 50 次双端协同会话。",
+              "displayName" : "双端协同年度会员",
+              "locale" : "zh_CN"
+            },
+            {
+              "description" : "Unlock unlimited two-device sync between iPhone and Mac with a better annual value. Free users can start up to 50 sync sessions per day.",
+              "displayName" : "Two-Device Sync Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.voicemind.twodevice.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Two-Device Sync Yearly",
+          "subscriptionGroupID" : "4F8B1A10",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
