@@ -1,0 +1,17 @@
+const testScript = `
+const { invoke } = window.__TAURI__.core;
+
+async function testTextInjection() {
+  try {
+    const result = await invoke('inject_text', { text: 'Hello from VoiceMind Windows!' });
+    if (result.success) {
+      console.log('Text injection successful:', result.text);
+    } else {
+      console.log('Text injection failed:', result.error);
+    }
+  } catch (e) {
+    console.error('Text injection test failed:', e);
+  }
+}
+
+testTextInjection();
