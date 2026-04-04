@@ -2050,7 +2050,7 @@ struct AboutTab: View {
     private var aboutHighlights: some View {
         HStack(alignment: .top, spacing: 18) {
             aboutHighlightCard(
-                systemImage: "desktopcomputer.and.iphone",
+                systemImage: "laptopcomputer.and.iphone",
                 title: String(localized: "main_nav_collaboration"),
                 description: String(localized: "about_description")
             )

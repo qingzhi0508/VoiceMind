@@ -31,6 +31,20 @@ final class MainWindowFullscreenLayoutTests: XCTestCase {
         )
     }
 
+    func testAboutTabUsesSupportedCrossDeviceSymbol() throws {
+        let source = try mainWindowSource()
+
+        XCTAssertFalse(
+            source.contains("\"desktopcomputer.and.iphone\""),
+            "AboutTab should avoid unavailable SF Symbols that log lookup failures at launch."
+        )
+
+        XCTAssertTrue(
+            source.contains("\"laptopcomputer.and.iphone\""),
+            "AboutTab should use a supported cross-device SF Symbol."
+        )
+    }
+
     private func mainWindowSource() throws -> String {
         let testsDirectory = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

@@ -47,7 +47,9 @@ class SpeechRecognitionManager {
 
             // 如果是第一个引擎，自动选中
             if self.currentEngine == nil {
-                try? self.selectEngine(identifier: engine.identifier)
+                self.currentEngine = engine
+                print("🎯 选择语音识别引擎: \(engine.displayName)")
+                self.postSpeechEngineDidChange(engine)
             }
         }
     }
@@ -55,23 +57,23 @@ class SpeechRecognitionManager {
     /// 选择引擎
     /// - Parameter identifier: 引擎标识符
     func selectEngine(identifier: String) throws {
-        try syncOnQueue {
+        let selectedEngine = try syncOnQueue {
             try selectEngineUnsafe(identifier: identifier)
         }
+        postSpeechEngineDidChange(selectedEngine)
     }
 
     /// 选择引擎（内部方法，不使用队列锁）
     /// - Parameter identifier: 引擎标识符
-    private func selectEngineUnsafe(identifier: String) throws {
+    @discardableResult
+    private func selectEngineUnsafe(identifier: String) throws -> SpeechRecognitionEngine {
         guard let engine = engines[identifier] else {
             throw SpeechError.noAvailableEngine
         }
 
         currentEngine = engine
         print("🎯 选择语音识别引擎: \(engine.displayName)")
-
-        // 通知引擎切换，以便更新 delegate
-        NotificationCenter.default.post(name: .speechEngineDidChange, object: engine)
+        return engine
     }
 
     /// 获取所有可用引擎
@@ -164,6 +166,12 @@ class SpeechRecognitionManager {
             if let current = currentEngine {
                 print("  🎯 当前使用: \(current.displayName)")
             }
+        }
+    }
+
+    private func postSpeechEngineDidChange(_ engine: SpeechRecognitionEngine) {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .speechEngineDidChange, object: engine)
         }
     }
 }
