@@ -126,6 +126,7 @@ enum SettingsInformationHierarchyPolicy {
         case permissions
         case help
         case supportEmail
+        case privacyPolicy
         case logs
         case version
     }
@@ -152,6 +153,7 @@ enum SettingsInformationHierarchyPolicy {
         .permissions,
         .help,
         .supportEmail,
+        .privacyPolicy,
         .logs,
         .version
     ]

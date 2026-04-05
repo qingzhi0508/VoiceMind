@@ -106,7 +106,8 @@ struct SettingsView: View {
                 versionText: "1.0.0",
                 requestPermissions: requestPermissions,
                 showOnboarding: { showOnboarding = true },
-                contactSupport: contactSupport
+                contactSupport: contactSupport,
+                openPrivacyPolicy: openPrivacyPolicy
             )
         }
     }
@@ -137,6 +138,13 @@ struct SettingsView: View {
                 showSupportMailUnavailableAlert = true
             }
         }
+    }
+
+    private func openPrivacyPolicy() {
+        guard let privacyURL = SettingsMembershipLinkPolicy.privacyPolicyURL else {
+            return
+        }
+        openURL(privacyURL)
     }
 }
 
@@ -388,6 +396,7 @@ private struct SettingsPermissionsSupportSection: View {
     let requestPermissions: () -> Void
     let showOnboarding: () -> Void
     let contactSupport: () -> Void
+    let openPrivacyPolicy: () -> Void
 
     var body: some View {
         Section {
@@ -451,6 +460,23 @@ private struct SettingsPermissionsSupportSection: View {
                         .frame(width: 30)
 
                     Text(String(localized: "settings_contact_support"))
+                        .foregroundColor(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                }
+            }
+        case .privacyPolicy:
+            Button(action: openPrivacyPolicy) {
+                HStack {
+                    Image(systemName: "hand.raised.fill")
+                        .foregroundColor(.blue)
+                        .frame(width: 30)
+
+                    Text(String(localized: "settings_privacy_policy"))
                         .foregroundColor(.primary)
 
                     Spacer()
