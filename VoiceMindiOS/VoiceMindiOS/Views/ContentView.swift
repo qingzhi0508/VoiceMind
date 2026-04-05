@@ -2026,7 +2026,7 @@ struct TranscriptTextView: UIViewRepresentable {
         textView.textColor = UIColor.label
         textView.alwaysBounceVertical = true
         textView.keyboardDismissMode = .interactive
-        textView.textContainerInset = UIEdgeInsets(top: 12, left: 2, bottom: 34, right: 2)
+        textView.textContainerInset = UIEdgeInsets(top: 12, left: 8, bottom: 34, right: 8)
         textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textView.text = text
         textView.isEditable = isEditable
