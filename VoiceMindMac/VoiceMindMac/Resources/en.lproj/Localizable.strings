@@ -141,7 +141,7 @@
 "status_connection_error" = "Error";
 
 "note_title" = "Notes";
-"note_placeholder" = "Speak or receive iOS transcription results here...";
+"note_placeholder" = "Speak or receive mobile transcription results here...";
 "note_recording" = "Recording...";
 "note_clear" = "Clear";
 
@@ -162,7 +162,7 @@
 "data_filter_all" = "All";
 "data_filter_voice" = "Voice";
 "data_filter_pairing" = "Pairing/Connection";
-"data_title" = "iOS Data Records";
+"data_title" = "Mobile Data Records";
 "data_subtitle" = "Shows data from phone and the final transcribed text on desktop.";
 "data_filter_picker" = "Filter";
 "data_action_clear" = "Clear Records";
@@ -205,7 +205,7 @@
 
 "about_version" = "Version 1.0";
 "about_title" = "Voice Input Assistant";
-"about_description" = "Use your iOS device for speech recognition and review results inside the desktop app in real time.";
+"about_description" = "Use your mobile device for speech recognition and review results inside the desktop app in real time.";
 "about_help_link" = "View Help Documentation";
 "about_open_guide" = "View Usage Guide";
 "window_title_usage_guide" = "Usage Guide";
