@@ -209,6 +209,8 @@
 "about_description" = "通过设备进行语音识别，并在电脑应用内实时查看结果";
 "about_help_link" = "查看帮助文档";
 "about_open_guide" = "查看操作指引";
+"about_website" = "官方网站";
+"about_privacy_policy" = "隐私政策";
 "window_title_usage_guide" = "操作指引";
 "usage_guide_title" = "VoiceMind 操作指引";
 "usage_guide_subtitle" = "首次使用时，你可以先按下面步骤完成配对和开始语音输入。后续也可以在“关于”页再次查看这份指引。";

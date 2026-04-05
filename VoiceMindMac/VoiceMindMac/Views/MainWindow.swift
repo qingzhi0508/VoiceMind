@@ -2031,6 +2031,20 @@ struct AboutTab: View {
                         onOpenGuide()
                     }
                     .buttonStyle(.borderedProminent)
+
+                    Button(String(localized: "about_website")) {
+                        if let url = URL(string: "https://voicemind.top-list.top") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button(String(localized: "about_privacy_policy")) {
+                        if let url = URL(string: "https://voicemind.top-list.top/privacy.html") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    .buttonStyle(.bordered)
                 }
             }
 

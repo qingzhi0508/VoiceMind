@@ -208,6 +208,8 @@
 "about_description" = "Use your mobile device for speech recognition and review results inside the desktop app in real time.";
 "about_help_link" = "View Help Documentation";
 "about_open_guide" = "View Usage Guide";
+"about_website" = "Official Website";
+"about_privacy_policy" = "Privacy Policy";
 "window_title_usage_guide" = "Usage Guide";
 "usage_guide_title" = "How to Use VoiceMind";
 "usage_guide_subtitle" = "On your first launch, follow the steps below to pair your devices and start voice input. You can reopen this guide later from the About tab.";
