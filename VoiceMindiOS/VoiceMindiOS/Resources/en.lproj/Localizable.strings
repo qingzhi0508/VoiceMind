@@ -174,8 +174,12 @@
 "settings_debug_header" = "Debug";
 "settings_contact_support" = "Contact Support";
 "settings_privacy_policy" = "Privacy Policy";
+"settings_about" = "About";
+"settings_website" = "Official Website";
 "settings_view_logs" = "View Data Logs";
 "settings_privacy_policy" = "Privacy Policy";
+"settings_about" = "About";
+"settings_website" = "Official Website";
 "settings_about_header" = "About";
 "settings_version" = "Version";
 "settings_permission_alert_title" = "Permission Request";

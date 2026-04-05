@@ -99,6 +99,8 @@ struct SettingsView: View {
                 languages: languages,
                 onSelectLanguage: selectLanguage
             )
+        case .about:
+            SettingsAboutSection()
         case .support:
             SettingsPermissionsSupportSection(
                 viewModel: viewModel,
@@ -653,5 +655,34 @@ struct PermissionRow: View {
             Image(systemName: isGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
                 .foregroundColor(isGranted ? .green : .red)
         }
+    }
+}
+
+private struct SettingsAboutSection: View {
+    var body: some View {
+        Section {
+            if let websiteURL = SettingsMembershipLinkPolicy.websiteURL {
+                Link(destination: websiteURL) {
+                    HStack {
+                        Image(systemName: "globe")
+                            .foregroundColor(.blue)
+                            .frame(width: 30)
+
+                        Text(String(localized: "settings_website"))
+                            .foregroundColor(.primary)
+
+                        Spacer()
+
+                        Image(systemName: "arrow.up.right.square")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+        } header: {
+            Text(String(localized: "settings_about"))
+        }
+        .modifier(AppGroupedRowSurface())
     }
 }

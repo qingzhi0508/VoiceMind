@@ -109,6 +109,7 @@ enum SettingsInformationHierarchyPolicy {
         case pairing
         case appearance
         case support
+        case about
     }
 
     enum PairingItem: Hashable {
@@ -131,11 +132,16 @@ enum SettingsInformationHierarchyPolicy {
         case version
     }
 
+    enum AboutItem: Hashable {
+        case website
+    }
+
     static let rootSections: [RootSection] = [
         .status,
         .pairing,
         .appearance,
-        .support
+        .support,
+        .about
     ]
 
     static let pairingItems: [PairingItem] = [
@@ -177,6 +183,8 @@ enum SettingsAppearancePresentationPolicy {
 }
 
 enum SettingsMembershipLinkPolicy {
+    static let websiteURL = URL(string: "https://voicemind.top-list.top")
+
     static let privacyPolicyURL = URL(string: "https://voicemind.top-list.top/privacy.html")
 }
 
