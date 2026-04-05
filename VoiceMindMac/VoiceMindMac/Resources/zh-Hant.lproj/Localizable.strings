@@ -9,13 +9,13 @@
 "main_nav_records" = "記錄";
 "main_nav_collaboration" = "双端协同";
 "main_nav_logs" = "日誌";
-"main_records_subtitle" = "查詢最近 30 天的語音識別文字，包含 Mac 本機與 iPhone 同步結果。";
+"main_records_subtitle" = "查詢最近 30 天的語音識別文字，包含 本機與 手機同步結果。";
 "main_collaboration_subtitle" = "管理服务、配对状态，并查看最近的双端协同活动。";
 "main_speech_subtitle" = "管理辨識設定和語言偏好。";
 
-"pair_with_iphone_title" = "与 iPhone 配对";
-"pair_with_iphone_instruction" = "在 iPhone 上输入此代码：";
-"pair_with_iphone_waiting" = "等待 iPhone 连接...";
+"pair_with_iphone_title" = "與手機配對";
+"pair_with_iphone_instruction" = "在 手機 上输入此代码：";
+"pair_with_iphone_waiting" = "等待 手機 连接...";
 "pair_with_iphone_time_format" = "剩余时间: %@秒";
 
 "menu_status_unpaired" = "未配对";
@@ -30,7 +30,7 @@
 "window_title_qr_pairing" = "扫码配对";
 
 "unpair_alert_title" = "解除配对？";
-"unpair_alert_message" = "這會移除與 iPhone 的配對。你需要重新配對才能繼續使用 VoiceMind。";
+"unpair_alert_message" = "這會移除與手機的配對。你需要重新配對才能繼續使用 VoiceMind。";
 "unpair_alert_button" = "解除配对";
 
 "error_title" = "错误";
@@ -50,10 +50,10 @@
 "status_unavailable" = "未获取到";
 
 "status_connected_ready" = "已连接 - 可以使用语音输入";
-"status_connecting_iphone" = "正在连接到 iPhone...";
+"status_connecting_iphone" = "正在连接到 手機...";
 "status_paired_not_connected" = "已配对但未连接";
 "status_pairing" = "正在配对...";
-"status_unpaired_need_pair" = "未配对 - 请先与 iPhone 配对";
+"status_unpaired_need_pair" = "未配对 - 请先與手機配對";
 "status_unknown" = "未知状态";
 
 "system_info_title" = "系统信息";
@@ -74,23 +74,23 @@
 "connection_status_error_format" = "错误: %@";
 
 "quickstart_title" = "快速开始";
-"quickstart_step1_format" = "在 iPhone 上打开 %@ 应用";
+"quickstart_step1_format" = "在 手機 上打开 %@ 应用";
 "quickstart_step2" = "点击下方\"开始配对\"按钮";
-"quickstart_step3" = "在 iPhone 上输入配对码";
-"quickstart_step4" = "配對成功後，在 iPhone 上按住麥克風說話，Mac 會自動轉寫並在 VoiceMind 視窗中顯示結果";
+"quickstart_step3" = "在 手機 上输入配对码";
+"quickstart_step4" = "配對成功後，在手機上按住麥克風說話，電腦會自動轉寫並在 VoiceMind 視窗中顯示結果";
 
 "action_start_pairing" = "开始配对";
 "action_unpair" = "解除配对";
 
 
 "qr_pairing_title" = "扫码配对";
-"qr_scan_instruction" = "使用 iPhone 扫描此二维码";
+"qr_scan_instruction" = "使用 手機 扫描此二维码";
 "qr_manual_code_label" = "或手动输入配对码：";
 "qr_connection_info_label" = "连接信息：";
 "qr_ip_label_format" = "IP: %@";
 "qr_port_label_format" = "端口: %@";
 "qr_progress_title" = "配对进度";
-"qr_progress_waiting" = "等待 iPhone 发起配对。";
+"qr_progress_waiting" = "等待 手機 发起配对。";
 "qr_time_remaining_format" = "剩余时间: %@秒";
 
 
@@ -147,7 +147,7 @@
 "data_filter_voice" = "语音";
 "data_filter_pairing" = "配对/连接";
 "data_title" = "iOS 数据记录";
-"data_subtitle" = "展示 iPhone 发来的数据，以及语音在 Mac 端转写后的最终文字。";
+"data_subtitle" = "展示 手機 发来的数据，以及语音在 Mac 端转写后的最终文字。";
 "data_filter_picker" = "筛选";
 "data_action_clear" = "清空记录";
 "data_search_placeholder" = "搜索标题、内容、Session ID";
@@ -159,7 +159,7 @@
 "data_empty_title" = "暂无数据";
 "data_session_unknown" = "未归档会话";
 "data_empty_search_desc" = "没有匹配当前关键词的数据记录。";
-"data_empty_all_desc" = "当 iPhone 发来配对请求、语音流或识别文本后，这里会按时间顺序记录。";
+"data_empty_all_desc" = "当 手機 发来配对请求、语音流或识别文本后，这里会按时间顺序记录。";
 "data_empty_voice_desc" = "当前还没有语音流或语音转写结果。";
 "data_empty_pairing_desc" = "当前还没有配对或连接相关记录。";
 "data_severity_info" = "信息";
@@ -171,12 +171,12 @@
 "data_section_count_format" = "%d 条";
 "records_search_placeholder" = "搜尋最近 30 天的識別文字";
 "records_empty_title" = "暫無語音記錄";
-"records_empty_desc" = "Mac 本機識別結果與 iPhone 同步文字會依時間保存在這裡。";
+"records_empty_desc" = "本機識別結果與手機同步文字會依時間保存在這裡。";
 "records_empty_search_desc" = "沒有符合目前關鍵字的語音記錄。";
 "records_section_count_format" = "%d 筆";
 "records_summary_count_format" = "最近 30 天共 %d 筆";
-"records_source_local_mac" = "Mac 本機";
-"records_source_ios_sync" = "iPhone 同步";
+"records_source_local_mac" = "本機";
+"records_source_ios_sync" = "手機同步";
 "billing_two_device_sync_header" = "雙端協同";
 "billing_two_device_sync_actions_title" = "解鎖方式";
 "billing_two_device_sync_restore_button" = "恢復購買";
@@ -188,10 +188,10 @@
 "billing_two_device_sync_lifetime_fallback" = "終身解鎖";
 "billing_two_device_sync_status_unlimited" = "已解鎖無限次雙端協同。";
 "billing_two_device_sync_status_free_mac" = "目前為免費方案。";
-"billing_two_device_sync_mac_detail_free" = "免費用戶可從 iPhone 每天發起最多 50 次雙端協同。你可以在這裡升級，在 iPhone 和 Mac 上解鎖無限次。";
-"billing_two_device_sync_mac_detail_monthly" = "你的月度方案已在 iPhone 和 Mac 上解鎖無限次雙端協同。";
-"billing_two_device_sync_mac_detail_yearly" = "你的年度方案已在 iPhone 和 Mac 上解鎖無限次雙端協同。";
-"billing_two_device_sync_mac_detail_lifetime" = "你的終身購買已在 iPhone 和 Mac 上永久解鎖目前的雙端協同功能。";
+"billing_two_device_sync_mac_detail_free" = "免費用戶可從 手機 每天發起最多 50 次雙端協同。你可以在這裡升級，在 手機 和 Mac 上解鎖無限次。";
+"billing_two_device_sync_mac_detail_monthly" = "你的月度方案已在 手機 和 Mac 上解鎖無限次雙端協同。";
+"billing_two_device_sync_mac_detail_yearly" = "你的年度方案已在 手機 和 Mac 上解鎖無限次雙端協同。";
+"billing_two_device_sync_mac_detail_lifetime" = "你的終身購買已在 手機 和 Mac 上永久解鎖目前的雙端協同功能。";
 "records_action_edit" = "編輯";
 "records_action_done" = "完成";
 "records_action_select_all" = "全選";
@@ -210,8 +210,8 @@
 "window_title_usage_guide" = "操作指引";
 "usage_guide_title" = "VoiceMind 操作指引";
 "usage_guide_subtitle" = "首次使用时，你可以先按下面步骤完成配对和开始语音输入。后续也可以在“关于”页再次查看这份指引。";
-"usage_guide_step1" = "确认 Mac 和 iPhone 连接在同一个局域网下。";
-"usage_guide_step3" = "在 Mac 中点击“开始配对”，然后用 iPhone 扫描二维码或输入配对码。";
+"usage_guide_step1" = "确认 Mac 和 手機 连接在同一个局域网下。";
+"usage_guide_step3" = "在 Mac 中点击“开始配对”，然后用 手機 扫描二维码或输入配对码。";
 "usage_guide_step4" = "如果系统提示权限，请先完成授权，再返回继续使用。";
 "usage_guide_footer" = "默认仅支持局域网内配对与连接，这样更安全，也更符合日常使用场景。";
 "close_button" = "关闭";
@@ -224,24 +224,24 @@
 "mac_onboarding_continue" = "繼續";
 "mac_onboarding_back" = "返回";
 "mac_onboarding_fetching_ip" = "正在取得本機位址...";
-"mac_onboarding_results_location" = "轉寫結果會保留在 VoiceMind 的 Mac 視窗中";
+"mac_onboarding_results_location" = "轉寫結果會保留在 VoiceMind 的電腦視窗中";
 
 "mac_onboarding_brand_badge" = "VOICEMIND FOR MAC";
 "mac_onboarding_welcome_title" = "VoiceMind for Mac，讓語音想法落到更大的工作檯。";
-"mac_onboarding_welcome_subtitle" = "把捕捉交給 iPhone，把查看、整理與推進交給 Mac。";
+"mac_onboarding_welcome_subtitle" = "把捕捉交給手機，把查看、整理與推進交給電腦。";
 "mac_onboarding_brand_panel_title" = "為桌面語音工作流而生";
 "mac_onboarding_brand_panel_point1" = "轉寫結果集中出現，不必在多個視窗之間來回尋找。";
 "mac_onboarding_brand_panel_point2" = "想法剛落地，就能立刻查看、調整、繼續推進。";
-"mac_onboarding_brand_panel_point3" = "需要時再連接 iPhone，讓雙端協同自然發生。";
+"mac_onboarding_brand_panel_point3" = "需要時再連接手機，讓雙端協同自然發生。";
 "mac_onboarding_brand_feature1_title" = "給語音一個更大的畫布";
 "mac_onboarding_brand_feature1_desc" = "從快速捕捉切換到專注查看，始終留在 VoiceMind。";
-"mac_onboarding_brand_feature2_title" = "順著 Mac 的節奏工作";
+"mac_onboarding_brand_feature2_title" = "順著電腦的節奏工作";
 "mac_onboarding_brand_feature2_desc" = "把結果留在桌面端，方便繼續整理與推進下一步。";
 
 "mac_onboarding_capture_badge" = "捕捉與查看";
-"mac_onboarding_capture_title" = "Mac 是 VoiceMind 的查看台，也是你推進內容的地方。";
+"mac_onboarding_capture_title" = "電腦是 VoiceMind 的查看台，也是你推進內容的地方。";
 "mac_onboarding_capture_subtitle" = "新的結果會持續匯入，讓你能邊看邊整理，不打斷節奏。";
-"mac_onboarding_capture_panel_title" = "Mac 端會發生什麼";
+"mac_onboarding_capture_panel_title" = "電腦端會發生什麼";
 "mac_onboarding_capture_panel_point1" = "新的轉寫內容會持續匯入同一個清晰的工作區。";
 "mac_onboarding_capture_panel_point2" = "趁上下文還在眼前，馬上查看並做出調整。";
 "mac_onboarding_capture_panel_point3" = "讓桌面端始終準備好，接住下一段語音內容。";
@@ -251,28 +251,28 @@
 "mac_onboarding_capture_feature2_desc" = "用 VoiceMind 作為捕捉之後、下一步之前的整理層。";
 
 "mac_onboarding_connect_badge" = "連接 IPHONE";
-"mac_onboarding_connect_title" = "連接一次 iPhone 和 Mac，讓語音工作流自然延續。";
-"mac_onboarding_connect_subtitle" = "iPhone 負責開口捕捉，Mac 負責展開查看，兩者透過區域網路保持同步。";
-"mac_onboarding_device_iphone" = "iPhone";
+"mac_onboarding_connect_title" = "連接一次手機和電腦，讓語音工作流自然延續。";
+"mac_onboarding_connect_subtitle" = "手機負責開口捕捉，電腦負責展開查看，兩者透過區域網路保持同步。";
+"mac_onboarding_device_iphone" = "手機";
 "mac_onboarding_device_mac" = "Mac";
 "mac_onboarding_connect_bridge" = "安全連接";
 "mac_onboarding_connect_step1_title" = "讓兩台裝置位於同一網路";
-"mac_onboarding_connect_step1_desc" = "確認 iPhone 和 Mac 在同一個區域網路內，方便彼此發現。";
-"mac_onboarding_connect_step2_title" = "從 Mac 發起配對";
-"mac_onboarding_connect_step2_desc" = "VoiceMind 會在 Mac 上顯示 QR Code 和配對碼，等待 iPhone 接入。";
-"mac_onboarding_connect_step3_title" = "在 iPhone 上確認連接";
+"mac_onboarding_connect_step1_desc" = "確認 手機 和 Mac 在同一個區域網路內，方便彼此發現。";
+"mac_onboarding_connect_step2_title" = "從電腦發起配對";
+"mac_onboarding_connect_step2_desc" = "VoiceMind 會在 Mac 上顯示 QR Code 和配對碼，等待 手機 接入。";
+"mac_onboarding_connect_step3_title" = "在 手機 上確認連接";
 "mac_onboarding_connect_step3_desc" = "掃描並確認這次會話後，VoiceMind 會讓兩端保持同步。";
 
 "mac_onboarding_start_badge" = "啟動 VOICEMIND";
-"mac_onboarding_start_title" = "啟動 Mac 端 VoiceMind，準備開始第一段協同。";
+"mac_onboarding_start_title" = "啟動電腦端 VoiceMind，準備開始第一段協同。";
 "mac_onboarding_start_subtitle" = "啟動網路服務後，這台 Mac 就能被發現、完成配對，並進入後續執行狀態。";
 "mac_onboarding_start_button" = "啟動 VoiceMind";
 "mac_onboarding_start_continue" = "查看執行狀態";
 "mac_onboarding_start_ip_title" = "本機網路位址";
 "mac_onboarding_start_mode_title" = "工作方式";
-"mac_onboarding_start_mode_value" = "iPhone 負責採集，Mac 負責查看";
+"mac_onboarding_start_mode_value" = "手機 負責採集，Mac 負責查看";
 "mac_onboarding_start_steps_title" = "接下來會發生什麼";
-"mac_onboarding_start_step1" = "先在這台 Mac 上啟動 VoiceMind 服務。";
-"mac_onboarding_start_step1_running" = "VoiceMind 服務已經在這台 Mac 上執行。";
-"mac_onboarding_start_step2" = "準備好後，在 iPhone 上開啟 VoiceMind 並進入配對畫面。";
-"mac_onboarding_start_step3" = "完成連接後，在 iPhone 開口說話，在 Mac 繼續查看與整理。";
+"mac_onboarding_start_step1" = "先在這台電腦上啟動 VoiceMind 服務。";
+"mac_onboarding_start_step1_running" = "VoiceMind 服務已經在這台電腦上執行。";
+"mac_onboarding_start_step2" = "準備好後，在 手機 上開啟 VoiceMind 並進入配對畫面。";
+"mac_onboarding_start_step3" = "完成連接後，在 手機 開口說話，在 Mac 繼續查看與整理。";

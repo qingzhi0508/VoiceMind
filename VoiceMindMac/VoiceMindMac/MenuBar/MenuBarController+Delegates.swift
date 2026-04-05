@@ -161,21 +161,21 @@ extension MenuBarController: ConnectionManagerDelegate {
         case .disconnected:
             appendInboundDataRecord(
                 title: "连接已断开",
-                detail: "当前没有活跃的 iPhone 连接。",
+                detail: "当前没有活跃的手机连接。",
                 category: .connection,
                 severity: .warning
             )
         case .connecting:
             appendInboundDataRecord(
                 title: "正在建立连接",
-                detail: "Mac 正在等待与 iPhone 建立连接。",
+                detail: "电脑正在等待与手机建立连接。",
                 category: .connection,
                 severity: .info
             )
         case .connected:
             appendInboundDataRecord(
                 title: "连接已建立",
-                detail: "iPhone 与 Mac 已建立可用连接。",
+                detail: "手机与电脑已建立可用连接。",
                 category: .connection,
                 severity: .info
             )
