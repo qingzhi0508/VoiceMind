@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隐私政策 - VoiceMind</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .legal-page {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px 24px 120px;
+        }
+        .legal-header {
+            margin-bottom: 48px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .legal-header h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        .legal-header .last-updated {
+            color: #888;
+            font-size: 0.875rem;
+        }
+        .legal-section {
+            margin-bottom: 36px;
+        }
+        .legal-section h2 {
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+            color: #fff;
+        }
+        .legal-section p {
+            color: #aaa;
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+        .legal-section ul {
+            color: #aaa;
+            padding-left: 24px;
+            line-height: 1.8;
+        }
+        .legal-section ul li {
+            margin-bottom: 4px;
+        }
+        .legal-section code {
+            background: rgba(255,255,255,0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.875em;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #6366f1;
+            text-decoration: none;
+            font-size: 0.875rem;
+            margin-bottom: 24px;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-icon">🎙️</span>
+                <span class="logo-text">VoiceMind</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">首页</a>
+                <a href="index.html#features" class="nav-link">功能</a>
+                <a href="index.html#download" class="nav-link">下载</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="legal-page">
+        <a href="index.html" class="back-link">
+            ← 返回首页
+        </a>
+
+        <div class="legal-header">
+            <h1>隐私政策</h1>
+            <p class="last-updated">最后更新：2026年4月5日</p>
+        </div>
+
+        <div class="legal-section">
+            <h2>概述</h2>
+            <p>VoiceMind（「我们」）尊重并保护您的隐私。本隐私政策说明了我们如何收集、使用、存储和保护您的信息。</p>
+            <p><strong>我们的核心原则：VoiceMind 不会收集、存储或上传您的任何个人数据。</strong></p>
+        </div>
+
+        <div class="legal-section">
+            <h2>我们收集的信息</h2>
+            <p>VoiceMind 应用本身不会收集、存储或传输任何用户个人数据。具体说明：</p>
+            <ul>
+                <li><strong>语音数据</strong>：您的语音由 Apple Speech 框架在设备本地处理，数据不会离开您的设备，也不会上传到任何服务器。</li>
+                <li><strong>识别结果</strong>：语音识别生成的文字仅保存在您本地的 Mac 设备上，不会同步到云端。</li>
+                <li><strong>位置信息</strong>：我们不收集、不使用您的位置信息。</li>
+                <li><strong>设备信息</strong>：我们不会收集设备标识符、型号、IP地址或其他设备信息。</li>
+            </ul>
+        </div>
+
+        <div class="legal-section">
+            <h2>本地网络通信</h2>
+            <p>VoiceMind 在您的 iPhone 和 Mac 之间建立本地网络连接，用于传输语音数据。通信使用 HMAC-SHA256 加密，确保：</p>
+            <ul>
+                <li>数据传输仅在您的设备之间进行</li>
+                <li>数据不会经过任何第三方服务器</li>
+                <li>每次配对会话使用独立的加密密钥</li>
+            </ul>
+        </div>
+
+        <div class="legal-section">
+            <h2>权限使用</h2>
+            <p>VoiceMind 请求以下权限，仅用于实现应用功能：</p>
+            <ul>
+                <li><strong>麦克风</strong>：用于采集您的语音进行识别</li>
+                <li><strong>语音识别</strong>：用于调用 Apple Speech 框架进行本地语音转文字</li>
+                <li><strong>本地网络</strong>：用于发现并连接您局域网内的 Mac 和 iPhone 设备</li>
+                <li><strong>相机</strong>（可选）：用于扫描二维码快速配对</li>
+            </ul>
+        </div>
+
+        <div class="legal-section">
+            <h2>数据存储</h2>
+            <p>VoiceMind 仅在以下位置存储必要的数据：</p>
+            <ul>
+                <li><strong>系统 Keychain</strong>：存储配对信息（加密存储，与您的 Apple ID 无关）</li>
+                <li><strong>本地 UserDefaults</strong>：存储应用设置（如选择的语言偏好），不包含任何个人身份信息</li>
+            </ul>
+            <p>我们不会使用任何云存储服务存储您的数据。</p>
+        </div>
+
+        <div class="legal-section">
+            <h2>第三方服务</h2>
+            <p>VoiceMind 不使用任何第三方分析、追踪或广告服务。</p>
+            <p>我们使用的唯一外部依赖是：</p>
+            <ul>
+                <li><strong>Apple Speech 框架</strong>：设备本地的语音识别引擎，由 Apple 提供并运行在您的设备上</li>
+                <li><strong>Bonjour/mDNS</strong>：用于本地网络设备发现，是 macOS/iOS 系统服务</li>
+            </ul>
+        </div>
+
+        <div class="legal-section">
+            <h2>儿童隐私</h2>
+            <p>VoiceMind 不针对 13 岁以下的儿童，也不收集任何儿童的个人信息。</p>
+        </div>
+
+        <div class="legal-section">
+            <h2>隐私政策更新</h2>
+            <p>如果我们对本隐私政策进行重大更改，我们将在应用内或通过网站通知您。您可以在本页查看最新版本。</p>
+        </div>
+
+        <div class="legal-section">
+            <h2>联系我们</h2>
+            <p>如果您对本隐私政策有任何疑问，请通过以下方式联系我们：</p>
+            <ul>
+                <li>邮箱：<a href="mailto:support@voicemind.app" style="color:#6366f1;">support@voicemind.app</a></li>
+                <li>网站：https://voicemind.app</li>
+            </ul>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>© 2026 VoiceMind. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
