@@ -36,7 +36,7 @@
 "menu_quit" = "Quit";
 
 "window_title_main" = "VoiceMind";
-"window_title_onboarding" = "VoiceMind for Mac";
+"window_title_onboarding" = "VoiceMind for Desktop";
 "window_title_qr_pairing" = "QR Pairing";
 
 "unpair_alert_title" = "Unpair?";

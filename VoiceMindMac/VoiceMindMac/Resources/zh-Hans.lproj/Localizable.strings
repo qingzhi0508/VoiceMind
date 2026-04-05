@@ -37,7 +37,7 @@
 "menu_quit" = "退出";
 
 "window_title_main" = "VoiceMind";
-"window_title_onboarding" = "VoiceMind for Mac";
+"window_title_onboarding" = "VoiceMind for 桌面端";
 "window_title_qr_pairing" = "扫码配对";
 
 "unpair_alert_title" = "解除配对？";
@@ -229,7 +229,7 @@
 "mac_onboarding_results_location" = "转写结果会保留在 VoiceMind 的电脑窗口中";
 
 "mac_onboarding_brand_badge" = "VOICEMIND FOR MAC";
-"mac_onboarding_welcome_title" = "VoiceMind for Mac，让语音想法落到更大的工作台。";
+"mac_onboarding_welcome_title" = "VoiceMind for 桌面端，让语音想法落到更大的工作台。";
 "mac_onboarding_welcome_subtitle" = "把捕捉留给手机，把查看、整理与推进交给电脑。";
 "mac_onboarding_brand_panel_title" = "为桌面语音工作流而生";
 "mac_onboarding_brand_panel_point1" = "转写结果集中出现，不用在多个窗口之间来回寻找。";
@@ -256,12 +256,12 @@
 "mac_onboarding_connect_title" = "连接一次手机和电脑，让语音工作流自然延续。";
 "mac_onboarding_connect_subtitle" = "手机负责开口捕捉，电脑负责展开查看，二者通过局域网保持同步。";
 "mac_onboarding_device_iphone" = "手机";
-"mac_onboarding_device_mac" = "Mac";
+"mac_onboarding_device_desktop" = "Mac";
 "mac_onboarding_connect_bridge" = "安全连接";
 "mac_onboarding_connect_step1_title" = "让两台设备处于同一网络";
-"mac_onboarding_connect_step1_desc" = "确认 手机 和 Mac 在同一个局域网内，方便彼此发现。";
+"mac_onboarding_connect_step1_desc" = "确认 手机 和 桌面端 在同一个局域网内，方便彼此发现。";
 "mac_onboarding_connect_step2_title" = "从电脑发起配对";
-"mac_onboarding_connect_step2_desc" = "VoiceMind 会在 Mac 上显示二维码和配对码，等待 手机 接入。";
+"mac_onboarding_connect_step2_desc" = "VoiceMind 会在 桌面端 上显示二维码和配对码，等待 手机 接入。";
 "mac_onboarding_connect_step3_title" = "在 手机 上确认连接";
 "mac_onboarding_connect_step3_desc" = "扫描并确认本次会话后，VoiceMind 会让两端保持同步。";
 
@@ -279,17 +279,17 @@
 "billing_two_device_sync_status_unlimited" = "已解锁无限次双端协同。";
 "billing_two_device_sync_status_free_mac" = "当前为免费方案。";
 "billing_two_device_sync_mac_detail_free" = "免费用户可从 手机 每天发起最多 50 次双端协同。你可以在这里升级，在 手机 和 Mac 上解锁无限次。";
-"billing_two_device_sync_mac_detail_monthly" = "你的月度方案已在 手机 和 Mac 上解锁无限次双端协同。";
-"billing_two_device_sync_mac_detail_yearly" = "你的年度方案已在 手机 和 Mac 上解锁无限次双端协同。";
-"billing_two_device_sync_mac_detail_lifetime" = "你的终身购买已在 手机 和 Mac 上永久解锁当前双端协同功能。";
-"mac_onboarding_start_subtitle" = "启动网络服务后，这台 Mac 就能被发现、完成配对，并进入后续运行状态。";
+"billing_two_device_sync_mac_detail_monthly" = "你的月度方案已在 手机 和 桌面端 上解锁无限次双端协同。";
+"billing_two_device_sync_mac_detail_yearly" = "你的年度方案已在 手机 和 桌面端 上解锁无限次双端协同。";
+"billing_two_device_sync_mac_detail_lifetime" = "你的终身购买已在 手机 和 桌面端 上永久解锁当前双端协同功能。";
+"mac_onboarding_start_subtitle" = "启动网络服务后，这台 桌面端 就能被发现、完成配对，并进入后续运行状态。";
 "mac_onboarding_start_button" = "启动 VoiceMind";
 "mac_onboarding_start_continue" = "查看运行状态";
 "mac_onboarding_start_ip_title" = "本机网络地址";
 "mac_onboarding_start_mode_title" = "工作方式";
-"mac_onboarding_start_mode_value" = "手机 负责采集，Mac 负责查看";
+"mac_onboarding_start_mode_value" = "手机 负责采集，桌面端 负责查看";
 "mac_onboarding_start_steps_title" = "接下来会发生什么";
 "mac_onboarding_start_step1" = "先在这台电脑上启动 VoiceMind 服务。";
 "mac_onboarding_start_step1_running" = "VoiceMind 服务已经在这台电脑上运行。";
 "mac_onboarding_start_step2" = "准备好后，在手机上打开 VoiceMind 并进入配对界面。";
-"mac_onboarding_start_step3" = "完成连接后，在 手机 开口说话，在 Mac 继续查看与整理。";
+"mac_onboarding_start_step3" = "完成连接后，在 手机 开口说话，在 桌面端 继续查看与整理。";
