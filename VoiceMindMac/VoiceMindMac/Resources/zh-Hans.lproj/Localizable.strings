@@ -142,7 +142,7 @@
 "status_connection_error" = "错误";
 
 "note_title" = "笔记";
-"note_placeholder" = "在此说话或接收 iOS 传输的识别结果...";
+"note_placeholder" = "在此说话或接收 移动端 传输的识别结果...";
 "note_recording" = "录音中...";
 "note_clear" = "清空";
 
@@ -163,7 +163,7 @@
 "data_filter_all" = "全部";
 "data_filter_voice" = "语音";
 "data_filter_pairing" = "配对/连接";
-"data_title" = "iOS 数据记录";
+"data_title" = "移动端 数据记录";
 "data_subtitle" = "展示手机发来的数据，以及语音在电脑端转写后的最终文字。";
 "data_filter_picker" = "筛选";
 "data_action_clear" = "清空记录";
