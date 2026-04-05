@@ -4,6 +4,11 @@ import SwiftUI
 import SharedCore
 
 class MenuBarController: NSObject, ObservableObject {
+    private enum MainWindowSizingPolicy {
+        static let defaultWidth: CGFloat = 1280
+        static let defaultHeight: CGFloat = 800
+    }
+
     var statusItem: NSStatusItem!
     let connectionManager = ConnectionManager()
     let settings = AppSettings.shared
@@ -127,15 +132,34 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     @objc private func showStatus() {
+        if let existingWindow = existingMainAppWindow() {
+            if existingWindow.isMiniaturized {
+                existingWindow.deminiaturize(nil)
+            }
+            existingWindow.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
         if statusWindow == nil {
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 500, height: 600),
+                contentRect: NSRect(
+                    x: 0,
+                    y: 0,
+                    width: MainWindowSizingPolicy.defaultWidth,
+                    height: MainWindowSizingPolicy.defaultHeight
+                ),
                 styleMask: [.titled, .closable, .miniaturizable, .resizable],
                 backing: .buffered,
                 defer: false
             )
             window.title = AppLocalization.localizedString("window_title_main")
-            window.setContentSize(NSSize(width: 500, height: 600))
+            window.setContentSize(
+                NSSize(
+                    width: MainWindowSizingPolicy.defaultWidth,
+                    height: MainWindowSizingPolicy.defaultHeight
+                )
+            )
             window.contentView = NSHostingView(rootView: MainWindow(controller: self))
             window.center()
             window.isReleasedWhenClosed = false
@@ -145,6 +169,22 @@ class MenuBarController: NSObject, ObservableObject {
 
         statusWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func existingMainAppWindow() -> NSWindow? {
+        let transientWindows = [pairingWindow, onboardingWindow, usageGuideWindow, statusWindow]
+        let excluded = Set(transientWindows.compactMap { window in
+            window.map(ObjectIdentifier.init)
+        })
+
+        return NSApp.windows.first { window in
+            let className = NSStringFromClass(type(of: window))
+
+            return !excluded.contains(ObjectIdentifier(window))
+                && window.canBecomeKey
+                && window.level == .normal
+                && className != "NSStatusBarWindow"
+        }
     }
 
     func showMainWindow() {
