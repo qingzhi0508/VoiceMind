@@ -448,9 +448,8 @@ struct MainWindow: View {
     private func pageContent(for section: MainWindowSection) -> some View {
         switch MainWindowNavigationPolicy.contentSection(for: section) {
         case .notes:
-            WindowPageShell(section: section) {
-                NotesTab(controller: controller, showsInlineHeader: false)
-            }
+            NotesTab(controller: controller, showsInlineHeader: false)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .records:
             WindowPageShell(section: section) {
                 VoiceRecognitionRecordsTab(controller: controller, showsInlineHeader: false)
@@ -2160,7 +2159,7 @@ struct NotesTab: View {
                     .padding(.top)
             }
 
-            // Note text display
+            // Note text display - expands to fill available space
             Group {
                 if NotesTextSelectionPolicy.allowsSelection(for: controller.noteText) {
                     Text(controller.noteText)
@@ -2172,7 +2171,7 @@ struct NotesTab: View {
             }
             .font(.body)
             .foregroundColor(controller.noteText.isEmpty ? MainWindowColors.secondaryText : MainWindowColors.title)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding()
             .background(MainWindowColors.cardSurface)
             .overlay(
@@ -2181,8 +2180,8 @@ struct NotesTab: View {
             )
             .cornerRadius(12)
 
-            // Recording button
-            VStack(spacing: 12) {
+            // Recording button - fixed at bottom
+            HStack(spacing: 20) {
                 RecordButton(
                     isRecording: controller.isLocalRecording,
                     onStartRecording: {
@@ -2193,19 +2192,23 @@ struct NotesTab: View {
                     }
                 )
 
-                Text(controller.isLocalRecording ? AppLocalization.localizedString("note_recording") : AppLocalization.localizedString("note_placeholder"))
-                    .font(.caption)
-                    .foregroundColor(controller.isLocalRecording ? .red : MainWindowColors.secondaryText)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(controller.isLocalRecording ? AppLocalization.localizedString("note_recording") : AppLocalization.localizedString("note_placeholder"))
+                        .font(.caption)
+                        .foregroundColor(controller.isLocalRecording ? .red : MainWindowColors.secondaryText)
 
-                Button(action: {
-                    controller.clearNote()
-                }) {
-                    Label(AppLocalization.localizedString("note_clear"), systemImage: "trash")
+                    Button(action: {
+                        controller.clearNote()
+                    }) {
+                        Label(AppLocalization.localizedString("note_clear"), systemImage: "trash")
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(controller.noteText.isEmpty)
                 }
-                .buttonStyle(.bordered)
-                .disabled(controller.noteText.isEmpty)
+
+                Spacer()
             }
-            .padding(.bottom, 40)
+            .padding(.bottom, 20)
         }
         .padding()
     }
