@@ -451,36 +451,31 @@ struct MainWindow: View {
             NotesTab(controller: controller, showsInlineHeader: false)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .records:
-            WindowPageShell(section: section) {
-                VoiceRecognitionRecordsTab(controller: controller, showsInlineHeader: false)
-            }
+            VoiceRecognitionRecordsTab(controller: controller, showsInlineHeader: false)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .collaboration:
             HomeDashboardView(
                 controller: controller,
                 showsWelcomeHeader: false
             )
         case .data:
-            WindowPageShell(section: section) {
-                DataRecordsTab(controller: controller, showsInlineHeader: false)
-            }
+            DataRecordsTab(controller: controller, showsInlineHeader: false)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .speech:
-            WindowPageShell(section: section) {
-                SpeechRecognitionTab(controller: controller, showsInlineHeader: false)
-            }
+            SpeechRecognitionTab(controller: controller, showsInlineHeader: false)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .about:
-            WindowPageShell(section: section) {
-                AboutTab(
-                    showsInlineHeader: false,
-                    onOpenGuide: {
-                        controller.showUsageGuide()
-                    },
-                    onRevealDebug: {}
-                )
-            }
+            AboutTab(
+                showsInlineHeader: false,
+                onOpenGuide: {
+                    controller.showUsageGuide()
+                },
+                onRevealDebug: {}
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .settings:
-            WindowPageShell(section: section) {
-                SettingsTab(settings: settings, controller: controller)
-            }
+            SettingsTab(settings: settings, controller: controller)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }
@@ -2160,33 +2155,18 @@ struct NotesTab: View {
             }
 
             // Note text display - expands to fill available space
-            ZStack {
-                Group {
-                    if NotesTextSelectionPolicy.allowsSelection(for: controller.noteText) {
-                        Text(controller.noteText)
-                            .textSelection(.enabled)
-                    } else {
-                        Text(AppLocalization.localizedString("note_placeholder"))
-                            .textSelection(.disabled)
-                    }
-                }
-                .font(.body)
-                .foregroundColor(controller.noteText.isEmpty ? MainWindowColors.secondaryText : MainWindowColors.title)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-
-                // Centered record button when no text
-                if controller.noteText.isEmpty {
-                    RecordButton(
-                        isRecording: controller.isLocalRecording,
-                        onStartRecording: {
-                            controller.startLocalRecording()
-                        },
-                        onStopRecording: {
-                            controller.stopLocalRecording()
-                        }
-                    )
+            Group {
+                if NotesTextSelectionPolicy.allowsSelection(for: controller.noteText) {
+                    Text(controller.noteText)
+                        .textSelection(.enabled)
+                } else {
+                    Text(AppLocalization.localizedString("note_placeholder"))
+                        .textSelection(.disabled)
                 }
             }
+            .font(.body)
+            .foregroundColor(controller.noteText.isEmpty ? MainWindowColors.secondaryText : MainWindowColors.title)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding()
             .background(MainWindowColors.cardSurface)
             .overlay(
@@ -2195,7 +2175,25 @@ struct NotesTab: View {
             )
             .cornerRadius(12)
 
-            // Bottom controls
+            // Recording button - centered below text box
+            HStack(spacing: 20) {
+                Spacer()
+
+                RecordButton(
+                    isRecording: controller.isLocalRecording,
+                    onStartRecording: {
+                        controller.startLocalRecording()
+                    },
+                    onStopRecording: {
+                        controller.stopLocalRecording()
+                    }
+                )
+
+                Spacer()
+            }
+            .padding(.bottom, 10)
+
+            // Status and clear button
             HStack(spacing: 20) {
                 Spacer()
 
