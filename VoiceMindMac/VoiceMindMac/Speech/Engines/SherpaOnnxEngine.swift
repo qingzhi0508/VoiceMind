@@ -1,6 +1,213 @@
 import Foundation
 import AVFoundation
 import Combine
+import Darwin
+
+enum SherpaOnnxRuntimeModel: Equatable {
+    case streamingParaformer(encoder: String, decoder: String, tokens: String)
+    case streamingTransducer(encoder: String, decoder: String, joiner: String, tokens: String)
+}
+
+enum SherpaOnnxRuntimeModelResolver {
+    static func resolveModel(in directoryPath: String) -> SherpaOnnxRuntimeModel? {
+        let directoryURL = URL(fileURLWithPath: directoryPath, isDirectory: true)
+
+        guard let tokens = existingFile(in: directoryURL, candidates: ["tokens.txt"]) else {
+            return nil
+        }
+
+        if let encoder = firstMatch(in: directoryURL, prefixes: ["encoder"], suffix: ".onnx"),
+           let decoder = firstMatch(in: directoryURL, prefixes: ["decoder"], suffix: ".onnx"),
+           let joiner = firstMatch(in: directoryURL, prefixes: ["joiner"], suffix: ".onnx") {
+            return .streamingTransducer(
+                encoder: encoder.path,
+                decoder: decoder.path,
+                joiner: joiner.path,
+                tokens: tokens.path
+            )
+        }
+
+        if let encoder = firstMatch(in: directoryURL, prefixes: ["encoder"], suffix: ".onnx"),
+           let decoder = firstMatch(in: directoryURL, prefixes: ["decoder"], suffix: ".onnx") {
+            return .streamingParaformer(
+                encoder: encoder.path,
+                decoder: decoder.path,
+                tokens: tokens.path
+            )
+        }
+
+        return nil
+    }
+
+    private static func existingFile(in directoryURL: URL, candidates: [String]) -> URL? {
+        for candidate in candidates {
+            let fileURL = directoryURL.appendingPathComponent(candidate)
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                return fileURL
+            }
+        }
+        return nil
+    }
+
+    private static func firstMatch(in directoryURL: URL, prefixes: [String], suffix: String) -> URL? {
+        guard let contents = try? FileManager.default.contentsOfDirectory(
+            at: directoryURL,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else {
+            return nil
+        }
+
+        return contents
+            .filter { $0.lastPathComponent.hasSuffix(suffix) }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .first { fileURL in
+                prefixes.contains { fileURL.lastPathComponent.hasPrefix($0) }
+            }
+    }
+}
+
+enum SherpaOnnxPCM16Converter {
+    static func floatSamples(from data: Data) -> [Float] {
+        data.withUnsafeBytes { rawBuffer in
+            let samples = rawBuffer.bindMemory(to: Int16.self)
+            return samples.map { sample in
+                if sample == Int16.min {
+                    return -1
+                }
+                return Float(sample) / Float(Int16.max)
+            }
+        }
+    }
+}
+
+enum SherpaOnnxRuntimeLibraryResolver {
+    static func resolveLibraryPath(
+        bundlePrivateFrameworksPath: String?,
+        fallbackPaths: [String]
+    ) -> String? {
+        // 1. 优先检查项目内建的 Frameworks 目录
+        if let bundledLib = checkBundledLibrary() {
+            return bundledLib
+        }
+
+        // 2. 检查 PrivateFrameworks
+        if let privateFrameworksPath = bundlePrivateFrameworksPath,
+           let bundledLibrary = bundledOnnxRuntimeLibrary(in: privateFrameworksPath) {
+            return bundledLibrary
+        }
+
+        // 3. 检查 fallback 路径
+        return fallbackPaths.first { FileManager.default.fileExists(atPath: $0) }
+    }
+
+    /// 检查项目内建的 Frameworks（sherpa-onnx.xcframework 和 onnxruntime.xcframework）
+    fileprivate static func checkBundledLibrary() -> String? {
+        // 检查 Frameworks 目录（项目内建或 CocoaPods）
+        let possiblePaths = [
+            // 项目内建的 Frameworks
+            Bundle.main.privateFrameworksPath.map { "\($0)/sherpa-onnx.xcframework" },
+            Bundle.main.privateFrameworksPath.map { "\($0)/onnxruntime.xcframework" },
+            // App Bundle 根目录的 Frameworks
+            Bundle.main.resourcePath.map { "\($0)/../Frameworks/sherpa-onnx.xcframework" },
+            Bundle.main.resourcePath.map { "\($0)/../Frameworks/onnxruntime.xcframework" },
+            // 项目构建产物目录
+            Bundle.main.resourcePath.map { "\($0)/../../Frameworks/sherpa-onnx.xcframework" },
+        ].compactMap { $0 }
+
+        for path in possiblePaths {
+            if FileManager.default.fileExists(atPath: path) {
+                print("✅ Sherpa-ONNX XCFramework 找到: \(path)")
+                return path
+            }
+        }
+
+        // 检查是否是 macOS App（.app bundle）
+        if let bundlePath = Bundle.main.bundlePath as String? {
+            let appFrameworks = (bundlePath as NSString).deletingLastPathComponent + "/Frameworks"
+            for name in ["sherpa-onnx.xcframework", "onnxruntime.xcframework"] {
+                let fullPath = (appFrameworks as NSString).appendingPathComponent(name)
+                if FileManager.default.fileExists(atPath: fullPath) {
+                    print("✅ Sherpa-ONNX XCFramework 找到: \(fullPath)")
+                    return fullPath
+                }
+            }
+        }
+
+        return nil
+    }
+
+    private static func bundledOnnxRuntimeLibrary(in frameworksPath: String) -> String? {
+        let frameworksURL = URL(fileURLWithPath: frameworksPath, isDirectory: true)
+
+        guard let contents = try? FileManager.default.contentsOfDirectory(
+            at: frameworksURL,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else {
+            return nil
+        }
+
+        return contents
+            .filter { fileURL in
+                let name = fileURL.lastPathComponent
+                return name.hasPrefix("libonnxruntime") && name.hasSuffix(".dylib")
+            }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .first?
+            .path
+    }
+}
+
+enum SherpaOnnxModelDirectoryResolver {
+    static func preferredLegacyHomeDirectory(
+        currentHomeDirectory: URL,
+        appBundleIdentifier: String?,
+        passwdHomeDirectory: URL?
+    ) -> URL {
+        guard let appBundleIdentifier,
+              isSandboxContainerHome(currentHomeDirectory, appBundleIdentifier: appBundleIdentifier),
+              let passwdHomeDirectory else {
+            return currentHomeDirectory
+        }
+
+        if passwdHomeDirectory.standardizedFileURL != currentHomeDirectory.standardizedFileURL {
+            return passwdHomeDirectory
+        }
+
+        return currentHomeDirectory
+    }
+
+    static func legacyModelConfigDirectory(
+        currentHomeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,
+        appBundleIdentifier: String? = Bundle.main.bundleIdentifier,
+        passwdHomeDirectory: URL? = passwdHomeDirectory()
+    ) -> URL {
+        let resolvedHomeDirectory = preferredLegacyHomeDirectory(
+            currentHomeDirectory: currentHomeDirectory,
+            appBundleIdentifier: appBundleIdentifier,
+            passwdHomeDirectory: passwdHomeDirectory
+        )
+
+        return resolvedHomeDirectory
+            .appendingPathComponent("Library/Application Support/VoiceMind/Models/SherpaOnnx", isDirectory: true)
+    }
+
+    private static func isSandboxContainerHome(_ url: URL, appBundleIdentifier: String) -> Bool {
+        let standardizedPath = url.standardizedFileURL.path
+        let containerComponent = "/Library/Containers/\(appBundleIdentifier)/Data"
+        return standardizedPath.contains(containerComponent)
+    }
+
+    private static func passwdHomeDirectory() -> URL? {
+        guard let pw = getpwuid(getuid()),
+              let homeDirectory = pw.pointee.pw_dir else {
+            return nil
+        }
+
+        return URL(fileURLWithPath: String(cString: homeDirectory), isDirectory: true)
+    }
+}
 
 /// Sherpa-ONNX 语音识别引擎
 /// 基于 https://github.com/k2-fsa/sherpa-onnx 的本地语音识别引擎
@@ -58,6 +265,7 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
 
     /// Sherpa-ONNX C 库句柄（用于存储创建的识别器）
     private var recognizerHandle: OpaquePointer?
+    private var streamHandle: OpaquePointer?
 
     /// 音频样本率
     private let sampleRate: Int32 = 16000
@@ -67,13 +275,12 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
 
     /// 模型配置
     private struct ModelConfig {
-        let encoder: String  // encoder.onnx 路径
-        let decoder: String  // decoder.onnx 路径
-        let tokens: String   // tokens.txt 路径
         let language: String
+        let runtimeModel: SherpaOnnxRuntimeModel
     }
 
     private var currentModelConfig: ModelConfig?
+    private var lastPartialText: String = ""
 
     // MARK: - 初始化
 
@@ -85,26 +292,44 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
     // MARK: - Library Loading
 
     /// 检查 sherpa-onnx 库是否可用
+    /// 对于 XCFramework 集成，库在编译时链接，此处检查 XCFramework 是否存在于 Bundle 中
     private func checkLibraryAvailability() {
-        // 检查是否可以通过 dlopen 加载 sherpa-onnx 库
-        // 或者检查库文件是否存在
-        let libraryPaths = [
-            Bundle.main.path(forResource: "libsherpa-onnx", ofType: "dylib"),
-            Bundle.main.path(forResource: "libsherpa-onnx", ofType: "a"),
-            "/usr/local/lib/libsherpa-onnx.dylib",
-            "/opt/homebrew/lib/libsherpa-onnx.dylib"
-        ]
+        // 1. 检查项目内建的 Frameworks 目录（sherpa-onnx.xcframework 和 onnxruntime.xcframework）
+        if let bundledLib = SherpaOnnxRuntimeLibraryResolver.checkBundledLibrary() {
+            isLibraryLoaded = true
+            print("✅ Sherpa-ONNX 库已找到: \(bundledLib)")
+        }
 
-        for path in libraryPaths {
-            if let path = path, FileManager.default.fileExists(atPath: path) {
+        // 2. 如果没找到，尝试检查 fallback 路径（手动安装的 dylib）
+        if !isLibraryLoaded {
+            let fallbackPaths = [
+                "/usr/local/lib/libsherpa-onnx.dylib",
+                "/opt/homebrew/lib/libsherpa-onnx.dylib",
+                "/usr/local/lib/libonnxruntime.dylib"
+            ]
+            if let fallbackPath = fallbackPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) {
                 isLibraryLoaded = true
-                print("✅ Sherpa-ONNX 库已找到: \(path)")
-                break
+                print("✅ Sherpa-ONNX 库已找到 (fallback): \(fallbackPath)")
+            }
+        }
+
+        // 3. 对于 macOS：如果 XCFramework 已链接到 Xcode，假设库已可用
+        // 这是因为 XCFramework 在编译时链接，不需要运行时 dlopen
+        if !isLibraryLoaded {
+            // 检查 Frameworks 是否存在于 App Bundle
+            if let bundlePath = Bundle.main.bundlePath as String? {
+                let appFrameworksPath = (bundlePath as NSString).deletingLastPathComponent + "/Frameworks"
+                let sherpaPath = (appFrameworksPath as NSString).appendingPathComponent("sherpa-onnx.xcframework")
+                let onnxPath = (appFrameworksPath as NSString).appendingPathComponent("onnxruntime.xcframework")
+                if FileManager.default.fileExists(atPath: sherpaPath) || FileManager.default.fileExists(atPath: onnxPath) {
+                    isLibraryLoaded = true
+                    print("✅ Sherpa-ONNX XCFramework 已链接 (bundle 内)")
+                }
             }
         }
 
         if !isLibraryLoaded {
-            print("⚠️ Sherpa-ONNX 库未找到，请先构建并集成 sherpa-onnx XCFramework")
+            print("⚠️ Sherpa-ONNX 库未找到，请确认 XCFramework 已正确集成到 Xcode 项目")
         }
 
         // 检查模型配置
@@ -113,35 +338,59 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
 
     /// 检查模型配置
     private func checkModelConfiguration() {
-        // 尝试从配置目录加载模型信息
-        let configDir = getModelConfigDirectory()
-        let configFile = configDir.appendingPathComponent("model.config")
+        for configDir in candidateModelConfigDirectories() {
+            let configFile = configDir.appendingPathComponent("model.config")
+            print("🔎 检查 Sherpa 模型配置: \(configFile.path)")
+            guard FileManager.default.fileExists(atPath: configFile.path) else {
+                continue
+            }
 
-        if FileManager.default.fileExists(atPath: configFile.path) {
-            // 从配置文件读取模型路径
             do {
                 let configData = try Data(contentsOf: configFile)
                 if let config = try? JSONDecoder().decode(ModelConfigJSON.self, from: configData) {
-                    currentModelConfig = ModelConfig(
-                        encoder: config.encoderPath,
-                        decoder: config.decoderPath,
-                        tokens: config.tokensPath,
-                        language: config.language
-                    )
-                    isModelConfigured = true
-                    print("✅ Sherpa-ONNX 模型已配置: \(config.language)")
+                    let directoryPath = URL(fileURLWithPath: config.encoderPath)
+                        .deletingLastPathComponent()
+                        .path
+
+                    if let runtimeModel = SherpaOnnxRuntimeModelResolver.resolveModel(in: directoryPath) {
+                        currentModelConfig = ModelConfig(
+                            language: config.language,
+                            runtimeModel: runtimeModel
+                        )
+                        isModelConfigured = true
+                        print("✅ Sherpa-ONNX 模型已配置: \(config.language)")
+                        return
+                    }
                 }
             } catch {
                 print("⚠️ 读取模型配置失败: \(error)")
             }
-        } else {
-            print("⚠️ 未找到模型配置文件")
         }
+
+        print("⚠️ 未找到模型配置文件")
     }
 
     private func getModelConfigDirectory() -> URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         return appSupport.appendingPathComponent("VoiceMind/Models/SherpaOnnx")
+    }
+
+    private func legacyModelConfigDirectory() -> URL {
+        SherpaOnnxModelDirectoryResolver.legacyModelConfigDirectory()
+    }
+
+    private func candidateModelConfigDirectories() -> [URL] {
+        let primary = getModelConfigDirectory()
+        let legacy = legacyModelConfigDirectory()
+
+        if primary.standardizedFileURL == legacy.standardizedFileURL {
+            print("📁 Sherpa 模型目录: \(primary.path)")
+            return [primary]
+        }
+
+        print("📁 Sherpa 模型目录候选: \(primary.path)")
+        print("📁 Sherpa 旧模型目录候选: \(legacy.path)")
+        return [primary, legacy]
     }
 
     // MARK: - SpeechRecognitionEngine Methods
@@ -170,12 +419,10 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
         // 默认使用流式 Whisper 模型
         // 模型需要预先下载到 Models 目录
         let modelDir = getModelConfigDirectory()
-
-        // 创建目录
         try FileManager.default.createDirectory(at: modelDir, withIntermediateDirectories: true)
 
-        // 检查 Models 目录下是否有 sherpa-onnx 模型
-        let models = findAvailableModels(in: modelDir)
+        let models = candidateModelConfigDirectories()
+            .flatMap { findAvailableModels(in: $0) }
 
         if let bestModel = models.first {
             currentModelConfig = bestModel
@@ -208,13 +455,7 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
                 continue
             }
 
-            // 检查必要的模型文件
-            let encoderPath = item.appendingPathComponent("encoder.onnx").path
-            let decoderPath = item.appendingPathComponent("decoder.onnx").path
-            let tokensPath = item.appendingPathComponent("tokens.txt").path
-
-            guard FileManager.default.fileExists(atPath: encoderPath),
-                  FileManager.default.fileExists(atPath: tokensPath) else {
+            guard let runtimeModel = SherpaOnnxRuntimeModelResolver.resolveModel(in: item.path) else {
                 continue
             }
 
@@ -234,10 +475,8 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
             }
 
             configs.append(ModelConfig(
-                encoder: encoderPath,
-                decoder: FileManager.default.fileExists(atPath: decoderPath) ? decoderPath : encoderPath,
-                tokens: tokensPath,
-                language: language
+                language: language,
+                runtimeModel: runtimeModel
             ))
 
             print("📁 发现模型: \(item.lastPathComponent) (语言: \(language))")
@@ -251,12 +490,23 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
         let configDir = getModelConfigDirectory()
         let configFile = configDir.appendingPathComponent("model.config")
 
-        let jsonConfig = ModelConfigJSON(
-            encoderPath: config.encoder,
-            decoderPath: config.decoder,
-            tokensPath: config.tokens,
-            language: config.language
-        )
+        let jsonConfig: ModelConfigJSON
+        switch config.runtimeModel {
+        case .streamingParaformer(let encoder, let decoder, let tokens):
+            jsonConfig = ModelConfigJSON(
+                encoderPath: encoder,
+                decoderPath: decoder,
+                tokensPath: tokens,
+                language: config.language
+            )
+        case .streamingTransducer(let encoder, let decoder, _, let tokens):
+            jsonConfig = ModelConfigJSON(
+                encoderPath: encoder,
+                decoderPath: decoder,
+                tokensPath: tokens,
+                language: config.language
+            )
+        }
 
         if let data = try? JSONEncoder().encode(jsonConfig) {
             try? data.write(to: configFile)
@@ -291,101 +541,94 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
             throw SpeechError.recognitionFailed("未配置语言模型")
         }
 
-        // 初始化 Sherpa-ONNX 识别器
-        // 注意：这里需要调用 Sherpa-ONNX C API
         try initializeRecognizer(config: config)
+        lastPartialText = ""
 
         print("✅ Sherpa-ONNX 识别器已启动")
     }
 
     /// 初始化 Sherpa-ONNX 识别器
     private func initializeRecognizer(config: ModelConfig) throws {
-        // TODO: 调用 Sherpa-ONNX C API 创建识别器
-        //
-        // Sherpa-ONNX C API 概览:
-        //
-        // // 创建特征提取配置
-        // SherpaOnnxOnlineRecognizerConfig config;
-        // config.feature_config.sample_rate = 16000;
-        // config.feature_config.feature_dim = 80;
-        // config.model_config.encoder = encoder_path;
-        // config.model_config.decoder = decoder_path;
-        // config.model_config.tokens = tokens_path;
-        // config.model_config.num_threads = 4;
-        // config.model_config.provider = "cpu"; // 或 "metal" for Apple Silicon
-        //
-        // // 创建识别器
-        // recognizerHandle = SherpaOnnxCreateOnlineRecognizer(&config);
-        //
-        // // 创建流
-        // SherpaOnnxOnlineStream *stream = SherpaOnnxCreateOnlineStream(recognizerHandle);
-        //
-        // // 开始识别
-        // SherpaOnnxOnlineRecognizer Accept(recognizerHandle, stream);
-        //
-        // // 输入音频 (16kHz, 16-bit PCM)
-        // SherpaOnnxOnlineRecognizer InputFeed(recognizerHandle, stream, samples, num_samples);
-        //
-        // // 获取结果
-        // const char* text = SherpaOnnxOnlineRecognizer GetResult(recognizerHandle, stream);
+        var recognizerConfig = SherpaOnnxOnlineRecognizerConfig()
+        recognizerConfig.feat_config.sample_rate = sampleRate
+        recognizerConfig.feat_config.feature_dim = 80
+        recognizerConfig.decoding_method = ("greedy_search" as NSString).utf8String
+        recognizerConfig.enable_endpoint = 0
 
-        print("🔧 Sherpa-ONNX C API 调用待实现")
-        print("   模型路径: \(config.encoder)")
+        var onlineModelConfig = SherpaOnnxOnlineModelConfig()
+        onlineModelConfig.debug = 0
+        onlineModelConfig.num_threads = max(1, Int32(ProcessInfo.processInfo.processorCount / 2))
+        onlineModelConfig.provider = ("cpu" as NSString).utf8String
+
+        switch config.runtimeModel {
+        case .streamingParaformer(let encoder, let decoder, let tokens):
+            var paraformerConfig = SherpaOnnxOnlineParaformerModelConfig()
+            paraformerConfig.encoder = (encoder as NSString).utf8String
+            paraformerConfig.decoder = (decoder as NSString).utf8String
+            onlineModelConfig.paraformer = paraformerConfig
+            onlineModelConfig.tokens = (tokens as NSString).utf8String
+        case .streamingTransducer(let encoder, let decoder, let joiner, let tokens):
+            var transducerConfig = SherpaOnnxOnlineTransducerModelConfig()
+            transducerConfig.encoder = (encoder as NSString).utf8String
+            transducerConfig.decoder = (decoder as NSString).utf8String
+            transducerConfig.joiner = (joiner as NSString).utf8String
+            onlineModelConfig.transducer = transducerConfig
+            onlineModelConfig.tokens = (tokens as NSString).utf8String
+        }
+
+        recognizerConfig.model_config = onlineModelConfig
+
+        guard let recognizer = SherpaOnnxCreateOnlineRecognizer(&recognizerConfig) else {
+            throw SpeechError.recognitionFailed("无法创建 Sherpa-ONNX 在线识别器")
+        }
+
+        guard let stream = SherpaOnnxCreateOnlineStream(recognizer) else {
+            SherpaOnnxDestroyOnlineRecognizer(recognizer)
+            throw SpeechError.recognitionFailed("无法创建 Sherpa-ONNX 音频流")
+        }
+
+        recognizerHandle = recognizer
+        streamHandle = stream
     }
 
     func processAudioData(_ data: Data) throws {
-        guard let handle = recognizerHandle else {
+        guard let recognizer = recognizerHandle,
+              let stream = streamHandle else {
             throw SpeechError.engineNotInitialized
         }
 
-        // TODO: 调用 Sherpa-ONNX C API 输入音频
-        //
-        // Sherpa-ONNX C API 音频输入:
-        //
-        // // 将 Data 转换为 float 样本
-        // let samples = data.withUnsafeBytes { buffer -> [Float] in
-        //     guard let baseAddress = buffer.bindMemory(to: Int16.self).baseAddress else {
-        //         return []
-        //     }
-        //     return (0..<buffer.count/2).map { Float(baseAddress[$0]) / Float(Int16.max) }
-        // }
-        //
-        // // 输入音频
-        // SherpaOnnxOnlineRecognizer InputFeed(handle, stream, samples, Int32(samples.count));
-        //
-        // // 触发识别（每输入一定量音频后调用）
-        // SherpaOnnxOnlineRecognizer Decode(handle, stream);
-        //
-        // // 获取部分结果
-        // let result = SherpaOnnxOnlineRecognizer GetResult(handle, stream)
-        // if let text = result.text {
-        //     delegate?.engine(self, didReceivePartialResult: String(cString: text), sessionId: currentSessionId ?? "")
-        // }
+        let samples = SherpaOnnxPCM16Converter.floatSamples(from: data)
+        guard !samples.isEmpty else { return }
 
-        // 示例：每 0.5 秒触发一次识别
-        let bytesPerSample = MemoryLayout<Int16>.size
-        let frameCount = data.count / bytesPerSample
-        let durationSeconds = Double(frameCount) / Double(sampleRate)
-
-        if durationSeconds >= 0.5 {
-            // 触发解码
-            decodeCurrentStream()
+        samples.withUnsafeBufferPointer { sampleBuffer in
+            guard let baseAddress = sampleBuffer.baseAddress else { return }
+            SherpaOnnxOnlineStreamAcceptWaveform(stream, sampleRate, baseAddress, Int32(sampleBuffer.count))
         }
+
+        while SherpaOnnxIsOnlineStreamReady(recognizer, stream) != 0 {
+            SherpaOnnxDecodeOnlineStream(recognizer, stream)
+        }
+
+        emitPartialResultIfNeeded()
     }
 
-    /// 解码当前音频流
-    private func decodeCurrentStream() {
-        // TODO: 调用 Sherpa-ONNX 解码
-        //
-        // SherpaOnnxOnlineRecognizer Decode(recognizerHandle, stream);
-        //
-        // // 获取结果
-        // let result = SherpaOnnxOnlineRecognizer GetResult(recognizerHandle, stream);
-        // if result.is_final {
-        //     delegate?.engine(self, didRecognizeText: String(cString: result.text), ...)
-        // } else {
-        //     delegate?.engine(self, didReceivePartialResult: String(cString: result.text), ...)
-        // }
+    private func emitPartialResultIfNeeded() {
+        guard let recognizer = recognizerHandle,
+              let stream = streamHandle,
+              let sessionId = currentSessionId,
+              let result = SherpaOnnxGetOnlineStreamResult(recognizer, stream) else {
+            return
+        }
+
+        defer { SherpaOnnxDestroyOnlineRecognizerResult(result) }
+
+        let text = result.pointee.text.map { String(cString: $0) } ?? ""
+        guard !text.isEmpty, text != lastPartialText else {
+            return
+        }
+
+        lastPartialText = text
+        delegate?.engine(self, didReceivePartialResult: text, sessionId: sessionId)
     }
 
     func stopRecognition() throws {
@@ -394,21 +637,56 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
         }
 
         print("🛑 Sherpa-ONNX 停止识别")
+        finalizeRecognitionIfNeeded()
+        cleanupRecognizerState()
+        print("🧹 Sherpa-ONNX 状态已清理")
+    }
 
-        // TODO: 清理 Sherpa-ONNX 资源
-        //
-        // // 释放流
-        // SherpaOnnxDestroyOnlineStream(recognizerHandle, stream);
-        //
-        // // 销毁识别器
-        // SherpaOnnxDestroyOnlineRecognizer(recognizerHandle);
-        // recognizerHandle = nil;
+    private func finalizeRecognitionIfNeeded() {
+        guard let recognizer = recognizerHandle,
+              let stream = streamHandle,
+              let sessionId = currentSessionId,
+              let language = currentLanguage else {
+            return
+        }
 
+        SherpaOnnxOnlineStreamInputFinished(stream)
+
+        let tailPadding = Array<Float>(repeating: 0, count: 4800)
+        tailPadding.withUnsafeBufferPointer { sampleBuffer in
+            guard let baseAddress = sampleBuffer.baseAddress else { return }
+            SherpaOnnxOnlineStreamAcceptWaveform(stream, sampleRate, baseAddress, Int32(sampleBuffer.count))
+        }
+
+        while SherpaOnnxIsOnlineStreamReady(recognizer, stream) != 0 {
+            SherpaOnnxDecodeOnlineStream(recognizer, stream)
+        }
+
+        guard let result = SherpaOnnxGetOnlineStreamResult(recognizer, stream) else {
+            return
+        }
+
+        defer { SherpaOnnxDestroyOnlineRecognizerResult(result) }
+
+        let text = result.pointee.text.map { String(cString: $0) } ?? ""
+        guard !text.isEmpty else { return }
+
+        delegate?.engine(self, didRecognizeText: text, sessionId: sessionId, language: language)
+    }
+
+    private func cleanupRecognizerState() {
+        if let stream = streamHandle {
+            SherpaOnnxDestroyOnlineStream(stream)
+        }
+        if let recognizer = recognizerHandle {
+            SherpaOnnxDestroyOnlineRecognizer(recognizer)
+        }
+
+        streamHandle = nil
         recognizerHandle = nil
         currentSessionId = nil
         currentLanguage = nil
-
-        print("🧹 Sherpa-ONNX 状态已清理")
+        lastPartialText = ""
     }
 
     // MARK: - Model Management
@@ -423,7 +701,7 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
         print("   目标: \(modelDir.path)")
 
         // 使用 URLSession 下载模型
-        let (tempURL, _) = try await URLSession.shared.download(from: url)
+        let (_, _) = try await URLSession.shared.download(from: url)
 
         // 创建目录
         try FileManager.default.createDirectory(at: modelDir, withIntermediateDirectories: true)
@@ -441,8 +719,8 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
 
     /// 获取支持 Whisper 的语言代码
     private func findModel(for language: String) -> ModelConfig? {
-        let modelDir = getModelConfigDirectory()
-        let models = findAvailableModels(in: modelDir)
+        let models = candidateModelConfigDirectories()
+            .flatMap { findAvailableModels(in: $0) }
         return models.first { $0.language == language }
     }
 
@@ -455,7 +733,13 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
         print("   模型已配置: \(isModelConfigured)")
         if let config = currentModelConfig {
             print("   当前模型语言: \(config.language)")
-            print("   Encoder: \(config.encoder)")
+            switch config.runtimeModel {
+            case .streamingParaformer(let encoder, _, _):
+                print("   Paraformer Encoder: \(encoder)")
+            case .streamingTransducer(let encoder, _, let joiner, _):
+                print("   Transducer Encoder: \(encoder)")
+                print("   Joiner: \(joiner)")
+            }
         }
     }
 }
