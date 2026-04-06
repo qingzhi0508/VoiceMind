@@ -150,6 +150,11 @@
 "settings_language_picker" = "识别语言";
 "settings_language_zh" = "中文";
 "settings_language_en" = "英文";
+"settings_ui_language_title" = "界面语言";
+"settings_ui_language_picker" = "选择语言";
+"settings_ui_language_zh" = "中文";
+"settings_ui_language_en" = "英文";
+"settings_ui_language_restart_hint" = "语言已更改，重启应用后生效";
 "settings_theme_title" = "界面主题";
 "settings_theme_picker" = "主题模式";
 "settings_theme_system" = "跟随系统";

@@ -3,7 +3,7 @@ import Foundation
 enum AppLocalization {
     static func localizedString(
         _ key: String,
-        languageCode: String = AppSettings.shared.language,
+        languageCode: String = AppSettings.shared.uiLanguage,
         bundle: Bundle = .main
     ) -> String {
         let localizedBundle = localizedBundle(for: languageCode, in: bundle)

@@ -1,12 +1,30 @@
 import XCTest
 
 final class MainWindowFullscreenLayoutTests: XCTestCase {
-    func testMainSceneDefaultsTo1280By800WindowSize() throws {
+    func testMainSceneDefaultsTo800By720WindowSize() throws {
         let appSource = try voiceMindMacAppSource()
 
         XCTAssertTrue(
-            appSource.contains(".defaultSize(width: 1280, height: 800)"),
-            "VoiceMindMacApp should default the main window to 1280 by 800."
+            appSource.contains(".defaultSize(width: 800, height: 720)"),
+            "VoiceMindMacApp should default the main window to 800 by 720."
+        )
+    }
+
+    func testMainSceneDoesNotForceContentMinSizeResizability() throws {
+        let appSource = try voiceMindMacAppSource()
+
+        XCTAssertFalse(
+            appSource.contains(".windowResizability(.contentMinSize)"),
+            "VoiceMindMacApp should not force content-based minimum resizing if the window should shrink freely."
+        )
+    }
+
+    func testAppDelegateRecentersAndResizesMainWindowAfterLaunch() throws {
+        let appSource = try voiceMindMacAppSource()
+
+        XCTAssertTrue(
+            appSource.contains("normalizeMainWindowFrameIfNeeded"),
+            "App launch should normalize main window frame so startup stays centered with preferred size."
         )
     }
 
@@ -16,6 +34,64 @@ final class MainWindowFullscreenLayoutTests: XCTestCase {
         XCTAssertFalse(
             source.contains(".frame(width: 1220, height: 780)"),
             "MainWindow should expand with the window instead of pinning the root layout to a fixed canvas."
+        )
+    }
+
+    func testMainWindowDoesNotForceMinimumHeightsThatBlockVerticalResize() throws {
+        let source = try mainWindowSource()
+
+        XCTAssertFalse(
+            source.contains("minHeight: 96"),
+            "MainWindow should not enforce the old 96pt minimum card height if vertical resize should stay flexible."
+        )
+
+        XCTAssertFalse(
+            source.contains("minHeight: 170"),
+            "MainWindow should not enforce the old 170pt minimum card height if vertical resize should stay flexible."
+        )
+
+        XCTAssertFalse(
+            source.contains("minHeight: 200"),
+            "MainWindow should not enforce the old 200pt minimum note area height if vertical resize should stay flexible."
+        )
+    }
+
+    func testMainWindowDoesNotStretchCoreContainersToInfiniteHeight() throws {
+        let source = try mainWindowSource()
+
+        XCTAssertFalse(
+            source.contains(".frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)"),
+            "MainWindow should not force core containers to infinite height if vertical resize should keep a compact page height."
+        )
+    }
+
+    func testContentAreaDoesNotUseOpacityOnlyForHiddenPersistentPages() throws {
+        let source = try mainWindowSource()
+
+        XCTAssertFalse(
+            source.contains(".opacity(selectedSection == section ? 1 : 0)"),
+            "MainWindow should not keep hidden pages in layout with opacity-only hiding because that makes the content height keep expanding."
+        )
+    }
+
+    func testMainWindowUsesAppLocalizationInsteadOfSystemLocalizedStringForUIOverrides() throws {
+        let source = try mainWindowSource()
+
+        XCTAssertFalse(
+            source.contains("String(localized:"),
+            "MainWindow should resolve UI strings through AppLocalization so the in-app language setting takes effect."
+        )
+    }
+
+    func testNotesTabDoesNotUseSpacerToPushContentToWindowBottom() throws {
+        let source = try mainWindowSource()
+        let notesTabRange = try XCTUnwrap(source.range(of: "struct NotesTab: View"))
+        let recordButtonRange = try XCTUnwrap(source.range(of: "// MARK: - Record Button"))
+        let notesTabSource = String(source[notesTabRange.lowerBound..<recordButtonRange.lowerBound])
+
+        XCTAssertFalse(
+            notesTabSource.contains("Spacer()"),
+            "NotesTab should not use a Spacer that forces the recording controls to stick to the window bottom."
         )
     }
 

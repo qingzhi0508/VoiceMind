@@ -43,10 +43,10 @@ struct QRCodePairingView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text(String(localized: "qr_pairing_title"))
+            Text(AppLocalization.localizedString("qr_pairing_title"))
                 .font(.title)
 
-            Text(String(localized: "qr_scan_instruction"))
+            Text(AppLocalization.localizedString("qr_scan_instruction"))
                 .font(.headline)
 
             // QR Code
@@ -64,7 +64,7 @@ struct QRCodePairingView: View {
             }
 
             VStack(spacing: 8) {
-                Text(String(localized: "qr_manual_code_label"))
+                Text(AppLocalization.localizedString("qr_manual_code_label"))
                     .font(.caption)
                     .foregroundColor(.secondary)
 
@@ -77,16 +77,16 @@ struct QRCodePairingView: View {
             }
 
             VStack(spacing: 4) {
-                Text(String(localized: "qr_connection_info_label"))
+                Text(AppLocalization.localizedString("qr_connection_info_label"))
                     .font(.caption)
                     .foregroundColor(.secondary)
-                Text(String(format: String(localized: "qr_ip_label_format"), connectionInfo.ip))
+                Text(String(format: AppLocalization.localizedString("qr_ip_label_format"), connectionInfo.ip))
                     .font(.system(.caption, design: .monospaced))
-                Text(String(format: String(localized: "qr_port_label_format"), "\(connectionInfo.port)"))
+                Text(String(format: AppLocalization.localizedString("qr_port_label_format"), "\(connectionInfo.port)"))
                     .font(.system(.caption, design: .monospaced))
             }
 
-            GroupBox(label: Label(String(localized: "qr_progress_title"), systemImage: "list.bullet.clipboard")) {
+            GroupBox(label: Label(AppLocalization.localizedString("qr_progress_title"), systemImage: "list.bullet.clipboard")) {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: progressIconName)
                         .foregroundColor(progressColor)
@@ -97,7 +97,7 @@ struct QRCodePairingView: View {
                             pairingState: controller.pairingState,
                             connectionState: controller.connectionState,
                             progressMessage: controller.pairingProgressMessage
-                        ) ?? String(localized: "qr_progress_waiting")
+                        ) ?? AppLocalization.localizedString("qr_progress_waiting")
                     )
                         .font(.callout)
                         .foregroundColor(.primary)
@@ -106,7 +106,7 @@ struct QRCodePairingView: View {
                 .padding(12)
             }
 
-            Text(String(format: String(localized: "qr_time_remaining_format"), "\(pairingTimer.timeRemaining)"))
+            Text(String(format: AppLocalization.localizedString("qr_time_remaining_format"), "\(pairingTimer.timeRemaining)"))
                 .font(.caption)
                 .foregroundColor(.secondary)
 

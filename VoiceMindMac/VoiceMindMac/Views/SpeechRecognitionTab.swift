@@ -8,7 +8,7 @@ struct SpeechRecognitionTab: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             if showsInlineHeader {
-                Text(String(localized: "speech_engine_title"))
+                Text(AppLocalization.localizedString("speech_engine_title"))
                     .font(.title2)
                     .fontWeight(.semibold)
             }
@@ -25,10 +25,10 @@ struct SpeechRecognitionTab: View {
 
     @ViewBuilder
     private var engineSelectionSection: some View {
-        GroupBox(label: Label(String(localized: "speech_engine_select_title"), systemImage: "waveform.circle")) {
+        GroupBox(label: Label(AppLocalization.localizedString("speech_engine_select_title"), systemImage: "waveform.circle")) {
             VStack(alignment: .leading, spacing: 12) {
                 if availableEngines.isEmpty {
-                    Text(String(localized: "speech_engine_loading"))
+                    Text(AppLocalization.localizedString("speech_engine_loading"))
                         .foregroundColor(MainWindowColors.secondaryText)
                 } else {
                     ForEach(availableEngines, id: \.identifier) { engine in
@@ -56,16 +56,16 @@ struct SpeechRecognitionTab: View {
 
                 HStack {
                     if engine.isAvailable {
-                        Label(String(localized: "engine_available"), systemImage: "checkmark.circle.fill")
+                        Label(AppLocalization.localizedString("engine_available"), systemImage: "checkmark.circle.fill")
                             .foregroundColor(.green)
                             .font(.caption)
                     } else {
-                        Label(String(localized: "engine_unavailable"), systemImage: "xmark.circle.fill")
+                        Label(AppLocalization.localizedString("engine_unavailable"), systemImage: "xmark.circle.fill")
                             .foregroundColor(.red)
                             .font(.caption)
                     }
 
-                    Text(String(format: String(localized: "engine_supported_languages_format"), engine.supportedLanguages.prefix(3).joined(separator: ", ")))
+                    Text(String(format: AppLocalization.localizedString("engine_supported_languages_format"), engine.supportedLanguages.prefix(3).joined(separator: ", ")))
                         .font(.caption)
                         .foregroundColor(MainWindowColors.secondaryText)
                 }

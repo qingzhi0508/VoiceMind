@@ -1,4 +1,4 @@
 "NSMicrophoneUsageDescription" = "VoiceMind needs microphone access for speech recognition.";
 "NSSpeechRecognitionUsageDescription" = "VoiceMind uses speech recognition to convert your voice to text.";
-"NSLocalNetworkUsageDescription" = "VoiceMind needs local network access to connect to your Mac.";
-"NSCameraUsageDescription" = "VoiceMind uses the camera to scan a QR code to connect to your Mac.";
+"NSLocalNetworkUsageDescription" = "VoiceMind needs local network access to connect to your Desktop.";
+"NSCameraUsageDescription" = "VoiceMind uses the camera to scan a QR code to connect to your Desktop.";

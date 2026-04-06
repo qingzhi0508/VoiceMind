@@ -9,7 +9,7 @@ struct VoiceMindMacApp: App {
         WindowGroup {
             MainWindow(controller: appDelegate.controller)
         }
-        .defaultSize(width: 1280, height: 800)
+        .defaultSize(width: 800, height: 720)
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("关于 VoiceMind") {
@@ -30,6 +30,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Task {
             await initializeSpeechEngine()
             controller.startNetworkServices()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [self] in
+                self.controller.normalizeMainWindowFrameIfNeeded()
+            }
 
             // Show onboarding on first launch
             if !AppSettings.shared.hasLaunchedBefore {

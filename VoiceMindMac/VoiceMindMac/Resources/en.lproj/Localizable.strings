@@ -149,6 +149,11 @@
 "settings_language_picker" = "Recognition Language";
 "settings_language_zh" = "Chinese";
 "settings_language_en" = "English";
+"settings_ui_language_title" = "Interface Language";
+"settings_ui_language_picker" = "Language";
+"settings_ui_language_zh" = "中文";
+"settings_ui_language_en" = "English";
+"settings_ui_language_restart_hint" = "Language changed. Restart the app for changes to take effect.";
 "settings_theme_title" = "Appearance";
 "settings_theme_picker" = "Theme";
 "settings_theme_system" = "Follow System";

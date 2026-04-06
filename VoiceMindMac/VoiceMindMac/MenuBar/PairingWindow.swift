@@ -8,10 +8,10 @@ struct PairingWindow: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text(String(localized: "pair_with_iphone_title"))
+            Text(AppLocalization.localizedString("pair_with_iphone_title"))
                 .font(.title)
 
-            Text(String(localized: "pair_with_iphone_instruction"))
+            Text(AppLocalization.localizedString("pair_with_iphone_instruction"))
                 .font(.headline)
 
             Text(code)
@@ -20,11 +20,11 @@ struct PairingWindow: View {
                 .background(Color.gray.opacity(0.2))
                 .cornerRadius(10)
 
-            Text(String(localized: "pair_with_iphone_waiting"))
+            Text(AppLocalization.localizedString("pair_with_iphone_waiting"))
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            Text(String(format: String(localized: "pair_with_iphone_time_format"), "\(timeRemaining)"))
+            Text(String(format: AppLocalization.localizedString("pair_with_iphone_time_format"), "\(timeRemaining)"))
                 .font(.caption)
                 .foregroundColor(.secondary)
 

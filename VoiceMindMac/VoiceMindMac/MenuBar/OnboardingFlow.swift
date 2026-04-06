@@ -59,7 +59,7 @@ struct OnboardingFlowView: View {
                 RunningStatusView(controller: controller)
             }
         }
-        .frame(width: 500, height: 600)
+        .frame(width: 400, height: 480)
     }
 }
 
