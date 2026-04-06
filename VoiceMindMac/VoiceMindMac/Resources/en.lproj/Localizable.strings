@@ -91,6 +91,15 @@
 
 "action_start_pairing" = "Start Pairing";
 "action_unpair" = "Unpair";
+"text_injection_success_title" = "Text Auto-Inserted";
+"text_injection_success_message_format" = "Attempted to insert the following text at the current cursor position: %@";
+"text_injection_missing_target_title" = "No Writable Input Found";
+"text_copy_alert_title" = "Automatic Text Insertion Failed";
+"text_copy_alert_message_format" = "Unable to automatically insert text: %@";
+"copy_text_button" = "Copy Text";
+"text_injection_permission_title" = "Accessibility Permission Required";
+"text_injection_permission_message" = "VoiceMind needs Accessibility permission to insert recognized text at the current cursor position. You can also copy the text and paste it manually.";
+"open_system_settings_button" = "Open System Settings";
 
 
 "qr_pairing_title" = "QR Pairing";

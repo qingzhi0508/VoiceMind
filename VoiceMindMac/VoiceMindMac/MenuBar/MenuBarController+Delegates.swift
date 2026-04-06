@@ -102,6 +102,10 @@ extension MenuBarController: ConnectionManagerDelegate {
         sessionTimer = nil
 
         DispatchQueue.main.async {
+            self.handleAutoInjectedText(
+                payload.text,
+                missingTargetTitle: AppLocalization.localizedString("text_injection_missing_target_title")
+            )
             self.noteText = payload.text
             self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
         }
@@ -123,6 +127,10 @@ extension MenuBarController: ConnectionManagerDelegate {
         }
 
         DispatchQueue.main.async {
+            self.handleAutoInjectedText(
+                payload.text,
+                missingTargetTitle: AppLocalization.localizedString("text_injection_missing_target_title")
+            )
             self.noteText = payload.text
             self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
         }

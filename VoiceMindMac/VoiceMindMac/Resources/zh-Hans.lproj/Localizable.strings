@@ -92,6 +92,15 @@
 
 "action_start_pairing" = "开始配对";
 "action_unpair" = "解除配对";
+"text_injection_success_title" = "文本已自动输入";
+"text_injection_success_message_format" = "已尝试将以下内容注入当前光标位置：%@";
+"text_injection_missing_target_title" = "未找到可输入控件";
+"text_copy_alert_title" = "文本自动输入失败";
+"text_copy_alert_message_format" = "无法自动输入文本：%@";
+"copy_text_button" = "复制文本";
+"text_injection_permission_title" = "需要辅助功能权限";
+"text_injection_permission_message" = "VoiceMind 需要辅助功能权限，才能把识别结果自动输入到当前光标位置。你也可以先复制文本再手动粘贴。";
+"open_system_settings_button" = "打开系统设置";
 
 
 "qr_pairing_title" = "扫码配对";

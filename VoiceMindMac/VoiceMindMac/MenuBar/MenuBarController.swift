@@ -12,6 +12,7 @@ class MenuBarController: NSObject, ObservableObject {
     var statusItem: NSStatusItem!
     let connectionManager = ConnectionManager()
     let settings = AppSettings.shared
+    private let textInjectionCoordinator: TextInjectionCoordinator
 
     // 本地语音识别
     private let localSpeechRecognizer = LocalSpeechRecognizer()
@@ -38,13 +39,17 @@ class MenuBarController: NSObject, ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let voiceRecognitionHistoryStore: VoiceRecognitionHistoryStore
 
-    init(voiceRecognitionHistoryStore: VoiceRecognitionHistoryStore = VoiceRecognitionHistoryStore()) {
+    init(
+        voiceRecognitionHistoryStore: VoiceRecognitionHistoryStore = VoiceRecognitionHistoryStore(),
+        textInjector: TextInjecting = AccessibilityTextInjector()
+    ) {
         self.pairingState = connectionManager.pairingState
         self.connectionState = connectionManager.connectionState
         self.pairingProgressMessage = connectionManager.pairingProgressMessage
         self.inboundDataRecords = []
         self.voiceRecognitionRecords = []
         self.voiceRecognitionHistoryStore = voiceRecognitionHistoryStore
+        self.textInjectionCoordinator = TextInjectionCoordinator(injector: textInjector)
         super.init()
 
         // 设置本地语音识别代理
@@ -396,6 +401,83 @@ class MenuBarController: NSObject, ObservableObject {
         alert.informativeText = message
         alert.alertStyle = .critical
         alert.runModal()
+    }
+
+    func handleAutoInjectedText(_ text: String, missingTargetTitle: String) {
+        switch textInjectionCoordinator.deliver(text: text) {
+        case .injected:
+            appendInboundDataRecord(
+                title: AppLocalization.localizedString("text_injection_success_title"),
+                detail: String(
+                    format: AppLocalization.localizedString("text_injection_success_message_format"),
+                    text
+                ),
+                category: .voice
+            )
+        case .permissionRequired:
+            appendInboundDataRecord(
+                title: AppLocalization.localizedString("text_injection_permission_title"),
+                detail: AppLocalization.localizedString("text_injection_permission_message"),
+                category: .connection,
+                severity: .warning
+            )
+            showTextInjectionPermissionError(with: text)
+        case .fallbackToCopy(let reason):
+            let titleKey = reason == "No focused input target"
+                ? missingTargetTitle
+                : AppLocalization.localizedString("text_copy_alert_title")
+            appendInboundDataRecord(
+                title: titleKey,
+                detail: String(
+                    format: AppLocalization.localizedString("text_copy_alert_message_format"),
+                    reason
+                ),
+                category: .connection,
+                severity: .warning
+            )
+            showTextCopyAlert(text, error: reason)
+        }
+    }
+
+    func showTextCopyAlert(_ text: String, error: String) {
+        let alert = NSAlert()
+        alert.messageText = AppLocalization.localizedString("text_copy_alert_title")
+        alert.informativeText = String(
+            format: AppLocalization.localizedString("text_copy_alert_message_format"),
+            error
+        )
+        alert.addButton(withTitle: AppLocalization.localizedString("copy_text_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("cancel_button"))
+        alert.alertStyle = .warning
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            copyTextToPasteboard(text)
+        }
+    }
+
+    func showTextInjectionPermissionError(with text: String) {
+        let alert = NSAlert()
+        alert.messageText = AppLocalization.localizedString("text_injection_permission_title")
+        alert.informativeText = AppLocalization.localizedString("text_injection_permission_message")
+        alert.addButton(withTitle: AppLocalization.localizedString("open_system_settings_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("copy_text_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("cancel_button"))
+        alert.alertStyle = .warning
+
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            PermissionsManager.requestAccessibility()
+            PermissionsManager.openSystemPreferences(for: .accessibility)
+        case .alertSecondButtonReturn:
+            copyTextToPasteboard(text)
+        default:
+            break
+        }
+    }
+
+    private func copyTextToPasteboard(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
     }
 
     func appendInboundDataRecord(
