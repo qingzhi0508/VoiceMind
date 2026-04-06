@@ -440,7 +440,7 @@ struct MainWindow: View {
             }
             .padding(30)
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(18)
     }
 
