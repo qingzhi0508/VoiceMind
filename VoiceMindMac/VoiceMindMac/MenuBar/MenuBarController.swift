@@ -6,7 +6,7 @@ import SharedCore
 class MenuBarController: NSObject, ObservableObject {
     private enum MainWindowSizingPolicy {
         static let defaultWidth: CGFloat = 800
-        static let defaultHeight: CGFloat = 720
+        static let defaultHeight: CGFloat = 770
     }
 
     var statusItem: NSStatusItem!

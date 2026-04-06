@@ -2180,8 +2180,10 @@ struct NotesTab: View {
             )
             .cornerRadius(12)
 
-            // Recording button - fixed at bottom
+            // Recording button - fixed at bottom, centered
             HStack(spacing: 20) {
+                Spacer()
+
                 RecordButton(
                     isRecording: controller.isLocalRecording,
                     onStartRecording: {
@@ -2191,6 +2193,8 @@ struct NotesTab: View {
                         controller.stopLocalRecording()
                     }
                 )
+
+                Spacer()
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(controller.isLocalRecording ? AppLocalization.localizedString("note_recording") : AppLocalization.localizedString("note_placeholder"))
