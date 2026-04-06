@@ -9,6 +9,13 @@ enum SettingsMembershipPresentationPolicy {
 
     static let accountDestinationTitleKey = "settings_account_membership_title"
     static let rootHeaderTitleKey = "settings_account_membership_title"
+    static let benefitTitleKeys = [
+        "billing_membership_benefit_unlimited",
+        "billing_membership_benefit_batch",
+        "billing_membership_benefit_workspace",
+        "billing_membership_benefit_updates",
+        "billing_membership_benefit_sync"
+    ]
 
     static func headerPresentation(isPaidUser: Bool) -> HeaderPresentation {
         isPaidUser ? .memberUser : .regularUser
@@ -70,6 +77,27 @@ enum SettingsMembershipPurchasePolicy {
         }
     }
 
+    static func defaultSelectedProductKind(
+        activeEntitlement: TwoDeviceSyncEntitlement,
+        availableProductIDs: [String]
+    ) -> TwoDeviceSyncProductKind {
+        if let ownedProductKind = ownedProductKind(for: activeEntitlement) {
+            return ownedProductKind
+        }
+
+        let visibleKinds = visibleProductKinds(
+            for: activeEntitlement,
+            availableProductIDs: availableProductIDs
+        )
+        let availableKinds = Set(availableProductIDs.compactMap(TwoDeviceSyncProductKind.init(rawValue:)))
+
+        if let firstAvailableVisibleKind = visibleKinds.first(where: { availableKinds.contains($0) }) {
+            return firstAvailableVisibleKind
+        }
+
+        return visibleKinds.first ?? .monthly
+    }
+
     static func isPurchaseDisabled(
         productKind: TwoDeviceSyncProductKind,
         activeEntitlement: TwoDeviceSyncEntitlement,
@@ -127,6 +155,7 @@ enum SettingsInformationHierarchyPolicy {
         case permissions
         case help
         case supportEmail
+        case termsOfUse
         case privacyPolicy
         case logs
         case version
@@ -159,6 +188,7 @@ enum SettingsInformationHierarchyPolicy {
         .permissions,
         .help,
         .supportEmail,
+        .termsOfUse,
         .privacyPolicy,
         .logs,
         .version
@@ -184,6 +214,8 @@ enum SettingsAppearancePresentationPolicy {
 
 enum SettingsMembershipLinkPolicy {
     static let websiteURL = URL(string: "https://voicemind.top-list.top")
+
+    static let termsOfUseURL = URL(string: "https://voicemind.top-list.top/terms.html")
 
     static let privacyPolicyURL = URL(string: "https://voicemind.top-list.top/privacy.html")
 }

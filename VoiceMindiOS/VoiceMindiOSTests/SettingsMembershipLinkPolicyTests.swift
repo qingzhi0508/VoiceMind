@@ -10,4 +10,12 @@ struct SettingsMembershipLinkPolicyTests {
             URL(string: "https://voicemind.top-list.top/privacy.html")
         )
     }
+
+    @Test
+    func termsOfUseURLMatchesConfiguredDestination() {
+        #expect(
+            SettingsMembershipLinkPolicy.termsOfUseURL ==
+            URL(string: "https://voicemind.top-list.top/terms.html")
+        )
+    }
 }

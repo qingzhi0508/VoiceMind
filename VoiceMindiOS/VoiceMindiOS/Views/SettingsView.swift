@@ -109,6 +109,7 @@ struct SettingsView: View {
                 requestPermissions: requestPermissions,
                 showOnboarding: { showOnboarding = true },
                 contactSupport: contactSupport,
+                openTermsOfUse: openTermsOfUse,
                 openPrivacyPolicy: openPrivacyPolicy
             )
         }
@@ -147,6 +148,13 @@ struct SettingsView: View {
             return
         }
         openURL(privacyURL)
+    }
+
+    private func openTermsOfUse() {
+        guard let termsURL = SettingsMembershipLinkPolicy.termsOfUseURL else {
+            return
+        }
+        openURL(termsURL)
     }
 }
 
@@ -398,6 +406,7 @@ private struct SettingsPermissionsSupportSection: View {
     let requestPermissions: () -> Void
     let showOnboarding: () -> Void
     let contactSupport: () -> Void
+    let openTermsOfUse: () -> Void
     let openPrivacyPolicy: () -> Void
 
     var body: some View {
@@ -462,6 +471,23 @@ private struct SettingsPermissionsSupportSection: View {
                         .frame(width: 30)
 
                     Text(String(localized: "settings_contact_support"))
+                        .foregroundColor(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                }
+            }
+        case .termsOfUse:
+            Button(action: openTermsOfUse) {
+                HStack {
+                    Image(systemName: "doc.text.fill")
+                        .foregroundColor(.blue)
+                        .frame(width: 30)
+
+                    Text(String(localized: "settings_terms_of_use"))
                         .foregroundColor(.primary)
 
                     Spacer()
