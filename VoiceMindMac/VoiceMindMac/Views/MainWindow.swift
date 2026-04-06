@@ -2160,18 +2160,33 @@ struct NotesTab: View {
             }
 
             // Note text display - expands to fill available space
-            Group {
-                if NotesTextSelectionPolicy.allowsSelection(for: controller.noteText) {
-                    Text(controller.noteText)
-                        .textSelection(.enabled)
-                } else {
-                    Text(AppLocalization.localizedString("note_placeholder"))
-                        .textSelection(.disabled)
+            ZStack {
+                Group {
+                    if NotesTextSelectionPolicy.allowsSelection(for: controller.noteText) {
+                        Text(controller.noteText)
+                            .textSelection(.enabled)
+                    } else {
+                        Text(AppLocalization.localizedString("note_placeholder"))
+                            .textSelection(.disabled)
+                    }
+                }
+                .font(.body)
+                .foregroundColor(controller.noteText.isEmpty ? MainWindowColors.secondaryText : MainWindowColors.title)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+                // Centered record button when no text
+                if controller.noteText.isEmpty {
+                    RecordButton(
+                        isRecording: controller.isLocalRecording,
+                        onStartRecording: {
+                            controller.startLocalRecording()
+                        },
+                        onStopRecording: {
+                            controller.stopLocalRecording()
+                        }
+                    )
                 }
             }
-            .font(.body)
-            .foregroundColor(controller.noteText.isEmpty ? MainWindowColors.secondaryText : MainWindowColors.title)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding()
             .background(MainWindowColors.cardSurface)
             .overlay(
@@ -2180,20 +2195,8 @@ struct NotesTab: View {
             )
             .cornerRadius(12)
 
-            // Recording button - fixed at bottom, centered
+            // Bottom controls
             HStack(spacing: 20) {
-                Spacer()
-
-                RecordButton(
-                    isRecording: controller.isLocalRecording,
-                    onStartRecording: {
-                        controller.startLocalRecording()
-                    },
-                    onStopRecording: {
-                        controller.stopLocalRecording()
-                    }
-                )
-
                 Spacer()
 
                 VStack(alignment: .leading, spacing: 6) {
