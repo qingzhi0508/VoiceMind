@@ -59,6 +59,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             print("❌ Apple Speech 引擎初始化失败: \(error.localizedDescription)")
         }
 
+        // 注册 Sherpa-ONNX 引擎
+        let sherpaOnnx = SherpaOnnxEngine()
+        do {
+            try await sherpaOnnx.initialize()
+            SpeechRecognitionManager.shared.registerEngine(sherpaOnnx)
+            print("✅ Sherpa-ONNX 引擎已注册")
+        } catch {
+            print("⚠️ Sherpa-ONNX 引擎初始化失败: \(error.localizedDescription)")
+            // 即使初始化失败也注册，让引擎显示为"不可用"状态
+            SpeechRecognitionManager.shared.registerEngine(sherpaOnnx)
+        }
+
         restorePreferredSpeechEngine()
 
         // Setup speech recognition delegate
