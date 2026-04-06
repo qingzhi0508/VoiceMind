@@ -189,30 +189,58 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
     }
 
     /// 查找可用的 Sherpa-ONNX 模型
+    /// 自动扫描 ModelDir 目录下的所有子目录，寻找有效的模型文件
     private func findAvailableModels(in directory: URL) -> [ModelConfig] {
         var configs: [ModelConfig] = []
 
         guard let contents = try? FileManager.default.contentsOfDirectory(
             at: directory,
-            includingPropertiesForKeys: nil,
+            includingPropertiesForKeys: [.isDirectoryKey],
             options: [.skipsHiddenFiles]
         ) else {
             return configs
         }
 
         for item in contents {
-            let configFile = item.appendingPathComponent("model.config")
-            if FileManager.default.fileExists(atPath: configFile.path) {
-                if let configData = try? Data(contentsOf: configFile),
-                   let config = try? JSONDecoder().decode(ModelConfigJSON.self, from: configData) {
-                    configs.append(ModelConfig(
-                        encoder: config.encoderPath,
-                        decoder: config.decoderPath,
-                        tokens: config.tokensPath,
-                        language: config.language
-                    ))
-                }
+            var isDirectory: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: item.path, isDirectory: &isDirectory),
+                  isDirectory.boolValue else {
+                continue
             }
+
+            // 检查必要的模型文件
+            let encoderPath = item.appendingPathComponent("encoder.onnx").path
+            let decoderPath = item.appendingPathComponent("decoder.onnx").path
+            let tokensPath = item.appendingPathComponent("tokens.txt").path
+
+            guard FileManager.default.fileExists(atPath: encoderPath),
+                  FileManager.default.fileExists(atPath: tokensPath) else {
+                continue
+            }
+
+            // 从目录名推断语言
+            let dirName = item.lastPathComponent.lowercased()
+            let language: String
+            if dirName.contains("zh") || dirName.contains("chinese") {
+                language = "zh-CN"
+            } else if dirName.contains("en") || dirName.contains("english") {
+                language = "en-US"
+            } else if dirName.contains("ja") || dirName.contains("japanese") {
+                language = "ja-JP"
+            } else if dirName.contains("ko") || dirName.contains("korean") {
+                language = "ko-KR"
+            } else {
+                language = "en-US"
+            }
+
+            configs.append(ModelConfig(
+                encoder: encoderPath,
+                decoder: FileManager.default.fileExists(atPath: decoderPath) ? decoderPath : encoderPath,
+                tokens: tokensPath,
+                language: language
+            ))
+
+            print("📁 发现模型: \(item.lastPathComponent) (语言: \(language))")
         }
 
         return configs
