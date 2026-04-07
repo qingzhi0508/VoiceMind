@@ -437,6 +437,13 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
         print("⚠️ Sherpa-ONNX 模型未找到")
     }
 
+    /// 重新加载模型配置（下载或删除模型后调用）
+    func reloadModelConfiguration() {
+        currentModelConfig = nil
+        isModelConfigured = false
+        checkModelConfiguration()
+    }
+
     /// 获取真实 home 目录下的模型路径（绕过 sandbox 的 container 路径）
     private func realHomeModelDirectories() -> [URL] {
         guard let pw = getpwuid(getuid()),
@@ -910,7 +917,7 @@ class SherpaOnnxEngine: NSObject, SpeechRecognitionEngine {
 // MARK: - Helper Types
 
 /// 模型配置的 JSON 表示
-private struct ModelConfigJSON: Codable {
+struct ModelConfigJSON: Codable {
     let encoderPath: String
     let decoderPath: String
     let tokensPath: String
