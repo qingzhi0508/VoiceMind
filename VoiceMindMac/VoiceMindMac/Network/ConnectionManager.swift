@@ -172,7 +172,7 @@ class ConnectionManager: NSObject {
         print("   配对码: \(code)")
         print("   有效期: 2分钟")
         print("   过期时间: \(expiresAt)")
-        updatePairingProgress("已生成配对码，等待 iPhone 扫描二维码或输入配对码。")
+        updatePairingProgress("已生成配对码，等待手机扫描二维码或输入配对码。")
 
         return code
     }
@@ -302,7 +302,7 @@ class ConnectionManager: NSObject {
             rateLimitedClients.removeValue(forKey: clientId)
 
             print("💾 配对信息已保存到 Keychain")
-            updatePairingProgress("配对信息已保存，正在向 iPhone 返回成功结果。")
+            updatePairingProgress("配对信息已保存，正在向手机返回成功结果。")
 
             // Send success
             let successPayload = PairSuccessPayload(sharedSecret: sharedSecret)

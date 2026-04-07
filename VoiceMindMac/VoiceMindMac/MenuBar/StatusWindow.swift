@@ -4,7 +4,7 @@ import Network
 
 struct StatusWindow: View {
     @ObservedObject var controller: MenuBarController
-    @State private var localIPAddress: String = String(localized: "status_loading")
+    @State private var localIPAddress: String = AppLocalization.localizedString("status_loading")
 
     var body: some View {
         ScrollView {
@@ -60,7 +60,7 @@ struct StatusWindow: View {
     }
 
     private func fetchLocalIPAddress() {
-        localIPAddress = getLocalIPAddress() ?? String(localized: "status_unavailable")
+        localIPAddress = getLocalIPAddress() ?? AppLocalization.localizedString("status_unavailable")
     }
 
     private func getLocalIPAddress() -> String? {
@@ -81,7 +81,7 @@ struct HeaderSection: View {
                 .foregroundColor(statusColor)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(String(localized: "app_title"))
+                Text(AppLocalization.localizedString("app_title"))
                     .font(.title)
                     .fontWeight(.bold)
 
@@ -134,17 +134,17 @@ struct HeaderSection: View {
     private var statusText: String {
         switch (pairingState, connectionState) {
         case (.paired, .connected):
-            return String(localized: "status_connected_ready")
+            return AppLocalization.localizedString("status_connected_ready")
         case (.paired, .connecting):
-            return String(localized: "status_connecting_iphone")
+            return AppLocalization.localizedString("status_connecting_iphone")
         case (.paired, .disconnected):
-            return String(localized: "status_paired_not_connected")
+            return AppLocalization.localizedString("status_paired_not_connected")
         case (.pairing, _):
-            return String(localized: "status_pairing")
+            return AppLocalization.localizedString("status_pairing")
         case (.unpaired, _):
-            return String(localized: "status_unpaired_need_pair")
+            return AppLocalization.localizedString("status_unpaired_need_pair")
         default:
-            return String(localized: "status_unknown")
+            return AppLocalization.localizedString("status_unknown")
         }
     }
 }
@@ -156,13 +156,13 @@ struct SystemInfoSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "system_info_title"))
+            Text(AppLocalization.localizedString("system_info_title"))
                 .font(.headline)
 
             VStack(spacing: 8) {
                 InfoRow(
                     icon: "network",
-                    title: String(localized: "system_ip_title"),
+                    title: AppLocalization.localizedString("system_ip_title"),
                     value: localIP,
                     color: .blue
                 )
@@ -182,13 +182,13 @@ struct DeviceConnectionSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "device_connection_title"))
+            Text(AppLocalization.localizedString("device_connection_title"))
                 .font(.headline)
 
             VStack(spacing: 8) {
                 InfoRow(
                     icon: "iphone",
-                    title: String(localized: "device_pairing_status"),
+                    title: AppLocalization.localizedString("device_pairing_status"),
                     value: pairingStatusText,
                     color: pairingStatusColor
                 )
@@ -196,7 +196,7 @@ struct DeviceConnectionSection: View {
                 if case .paired(_, let deviceName) = pairingState {
                     InfoRow(
                         icon: "person.circle",
-                        title: String(localized: "device_name"),
+                        title: AppLocalization.localizedString("device_name"),
                         value: deviceName,
                         color: .blue
                     )
@@ -204,7 +204,7 @@ struct DeviceConnectionSection: View {
 
                 InfoRow(
                     icon: "wifi",
-                    title: String(localized: "device_connection_status"),
+                    title: AppLocalization.localizedString("device_connection_status"),
                     value: connectionStatusText,
                     color: connectionStatusColor
                 )
@@ -218,11 +218,11 @@ struct DeviceConnectionSection: View {
     private var pairingStatusText: String {
         switch pairingState {
         case .unpaired:
-            return String(localized: "pairing_status_unpaired")
+            return AppLocalization.localizedString("pairing_status_unpaired")
         case .pairing:
-            return String(localized: "pairing_status_pairing")
+            return AppLocalization.localizedString("pairing_status_pairing")
         case .paired:
-            return String(localized: "pairing_status_paired")
+            return AppLocalization.localizedString("pairing_status_paired")
         }
     }
 
@@ -243,13 +243,13 @@ struct DeviceConnectionSection: View {
             connectionState: connectionState
         ) {
         case .disconnected:
-            return String(localized: "connection_status_disconnected")
+            return AppLocalization.localizedString("connection_status_disconnected")
         case .connecting:
-            return String(localized: "connection_status_connecting")
+            return AppLocalization.localizedString("connection_status_connecting")
         case .connected:
-            return String(localized: "connection_status_connected")
+            return AppLocalization.localizedString("connection_status_connected")
         case .error(let error):
-            return String(format: String(localized: "connection_status_error_format"), error.localizedDescription)
+            return String(format: AppLocalization.localizedString("connection_status_error_format"), error.localizedDescription)
         }
     }
 
@@ -277,14 +277,14 @@ struct QuickStartSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "quickstart_title"))
+            Text(AppLocalization.localizedString("quickstart_title"))
                 .font(.headline)
 
             VStack(alignment: .leading, spacing: 8) {
-                GuideStep(number: 1, text: String(format: String(localized: "quickstart_step1_format"), String(localized: "app_title")))
-                GuideStep(number: 2, text: String(localized: "quickstart_step2"))
-                GuideStep(number: 3, text: String(localized: "quickstart_step3"))
-                GuideStep(number: 4, text: String(localized: "quickstart_step4"))
+                GuideStep(number: 1, text: String(format: AppLocalization.localizedString("quickstart_step1_format"), AppLocalization.localizedString("app_title")))
+                GuideStep(number: 2, text: AppLocalization.localizedString("quickstart_step2"))
+                GuideStep(number: 3, text: AppLocalization.localizedString("quickstart_step3"))
+                GuideStep(number: 4, text: AppLocalization.localizedString("quickstart_step4"))
             }
         }
         .padding()
@@ -328,7 +328,7 @@ struct ActionButtonsSection: View {
                 Button(action: onStartPairing) {
                     HStack {
                         Image(systemName: "link")
-                        Text(String(localized: "action_start_pairing"))
+                        Text(AppLocalization.localizedString("action_start_pairing"))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
@@ -342,7 +342,7 @@ struct ActionButtonsSection: View {
                     Button(action: onUnpair) {
                         HStack {
                             Image(systemName: "link.badge.minus")
-                            Text(String(localized: "action_unpair"))
+                            Text(AppLocalization.localizedString("action_unpair"))
                         }
                         .frame(maxWidth: .infinity)
                     }

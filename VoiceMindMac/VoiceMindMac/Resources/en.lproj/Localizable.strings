@@ -12,20 +12,20 @@
 "main_home_welcome" = "Welcome back";
 "main_home_subtitle" = "Review connection health, service status, and your latest voice activity in one place.";
 "main_home_status_spotlight" = "Current desktop input status";
-"main_home_unpaired_summary" = "Your Mac is not paired with an iPhone yet. Start the service to begin a new pairing flow.";
-"main_home_paired_summary_format" = "Your Mac is paired with %@. You can keep receiving synced text or review recent activity.";
+"main_home_unpaired_summary" = "Your desktop is not paired with a phone yet. Start the service to begin a new pairing flow.";
+"main_home_paired_summary_format" = "Your desktop is paired with %@. You can keep receiving synced text or review recent activity.";
 "main_home_recent_activity" = "Recent activity";
 "main_home_open_notes" = "Open notes";
 "main_home_note_count_format" = "%d chars";
 "main_collaboration_subtitle" = "Manage service, pairing status, and your latest cross-device activity.";
 "main_speech_subtitle" = "Manage recognition settings and language preferences.";
-"main_records_subtitle" = "Browse the last 30 days of voice transcripts from local Mac capture and synced iPhone text.";
+"main_records_subtitle" = "Browse the last 30 days of voice transcripts from local capture and synced phone text.";
 "main_notes_subtitle" = "Review the latest text results and trigger local recording input.";
 "main_settings_subtitle" = "Adjust language, appearance, and network service settings.";
 
-"pair_with_iphone_title" = "Pair with iPhone";
-"pair_with_iphone_instruction" = "Enter this code on your iPhone:";
-"pair_with_iphone_waiting" = "Waiting for iPhone to connect...";
+"pair_with_iphone_title" = "Pair with Phone";
+"pair_with_iphone_instruction" = "Enter this code on your phone:";
+"pair_with_iphone_waiting" = "Waiting for phone to connect...";
 "pair_with_iphone_time_format" = "Time remaining: %@s";
 
 "menu_status_unpaired" = "Not Paired";
@@ -36,11 +36,11 @@
 "menu_quit" = "Quit";
 
 "window_title_main" = "VoiceMind";
-"window_title_onboarding" = "VoiceMind for Mac";
+"window_title_onboarding" = "VoiceMind for Desktop";
 "window_title_qr_pairing" = "QR Pairing";
 
 "unpair_alert_title" = "Unpair?";
-"unpair_alert_message" = "This will remove the pairing with your iPhone. You will need to pair again to use VoiceMind.";
+"unpair_alert_message" = "This will remove the pairing with your phone. You will need to pair again to use VoiceMind.";
 "unpair_alert_button" = "Unpair";
 
 "error_title" = "Error";
@@ -60,10 +60,10 @@
 "status_unavailable" = "Unavailable";
 
 "status_connected_ready" = "Connected - Ready for voice input";
-"status_connecting_iphone" = "Connecting to iPhone...";
+"status_connecting_iphone" = "Connecting to phone...";
 "status_paired_not_connected" = "Paired but not connected";
 "status_pairing" = "Pairing...";
-"status_unpaired_need_pair" = "Not paired - Pair with your iPhone first";
+"status_unpaired_need_pair" = "Not paired - Pair with your phone first";
 "status_unknown" = "Unknown status";
 
 "system_info_title" = "System Info";
@@ -84,23 +84,23 @@
 "connection_status_error_format" = "Error: %@";
 
 "quickstart_title" = "Quick Start";
-"quickstart_step1_format" = "Open %@ on your iPhone";
+"quickstart_step1_format" = "Open %@ on your phone";
 "quickstart_step2" = "Click the \"Start Pairing\" button below";
-"quickstart_step3" = "Enter the pairing code on your iPhone";
-"quickstart_step4" = "After pairing, hold the mic on your iPhone to speak. The Mac will transcribe and show the result inside VoiceMind.";
+"quickstart_step3" = "Enter the pairing code on your phone";
+"quickstart_step4" = "After pairing, hold the mic on your phone to speak. The desktop will transcribe and show the result inside VoiceMind.";
 
 "action_start_pairing" = "Start Pairing";
 "action_unpair" = "Unpair";
 
 
 "qr_pairing_title" = "QR Pairing";
-"qr_scan_instruction" = "Scan this QR code with your iPhone";
+"qr_scan_instruction" = "Scan this QR code with your phone";
 "qr_manual_code_label" = "Or enter the pairing code manually:";
 "qr_connection_info_label" = "Connection Info:";
 "qr_ip_label_format" = "IP: %@";
 "qr_port_label_format" = "Port: %@";
 "qr_progress_title" = "Pairing Progress";
-"qr_progress_waiting" = "Waiting for iPhone to start pairing.";
+"qr_progress_waiting" = "Waiting for phone to start pairing.";
 "qr_time_remaining_format" = "Time remaining: %@s";
 
 
@@ -141,7 +141,7 @@
 "status_connection_error" = "Error";
 
 "note_title" = "Notes";
-"note_placeholder" = "Speak or receive iOS transcription results here...";
+"note_placeholder" = "Speak or receive mobile transcription results here...";
 "note_recording" = "Recording...";
 "note_clear" = "Clear";
 
@@ -149,6 +149,11 @@
 "settings_language_picker" = "Recognition Language";
 "settings_language_zh" = "Chinese";
 "settings_language_en" = "English";
+"settings_ui_language_title" = "Interface Language";
+"settings_ui_language_picker" = "Language";
+"settings_ui_language_zh" = "中文";
+"settings_ui_language_en" = "English";
+"settings_ui_language_restart_hint" = "Language changed. Restart the app for changes to take effect.";
 "settings_theme_title" = "Appearance";
 "settings_theme_picker" = "Theme";
 "settings_theme_system" = "Follow System";
@@ -162,8 +167,8 @@
 "data_filter_all" = "All";
 "data_filter_voice" = "Voice";
 "data_filter_pairing" = "Pairing/Connection";
-"data_title" = "iOS Data Records";
-"data_subtitle" = "Shows data from iPhone and the final transcribed text on Mac.";
+"data_title" = "Mobile Data Records";
+"data_subtitle" = "Shows data from phone and the final transcribed text on desktop.";
 "data_filter_picker" = "Filter";
 "data_action_clear" = "Clear Records";
 "data_search_placeholder" = "Search title, content, Session ID";
@@ -175,7 +180,7 @@
 "data_empty_title" = "No Data";
 "data_session_unknown" = "Unassigned Session";
 "data_empty_search_desc" = "No records match the current keyword.";
-"data_empty_all_desc" = "Records will appear here after the iPhone sends pairing, audio, or recognition results.";
+"data_empty_all_desc" = "Records will appear here after the phone sends pairing, audio, or recognition results.";
 "data_empty_voice_desc" = "No audio streams or transcription results yet.";
 "data_empty_pairing_desc" = "No pairing or connection records yet.";
 "data_severity_info" = "Info";
@@ -187,12 +192,12 @@
 "data_section_count_format" = "%d items";
 "records_search_placeholder" = "Search transcripts from the last 30 days";
 "records_empty_title" = "No voice records yet";
-"records_empty_desc" = "Final Mac transcripts and synced iPhone text will appear here over time.";
+"records_empty_desc" = "Final desktop transcripts and synced phone text will appear here over time.";
 "records_empty_search_desc" = "No voice records match the current keyword.";
 "records_section_count_format" = "%d items";
 "records_summary_count_format" = "%d items in the last 30 days";
-"records_source_local_mac" = "Mac Local";
-"records_source_ios_sync" = "iPhone Sync";
+"records_source_local_mac" = "Local";
+"records_source_ios_sync" = "Phone Sync";
 "records_action_edit" = "Edit";
 "records_action_done" = "Done";
 "records_action_select_all" = "Select All";
@@ -205,13 +210,15 @@
 
 "about_version" = "Version 1.0";
 "about_title" = "Voice Input Assistant";
-"about_description" = "Use your iOS device for speech recognition and review results inside the Mac app in real time.";
+"about_description" = "Use your mobile device for speech recognition and review results inside the desktop app in real time.";
 "about_help_link" = "View Help Documentation";
 "about_open_guide" = "View Usage Guide";
+"about_website" = "Official Website";
+"about_privacy_policy" = "Privacy Policy";
 "window_title_usage_guide" = "Usage Guide";
 "usage_guide_title" = "How to Use VoiceMind";
 "usage_guide_subtitle" = "On your first launch, follow the steps below to pair your devices and start voice input. You can reopen this guide later from the About tab.";
-"usage_guide_step1" = "Make sure your Mac and iPhone are connected to the same local network.";
+"usage_guide_step1" = "Make sure your desktop and phone are connected to the same local network.";
 "usage_guide_step3" = "Click \"Start Pairing\" on the Mac, then scan the QR code or enter the pairing code on your iPhone.";
 "usage_guide_step4" = "If macOS asks for permissions, complete them first and then return to continue.";
 "usage_guide_footer" = "Pairing and connection are limited to the local network by default for a safer and simpler setup.";
@@ -229,18 +236,18 @@
 
 "mac_onboarding_brand_badge" = "VOICEMIND FOR MAC";
 "mac_onboarding_welcome_title" = "Capture ideas fast. Review them with room to think.";
-"mac_onboarding_welcome_subtitle" = "VoiceMind for Mac gives your voice a focused desktop space the moment you are ready to keep going.";
+"mac_onboarding_welcome_subtitle" = "VoiceMind for desktop gives your voice a focused desktop space the moment you are ready to keep going.";
 "mac_onboarding_brand_panel_title" = "Built for a desktop voice workflow";
 "mac_onboarding_brand_panel_point1" = "See transcripts land in one clear workspace instead of chasing them across windows.";
 "mac_onboarding_brand_panel_point2" = "Review, refine, and continue the thought while momentum is still there.";
-"mac_onboarding_brand_panel_point3" = "Pair with iPhone when you want capture and desktop review to move as one.";
+"mac_onboarding_brand_panel_point3" = "Pair with Phone when you want capture and desktop review to move as one.";
 "mac_onboarding_brand_feature1_title" = "A bigger canvas for voice";
 "mac_onboarding_brand_feature1_desc" = "Move from a quick spoken note into real review without leaving VoiceMind.";
-"mac_onboarding_brand_feature2_title" = "Made for your Mac flow";
+"mac_onboarding_brand_feature2_title" = "Made for your desktop flow";
 "mac_onboarding_brand_feature2_desc" = "Keep results visible, organized, and ready for the next step on desktop.";
 
 "mac_onboarding_capture_badge" = "CAPTURE AND REVIEW";
-"mac_onboarding_capture_title" = "Your Mac becomes the place where voice turns into work.";
+"mac_onboarding_capture_title" = "Your desktop becomes the place where voice turns into work.";
 "mac_onboarding_capture_subtitle" = "VoiceMind keeps incoming text easy to scan, revisit, and shape before you move on.";
 "mac_onboarding_capture_panel_title" = "What happens on Mac";
 "mac_onboarding_capture_panel_point1" = "Incoming transcripts stay visible in one focused workspace.";
@@ -252,16 +259,16 @@
 "mac_onboarding_capture_feature2_desc" = "Use VoiceMind as the review layer between capture and whatever comes next.";
 
 "mac_onboarding_connect_badge" = "CONNECT IPHONE";
-"mac_onboarding_connect_title" = "Pair iPhone and Mac once, then let the flow feel seamless.";
-"mac_onboarding_connect_subtitle" = "Start on iPhone, keep the desktop view on Mac, and stay in sync over your local network.";
+"mac_onboarding_connect_title" = "Pair phone and desktop once, then let the flow feel seamless.";
+"mac_onboarding_connect_subtitle" = "Start on phone, keep the desktop view on desktop, and stay in sync over your local network.";
 "mac_onboarding_device_iphone" = "iPhone";
 "mac_onboarding_device_mac" = "Mac";
 "mac_onboarding_connect_bridge" = "Secure link";
 "mac_onboarding_connect_step1_title" = "Keep both devices on the same network";
-"mac_onboarding_connect_step1_desc" = "Make sure iPhone and Mac can see each other locally before you pair.";
+"mac_onboarding_connect_step1_desc" = "Make sure phone and desktop can see each other locally before you pair.";
 "mac_onboarding_connect_step2_title" = "Start pairing from Mac";
-"mac_onboarding_connect_step2_desc" = "VoiceMind will show a QR code and pairing code for your iPhone.";
-"mac_onboarding_connect_step3_title" = "Confirm on iPhone";
+"mac_onboarding_connect_step2_desc" = "VoiceMind will show a QR code and pairing code for your phone.";
+"mac_onboarding_connect_step3_title" = "Confirm on phone";
 "mac_onboarding_connect_step3_desc" = "Scan the code, approve the session, and let VoiceMind keep both sides in sync.";
 "billing_two_device_sync_header" = "Two-Device Sync";
 "billing_two_device_sync_actions_title" = "Unlock options";
@@ -274,21 +281,21 @@
 "billing_two_device_sync_lifetime_fallback" = "Lifetime Unlock";
 "billing_two_device_sync_status_unlimited" = "Unlimited two-device sync is active.";
 "billing_two_device_sync_status_free_mac" = "Free plan is active.";
-"billing_two_device_sync_mac_detail_free" = "Free users can start up to 50 sync sessions per day from iPhone. Upgrade here to unlock unlimited sync on both devices.";
-"billing_two_device_sync_mac_detail_monthly" = "Your monthly plan unlocks unlimited two-device sync on iPhone and Mac.";
-"billing_two_device_sync_mac_detail_yearly" = "Your yearly plan unlocks unlimited two-device sync on iPhone and Mac.";
-"billing_two_device_sync_mac_detail_lifetime" = "Your lifetime purchase unlocks the current two-device sync feature on iPhone and Mac.";
+"billing_two_device_sync_mac_detail_free" = "Free users can start up to 50 sync sessions per day from phone. Upgrade here to unlock unlimited sync on both devices.";
+"billing_two_device_sync_mac_detail_monthly" = "Your monthly plan unlocks unlimited two-device sync on phone and desktop.";
+"billing_two_device_sync_mac_detail_yearly" = "Your yearly plan unlocks unlimited two-device sync on phone and desktop.";
+"billing_two_device_sync_mac_detail_lifetime" = "Your lifetime purchase unlocks the current two-device sync feature on phone and desktop.";
 
 "mac_onboarding_start_badge" = "START VOICEMIND";
-"mac_onboarding_start_title" = "Turn on VoiceMind for Mac and get ready for your first session.";
+"mac_onboarding_start_title" = "Turn on VoiceMind for desktop and get ready for your first session.";
 "mac_onboarding_start_subtitle" = "Starting the network service makes this Mac discoverable for pairing, review, and the running state that follows.";
 "mac_onboarding_start_button" = "Start VoiceMind";
 "mac_onboarding_start_continue" = "Open Status";
 "mac_onboarding_start_ip_title" = "Local Network Address";
 "mac_onboarding_start_mode_title" = "Workspace";
-"mac_onboarding_start_mode_value" = "Capture on iPhone, review on Mac";
+"mac_onboarding_start_mode_value" = "Capture on phone, review on desktop";
 "mac_onboarding_start_steps_title" = "What happens next";
 "mac_onboarding_start_step1" = "Start the VoiceMind service on this Mac.";
 "mac_onboarding_start_step1_running" = "VoiceMind is already running on this Mac.";
-"mac_onboarding_start_step2" = "Open VoiceMind on iPhone and enter the pairing flow when you are ready.";
-"mac_onboarding_start_step3" = "Once connected, speak on iPhone and keep reviewing the transcript on Mac.";
+"mac_onboarding_start_step2" = "Open VoiceMind on phone and enter the pairing flow when you are ready.";
+"mac_onboarding_start_step3" = "Once connected, speak on phone and keep reviewing the transcript on desktop.";

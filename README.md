@@ -152,6 +152,11 @@ VoiceMind/
 
 ## 开发说明
 
+### 设计规范
+
+- 项目默认设计规范入口：`docs/design/README.md`
+- Apple 风格基线文档：`docs/design/vendor/apple-design-md/DESIGN.md`
+
 ### 依赖
 
 - **Swift**: 5.9+

@@ -4,6 +4,11 @@ import SwiftUI
 import SharedCore
 
 class MenuBarController: NSObject, ObservableObject {
+    private enum MainWindowSizingPolicy {
+        static let defaultWidth: CGFloat = 850
+        static let defaultHeight: CGFloat = 720
+    }
+
     var statusItem: NSStatusItem!
     let connectionManager = ConnectionManager()
     let settings = AppSettings.shared
@@ -127,15 +132,36 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     @objc private func showStatus() {
+        if let existingWindow = existingMainAppWindow() {
+            if existingWindow.isMiniaturized {
+                existingWindow.deminiaturize(nil)
+            }
+            existingWindow.delegate = self
+            applyPreferredMainWindowSizeAndPosition(to: existingWindow)
+            existingWindow.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
         if statusWindow == nil {
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 500, height: 600),
+                contentRect: NSRect(
+                    x: 0,
+                    y: 0,
+                    width: MainWindowSizingPolicy.defaultWidth,
+                    height: MainWindowSizingPolicy.defaultHeight
+                ),
                 styleMask: [.titled, .closable, .miniaturizable, .resizable],
                 backing: .buffered,
                 defer: false
             )
             window.title = AppLocalization.localizedString("window_title_main")
-            window.setContentSize(NSSize(width: 500, height: 600))
+            window.setContentSize(
+                NSSize(
+                    width: MainWindowSizingPolicy.defaultWidth,
+                    height: MainWindowSizingPolicy.defaultHeight
+                )
+            )
             window.contentView = NSHostingView(rootView: MainWindow(controller: self))
             window.center()
             window.isReleasedWhenClosed = false
@@ -147,6 +173,45 @@ class MenuBarController: NSObject, ObservableObject {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    private func existingMainAppWindow() -> NSWindow? {
+        let transientWindows = [pairingWindow, onboardingWindow, usageGuideWindow, statusWindow]
+        let excluded = Set(transientWindows.compactMap { window in
+            window.map(ObjectIdentifier.init)
+        })
+
+        return NSApp.windows.first { window in
+            let className = NSStringFromClass(type(of: window))
+
+            return !excluded.contains(ObjectIdentifier(window))
+                && window.canBecomeKey
+                && window.level == .normal
+                && className != "NSStatusBarWindow"
+        }
+    }
+
+    func normalizeMainWindowFrameIfNeeded() {
+        guard let window = existingMainAppWindow() else { return }
+        window.delegate = self
+        applyPreferredMainWindowSizeAndPosition(to: window)
+    }
+
+    private func applyPreferredMainWindowSizeAndPosition(to window: NSWindow) {
+        let preferredContentRect = NSRect(
+            x: 0,
+            y: 0,
+            width: MainWindowSizingPolicy.defaultWidth,
+            height: MainWindowSizingPolicy.defaultHeight
+        )
+        var preferredFrame = window.frameRect(forContentRect: preferredContentRect)
+
+        if let visibleFrame = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame {
+            preferredFrame.origin.x = visibleFrame.midX - (preferredFrame.width / 2)
+            preferredFrame.origin.y = visibleFrame.midY - (preferredFrame.height / 2)
+        }
+
+        window.setFrame(preferredFrame, display: true)
+    }
+
     func showMainWindow() {
         showStatus()
     }
@@ -156,7 +221,7 @@ class MenuBarController: NSObject, ObservableObject {
             let contentView = OnboardingFlowView(controller: self)
 
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 600, height: 500),
+                contentRect: NSRect(x: 0, y: 0, width: 400, height: 480),
                 styleMask: [.titled, .closable],
                 backing: .buffered,
                 defer: false
@@ -186,7 +251,7 @@ class MenuBarController: NSObject, ObservableObject {
             )
 
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 520, height: 560),
+                contentRect: NSRect(x: 0, y: 0, width: 416, height: 448),
                 styleMask: [.titled, .closable],
                 backing: .buffered,
                 defer: false
@@ -213,8 +278,8 @@ class MenuBarController: NSObject, ObservableObject {
 
     @objc private func unpairDevice() {
         let alert = NSAlert()
-        alert.messageText = String(localized: "unpair_alert_title")
-        alert.informativeText = String(localized: "unpair_alert_message")
+        alert.messageText = AppLocalization.localizedString("unpair_alert_title")
+        alert.informativeText = AppLocalization.localizedString("unpair_alert_message")
         alert.addButton(withTitle: AppLocalization.localizedString("unpair_alert_button"))
         alert.addButton(withTitle: AppLocalization.localizedString("cancel_button"))
         alert.alertStyle = .warning
@@ -255,7 +320,7 @@ class MenuBarController: NSObject, ObservableObject {
 
         // Get local IP address
         guard let ipAddress = getLocalIPAddress() else {
-            showError(String(localized: "error_local_ip"))
+            showError(AppLocalization.localizedString("error_local_ip"))
             return
         }
 
@@ -327,7 +392,7 @@ class MenuBarController: NSObject, ObservableObject {
 
     func showError(_ message: String) {
         let alert = NSAlert()
-        alert.messageText = String(localized: "error_title")
+        alert.messageText = AppLocalization.localizedString("error_title")
         alert.informativeText = message
         alert.alertStyle = .critical
         alert.runModal()
@@ -395,8 +460,8 @@ class MenuBarController: NSObject, ObservableObject {
 
     private func handleServerPortChange(_ newPort: UInt16) {
         appendInboundDataRecord(
-            title: String(localized: "log_server_port_updated_title"),
-            detail: String(format: String(localized: "log_server_port_updated_detail_format"), "\(newPort)"),
+            title: AppLocalization.localizedString("log_server_port_updated_title"),
+            detail: String(format: AppLocalization.localizedString("log_server_port_updated_detail_format"), "\(newPort)"),
             category: .connection,
             severity: .warning
         )
@@ -506,6 +571,17 @@ extension MenuBarController: LocalSpeechRecognizerDelegate {
 
 // MARK: - NSWindowDelegate
 extension MenuBarController: NSWindowDelegate {
+    func windowDidExitFullScreen(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        let transientWindows = [pairingWindow, onboardingWindow, usageGuideWindow, statusWindow]
+        let isTransientWindow = transientWindows.contains { $0 === window }
+        guard !isTransientWindow else { return }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.applyPreferredMainWindowSizeAndPosition(to: window)
+        }
+    }
+
     func windowWillClose(_ notification: Notification) {
         if let window = notification.object as? NSWindow {
             if window === pairingWindow {

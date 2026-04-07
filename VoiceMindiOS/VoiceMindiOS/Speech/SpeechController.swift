@@ -40,18 +40,37 @@ class SpeechController: NSObject {
     }
 
     func requestPermissions(completion: @escaping (Bool) -> Void) {
-        // Request microphone permission
-        AVAudioApplication.requestRecordPermission { micGranted in
+        // Check current status first to avoid redundant prompts
+        let micStatus = AVAudioApplication.shared.recordPermission
+        let speechStatus = SFSpeechRecognizer.authorizationStatus()
+
+        if micStatus == .granted && speechStatus == .authorized {
+            DispatchQueue.main.async { completion(true) }
+            return
+        }
+
+        if micStatus == .denied || speechStatus == .denied {
+            DispatchQueue.main.async { completion(false) }
+            return
+        }
+
+        // Request permissions with timeout protection
+        AVAudioApplication.requestRecordPermission { [weak self] micGranted in
             guard micGranted else {
                 DispatchQueue.main.async { completion(false) }
                 return
             }
 
-            // Request speech recognition permission
             SFSpeechRecognizer.requestAuthorization { status in
                 DispatchQueue.main.async {
                     completion(status == .authorized)
                 }
+            }
+
+            // Timeout protection: resolve after 3 seconds if callbacks are lost
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                let granted = self?.checkPermissions() ?? false
+                completion(granted)
             }
         }
     }

@@ -128,38 +128,38 @@ enum MainWindowSection: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .home:
-            return String(localized: "main_nav_home")
+            return AppLocalization.localizedString("main_nav_home")
         case .records:
-            return String(localized: "main_nav_records")
+            return AppLocalization.localizedString("main_nav_records")
         case .collaboration:
-            return String(localized: "main_nav_collaboration")
+            return AppLocalization.localizedString("main_nav_collaboration")
         case .data:
-            return String(localized: "main_nav_logs")
+            return AppLocalization.localizedString("main_nav_logs")
         case .speech:
-            return String(localized: "tab_speech")
+            return AppLocalization.localizedString("tab_speech")
         case .about:
-            return String(localized: "tab_about")
+            return AppLocalization.localizedString("tab_about")
         case .settings:
-            return String(localized: "tab_settings")
+            return AppLocalization.localizedString("tab_settings")
         }
     }
 
     var subtitle: String {
         switch self {
         case .home:
-            return String(localized: "main_notes_subtitle")
+            return AppLocalization.localizedString("main_notes_subtitle")
         case .records:
-            return String(localized: "main_records_subtitle")
+            return AppLocalization.localizedString("main_records_subtitle")
         case .collaboration:
-            return String(localized: "main_collaboration_subtitle")
+            return AppLocalization.localizedString("main_collaboration_subtitle")
         case .data:
-            return String(localized: "data_subtitle")
+            return AppLocalization.localizedString("data_subtitle")
         case .speech:
-            return String(localized: "main_speech_subtitle")
+            return AppLocalization.localizedString("main_speech_subtitle")
         case .about:
-            return String(localized: "about_description")
+            return AppLocalization.localizedString("about_description")
         case .settings:
-            return String(localized: "main_settings_subtitle")
+            return AppLocalization.localizedString("main_settings_subtitle")
         }
     }
 
@@ -229,6 +229,23 @@ enum MainWindowPagePersistencePolicy {
         .settings,
         .about
     ]
+}
+
+private struct PersistentPageVisibilityModifier: ViewModifier {
+    let isVisible: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isVisible {
+            content
+        } else {
+            content
+                .frame(width: 0, height: 0)
+                .clipped()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
 }
 
 enum SidebarNavigationInteractionPolicy {
@@ -301,9 +318,9 @@ struct MainWindow: View {
                 sidebar
                 contentArea
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .preferredColorScheme(settings.themePreference.preferredColorScheme)
     }
 
@@ -331,9 +348,9 @@ struct MainWindow: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(String(localized: "app_title"))
+                    Text(AppLocalization.localizedString("app_title"))
                         .font(.system(size: 26, weight: .bold))
-                    Text(String(localized: "main_brand_subtitle"))
+                    Text(AppLocalization.localizedString("main_brand_subtitle"))
                         .font(.callout)
                         .foregroundColor(MainWindowColors.secondaryText)
                 }
@@ -418,13 +435,12 @@ struct MainWindow: View {
             ZStack {
                 ForEach(MainWindowPagePersistencePolicy.persistentSections) { section in
                     pageContent(for: section)
-                        .opacity(selectedSection == section ? 1 : 0)
-                        .allowsHitTesting(selectedSection == section)
-                        .accessibilityHidden(selectedSection != section)
+                        .modifier(PersistentPageVisibilityModifier(isVisible: selectedSection == section))
                 }
             }
             .padding(30)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(18)
     }
 
@@ -432,40 +448,34 @@ struct MainWindow: View {
     private func pageContent(for section: MainWindowSection) -> some View {
         switch MainWindowNavigationPolicy.contentSection(for: section) {
         case .notes:
-            WindowPageShell(section: section) {
-                NotesTab(controller: controller, showsInlineHeader: false)
-            }
+            NotesTab(controller: controller, showsInlineHeader: false)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .records:
-            WindowPageShell(section: section) {
-                VoiceRecognitionRecordsTab(controller: controller, showsInlineHeader: false)
-            }
+            VoiceRecognitionRecordsTab(controller: controller, showsInlineHeader: false)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .collaboration:
             HomeDashboardView(
                 controller: controller,
                 showsWelcomeHeader: false
             )
         case .data:
-            WindowPageShell(section: section) {
-                DataRecordsTab(controller: controller, showsInlineHeader: false)
-            }
+            DataRecordsTab(controller: controller, showsInlineHeader: false)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .speech:
-            WindowPageShell(section: section) {
-                SpeechRecognitionTab(controller: controller, showsInlineHeader: false)
-            }
+            SpeechRecognitionTab(controller: controller, showsInlineHeader: false)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .about:
-            WindowPageShell(section: section) {
-                AboutTab(
-                    showsInlineHeader: false,
-                    onOpenGuide: {
-                        controller.showUsageGuide()
-                    },
-                    onRevealDebug: {}
-                )
-            }
+            AboutTab(
+                showsInlineHeader: false,
+                onOpenGuide: {
+                    controller.showUsageGuide()
+                },
+                onRevealDebug: {}
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .settings:
-            WindowPageShell(section: section) {
-                SettingsTab(settings: settings, controller: controller)
-            }
+            SettingsTab(settings: settings, controller: controller)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }
@@ -482,14 +492,14 @@ private struct VoiceRecognitionRecordsTab: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             if showsInlineHeader {
-                Text(String(localized: "main_nav_records"))
+                Text(AppLocalization.localizedString("main_nav_records"))
                     .font(.title.weight(.bold))
                     .foregroundColor(MainWindowColors.title)
             }
 
             HStack(spacing: 12) {
                 Label(
-                    String(format: String(localized: "records_summary_count_format"), filteredRecords.count),
+                    String(format: AppLocalization.localizedString("records_summary_count_format"), filteredRecords.count),
                     systemImage: "waveform.badge.magnifyingglass"
                 )
                 .font(.subheadline.weight(.medium))
@@ -497,7 +507,7 @@ private struct VoiceRecognitionRecordsTab: View {
 
                 Spacer()
 
-                Button(isEditing ? String(localized: "records_action_done") : String(localized: "records_action_edit")) {
+                Button(isEditing ? AppLocalization.localizedString("records_action_done") : AppLocalization.localizedString("records_action_edit")) {
                     if isEditing {
                         selectedRecordIDs.removeAll()
                     }
@@ -505,7 +515,7 @@ private struct VoiceRecognitionRecordsTab: View {
                 }
                 .buttonStyle(.bordered)
 
-                TextField(String(localized: "records_search_placeholder"), text: $keyword)
+                TextField(AppLocalization.localizedString("records_search_placeholder"), text: $keyword)
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 260)
             }
@@ -513,13 +523,13 @@ private struct VoiceRecognitionRecordsTab: View {
             if bulkActionPolicy.canClearAll || isEditing {
                 HStack(spacing: 12) {
                     if isEditing {
-                        Button(String(localized: "records_action_select_all")) {
+                        Button(AppLocalization.localizedString("records_action_select_all")) {
                             selectedRecordIDs = Set(filteredRecords.map(\.id))
                         }
                         .buttonStyle(.bordered)
                         .disabled(filteredRecords.isEmpty || selectedRecordIDs.count == filteredRecords.count)
 
-                        Button(String(localized: "records_action_delete_selected")) {
+                        Button(AppLocalization.localizedString("records_action_delete_selected")) {
                             showsDeleteSelectedConfirmation = true
                         }
                         .buttonStyle(.borderedProminent)
@@ -528,7 +538,7 @@ private struct VoiceRecognitionRecordsTab: View {
 
                     Spacer()
 
-                    Button(String(localized: "records_action_clear_all")) {
+                    Button(AppLocalization.localizedString("records_action_clear_all")) {
                         showsClearAllConfirmation = true
                     }
                     .buttonStyle(.bordered)
@@ -538,7 +548,7 @@ private struct VoiceRecognitionRecordsTab: View {
 
             if filteredRecords.isEmpty {
                 ContentUnavailableView(
-                    String(localized: "records_empty_title"),
+                    AppLocalization.localizedString("records_empty_title"),
                     systemImage: "text.magnifyingglass",
                     description: Text(AppLocalization.localizedString(recordsEmptyDescriptionKey))
                 )
@@ -559,7 +569,7 @@ private struct VoiceRecognitionRecordsTab: View {
                                         .font(.headline.weight(.semibold))
                                         .foregroundColor(MainWindowColors.secondaryText)
                                     Spacer()
-                                    Text(String(format: String(localized: "records_section_count_format"), section.records.count))
+                                    Text(String(format: AppLocalization.localizedString("records_section_count_format"), section.records.count))
                                         .font(.caption.weight(.medium))
                                         .foregroundColor(MainWindowColors.secondaryText)
                                 }
@@ -573,32 +583,32 @@ private struct VoiceRecognitionRecordsTab: View {
             }
         }
         .confirmationDialog(
-            String(localized: "records_delete_selected_confirm_title"),
+            AppLocalization.localizedString("records_delete_selected_confirm_title"),
             isPresented: $showsDeleteSelectedConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "records_action_delete_selected"), role: .destructive) {
+            Button(AppLocalization.localizedString("records_action_delete_selected"), role: .destructive) {
                 controller.deleteVoiceRecognitionRecords(withIDs: selectedRecordIDs)
                 selectedRecordIDs.removeAll()
                 isEditing = false
             }
-            Button(String(localized: "cancel_button"), role: .cancel) {}
+            Button(AppLocalization.localizedString("cancel_button"), role: .cancel) {}
         } message: {
-            Text(String(format: String(localized: "records_delete_selected_confirm_message_format"), selectedRecordIDs.count))
+            Text(String(format: AppLocalization.localizedString("records_delete_selected_confirm_message_format"), selectedRecordIDs.count))
         }
         .confirmationDialog(
-            String(localized: "records_clear_all_confirm_title"),
+            AppLocalization.localizedString("records_clear_all_confirm_title"),
             isPresented: $showsClearAllConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "records_action_clear_all"), role: .destructive) {
+            Button(AppLocalization.localizedString("records_action_clear_all"), role: .destructive) {
                 controller.clearVoiceRecognitionRecords()
                 selectedRecordIDs.removeAll()
                 isEditing = false
             }
-            Button(String(localized: "cancel_button"), role: .cancel) {}
+            Button(AppLocalization.localizedString("cancel_button"), role: .cancel) {}
         } message: {
-            Text(String(localized: "records_clear_all_confirm_message"))
+            Text(AppLocalization.localizedString("records_clear_all_confirm_message"))
         }
     }
 
@@ -745,7 +755,7 @@ private struct WindowPageShell<Content: View>: View {
             }
 
             content
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         }
     }
 }
@@ -766,10 +776,10 @@ private struct HomeDashboardView: View {
             if showsWelcomeHeader {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(String(localized: "main_home_welcome"))
+                        Text(AppLocalization.localizedString("main_home_welcome"))
                             .font(.system(size: 42, weight: .bold))
                             .foregroundColor(MainWindowColors.title)
-                        Text(String(localized: "main_home_subtitle"))
+                        Text(AppLocalization.localizedString("main_home_subtitle"))
                             .font(.callout)
                             .foregroundColor(MainWindowColors.secondaryText)
                     }
@@ -794,7 +804,7 @@ private struct HomeDashboardView: View {
 
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    Text(String(localized: "main_home_recent_activity"))
+                    Text(AppLocalization.localizedString("main_home_recent_activity"))
                         .font(.title3.weight(.semibold))
                         .foregroundColor(MainWindowColors.title)
                     Spacer()
@@ -816,7 +826,7 @@ private struct HomeDashboardView: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(String(localized: "status_connection_title"))
+                    Text(AppLocalization.localizedString("status_connection_title"))
                         .font(.title3.weight(.semibold))
                         .foregroundColor(MainWindowColors.title)
 
@@ -846,14 +856,14 @@ private struct HomeDashboardView: View {
                 spacing: 14
             ) {
                 collaborationStatusCard(
-                    title: String(localized: "status_label"),
+                    title: AppLocalization.localizedString("status_label"),
                     value: connectionSummaryValue,
                     tint: spotlightTint,
                     systemImage: "antenna.radiowaves.left.and.right"
                 )
 
                 collaborationStatusCard(
-                    title: String(localized: "status_service_label"),
+                    title: AppLocalization.localizedString("status_service_label"),
                     value: serviceSummaryValue,
                     tint: controller.isServiceRunning ? .green : .orange,
                     systemImage: "server.rack"
@@ -861,7 +871,7 @@ private struct HomeDashboardView: View {
 
                 if let deviceName = controlsPolicy.pairedDeviceName {
                     collaborationStatusCard(
-                        title: String(localized: "status_paired_device_label"),
+                        title: AppLocalization.localizedString("status_paired_device_label"),
                         value: deviceName,
                         tint: .blue,
                         systemImage: "iphone"
@@ -869,8 +879,8 @@ private struct HomeDashboardView: View {
                 }
 
                 collaborationStatusCard(
-                    title: String(localized: "status_ip_label"),
-                    value: LocalNetworkAccessPolicy.preferredLocalIPv4() ?? String(localized: "status_unknown_value"),
+                    title: AppLocalization.localizedString("status_ip_label"),
+                    value: LocalNetworkAccessPolicy.preferredLocalIPv4() ?? AppLocalization.localizedString("status_unknown_value"),
                     tint: MainWindowColors.secondaryText,
                     systemImage: "network"
                 )
@@ -879,8 +889,8 @@ private struct HomeDashboardView: View {
             HStack(spacing: 14) {
                 spotlightAction(
                     title: controller.isServiceRunning
-                    ? String(localized: "status_action_stop_service")
-                    : String(localized: "status_action_start_service"),
+                    ? AppLocalization.localizedString("status_action_stop_service")
+                    : AppLocalization.localizedString("status_action_start_service"),
                     role: controller.isServiceRunning ? .secondary : .primary
                 ) {
                     if controller.isServiceRunning {
@@ -892,7 +902,7 @@ private struct HomeDashboardView: View {
 
                 if controlsPolicy.showsStartPairing {
                     spotlightAction(
-                        title: String(localized: "status_action_start_pairing"),
+                        title: AppLocalization.localizedString("status_action_start_pairing"),
                         role: .secondary
                     ) {
                         controller.showPairingWindowFromUI()
@@ -901,7 +911,7 @@ private struct HomeDashboardView: View {
 
                 if controlsPolicy.showsUnpair {
                     spotlightAction(
-                        title: String(localized: "status_action_unpair"),
+                        title: AppLocalization.localizedString("status_action_unpair"),
                         role: .secondary
                     ) {
                         controller.unpairDeviceFromUI()
@@ -937,7 +947,7 @@ private struct HomeDashboardView: View {
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, minHeight: 96, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -987,7 +997,7 @@ private struct HomeDashboardView: View {
                     .font(.subheadline.weight(.medium))
                     .foregroundColor(MainWindowColors.secondaryText)
 
-                Text(record.category == .voice ? String(localized: "data_category_voice") : String(localized: "data_category_connection"))
+                Text(record.category == .voice ? AppLocalization.localizedString("data_category_voice") : AppLocalization.localizedString("data_category_connection"))
                     .font(.caption)
                     .foregroundColor(MainWindowColors.secondaryText)
             }
@@ -1021,32 +1031,32 @@ private struct HomeDashboardView: View {
             connectionState: controller.connectionState
         ) {
         case .connected:
-            return String(localized: "status_connection_connected")
+            return AppLocalization.localizedString("status_connection_connected")
         case .connecting:
-            return String(localized: "status_connection_connecting")
+            return AppLocalization.localizedString("status_connection_connecting")
         case .disconnected:
-            return String(localized: "status_connection_disconnected")
+            return AppLocalization.localizedString("status_connection_disconnected")
         case .error:
-            return String(localized: "status_connection_error")
+            return AppLocalization.localizedString("status_connection_error")
         }
     }
 
     private var serviceSummaryValue: String {
         controller.isServiceRunning
-        ? String(localized: "status_service_running")
-        : String(localized: "status_service_stopped")
+        ? AppLocalization.localizedString("status_service_running")
+        : AppLocalization.localizedString("status_service_stopped")
     }
 
     private var noteSummaryValue: String {
-        String(format: String(localized: "main_home_note_count_format"), controller.noteText.count)
+        String(format: AppLocalization.localizedString("main_home_note_count_format"), controller.noteText.count)
     }
 
     private var spotlightDescription: String {
         if case .paired(_, let deviceName) = controller.pairingState {
-            return String(format: String(localized: "main_home_paired_summary_format"), deviceName)
+            return String(format: AppLocalization.localizedString("main_home_paired_summary_format"), deviceName)
         }
 
-        return String(localized: "main_home_unpaired_summary")
+        return AppLocalization.localizedString("main_home_unpaired_summary")
     }
 
     private var spotlightTint: Color {
@@ -1108,15 +1118,15 @@ struct StatusTab: View {
     var body: some View {
         VStack(spacing: 20) {
             if showsInlineHeader {
-                Text("🎤 \(String(localized: "app_title"))")
+                Text("🎤 \(AppLocalization.localizedString("app_title"))")
                     .font(.system(size: 32, weight: .bold))
             }
 
             // Connection Status
-            GroupBox(label: Label(String(localized: "status_connection_title"), systemImage: "network")) {
+            GroupBox(label: Label(AppLocalization.localizedString("status_connection_title"), systemImage: "network")) {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Text(String(localized: "status_label"))
+                        Text(AppLocalization.localizedString("status_label"))
                         Spacer()
                         connectionStatusView
                     }
@@ -1124,7 +1134,7 @@ struct StatusTab: View {
                     if case .paired(_, let deviceName) = controller.pairingState {
                         Divider()
                         HStack {
-                            Text(String(localized: "status_paired_device_label"))
+                            Text(AppLocalization.localizedString("status_paired_device_label"))
                             Spacer()
                             Text(deviceName)
                                 .foregroundColor(MainWindowColors.secondaryText)
@@ -1134,7 +1144,7 @@ struct StatusTab: View {
                     if let progressMessage = effectivePairingProgressMessage {
                         Divider()
                         HStack(alignment: .top) {
-                            Text(String(localized: "status_pairing_progress_label"))
+                            Text(AppLocalization.localizedString("status_pairing_progress_label"))
                             Spacer()
                             Label {
                                 Text(progressMessage)
@@ -1148,9 +1158,9 @@ struct StatusTab: View {
 
                     Divider()
                     HStack {
-                        Text(String(localized: "status_ip_label"))
+                        Text(AppLocalization.localizedString("status_ip_label"))
                         Spacer()
-                        Text(getLocalIPAddress() ?? String(localized: "status_unknown_value"))
+                        Text(getLocalIPAddress() ?? AppLocalization.localizedString("status_unknown_value"))
                             .foregroundColor(MainWindowColors.secondaryText)
                     }
                 }
@@ -1158,12 +1168,12 @@ struct StatusTab: View {
             }
 
             // Service Status
-            GroupBox(label: Label(String(localized: "status_service_title"), systemImage: "server.rack")) {
+            GroupBox(label: Label(AppLocalization.localizedString("status_service_title"), systemImage: "server.rack")) {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Text(String(localized: "status_service_label"))
+                        Text(AppLocalization.localizedString("status_service_label"))
                         Spacer()
-                        Text(controller.isServiceRunning ? String(localized: "status_service_running") : String(localized: "status_service_stopped"))
+                        Text(controller.isServiceRunning ? AppLocalization.localizedString("status_service_running") : AppLocalization.localizedString("status_service_stopped"))
                             .foregroundColor(controller.isServiceRunning ? .green : MainWindowColors.secondaryText)
                     }
                 }
@@ -1178,7 +1188,7 @@ struct StatusTab: View {
                     Button(action: {
                         controller.startNetworkServices()
                     }) {
-                        Label(String(localized: "status_action_start_service"), systemImage: "play.fill")
+                        Label(AppLocalization.localizedString("status_action_start_service"), systemImage: "play.fill")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
@@ -1186,7 +1196,7 @@ struct StatusTab: View {
                     Button(action: {
                         controller.stopNetworkServices()
                     }) {
-                        Label(String(localized: "status_action_stop_service"), systemImage: "stop.fill")
+                        Label(AppLocalization.localizedString("status_action_stop_service"), systemImage: "stop.fill")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
@@ -1200,14 +1210,14 @@ struct StatusTab: View {
                     Button(action: {
                         controller.showPairingWindowFromUI()
                     }) {
-                        Label(String(localized: "status_action_start_pairing"), systemImage: "iphone.and.arrow.forward")
+                        Label(AppLocalization.localizedString("status_action_start_pairing"), systemImage: "iphone.and.arrow.forward")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
                     .padding(.horizontal)
                 } else if case .paired(_, let deviceName) = controller.pairingState {
                     HStack {
-                        Text(String(format: String(localized: "status_paired_device_format"), deviceName))
+                        Text(String(format: AppLocalization.localizedString("status_paired_device_format"), deviceName))
                             .foregroundColor(MainWindowColors.secondaryText)
                         Spacer()
                         Button(AppLocalization.localizedString("status_action_unpair")) {
@@ -1229,16 +1239,16 @@ struct StatusTab: View {
             connectionState: controller.connectionState
         ) {
         case .disconnected:
-            Label(String(localized: "status_connection_disconnected"), systemImage: "circle")
+            Label(AppLocalization.localizedString("status_connection_disconnected"), systemImage: "circle")
                 .foregroundColor(MainWindowColors.secondaryText)
         case .connecting:
-            Label(String(localized: "status_connection_connecting"), systemImage: "circle.dotted")
+            Label(AppLocalization.localizedString("status_connection_connecting"), systemImage: "circle.dotted")
                 .foregroundColor(.orange)
         case .connected:
-            Label(String(localized: "status_connection_connected"), systemImage: "circle.fill")
+            Label(AppLocalization.localizedString("status_connection_connected"), systemImage: "circle.fill")
                 .foregroundColor(.green)
         case .error:
-            Label(String(localized: "status_connection_error"), systemImage: "exclamationmark.triangle")
+            Label(AppLocalization.localizedString("status_connection_error"), systemImage: "exclamationmark.triangle")
                 .foregroundColor(.red)
         }
     }
@@ -1281,26 +1291,27 @@ struct SettingsTab: View {
     var showsInlineHeader = false
     @State private var serverPortText = ""
     @State private var languageSelection = "zh-CN"
+    @State private var uiLanguageSelection = "zh-CN"
     @State private var themeSelection: AppThemePreference = .system
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
             if showsInlineHeader {
-                Text(String(localized: "tab_settings"))
+                Text(AppLocalization.localizedString("tab_settings"))
                     .font(.title2)
                     .fontWeight(.semibold)
             }
 
                 settingsSectionCard(
-                    title: String(localized: "settings_language_title")
+                    title: AppLocalization.localizedString("settings_language_title")
                 ) {
                     settingsPickerRow(
-                        title: String(localized: "settings_language_picker")
+                        title: AppLocalization.localizedString("settings_language_picker")
                     ) {
-                        Picker(String(localized: "settings_language_picker"), selection: $languageSelection) {
-                            Text(String(localized: "settings_language_zh")).tag("zh-CN")
-                            Text(String(localized: "settings_language_en")).tag("en-US")
+                        Picker(AppLocalization.localizedString("settings_language_picker"), selection: $languageSelection) {
+                            Text(AppLocalization.localizedString("settings_language_zh")).tag("zh-CN")
+                            Text(AppLocalization.localizedString("settings_language_en")).tag("en-US")
                         }
                         .pickerStyle(.segmented)
                         .frame(maxWidth: 260)
@@ -1308,12 +1319,27 @@ struct SettingsTab: View {
                 }
 
                 settingsSectionCard(
-                    title: String(localized: "settings_theme_title")
+                    title: AppLocalization.localizedString("settings_ui_language_title")
                 ) {
                     settingsPickerRow(
-                        title: String(localized: "settings_theme_picker")
+                        title: AppLocalization.localizedString("settings_ui_language_picker")
                     ) {
-                        Picker(String(localized: "settings_theme_picker"), selection: $themeSelection) {
+                        Picker(AppLocalization.localizedString("settings_ui_language_picker"), selection: $uiLanguageSelection) {
+                            Text(AppLocalization.localizedString("settings_ui_language_zh")).tag("zh-CN")
+                            Text(AppLocalization.localizedString("settings_ui_language_en")).tag("en-US")
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 260)
+                    }
+                }
+
+                settingsSectionCard(
+                    title: AppLocalization.localizedString("settings_theme_title")
+                ) {
+                    settingsPickerRow(
+                        title: AppLocalization.localizedString("settings_theme_picker")
+                    ) {
+                        Picker(AppLocalization.localizedString("settings_theme_picker"), selection: $themeSelection) {
                             ForEach(AppThemePreference.allCases) { preference in
                                 Text(AppLocalization.localizedString(preference.localizedTitleKey))
                                     .tag(preference)
@@ -1324,7 +1350,7 @@ struct SettingsTab: View {
                 }
 
                 settingsSectionCard(
-                    title: String(localized: "billing_two_device_sync_header")
+                    title: AppLocalization.localizedString("billing_two_device_sync_header")
                 ) {
                     VStack(alignment: .leading, spacing: 14) {
                         settingsInfoRow(
@@ -1334,7 +1360,7 @@ struct SettingsTab: View {
 
                         if MacBillingPresentationPolicy.showsUnlockOptions(for: purchaseStore.entitlement) {
                             settingsPickerRow(
-                                title: String(localized: "billing_two_device_sync_actions_title")
+                                title: AppLocalization.localizedString("billing_two_device_sync_actions_title")
                             ) {
                                 VStack(alignment: .leading, spacing: 10) {
                                     billingActionButton(
@@ -1368,7 +1394,7 @@ struct SettingsTab: View {
                         }
 
                         billingActionButton(
-                            title: String(localized: "billing_two_device_sync_restore_button"),
+                            title: AppLocalization.localizedString("billing_two_device_sync_restore_button"),
                             isLoading: purchaseStore.isRestoringPurchases
                         ) {
                             Task {
@@ -1385,11 +1411,11 @@ struct SettingsTab: View {
                 }
 
                 settingsSectionCard(
-                    title: String(localized: "settings_network_title")
+                    title: AppLocalization.localizedString("settings_network_title")
                 ) {
                     VStack(alignment: .leading, spacing: 14) {
-                        settingsInputRow(title: String(localized: "settings_network_port_label")) {
-                            TextField(String(localized: "settings_network_port_placeholder"), text: $serverPortText)
+                        settingsInputRow(title: AppLocalization.localizedString("settings_network_port_label")) {
+                            TextField(AppLocalization.localizedString("settings_network_port_placeholder"), text: $serverPortText)
                                 .frame(width: 140)
                                 .multilineTextAlignment(.center)
                                 .textFieldStyle(.roundedBorder)
@@ -1405,7 +1431,7 @@ struct SettingsTab: View {
                                 }
                         }
 
-                        Text(String(localized: "settings_network_port_desc"))
+                        Text(AppLocalization.localizedString("settings_network_port_desc"))
                             .font(.caption)
                             .foregroundColor(SettingsSurfaceStylePolicy.secondaryTextColor)
                             .fixedSize(horizontal: false, vertical: true)
@@ -1426,17 +1452,24 @@ struct SettingsTab: View {
                 settings.language = newValue
             }
         }
+        .onChange(of: uiLanguageSelection) { _, newValue in
+            guard settings.uiLanguage != newValue else { return }
+            DispatchQueue.main.async {
+                settings.uiLanguage = newValue
+            }
+        }
         .onChange(of: themeSelection) { _, newValue in
             guard settings.themePreference != newValue else { return }
             DispatchQueue.main.async {
                 settings.themePreference = newValue
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private func syncLocalSettingsState() {
         languageSelection = settings.language
+        uiLanguageSelection = settings.uiLanguage
         themeSelection = settings.themePreference
         serverPortText = String(settings.serverPort)
     }
@@ -1545,22 +1578,22 @@ struct SettingsTab: View {
     private var macBillingStatusTitle: String {
         switch purchaseStore.entitlement {
         case .free:
-            return String(localized: "billing_two_device_sync_status_free_mac")
+            return AppLocalization.localizedString("billing_two_device_sync_status_free_mac")
         case .monthly, .yearly, .lifetime:
-            return String(localized: "billing_two_device_sync_status_unlimited")
+            return AppLocalization.localizedString("billing_two_device_sync_status_unlimited")
         }
     }
 
     private var macBillingStatusDetail: String {
         switch purchaseStore.entitlement {
         case .free:
-            return String(localized: "billing_two_device_sync_mac_detail_free")
+            return AppLocalization.localizedString("billing_two_device_sync_mac_detail_free")
         case .monthly:
-            return String(localized: "billing_two_device_sync_mac_detail_monthly")
+            return AppLocalization.localizedString("billing_two_device_sync_mac_detail_monthly")
         case .yearly:
-            return String(localized: "billing_two_device_sync_mac_detail_yearly")
+            return AppLocalization.localizedString("billing_two_device_sync_mac_detail_yearly")
         case .lifetime:
-            return String(localized: "billing_two_device_sync_mac_detail_lifetime")
+            return AppLocalization.localizedString("billing_two_device_sync_mac_detail_lifetime")
         }
     }
 
@@ -1568,21 +1601,21 @@ struct SettingsTab: View {
         if let price = purchaseStore.displayPrice(for: kind) {
             switch kind {
             case .monthly:
-                return String(format: String(localized: "billing_two_device_sync_monthly_button"), price)
+                return String(format: AppLocalization.localizedString("billing_two_device_sync_monthly_button"), price)
             case .yearly:
-                return String(format: String(localized: "billing_two_device_sync_yearly_button"), price)
+                return String(format: AppLocalization.localizedString("billing_two_device_sync_yearly_button"), price)
             case .lifetime:
-                return String(format: String(localized: "billing_two_device_sync_lifetime_button"), price)
+                return String(format: AppLocalization.localizedString("billing_two_device_sync_lifetime_button"), price)
             }
         }
 
         switch kind {
         case .monthly:
-            return String(localized: "billing_two_device_sync_monthly_fallback")
+            return AppLocalization.localizedString("billing_two_device_sync_monthly_fallback")
         case .yearly:
-            return String(localized: "billing_two_device_sync_yearly_fallback")
+            return AppLocalization.localizedString("billing_two_device_sync_yearly_fallback")
         case .lifetime:
-            return String(localized: "billing_two_device_sync_lifetime_fallback")
+            return AppLocalization.localizedString("billing_two_device_sync_lifetime_fallback")
         }
     }
 
@@ -1635,7 +1668,7 @@ struct DataRecordsTab: View {
         }
 
         var title: String {
-            String(localized: .init(titleKey))
+            AppLocalization.localizedString(titleKey)
         }
     }
 
@@ -1643,11 +1676,11 @@ struct DataRecordsTab: View {
         VStack(alignment: .leading, spacing: 16) {
             if showsInlineHeader {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(String(localized: "data_title"))
+                    Text(AppLocalization.localizedString("data_title"))
                         .font(.title2)
                         .fontWeight(.semibold)
 
-                    Text(String(localized: "data_subtitle"))
+                    Text(AppLocalization.localizedString("data_subtitle"))
                         .font(.callout)
                         .foregroundColor(MainWindowColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -1655,11 +1688,11 @@ struct DataRecordsTab: View {
             }
 
             HStack(alignment: .center, spacing: 12) {
-                Text(String(localized: "data_filter_picker"))
+                Text(AppLocalization.localizedString("data_filter_picker"))
                     .font(.headline)
                     .foregroundColor(MainWindowColors.secondaryText)
 
-                Picker(String(localized: "data_filter_picker"), selection: $selectedFilter) {
+                Picker(AppLocalization.localizedString("data_filter_picker"), selection: $selectedFilter) {
                     ForEach(DataRecordFilter.allCases) { filter in
                         Text(filter.title).tag(filter)
                     }
@@ -1677,23 +1710,23 @@ struct DataRecordsTab: View {
             }
 
             HStack(spacing: 12) {
-                TextField(String(localized: "data_search_placeholder"), text: $searchText)
+                TextField(AppLocalization.localizedString("data_search_placeholder"), text: $searchText)
                     .textFieldStyle(.roundedBorder)
 
-                Toggle(String(localized: "data_group_by_session"), isOn: $groupBySession)
+                Toggle(AppLocalization.localizedString("data_group_by_session"), isOn: $groupBySession)
                     .toggleStyle(.checkbox)
             }
 
             HStack(spacing: 12) {
-                summaryBadge(title: String(localized: "data_summary_total"), value: "\(filteredRecords.count)", color: .secondary)
-                summaryBadge(title: String(localized: "data_summary_voice"), value: "\(filteredVoiceCount)", color: .accentColor)
-                summaryBadge(title: String(localized: "data_summary_pairing"), value: "\(filteredPairingCount)", color: .blue)
-                summaryBadge(title: String(localized: "data_summary_failure"), value: "\(filteredFailureCount)", color: .red)
+                summaryBadge(title: AppLocalization.localizedString("data_summary_total"), value: "\(filteredRecords.count)", color: .secondary)
+                summaryBadge(title: AppLocalization.localizedString("data_summary_voice"), value: "\(filteredVoiceCount)", color: .accentColor)
+                summaryBadge(title: AppLocalization.localizedString("data_summary_pairing"), value: "\(filteredPairingCount)", color: .blue)
+                summaryBadge(title: AppLocalization.localizedString("data_summary_failure"), value: "\(filteredFailureCount)", color: .red)
             }
 
             if filteredRecords.isEmpty {
                 ContentUnavailableView(
-                    String(localized: "data_empty_title"),
+                    AppLocalization.localizedString("data_empty_title"),
                     systemImage: "tray",
                     description: Text(emptyStateDescription)
                 )
@@ -1747,7 +1780,7 @@ struct DataRecordsTab: View {
         var groups: [GroupedDataRecords] = []
 
         for record in filteredRecords {
-            let sessionKey = extractSessionKey(from: record.detail) ?? String(localized: "data_session_unknown")
+            let sessionKey = extractSessionKey(from: record.detail) ?? AppLocalization.localizedString("data_session_unknown")
             if let index = groups.firstIndex(where: { $0.title == sessionKey }) {
                 groups[index].records.append(record)
             } else {
@@ -1772,16 +1805,16 @@ struct DataRecordsTab: View {
 
     private var emptyStateDescription: String {
         if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return String(localized: "data_empty_search_desc")
+            return AppLocalization.localizedString("data_empty_search_desc")
         }
 
         switch selectedFilter {
         case .all:
-            return String(localized: "data_empty_all_desc")
+            return AppLocalization.localizedString("data_empty_all_desc")
         case .voice:
-            return String(localized: "data_empty_voice_desc")
+            return AppLocalization.localizedString("data_empty_voice_desc")
         case .pairing:
-            return String(localized: "data_empty_pairing_desc")
+            return AppLocalization.localizedString("data_empty_pairing_desc")
         }
     }
 
@@ -1848,7 +1881,7 @@ struct DataRecordsTab: View {
             Text(title)
                 .font(.headline)
             Spacer()
-            Text(String(format: String(localized: "data_section_count_format"), count))
+            Text(String(format: AppLocalization.localizedString("data_section_count_format"), count))
                 .font(.caption)
                 .foregroundColor(MainWindowColors.secondaryText)
         }
@@ -1933,22 +1966,22 @@ struct DataRecordsTab: View {
     private func severityTitle(for severity: InboundDataSeverity) -> String {
         switch severity {
         case .info:
-            return String(localized: "data_severity_info")
+            return AppLocalization.localizedString("data_severity_info")
         case .warning:
-            return String(localized: "data_severity_warning")
+            return AppLocalization.localizedString("data_severity_warning")
         case .error:
-            return String(localized: "data_severity_error")
+            return AppLocalization.localizedString("data_severity_error")
         }
     }
 
     private func categoryTitle(for category: InboundDataCategory) -> String {
         switch category {
         case .voice:
-            return String(localized: "data_category_voice")
+            return AppLocalization.localizedString("data_category_voice")
         case .pairing:
-            return String(localized: "data_category_pairing")
+            return AppLocalization.localizedString("data_category_pairing")
         case .connection:
-            return String(localized: "data_category_connection")
+            return AppLocalization.localizedString("data_category_connection")
         }
     }
 }
@@ -1980,7 +2013,7 @@ struct AboutTab: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding(8)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private var aboutHero: some View {
@@ -2007,30 +2040,44 @@ struct AboutTab: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 if showsInlineHeader {
-                    Text(String(localized: "app_title"))
+                    Text(AppLocalization.localizedString("app_title"))
                         .font(.system(size: 34, weight: .bold))
                         .foregroundColor(MainWindowColors.title)
                 }
 
-                Text(String(localized: "about_title"))
+                Text(AppLocalization.localizedString("about_title"))
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(MainWindowColors.title)
 
-                Text(String(localized: "about_description"))
+                Text(AppLocalization.localizedString("about_description"))
                     .font(.body)
                     .foregroundColor(MainWindowColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 12) {
-                    Label(String(localized: "about_version"), systemImage: "number.circle")
+                    Label(AppLocalization.localizedString("about_version"), systemImage: "number.circle")
                         .font(.subheadline.weight(.medium))
                         .foregroundColor(MainWindowColors.secondaryText)
                         .onTapGesture(count: 2, perform: onRevealDebug)
 
-                    Button(String(localized: "about_open_guide")) {
+                    Button(AppLocalization.localizedString("about_open_guide")) {
                         onOpenGuide()
                     }
                     .buttonStyle(.borderedProminent)
+
+                    Button(AppLocalization.localizedString("about_website")) {
+                        if let url = URL(string: "https://voicemind.top-list.top") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button(AppLocalization.localizedString("about_privacy_policy")) {
+                        if let url = URL(string: "https://voicemind.top-list.top/privacy.html") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    .buttonStyle(.bordered)
                 }
             }
 
@@ -2050,15 +2097,15 @@ struct AboutTab: View {
     private var aboutHighlights: some View {
         HStack(alignment: .top, spacing: 18) {
             aboutHighlightCard(
-                systemImage: "desktopcomputer.and.iphone",
-                title: String(localized: "main_nav_collaboration"),
-                description: String(localized: "about_description")
+                systemImage: "laptopcomputer.and.iphone",
+                title: AppLocalization.localizedString("main_nav_collaboration"),
+                description: AppLocalization.localizedString("about_description")
             )
 
             aboutHighlightCard(
                 systemImage: "book.pages",
-                title: String(localized: "about_open_guide"),
-                description: String(localized: "main_brand_subtitle")
+                title: AppLocalization.localizedString("about_open_guide"),
+                description: AppLocalization.localizedString("main_brand_subtitle")
             )
         }
     }
@@ -2080,7 +2127,7 @@ struct AboutTab: View {
 
             Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, minHeight: 170, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .padding(22)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -2102,24 +2149,24 @@ struct NotesTab: View {
     var body: some View {
         VStack(spacing: 20) {
             if showsInlineHeader {
-                Text(String(localized: "note_title"))
+                Text(AppLocalization.localizedString("note_title"))
                     .font(.title)
                     .padding(.top)
             }
 
-            // Note text display
+            // Note text display - expands to fill available space
             Group {
                 if NotesTextSelectionPolicy.allowsSelection(for: controller.noteText) {
                     Text(controller.noteText)
                         .textSelection(.enabled)
                 } else {
-                    Text(String(localized: "note_placeholder"))
+                    Text(AppLocalization.localizedString("note_placeholder"))
                         .textSelection(.disabled)
                 }
             }
             .font(.body)
             .foregroundColor(controller.noteText.isEmpty ? MainWindowColors.secondaryText : MainWindowColors.title)
-            .frame(maxWidth: .infinity, minHeight: 200, alignment: .topLeading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding()
             .background(MainWindowColors.cardSurface)
             .overlay(
@@ -2128,10 +2175,10 @@ struct NotesTab: View {
             )
             .cornerRadius(12)
 
-            Spacer()
+            // Recording button - centered below text box
+            HStack(spacing: 20) {
+                Spacer()
 
-            // Recording button
-            VStack(spacing: 12) {
                 RecordButton(
                     isRecording: controller.isLocalRecording,
                     onStartRecording: {
@@ -2142,19 +2189,31 @@ struct NotesTab: View {
                     }
                 )
 
-                Text(controller.isLocalRecording ? String(localized: "note_recording") : String(localized: "note_placeholder"))
-                    .font(.caption)
-                    .foregroundColor(controller.isLocalRecording ? .red : MainWindowColors.secondaryText)
-
-                Button(action: {
-                    controller.clearNote()
-                }) {
-                    Label(String(localized: "note_clear"), systemImage: "trash")
-                }
-                .buttonStyle(.bordered)
-                .disabled(controller.noteText.isEmpty)
+                Spacer()
             }
-            .padding(.bottom, 40)
+            .padding(.bottom, 10)
+
+            // Status and clear button
+            HStack(spacing: 20) {
+                Spacer()
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(controller.isLocalRecording ? AppLocalization.localizedString("note_recording") : AppLocalization.localizedString("note_placeholder"))
+                        .font(.caption)
+                        .foregroundColor(controller.isLocalRecording ? .red : MainWindowColors.secondaryText)
+
+                    Button(action: {
+                        controller.clearNote()
+                    }) {
+                        Label(AppLocalization.localizedString("note_clear"), systemImage: "trash")
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(controller.noteText.isEmpty)
+                }
+
+                Spacer()
+            }
+            .padding(.bottom, 20)
         }
         .padding()
     }

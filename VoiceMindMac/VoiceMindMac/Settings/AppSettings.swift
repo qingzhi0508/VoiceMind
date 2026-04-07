@@ -67,6 +67,7 @@ class AppSettings: ObservableObject {
         static let hotkeyModifiers = "hotkeyModifiers"
         static let hotkeyKey = "hotkeyKey"
         static let language = "language"
+        static let uiLanguage = "uiLanguage"
         static let serverPort = "serverPort"
         static let hasCustomizedServerPort = "hasCustomizedServerPort"
         static let themePreference = "themePreference"
@@ -91,6 +92,12 @@ class AppSettings: ObservableObject {
     @Published var language: String {
         didSet {
             defaults.set(language, forKey: Keys.language)
+        }
+    }
+
+    @Published var uiLanguage: String {
+        didSet {
+            defaults.set(uiLanguage, forKey: Keys.uiLanguage)
         }
     }
 
@@ -129,11 +136,18 @@ class AppSettings: ObservableObject {
         let savedKey = defaults.integer(forKey: Keys.hotkeyKey)
         self.hotkeyKey = savedKey > 0 ? UInt16(savedKey) : 49 // Default: Space (0x31)
 
-        // Load language
+        // Load language (speech recognition language)
         if let savedLanguage = defaults.string(forKey: Keys.language) {
             self.language = savedLanguage
         } else {
             self.language = "zh-CN" // Default
+        }
+
+        // Load UI language
+        if let savedUILanguage = defaults.string(forKey: Keys.uiLanguage) {
+            self.uiLanguage = savedUILanguage
+        } else {
+            self.uiLanguage = "zh-CN" // Default
         }
 
         let savedPort = defaults.integer(forKey: Keys.serverPort)
@@ -161,6 +175,7 @@ class AppSettings: ObservableObject {
         hotkeyModifiers = 0x80000 // Option
         hotkeyKey = 49 // Space
         language = "zh-CN"
+        uiLanguage = "zh-CN"
         serverPort = ListeningPortMigrationPolicy.defaultPort
         defaults.set(false, forKey: Keys.hasCustomizedServerPort)
         themePreference = .system

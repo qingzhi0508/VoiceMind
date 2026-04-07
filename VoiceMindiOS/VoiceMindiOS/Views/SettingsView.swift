@@ -99,6 +99,8 @@ struct SettingsView: View {
                 languages: languages,
                 onSelectLanguage: selectLanguage
             )
+        case .about:
+            SettingsAboutSection()
         case .support:
             SettingsPermissionsSupportSection(
                 viewModel: viewModel,
@@ -106,7 +108,9 @@ struct SettingsView: View {
                 versionText: "1.0.0",
                 requestPermissions: requestPermissions,
                 showOnboarding: { showOnboarding = true },
-                contactSupport: contactSupport
+                contactSupport: contactSupport,
+                openTermsOfUse: openTermsOfUse,
+                openPrivacyPolicy: openPrivacyPolicy
             )
         }
     }
@@ -137,6 +141,20 @@ struct SettingsView: View {
                 showSupportMailUnavailableAlert = true
             }
         }
+    }
+
+    private func openPrivacyPolicy() {
+        guard let privacyURL = SettingsMembershipLinkPolicy.privacyPolicyURL else {
+            return
+        }
+        openURL(privacyURL)
+    }
+
+    private func openTermsOfUse() {
+        guard let termsURL = SettingsMembershipLinkPolicy.termsOfUseURL else {
+            return
+        }
+        openURL(termsURL)
     }
 }
 
@@ -388,6 +406,8 @@ private struct SettingsPermissionsSupportSection: View {
     let requestPermissions: () -> Void
     let showOnboarding: () -> Void
     let contactSupport: () -> Void
+    let openTermsOfUse: () -> Void
+    let openPrivacyPolicy: () -> Void
 
     var body: some View {
         Section {
@@ -451,6 +471,40 @@ private struct SettingsPermissionsSupportSection: View {
                         .frame(width: 30)
 
                     Text(String(localized: "settings_contact_support"))
+                        .foregroundColor(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                }
+            }
+        case .termsOfUse:
+            Button(action: openTermsOfUse) {
+                HStack {
+                    Image(systemName: "doc.text.fill")
+                        .foregroundColor(.blue)
+                        .frame(width: 30)
+
+                    Text(String(localized: "settings_terms_of_use"))
+                        .foregroundColor(.primary)
+
+                    Spacer()
+
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                }
+            }
+        case .privacyPolicy:
+            Button(action: openPrivacyPolicy) {
+                HStack {
+                    Image(systemName: "hand.raised.fill")
+                        .foregroundColor(.blue)
+                        .frame(width: 30)
+
+                    Text(String(localized: "settings_privacy_policy"))
                         .foregroundColor(.primary)
 
                     Spacer()
@@ -627,5 +681,34 @@ struct PermissionRow: View {
             Image(systemName: isGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
                 .foregroundColor(isGranted ? .green : .red)
         }
+    }
+}
+
+private struct SettingsAboutSection: View {
+    var body: some View {
+        Section {
+            if let websiteURL = SettingsMembershipLinkPolicy.websiteURL {
+                Link(destination: websiteURL) {
+                    HStack {
+                        Image(systemName: "globe")
+                            .foregroundColor(.blue)
+                            .frame(width: 30)
+
+                        Text(String(localized: "settings_website"))
+                            .foregroundColor(.primary)
+
+                        Spacer()
+
+                        Image(systemName: "arrow.up.right.square")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+        } header: {
+            Text(String(localized: "settings_about"))
+        }
+        .modifier(AppGroupedRowSurface())
     }
 }

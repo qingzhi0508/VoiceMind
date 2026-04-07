@@ -464,6 +464,10 @@ enum PrimaryRecognitionLayoutPolicy {
     static func recognitionControlAlignment(showingTranscriptPreview: Bool) -> Alignment {
         .center
     }
+
+    static func transcriptCardHorizontalPadding(showingTranscriptPreview: Bool) -> CGFloat {
+        showingTranscriptPreview ? AppPageLayout.horizontalPadding : 0
+    }
 }
 
 enum HomeModeTogglePlacementPolicy {
@@ -1065,7 +1069,8 @@ struct TranscriptCard: View {
                 isEditable: isEditable
             )
             .frame(height: 150)
-            .padding(.horizontal, 2)
+            .padding(.leading, 8)
+            .padding(.trailing, 8)
 
             if transcriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
@@ -1083,7 +1088,7 @@ struct TranscriptCard: View {
                             .foregroundColor(.secondary)
                     }
                 }
-                .padding(.top, 12)
+                .padding(.top, 0)
                 .padding(.leading, 8)
                 .allowsHitTesting(false)
             }
@@ -1098,7 +1103,8 @@ struct TranscriptCard: View {
                 .stroke(transcriptCardBorder, lineWidth: 1)
         )
         .shadow(color: transcriptCardShadow, radius: 18, x: 0, y: 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .clipped()
     }
 
     private var transcriptCardBackground: AnyShapeStyle {
@@ -1201,6 +1207,12 @@ struct PrimaryRecognitionPage: View {
                                 .combined(with: .opacity)
                                 .combined(with: .scale(scale: 0.96, anchor: .top)),
                             removal: .opacity
+                        )
+                    )
+                    .padding(
+                        .horizontal,
+                        PrimaryRecognitionLayoutPolicy.transcriptCardHorizontalPadding(
+                            showingTranscriptPreview: viewModel.shouldShowTranscriptPreviewOnHome
                         )
                     )
                     .padding(.top, 4)
@@ -2026,7 +2038,7 @@ struct TranscriptTextView: UIViewRepresentable {
         textView.textColor = UIColor.label
         textView.alwaysBounceVertical = true
         textView.keyboardDismissMode = .interactive
-        textView.textContainerInset = UIEdgeInsets(top: 12, left: 2, bottom: 34, right: 2)
+        textView.textContainerInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
         textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textView.text = text
         textView.isEditable = isEditable

@@ -1,4 +1,4 @@
 "NSMicrophoneUsageDescription" = "VoiceMind 需要使用麦克风进行语音识别";
 "NSSpeechRecognitionUsageDescription" = "VoiceMind 需要使用语音识别功能将您的语音转换为文字";
-"NSLocalNetworkUsageDescription" = "VoiceMind 需要访问本地网络以连接到您的 Mac";
-"NSCameraUsageDescription" = "VoiceMind 需要使用相机扫描二维码以连接到您的 Mac";
+"NSLocalNetworkUsageDescription" = "VoiceMind 需要访问本地网络以连接到您的 桌面端";
+"NSCameraUsageDescription" = "VoiceMind 需要使用相机扫描二维码以连接到您的 桌面端";

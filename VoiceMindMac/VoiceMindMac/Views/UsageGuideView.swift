@@ -7,28 +7,28 @@ struct UsageGuideView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(String(localized: "usage_guide_title"))
+                Text(AppLocalization.localizedString("usage_guide_title"))
                     .font(.largeTitle)
                     .fontWeight(.bold)
 
-                Text(String(localized: "usage_guide_subtitle"))
+                Text(AppLocalization.localizedString("usage_guide_subtitle"))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                GuideStep(number: 1, text: String(localized: "usage_guide_step1"))
-                GuideStep(number: 2, text: String(format: String(localized: "quickstart_step1_format"), String(localized: "app_title")))
-                GuideStep(number: 3, text: String(localized: "usage_guide_step3"))
-                GuideStep(number: 4, text: String(localized: "usage_guide_step4"))
-                GuideStep(number: 5, text: String(localized: "quickstart_step4"))
+                GuideStep(number: 1, text: AppLocalization.localizedString("usage_guide_step1"))
+                GuideStep(number: 2, text: String(format: AppLocalization.localizedString("quickstart_step1_format"), AppLocalization.localizedString("app_title")))
+                GuideStep(number: 3, text: AppLocalization.localizedString("usage_guide_step3"))
+                GuideStep(number: 4, text: AppLocalization.localizedString("usage_guide_step4"))
+                GuideStep(number: 5, text: AppLocalization.localizedString("quickstart_step4"))
             }
             .padding(18)
             .background(Color.blue.opacity(0.08))
             .cornerRadius(14)
 
-            Text(String(localized: "usage_guide_footer"))
+            Text(AppLocalization.localizedString("usage_guide_footer"))
                 .font(.footnote)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -36,20 +36,20 @@ struct UsageGuideView: View {
             Spacer()
 
             HStack {
-                Button(String(localized: "close_button")) {
+                Button(AppLocalization.localizedString("close_button")) {
                     onClose()
                 }
                 .buttonStyle(.bordered)
 
                 Spacer()
 
-                Button(String(localized: "action_start_pairing")) {
+                Button(AppLocalization.localizedString("action_start_pairing")) {
                     onStartPairing()
                 }
                 .buttonStyle(.borderedProminent)
             }
         }
         .padding(24)
-        .frame(width: 520, height: 560)
+        .frame(width: 416, height: 448)
     }
 }

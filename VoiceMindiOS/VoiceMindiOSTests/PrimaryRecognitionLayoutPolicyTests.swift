@@ -16,4 +16,13 @@ struct PrimaryRecognitionLayoutPolicyTests {
             ) == .center
         )
     }
+
+    @Test
+    func transcriptPreviewKeepsHorizontalInset() {
+        #expect(
+            PrimaryRecognitionLayoutPolicy.transcriptCardHorizontalPadding(
+                showingTranscriptPreview: true
+            ) > 0
+        )
+    }
 }

@@ -179,4 +179,49 @@ struct SettingsMembershipPresentationPolicyTests {
             ) == [.lifetime]
         )
     }
+
+    @Test
+    func supportItemsIncludeTermsOfUseAndPrivacyPolicy() {
+        #expect(
+            SettingsInformationHierarchyPolicy.supportItems.contains(.termsOfUse)
+        )
+        #expect(
+            SettingsInformationHierarchyPolicy.supportItems.contains(.privacyPolicy)
+        )
+    }
+
+    @Test
+    func purchasePageDefaultsToMonthlyForFreeUsersAndOwnedPlanForMembers() {
+        #expect(
+            SettingsMembershipPurchasePolicy.defaultSelectedProductKind(
+                activeEntitlement: .free,
+                availableProductIDs: TwoDeviceSyncProductKind.allCases.map(\.rawValue)
+            ) == .monthly
+        )
+        #expect(
+            SettingsMembershipPurchasePolicy.defaultSelectedProductKind(
+                activeEntitlement: .yearly,
+                availableProductIDs: TwoDeviceSyncProductKind.allCases.map(\.rawValue)
+            ) == .yearly
+        )
+        #expect(
+            SettingsMembershipPurchasePolicy.defaultSelectedProductKind(
+                activeEntitlement: .lifetime,
+                availableProductIDs: TwoDeviceSyncProductKind.allCases.map(\.rawValue)
+            ) == .lifetime
+        )
+    }
+
+    @Test
+    func membershipBenefitsStayInExpectedOrder() {
+        #expect(
+            SettingsMembershipPresentationPolicy.benefitTitleKeys == [
+                "billing_membership_benefit_unlimited",
+                "billing_membership_benefit_batch",
+                "billing_membership_benefit_workspace",
+                "billing_membership_benefit_updates",
+                "billing_membership_benefit_sync"
+            ]
+        )
+    }
 }
