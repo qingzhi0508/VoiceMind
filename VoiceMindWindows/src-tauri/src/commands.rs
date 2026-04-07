@@ -4,6 +4,16 @@ use tauri::State;
 use std::net::UdpSocket;
 use tracing::info;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboundDataRecord {
+    pub id: String,
+    pub timestamp: String,
+    pub title: String,
+    pub detail: String,
+    pub category: String,  // "voice" | "pairing"
+    pub severity: String,  // "info" | "warning" | "error"
+}
+
 fn is_valid_local_ip(ip: &str) -> bool {
     // Filter out invalid/loopback/link-local IPs
     // Real network IPs (including 172.20.x.x, 192.168.x.x, 10.x.x.x) are accepted
@@ -630,5 +640,32 @@ pub async fn save_asr_config(state: State<'_, AppState>, config: AsrConfig) -> R
         language: asr_language,
     }));
 
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_accessibility_status() -> Result<String, String> {
+    Ok("granted".to_string())
+}
+
+#[tauri::command]
+pub async fn open_accessibility_settings() -> Result<(), String> {
+    std::process::Command::new("cmd")
+        .args(["/C", "start", "ms-settings:easeofaccess-keyboard"])
+        .spawn()
+        .map_err(|e| format!("Failed to open settings: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_inbound_data_records(state: State<'_, AppState>) -> Result<Vec<InboundDataRecord>, String> {
+    let records = state.inbound_data_records.lock().await;
+    Ok(records.iter().cloned().collect())
+}
+
+#[tauri::command]
+pub async fn clear_inbound_data_records(state: State<'_, AppState>) -> Result<(), String> {
+    let mut records = state.inbound_data_records.lock().await;
+    records.clear();
     Ok(())
 }

@@ -1,11 +1,15 @@
 use serde::{Deserialize, Serialize};
 
+fn default_theme() -> String { "system".to_string() }
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
     pub language: String,
     pub injection_method: String,
     pub server_port: u16,
     pub hotkey: String,
+    #[serde(default = "default_theme")]
+    pub theme: String,
     pub bonjour: BonjourSettings,
     pub asr: AsrSettings,
 }
@@ -32,6 +36,7 @@ impl Default for Settings {
             injection_method: "keyboard".to_string(),
             server_port: 8765,
             hotkey: "".to_string(),
+            theme: "system".to_string(),
             bonjour: BonjourSettings { enabled: true },
             asr: AsrSettings {
                 provider: "".to_string(),

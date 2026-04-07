@@ -253,6 +253,7 @@ impl ConnectionManager {
         &mut self,
         port: u16,
         pairing_manager: Arc<Mutex<PairingManager>>,
+        history_store: Arc<Mutex<crate::speech::HistoryStore>>,
     ) -> Result<(), String> {
         self.server_port = port;
         let addr = format!("0.0.0.0:{port}");
@@ -274,6 +275,7 @@ impl ConnectionManager {
                         let connections = connections.clone();
                         let pairing_manager = pairing_manager.clone();
                         let emitter = emitter.clone();
+                        let history_store = history_store.clone();
                         tokio::spawn(async move {
                             if let Err(err) = handle_connection(
                                 conn_id,
@@ -281,6 +283,7 @@ impl ConnectionManager {
                                 connections,
                                 pairing_manager,
                                 emitter,
+                                history_store,
                             )
                             .await
                             {
@@ -416,6 +419,7 @@ async fn handle_connection(
     connections: Arc<RwLock<HashMap<String, Connection>>>,
     pairing_manager: Arc<Mutex<PairingManager>>,
     event_emitter: Arc<Mutex<EventEmitter>>,
+    history_store: Arc<Mutex<crate::speech::HistoryStore>>,
 ) -> Result<(), String> {
     info!("handle_connection START: conn_id={}", conn_id);
     let (reader, writer) = stream.into_split();
@@ -451,6 +455,7 @@ async fn handle_connection(
         &connections,
         &pairing_manager,
         &event_emitter,
+        &history_store,
     )
     .await;
 
@@ -479,6 +484,7 @@ async fn read_loop(
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
     pairing_manager: &Arc<Mutex<PairingManager>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
+    history_store: &Arc<Mutex<crate::speech::HistoryStore>>,
 ) -> Result<(), String> {
     loop {
         let mut length_buf = [0_u8; 4];
@@ -513,6 +519,7 @@ async fn read_loop(
             connections,
             pairing_manager,
             event_emitter,
+            history_store,
         )
         .await?;
     }
@@ -524,6 +531,7 @@ async fn process_message(
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
     pairing_manager: &Arc<Mutex<PairingManager>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
+    history_store: &Arc<Mutex<crate::speech::HistoryStore>>,
 ) -> Result<(), String> {
     let message_type = MessageType::from_str(&envelope.type_)
         .ok_or_else(|| format!("Unknown message type: {}", envelope.type_))?;
@@ -557,9 +565,9 @@ async fn process_message(
         }
         MessageType::Ping => handle_ping(conn_id, envelope, connections).await,
         MessageType::Pong => handle_pong(conn_id, connections).await,
-        MessageType::Result => handle_result(conn_id, envelope, connections, event_emitter).await,
+        MessageType::Result => handle_result(conn_id, envelope, connections, event_emitter, history_store).await,
         MessageType::TextMessage => {
-            handle_text_message(conn_id, envelope, connections, event_emitter).await
+            handle_text_message(conn_id, envelope, connections, event_emitter, history_store).await
         }
         MessageType::PartialResult => handle_partial_result(conn_id, envelope, event_emitter).await,
         MessageType::AudioStart => handle_audio_start(conn_id, envelope, connections, event_emitter).await,
@@ -891,6 +899,7 @@ async fn handle_result(
     envelope: Envelope,
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
+    history_store: &Arc<Mutex<crate::speech::HistoryStore>>,
 ) -> Result<(), String> {
     let payload: ResultPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid result payload: {}", e))?;
@@ -902,6 +911,12 @@ async fn handle_result(
         let conns = connections.read().await;
         conns.get(conn_id).and_then(|conn| conn.device_name.clone())
     };
+
+    // Save to history
+    {
+        let mut store = history_store.lock().await;
+        store.add(payload.text.clone(), device_name.clone().unwrap_or_else(|| "iOS".to_string()), Some(payload.session_id.clone()));
+    }
 
     inject_text(&payload.text);
     let emitter = event_emitter.lock().await;
@@ -919,6 +934,7 @@ async fn handle_text_message(
     envelope: Envelope,
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
+    history_store: &Arc<Mutex<crate::speech::HistoryStore>>,
 ) -> Result<(), String> {
     let payload: TextMessagePayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid textMessage payload: {}", e))?;
@@ -943,6 +959,12 @@ async fn handle_text_message(
             None
         }
     };
+
+    // Save to history
+    {
+        let mut store = history_store.lock().await;
+        store.add(payload.text.clone(), device_name.clone().unwrap_or_else(|| "iOS".to_string()), Some(payload.session_id.clone()));
+    }
 
     info!("Injecting text: {}", payload.text);
     inject_text(&payload.text);

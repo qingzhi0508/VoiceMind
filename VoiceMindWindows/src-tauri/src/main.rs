@@ -34,6 +34,7 @@ pub struct AppState {
     pub settings_store: Arc<Mutex<settings::SettingsStore>>,
     pub bonjour_service: Arc<Mutex<Option<bonjour::BonjourService>>>,
     pub asr_provider: Arc<Mutex<Option<asr::VeAnchorProvider>>>,
+    pub inbound_data_records: Arc<Mutex<std::collections::VecDeque<crate::commands::InboundDataRecord>>>,
 }
 
 fn setup_logging() {
@@ -90,6 +91,7 @@ fn main() {
                 settings_store: Arc::new(Mutex::new(settings::SettingsStore::new())),
                 bonjour_service: Arc::new(Mutex::new(None)),
                 asr_provider: Arc::new(Mutex::new(None)),
+                inbound_data_records: Arc::new(Mutex::new(std::collections::VecDeque::new())),
             };
 
             // Manage state first before accessing it
@@ -98,6 +100,7 @@ fn main() {
             // Set app handle for connection manager and start WebSocket server
             let conn_mgr = app.state::<AppState>().connection_manager.clone();
             let pairing_mgr = app.state::<AppState>().pairing_manager.clone();
+            let history_store = app.state::<AppState>().history_store.clone();
             let app_handle = app.handle().clone();
             let server_port = init_settings.server_port;
             
@@ -110,7 +113,7 @@ fn main() {
                 
                 // Start WebSocket server
                 let mut conn_mgr_guard = conn_mgr.lock().await;
-                match conn_mgr_guard.start_server(server_port, pairing_mgr).await {
+                match conn_mgr_guard.start_server(server_port, pairing_mgr, history_store.clone()).await {
                     Ok(_) => {
                         info!("WebSocket server started on port {}", server_port);
                     }
@@ -248,6 +251,10 @@ fn main() {
             commands::start_listening,
             commands::stop_listening,
             commands::get_listening_status,
+            commands::get_accessibility_status,
+            commands::open_accessibility_settings,
+            commands::get_inbound_data_records,
+            commands::clear_inbound_data_records,
         ])
         .run(tauri::generate_context!());
 

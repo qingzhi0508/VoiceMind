@@ -142,12 +142,24 @@ impl EventEmitter {
                 message: message.clone(),
                 recoverable,
             };
-            
+
             if let Err(e) = handle.emit("error", event) {
                 error!("Failed to emit error event: {}", e);
             } else {
                 info!("Emitted error event: {}", code);
             }
+        }
+    }
+
+    pub fn emit_service_state_changed(&self, running: bool) {
+        if let Some(ref handle) = self.app_handle {
+            let _ = handle.emit("service-state-changed", serde_json::json!({ "running": running }));
+        }
+    }
+
+    pub fn emit_new_inbound_data(&self, record: &crate::commands::InboundDataRecord) {
+        if let Some(ref handle) = self.app_handle {
+            let _ = handle.emit("new-inbound-data", record);
         }
     }
 }

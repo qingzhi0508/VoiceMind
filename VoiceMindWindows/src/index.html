@@ -5,186 +5,947 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VoiceMind Windows</title>
   <style>
-    :root{--bg:#f1f4fb;--side1:#f7f9fd;--side2:#edf2fb;--canvas:#fff;--surface:#f8faff;--line:#dbe5f1;--title:#172232;--text:#344055;--muted:#66758f;--primary:#2f78f7;--primarySoft:rgba(47,120,247,.12);--primaryBorder:#7caefb;--success:#24a56d;--warning:#d9971e;--danger:#d74e4e;--shadow:0 18px 36px rgba(22,34,50,.08);--radius:22px;--side:280px;--font:"Segoe UI","Microsoft YaHei",sans-serif}
-    *{box-sizing:border-box} body{margin:0;min-height:100vh;font-family:var(--font);color:var(--text);background:radial-gradient(circle at top left,rgba(47,120,247,.16),transparent 28%),radial-gradient(circle at bottom right,rgba(36,165,109,.12),transparent 20%),var(--bg)}
-    .app{display:grid;grid-template-columns:var(--side) 1fr;min-height:100vh}.sidebar{display:flex;flex-direction:column;gap:22px;padding:22px;background:linear-gradient(180deg,var(--side1),var(--side2));border-right:1px solid rgba(219,229,241,.88)}
-    .brand{display:flex;gap:14px;align-items:center}.brand-icon{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#ff9b2f,#f5d34d 55%,#39c783)}.brand h1{margin:0;font-size:26px;color:var(--title)}.brand p{margin:2px 0 0;font-size:14px;color:var(--muted)}
-    .nav{display:grid;gap:10px}.nav.secondary{margin-top:auto}.nav-item{display:flex;gap:14px;align-items:center;width:100%;border:0;background:transparent;border-radius:18px;padding:14px 18px;font:inherit;color:var(--muted);text-align:left;cursor:pointer}.nav-item:hover,.nav-item.active{color:var(--title);background:var(--primarySoft)}.nav-item.active{box-shadow:inset 0 0 0 2px var(--primaryBorder)}.nav-icon{width:24px;text-align:center}
-    .status{padding:16px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.84);box-shadow:var(--shadow)}.status-top{display:flex;gap:10px;align-items:center;margin-bottom:6px}.dot{width:11px;height:11px;border-radius:50%;background:#a9b6c9}.dot.connected{background:var(--success)}.dot.listening{background:var(--danger)}.dot.connecting{background:var(--warning)} .status strong{color:var(--title)} .status p{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
-    .content{padding:18px}.canvas{min-height:calc(100vh - 36px);border-radius:28px;border:1px solid rgba(219,229,241,.92);background:var(--canvas);box-shadow:var(--shadow);padding:30px}.page{display:none}.page.active{display:block}
-    .head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:24px}.head h2{margin:0;font-size:34px;color:var(--title)}.head p{margin:8px 0 0;color:var(--muted);max-width:680px;line-height:1.6}
-    .grid3,.grid2,.status-grid{display:grid;gap:16px}.grid3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid2{grid-template-columns:1.2fr 1fr}.status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .card{padding:22px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface)}.card h3{margin:0 0 8px;color:var(--title);font-size:22px}.card p{margin:0;color:var(--muted);line-height:1.6}
-    .stat .label,.mini .label{font-size:14px;color:var(--muted)}.stat .value{margin-top:10px;color:var(--title);font-size:24px;font-weight:700}.mini{padding:16px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.72)}.mini .value{margin-top:8px;color:var(--title);font-size:18px;font-weight:700;line-height:1.45}
-    .toolbar{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}.btn{border:0;border-radius:16px;padding:12px 16px;font:inherit;cursor:pointer}.btn.primary{background:var(--primary);color:#fff}.btn.secondary{background:#eef4ff;color:var(--title);border:1px solid var(--line)}.btn.danger{background:#db5757;color:#fff}.btn:disabled{opacity:.55;cursor:not-allowed}
-    .mic{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:290px}.mic-button{width:130px;height:130px;border-radius:999px;border:0;background:linear-gradient(145deg,#2f78f7,#64a8ff);color:#fff;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 18px 34px rgba(47,120,247,.28)}.mic-button.listening{background:linear-gradient(145deg,#eb5a5a,#c83b3b);box-shadow:0 18px 34px rgba(215,78,78,.24)}
-    .preview{min-height:160px;margin-top:18px;border-radius:18px;border:1px solid var(--line);background:#fff;padding:18px;color:var(--title);line-height:1.8;white-space:pre-wrap;word-break:break-word}
-    .list{display:grid;gap:14px;margin-top:18px}.item{display:flex;gap:16px;justify-content:space-between;border-radius:20px;border:1px solid var(--line);background:rgba(255,255,255,.8);padding:18px}.item-main{min-width:0}.item-title{color:var(--title);font-weight:700;margin-bottom:6px}.item-detail{color:var(--muted);line-height:1.6;word-break:break-word}.item-meta{width:148px;color:var(--muted);font-size:13px;line-height:1.6;text-align:right;flex-shrink:0}.empty{padding:26px;border-radius:18px;border:1px dashed var(--line);color:var(--muted);background:rgba(247,250,255,.72);text-align:center}
-    .qr{display:grid;place-items:center;min-height:250px;margin-top:18px;border-radius:20px;border:1px dashed var(--line);background:#fff;overflow:hidden}.qr img{width:220px;height:220px;object-fit:contain}.code{margin-top:18px;text-align:center;font-size:34px;font-weight:700;letter-spacing:8px;color:var(--title)}
-    .form{display:grid;gap:14px;max-width:680px;margin-top:18px}label{display:grid;gap:8px;color:var(--muted);font-size:14px}input,select{width:100%;border-radius:14px;border:1px solid var(--line);padding:12px 14px;font:inherit;color:var(--title);background:#fff}
-    .banner{display:none;margin-bottom:18px;border-radius:16px;border:1px solid rgba(217,151,30,.3);background:rgba(217,151,30,.12);color:#86611d;padding:14px 16px}.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(47,120,247,.1);color:var(--primary);font-size:13px;font-weight:600}.toast{position:fixed;right:22px;bottom:22px;z-index:1000;max-width:320px;padding:14px 16px;border-radius:16px;background:rgba(23,34,50,.94);color:#fff;box-shadow:var(--shadow)}
-    @media (max-width:1080px){.app{grid-template-columns:1fr}.sidebar{border-right:0;border-bottom:1px solid rgba(219,229,241,.88)}.grid3,.grid2,.status-grid{grid-template-columns:1fr}.item{flex-direction:column}.item-meta{width:auto;text-align:left}}
+    :root {
+      --pageBg: #F2F4FA;
+      --sidebarBgTop: #F6F7FC;
+      --sidebarBgBottom: #ECEEF7;
+      --sidebarSelectedFill: #DDE4F2;
+      --sidebarSelectedBorder: #5B9AB5;
+      --sidebarText: #4D5C78;
+      --sidebarTextSelected: #17203A;
+      --canvasBg: #FFFFFF;
+      --canvasBorder: rgba(0,0,0,0.08);
+      --cardSurface: #FFFFFF;
+      --cardBorder: rgba(0,0,0,0.10);
+      --softSurface: #F5F6FA;
+      --title: #17203A;
+      --primaryText: #2E3A52;
+      --secondaryText: #6B7A96;
+      --accent: #00B4DD;
+      --accentOrange: #E07830;
+      --accentGreen: #22C55E;
+      --accentRed: #EF4444;
+      --accentSoft: rgba(0,180,221,0.12);
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+      --shadowLg: 0 8px 24px rgba(0,0,0,0.10);
+      --radius: 16px;
+      --side: 200px;
+      --font: "Segoe UI","Microsoft YaHei",sans-serif;
+    }
+    [data-theme="dark"] {
+      --pageBg: #141828;
+      --sidebarBgTop: #19222E;
+      --sidebarBgBottom: #141C28;
+      --sidebarSelectedFill: #2E3D56;
+      --sidebarSelectedBorder: #619FAF;
+      --sidebarText: #9EB2C8;
+      --sidebarTextSelected: #EEEEFF;
+      --canvasBg: #1C2130;
+      --canvasBorder: #2A3448;
+      --cardSurface: #212840;
+      --cardBorder: #3A4860;
+      --softSurface: #1E2636;
+      --title: #EEEEFF;
+      --primaryText: #D0D8EE;
+      --secondaryText: #9EB2C8;
+      --accent: #00D4FF;
+      --accentOrange: #FF8C42;
+      --accentGreen: #4ADE80;
+      --accentRed: #F87171;
+      --accentSoft: rgba(0,212,255,0.12);
+      --shadow: 0 2px 8px rgba(0,0,0,0.2);
+      --shadowLg: 0 8px 24px rgba(0,0,0,0.25);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: var(--font); color: var(--primaryText); background: var(--pageBg); }
+
+    /* Layout */
+    .app { display: grid; grid-template-columns: var(--side) 1fr; min-height: 100vh; }
+    .sidebar { display: flex; flex-direction: column; gap: 16px; padding: 16px; background: linear-gradient(180deg, var(--sidebarBgTop), var(--sidebarBgBottom)); border-right: 1px solid var(--canvasBorder); }
+    .content { padding: 14px; }
+    .canvas { min-height: calc(100vh - 28px); border-radius: 20px; border: 1px solid var(--canvasBorder); background: var(--canvasBg); box-shadow: var(--shadowLg); padding: 28px; }
+
+    /* Brand */
+    .brand { display: flex; gap: 12px; align-items: center; }
+    .brand-icon { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #ff9b2f, #f5d34d 55%, #39c783); font-size: 16px; font-weight: 700; }
+    .brand h1 { margin: 0; font-size: 20px; color: var(--title); }
+    .brand p { margin: 2px 0 0; font-size: 12px; color: var(--secondaryText); }
+
+    /* Navigation */
+    .nav { display: grid; gap: 4px; }
+    .nav.secondary { margin-top: auto; }
+    .nav-item { display: flex; gap: 10px; align-items: center; width: 100%; border: 0; background: transparent; border-radius: 12px; padding: 12px 14px; font: inherit; font-size: 13px; color: var(--sidebarText); text-align: left; cursor: pointer; transition: background 0.15s ease; }
+    .nav-item:hover { background: var(--sidebarSelectedFill); color: var(--sidebarTextSelected); }
+    .nav-item.active { color: var(--sidebarTextSelected); background: var(--sidebarSelectedFill); box-shadow: inset 0 0 0 2px var(--sidebarSelectedBorder); }
+    .nav-icon { width: 20px; height: 20px; display: grid; place-items: center; font-size: 14px; }
+
+    /* Sidebar status */
+    .sidebar-status { padding: 12px; border-radius: 12px; border: 1px solid var(--cardBorder); background: var(--softSurface); }
+    .sidebar-status-top { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--secondaryText); }
+    .dot.connected { background: var(--accentGreen); }
+    .dot.listening { background: var(--accentRed); }
+    .dot.connecting { background: var(--accentOrange); }
+    .sidebar-status strong { color: var(--title); font-size: 13px; }
+    .sidebar-status p { margin: 0; font-size: 12px; color: var(--secondaryText); line-height: 1.4; }
+
+    /* Pages */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* Head */
+    .head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 24px; }
+    .head h2 { margin: 0; font-size: 28px; color: var(--title); font-weight: 700; }
+    .head p { margin: 6px 0 0; color: var(--secondaryText); max-width: 640px; line-height: 1.5; font-size: 14px; }
+
+    /* Cards */
+    .card { padding: 20px; border-radius: var(--radius); border: 1px solid var(--cardBorder); background: var(--cardSurface); margin-bottom: 16px; }
+    .card h3 { margin: 0 0 10px; color: var(--title); font-size: 16px; font-weight: 600; }
+    .card > p { margin: 0; color: var(--secondaryText); line-height: 1.5; font-size: 14px; }
+
+    /* Grids */
+    .grid2, .grid3, .grid2x2 { display: grid; gap: 12px; }
+    .grid2 { grid-template-columns: 1fr 1fr; }
+    .grid3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .grid2x2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+
+    /* Mini cards */
+    .mini { padding: 14px; border-radius: 12px; border: 1px solid var(--cardBorder); background: var(--softSurface); }
+    .mini .label { font-size: 13px; color: var(--secondaryText); }
+    .mini .value { margin-top: 6px; color: var(--title); font-size: 16px; font-weight: 700; line-height: 1.4; }
+
+    /* Stats badges */
+    .stats-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+    .stat-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; background: var(--softSurface); border: 1px solid var(--cardBorder); color: var(--primaryText); }
+    .stat-badge .badge-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .stat-badge.connected { background: rgba(34,197,94,0.12); color: var(--accentGreen); }
+    .stat-badge.connected .badge-dot { background: var(--accentGreen); }
+    .stat-badge.disconnected .badge-dot { background: var(--secondaryText); }
+    .stat-badge.listening { background: rgba(239,68,68,0.12); color: var(--accentRed); }
+    .stat-badge.listening .badge-dot { background: var(--accentRed); }
+    .stat-badge.success { background: rgba(34,197,94,0.12); color: var(--accentGreen); }
+    .stat-badge.accent { background: var(--accentSoft); color: var(--accent); }
+
+    /* Buttons */
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .btn { border: 0; border-radius: 12px; padding: 10px 18px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.85; }
+    .btn.primary { background: var(--accent); color: #1a1a2e; }
+    .btn.secondary { background: var(--softSurface); color: var(--primaryText); border: 1px solid var(--cardBorder); }
+    .btn.danger { background: var(--accentRed); color: #fff; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Segmented picker */
+    .seg-picker { display: inline-flex; border-radius: 10px; border: 1px solid var(--cardBorder); overflow: hidden; background: var(--softSurface); }
+    .seg { padding: 8px 16px; border: 0; background: transparent; color: var(--secondaryText); font: inherit; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+    .seg.active { background: var(--accent); color: #1a1a2e; font-weight: 600; }
+
+    /* Radio group */
+    .radio-group { display: grid; gap: 10px; margin-top: 8px; }
+    .radio-option { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--cardBorder); background: var(--softSurface); cursor: pointer; font-size: 14px; color: var(--primaryText); }
+    .radio-option:hover { border-color: var(--accent); }
+    .radio-option input[type="radio"] { accent-color: var(--accent); }
+    .radio-option .radio-hint { font-size: 12px; color: var(--secondaryText); margin-left: auto; }
+
+    /* Engine list */
+    .engine-row { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 12px; border: 1px solid var(--cardBorder); margin-bottom: 8px; cursor: default; }
+    .engine-row.selected { border-color: var(--accent); background: var(--accentSoft); }
+    .engine-radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--cardBorder); display: grid; place-items: center; }
+    .engine-row.selected .engine-radio { border-color: var(--accent); }
+    .engine-radio::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: transparent; }
+    .engine-row.selected .engine-radio::after { background: var(--accent); }
+    .engine-info { flex: 1; }
+    .engine-name { font-weight: 600; color: var(--title); font-size: 14px; }
+    .engine-langs { font-size: 12px; color: var(--secondaryText); margin-top: 2px; }
+    .engine-status { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+    .engine-status.available { background: rgba(34,197,94,0.12); color: var(--accentGreen); }
+
+    /* List */
+    .list { display: grid; gap: 10px; margin-top: 14px; }
+    .item { display: flex; gap: 14px; justify-content: space-between; border-radius: 12px; border: 1px solid var(--cardBorder); background: var(--softSurface); padding: 14px; }
+    .item-main { min-width: 0; flex: 1; }
+    .item-title { color: var(--title); font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .item-detail { color: var(--secondaryText); line-height: 1.5; font-size: 13px; word-break: break-word; }
+    .item-meta { width: 130px; color: var(--secondaryText); font-size: 12px; line-height: 1.5; text-align: right; flex-shrink: 0; }
+    .empty { padding: 24px; border-radius: 12px; border: 1px dashed var(--cardBorder); color: var(--secondaryText); background: var(--softSurface); text-align: center; font-size: 14px; }
+
+    /* Date group */
+    .date-group { margin-bottom: 12px; }
+    .date-label { font-size: 13px; font-weight: 600; color: var(--secondaryText); margin-bottom: 8px; padding-left: 2px; }
+
+    /* Source badge */
+    .source-badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+    .source-badge.ios { background: rgba(0,180,221,0.12); color: var(--accent); }
+    .source-badge.local { background: rgba(224,120,48,0.12); color: var(--accentOrange); }
+
+    /* Severity badge */
+    .sev { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; margin-right: 6px; }
+    .sev.info { background: rgba(34,197,94,0.12); color: var(--accentGreen); }
+    .sev.warning { background: rgba(224,120,48,0.12); color: var(--accentOrange); }
+    .sev.error { background: rgba(239,68,68,0.12); color: var(--accentRed); }
+
+    /* Search */
+    .search-input { width: 100%; border-radius: 10px; border: 1px solid var(--cardBorder); padding: 10px 14px; font: inherit; font-size: 13px; color: var(--primaryText); background: var(--softSurface); }
+    .search-input:focus { outline: none; border-color: var(--accent); }
+    .search-row { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+    .search-row .search-input { flex: 1; }
+
+    /* Summary badges */
+    .summary-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .summary-badge { padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; background: var(--softSurface); border: 1px solid var(--cardBorder); color: var(--primaryText); }
+    .summary-badge.green { color: var(--accentGreen); border-color: rgba(34,197,94,0.3); }
+    .summary-badge.blue { color: var(--accent); border-color: rgba(0,180,221,0.3); }
+    .summary-badge.red { color: var(--accentRed); border-color: rgba(239,68,68,0.3); }
+
+    /* QR */
+    .qr { display: grid; place-items: center; min-height: 200px; margin-top: 14px; border-radius: 12px; border: 1px dashed var(--cardBorder); background: var(--softSurface); overflow: hidden; }
+    .qr img { width: 200px; height: 200px; object-fit: contain; }
+    .code { margin-top: 14px; text-align: center; font-size: 30px; font-weight: 700; letter-spacing: 8px; color: var(--title); }
+
+    /* Form */
+    .form { display: grid; gap: 12px; max-width: 560px; margin-top: 14px; }
+    .form label { display: grid; gap: 6px; color: var(--secondaryText); font-size: 13px; }
+    .form input, .form select { width: 100%; border-radius: 10px; border: 1px solid var(--cardBorder); padding: 10px 14px; font: inherit; font-size: 14px; color: var(--primaryText); background: var(--softSurface); }
+    .form input:focus, .form select:focus { outline: none; border-color: var(--accent); }
+
+    /* About hero */
+    .about-hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px 20px; }
+    .about-icon { width: 72px; height: 72px; border-radius: 20px; display: grid; place-items: center; font-size: 36px; background: linear-gradient(135deg, var(--accent), var(--accentOrange)); color: #fff; margin-bottom: 16px; }
+    .about-hero h2 { margin: 0; font-size: 28px; color: var(--title); }
+    .about-version { margin: 6px 0 0; color: var(--secondaryText); font-size: 14px; }
+    .about-divider { width: 60px; height: 2px; background: var(--cardBorder); margin: 20px 0; border-radius: 1px; }
+    .about-desc { color: var(--primaryText); font-size: 16px; margin: 0 0 20px; }
+
+    /* Permission status */
+    .perm-status { display: flex; align-items: center; gap: 10px; padding: 16px; border-radius: 12px; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); margin-bottom: 12px; }
+    .perm-icon { font-size: 20px; color: var(--accentGreen); }
+    .perm-label { font-weight: 600; color: var(--accentGreen); }
+
+    /* Preview (note) */
+    .preview { min-height: 120px; margin-top: 14px; border-radius: 12px; border: 1px solid var(--cardBorder); background: var(--softSurface); padding: 14px; color: var(--title); line-height: 1.7; white-space: pre-wrap; word-break: break-word; font-size: 14px; }
+
+    /* Banner */
+    .banner { display: none; margin-bottom: 16px; border-radius: 12px; border: 1px solid rgba(217,151,30,0.3); background: rgba(217,151,30,0.12); color: #86611d; padding: 12px 14px; font-size: 13px; }
+
+    /* Toast */
+    .toast { position: fixed; right: 20px; bottom: 20px; z-index: 1000; max-width: 300px; padding: 12px 16px; border-radius: 12px; background: var(--title); color: var(--canvasBg); font-size: 13px; box-shadow: var(--shadowLg); }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--canvasBorder); }
+      .grid2, .grid3, .grid2x2 { grid-template-columns: 1fr; }
+      .item { flex-direction: column; }
+      .item-meta { width: auto; text-align: left; }
+    }
   </style>
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
-      <div class="brand"><div class="brand-icon">W</div><div><h1>VoiceMind</h1><p>Windows 页面结构对齐 macOS 主窗口。</p></div></div>
+      <div class="brand">
+        <div class="brand-icon">W</div>
+        <div><h1>VoiceMind</h1><p>Windows</p></div>
+      </div>
       <div class="nav primary">
-        <button class="nav-item active" data-page="home"><span class="nav-icon">N</span><span>首页</span></button>
-        <button class="nav-item" data-page="records"><span class="nav-icon">R</span><span>记录</span></button>
-        <button class="nav-item" data-page="collaboration"><span class="nav-icon">C</span><span>协作</span></button>
-        <button class="nav-item" data-page="data"><span class="nav-icon">D</span><span>数据</span></button>
-        <button class="nav-item" data-page="speech"><span class="nav-icon">S</span><span>语音</span></button>
-        <button class="nav-item" data-page="permissions"><span class="nav-icon">P</span><span>权限</span></button>
+        <button class="nav-item active" data-page="home"><span class="nav-icon">&#9679;</span><span>首页</span></button>
+        <button class="nav-item" data-page="records"><span class="nav-icon">&#8635;</span><span>记录</span></button>
+        <button class="nav-item" data-page="data"><span class="nav-icon">&#9776;</span><span>数据</span></button>
+        <button class="nav-item" data-page="speech"><span class="nav-icon">&#9898;</span><span>语音</span></button>
+        <button class="nav-item" data-page="permissions"><span class="nav-icon">&#128274;</span><span>权限</span></button>
       </div>
       <div class="nav secondary">
-        <button class="nav-item" data-page="settings"><span class="nav-icon">G</span><span>设置</span></button>
-        <button class="nav-item" data-page="about"><span class="nav-icon">A</span><span>关于</span></button>
+        <button class="nav-item" data-page="settings"><span class="nav-icon">&#9881;</span><span>设置</span></button>
+        <button class="nav-item" data-page="about"><span class="nav-icon">&#8263;</span><span>关于</span></button>
       </div>
-      <div class="status"><div class="status-top"><span id="side-dot" class="dot"></span><strong id="side-title">未连接</strong></div><p id="side-detail">等待 iPhone 接入，服务默认在 Windows 端启动。</p></div>
+      <div class="sidebar-status">
+        <div class="sidebar-status-top">
+          <span id="side-dot" class="dot"></span>
+          <strong id="side-title">未连接</strong>
+        </div>
+        <p id="side-detail">等待 iPhone 接入</p>
+      </div>
     </aside>
 
     <main class="content">
       <div class="canvas">
         <div id="banner" class="banner">当前是浏览器预览模式，只显示静态页面；桌面命令和连接状态只会在 Tauri 中工作。</div>
 
+        <!-- HOME -->
         <section id="home" class="page active">
-          <div class="head"><div><h2>首页</h2><p>这里对应 macOS 的主工作区，用来展示当前连接状态、语音控制和实时文字内容。</p></div><span class="badge" id="home-badge">服务运行中</span></div>
-          <div class="grid3">
-            <div class="card stat"><div class="label">连接状态</div><div id="stat-connection" class="value">未连接</div></div>
-            <div class="card stat"><div class="label">监听状态</div><div id="stat-listening" class="value">空闲</div></div>
-            <div class="card stat"><div class="label">笔记字数</div><div id="stat-note" class="value">0</div></div>
+          <div class="head">
+            <div><h2>首页</h2><p>连接状态与协作控制面板</p></div>
           </div>
-          <div class="grid2" style="margin-top:16px">
-            <div class="card">
-              <h3>笔记面板</h3><p>和 macOS 的 Notes 页一样，这里保留最近识别结果，便于检查文字注入。</p>
-              <div id="note-preview" class="preview">等待识别结果...</div>
-              <div class="toolbar"><button id="clear-note" class="btn secondary" type="button">清空内容</button><button id="refresh-pairing-home" class="btn secondary" type="button">刷新配对码</button></div>
-            </div>
-            <div class="card mic">
-              <h3>语音控制</h3><button id="mic-button" class="mic-button" type="button">开始监听</button><p id="mic-hint">iPhone 连接后，可以由 Windows 主动发送开始/停止监听指令。</p>
-            </div>
+          <div class="stats-row">
+            <div class="stat-badge" id="home-badge-conn"><span class="badge-dot" id="home-conn-dot"></span><span id="home-conn-label">未连接</span></div>
+            <div class="stat-badge success"><span>&#9654;</span><span>服务运行中</span></div>
+            <div class="stat-badge accent"><span>&#9998;</span><span id="home-records-count">记录: 0</span></div>
           </div>
-        </section>
-
-        <section id="records" class="page">
-          <div class="head"><div><h2>记录</h2><p>对应 macOS 的识别记录页，按时间展示识别历史。</p></div></div>
-          <div class="card"><div class="toolbar"><button id="refresh-history" class="btn secondary" type="button">刷新历史</button><button id="clear-history" class="btn danger" type="button">清空历史</button></div><div id="history-list" class="list"></div></div>
-        </section>
-
-        <section id="collaboration" class="page">
-          <div class="head"><div><h2>协作</h2><p>对齐 macOS 的 Home Dashboard，统一展示服务、配对、连接和协作状态。</p></div></div>
           <div class="card">
-            <h3>连接聚焦卡片</h3><p id="collab-summary">尚未配对设备。请刷新二维码，用 iPhone 扫码建立连接。</p>
-            <div class="status-grid">
-              <div class="mini"><div class="label">状态</div><div id="collab-connection" class="value">未连接</div></div>
+            <h3>连接状态</h3>
+            <p id="home-summary">尚未配对设备。请刷新二维码，用 iPhone 扫码建立连接。</p>
+            <div class="grid2x2" style="margin-top:14px">
+              <div class="mini"><div class="label">状态</div><div id="home-status" class="value">未连接</div></div>
               <div class="mini"><div class="label">服务</div><div class="value">运行中</div></div>
-              <div class="mini"><div class="label">已配对设备</div><div id="collab-device" class="value">暂无</div></div>
-              <div class="mini"><div class="label">服务地址</div><div id="collab-network" class="value">待加载</div></div>
+              <div class="mini"><div class="label">已配对设备</div><div id="home-device" class="value">暂无</div></div>
+              <div class="mini"><div class="label">服务地址</div><div id="home-network" class="value">待加载</div></div>
             </div>
-            <div class="toolbar"><button id="refresh-pairing" class="btn primary" type="button">开始/刷新配对</button><button id="refresh-devices" class="btn secondary" type="button">刷新设备列表</button></div>
+            <div class="toolbar">
+              <button id="btn-toggle-listen" class="btn primary" type="button">开始监听</button>
+              <button id="btn-pairing" class="btn secondary" type="button">刷新配对</button>
+              <button id="btn-refresh-devices" class="btn secondary" type="button">刷新设备</button>
+            </div>
           </div>
-          <div class="grid2" style="margin-top:16px">
-            <div class="card"><h3>二维码配对</h3><p>这里和 macOS 的 QRCodePairingView 一样，显示二维码、验证码和服务地址。</p><div id="qr-box" class="qr"></div><div id="pairing-code" class="code">------</div><p id="pairing-meta" style="margin-top:12px;text-align:center">服务信息待加载</p></div>
-            <div class="card"><h3>已配对设备</h3><div id="devices-list" class="list"></div></div>
+          <div class="grid2">
+            <div class="card">
+              <h3>二维码配对</h3>
+              <div id="qr-box" class="qr"></div>
+              <div id="pairing-code" class="code">------</div>
+              <p id="pairing-meta" style="margin-top:10px;text-align:center;font-size:13px;color:var(--secondaryText)">服务信息待加载</p>
+            </div>
+            <div class="card">
+              <h3>已配对设备</h3>
+              <div id="devices-list" class="list"></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>最近识别</h3>
+            <div id="note-preview" class="preview">等待识别结果...</div>
+            <div class="toolbar"><button id="clear-note" class="btn secondary" type="button">清空</button></div>
           </div>
         </section>
 
+        <!-- RECORDS -->
+        <section id="records" class="page">
+          <div class="head"><div><h2>记录</h2><p>语音识别历史记录</p></div></div>
+          <div class="search-row">
+            <input id="records-search" type="text" class="search-input" placeholder="搜索记录...">
+            <button id="refresh-history" class="btn secondary" type="button">刷新</button>
+            <button id="clear-history" class="btn danger" type="button">清空</button>
+          </div>
+          <div id="history-list"></div>
+        </section>
+
+        <!-- DATA -->
         <section id="data" class="page">
-          <div class="head"><div><h2>数据</h2><p>对应 macOS 的 Data 页，记录连接、配对和识别反馈，并对重复状态做去重。</p></div></div>
-          <div class="card"><div class="toolbar"><button id="clear-activity" class="btn secondary" type="button">清空活动</button></div><div id="activity-list" class="list"></div></div>
+          <div class="head"><div><h2>数据</h2><p>连接、配对和识别事件日志</p></div></div>
+          <div class="search-row">
+            <div class="seg-picker" id="data-filter">
+              <button class="seg active" data-filter="all">全部</button>
+              <button class="seg" data-filter="voice">语音</button>
+              <button class="seg" data-filter="pairing">配对</button>
+            </div>
+            <input id="data-search" type="text" class="search-input" placeholder="搜索...">
+            <button id="clear-activity" class="btn secondary" type="button">清空</button>
+          </div>
+          <div class="summary-row">
+            <span class="summary-badge" id="data-total">总计: 0</span>
+            <span class="summary-badge green" id="data-voice">语音: 0</span>
+            <span class="summary-badge blue" id="data-pairing">配对: 0</span>
+            <span class="summary-badge red" id="data-errors">错误: 0</span>
+          </div>
+          <div id="activity-list" class="list"></div>
         </section>
 
+        <!-- SPEECH -->
         <section id="speech" class="page">
-          <div class="head"><div><h2>语音</h2><p>Windows 端先保留与当前设置结构一致的语音配置入口，方便继续对齐 macOS 的 Speech 页面。</p></div></div>
-          <div class="grid3">
-            <div class="card"><h3>识别语言</h3><p id="speech-language">待加载</p></div>
-            <div class="card"><h3>文本注入</h3><p id="speech-injection">待加载</p></div>
-            <div class="card"><h3>服务端口</h3><p id="speech-port">待加载</p></div>
+          <div class="head"><div><h2>语音</h2><p>语音识别引擎选择</p></div></div>
+          <div class="card">
+            <h3>识别引擎</h3>
+            <div class="engine-list">
+              <div class="engine-row selected">
+                <div class="engine-radio"></div>
+                <div class="engine-info">
+                  <div class="engine-name">Volcengine ASR (火山引擎)</div>
+                  <div class="engine-langs">支持: zh-CN, en-US</div>
+                </div>
+                <span class="engine-status available" id="engine-status">可用</span>
+              </div>
+            </div>
+            <p style="margin-top:12px;font-size:13px;color:var(--secondaryText)">引擎配置请前往 设置 → ASR 配置。</p>
           </div>
         </section>
 
+        <!-- PERMISSIONS -->
         <section id="permissions" class="page">
-          <div class="head"><div><h2>权限</h2><p>Windows 端先展示当前实现依赖的关键权限与能力，方便对齐 macOS 的 Permissions 页。</p></div></div>
-          <div class="grid3">
-            <div class="card"><h3>网络访问</h3><p>已启用。Windows 启动后会监听局域网端口供 iPhone 接入。</p></div>
-            <div class="card"><h3>文本注入</h3><p>当前优先使用键盘模拟，失败时回退到剪贴板。</p></div>
-            <div class="card"><h3>麦克风与语音</h3><p>当前主要依赖 iPhone 侧采集音频，Windows 端负责接收、配对和注入。</p></div>
+          <div class="head"><div><h2>权限</h2><p>Windows 文本注入所需的权限</p></div></div>
+          <div class="card">
+            <h3>辅助功能权限</h3>
+            <div class="perm-status">
+              <span class="perm-icon">&#10003;</span>
+              <span class="perm-label">状态: 已授权</span>
+            </div>
+            <p>Windows 键盘注入通过 SendInput 实现，无需额外权限授予。</p>
+            <div class="toolbar">
+              <button id="btn-check-perm" class="btn secondary" type="button">检查状态</button>
+              <button id="btn-open-settings" class="btn secondary" type="button">打开系统设置</button>
+            </div>
           </div>
         </section>
 
+        <!-- SETTINGS -->
         <section id="settings" class="page">
-          <div class="head"><div><h2>设置</h2><p>设置结构保持和当前 Rust 后端一致，读写会直接调用现有命令。</p></div></div>
+          <div class="head"><div><h2>设置</h2><p>应用配置</p></div></div>
           <div class="card">
-            <div class="form">
-              <label>界面语言<select id="setting-language"><option value="zh-CN">简体中文</option><option value="en-US">English</option></select></label>
-              <label>文本注入方式<select id="setting-injection"><option value="keyboard">键盘模拟</option><option value="clipboard">剪贴板</option><option value="auto">自动</option></select></label>
-              <label>服务端口<input id="setting-port" type="number" min="1024" max="65535" value="8765"></label>
-              <label>快捷键<input id="setting-hotkey" type="text" placeholder="可留空"></label>
-              <label>ASR 语言<select id="setting-asr-language"><option value="zh-CN">中文</option><option value="en-US">English</option></select></label>
+            <h3>文本注入</h3>
+            <div class="radio-group">
+              <label class="radio-option"><input type="radio" name="injection" value="keyboard" checked> 键盘模拟 <span class="radio-hint">推荐</span></label>
+              <label class="radio-option"><input type="radio" name="injection" value="clipboard"> 剪贴板</label>
             </div>
-            <div class="toolbar"><button id="save-settings" class="btn primary" type="button">保存设置</button><button id="reload-settings" class="btn secondary" type="button">重新加载</button></div>
+          </div>
+          <div class="card">
+            <h3>界面语言</h3>
+            <div class="seg-picker" id="lang-picker">
+              <button class="seg active" data-val="zh-CN">简体中文</button>
+              <button class="seg" data-val="en-US">English</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>主题</h3>
+            <div class="seg-picker" id="theme-picker">
+              <button class="seg" data-val="system">跟随系统</button>
+              <button class="seg active" data-val="light">浅色</button>
+              <button class="seg" data-val="dark">深色</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>服务端口</h3>
+            <input id="setting-port" type="number" min="1024" max="65535" value="8765" style="border-radius:10px;border:1px solid var(--cardBorder);padding:10px 14px;font:inherit;font-size:14px;color:var(--primaryText);background:var(--softSurface);max-width:200px">
+          </div>
+          <div class="card">
+            <h3>ASR 配置</h3>
+            <div class="form">
+              <label>App ID<input id="setting-asr-appid" type="text"></label>
+              <label>Access Key ID<input id="setting-asr-keyid" type="text"></label>
+              <label>Access Key Secret<input id="setting-asr-keysecret" type="password"></label>
+              <label>Cluster<input id="setting-asr-cluster" type="text"></label>
+              <label>识别语言
+                <select id="setting-asr-language">
+                  <option value="zh-CN">中文</option>
+                  <option value="en-US">English</option>
+                </select>
+              </label>
+            </div>
+            <div class="toolbar">
+              <button id="save-settings" class="btn primary" type="button">保存设置</button>
+              <button id="save-asr" class="btn secondary" type="button">保存 ASR 配置</button>
+              <button id="reload-settings" class="btn secondary" type="button">重新加载</button>
+            </div>
           </div>
         </section>
 
+        <!-- ABOUT -->
         <section id="about" class="page">
-          <div class="head"><div><h2>关于</h2><p>这里对应 macOS 的 About 页面，用于展示版本、能力范围和当前 Windows 端的实现方向。</p></div></div>
-          <div class="card">
-            <h3>VoiceMind Windows</h3><p style="margin-bottom:16px">版本 0.1.0。目标是让 Windows 端在配对流程、页面结构和状态表达上逐步对齐 macOS 版本。</p>
-            <div class="grid3">
-              <div class="mini"><div class="label">配对</div><div class="value">二维码已改为 mac/iOS 兼容 JSON 格式</div></div>
-              <div class="mini"><div class="label">连接协议</div><div class="value">已切换为长度前缀 TCP Envelope</div></div>
-              <div class="mini"><div class="label">前端布局</div><div class="value">已按 macOS 主窗口导航重新组织</div></div>
-            </div>
+          <div class="about-hero">
+            <div class="about-icon">&#127908;</div>
+            <h2>VoiceMind</h2>
+            <p class="about-version">Version 0.1.0</p>
+            <div class="about-divider"></div>
+            <p class="about-desc">iPhone 无线麦克风 · Windows 端</p>
+            <button class="btn primary" type="button" onclick="toast('使用指南功能开发中')">使用指南</button>
           </div>
         </section>
+
       </div>
     </main>
   </div>
 
   <script>
-    const state={isTauri:Boolean(window.__TAURI__),page:"home",connected:false,listening:false,deviceName:null,deviceId:null,pairingCode:"",pairingIp:null,pairingPort:null,noteText:"",settings:null,history:[],devices:[],activity:[]};
-    const pages=[...document.querySelectorAll(".page")],navItems=[...document.querySelectorAll(".nav-item")],banner=document.getElementById("banner"),notePreview=document.getElementById("note-preview"),historyList=document.getElementById("history-list"),devicesList=document.getElementById("devices-list"),activityList=document.getElementById("activity-list"),micButton=document.getElementById("mic-button");
-    if(!state.isTauri) banner.style.display="block";
-    const invoke=(cmd,payload)=>{const api=window.__TAURI__&&window.__TAURI__.core&&window.__TAURI__.core.invoke;return api?api(cmd,payload):Promise.reject(new Error("Tauri invoke API is unavailable"))};
-    const listenApi=()=>window.__TAURI__&&window.__TAURI__.event&&typeof window.__TAURI__.event.listen==="function"?window.__TAURI__.event.listen:window.__TAURI__&&window.__TAURI__.core&&typeof window.__TAURI__.core.listen==="function"?window.__TAURI__.core.listen:null;
-    const pairedName=()=>state.deviceName||(state.devices[0]&&state.devices[0].name)||null;
-    const label=()=>state.listening?"监听中":state.connected?"已连接":"未连接";
-    const detail=()=>state.deviceName?`${state.deviceName}${state.listening?" 正在发送语音":" 已连接到 Windows"}`:"等待 iPhone 接入，服务默认在 Windows 端启动。";
-    const summary=()=>state.deviceName?`${state.deviceName} 已完成配对，当前${state.listening?"正在传输音频":"处于可用连接状态"}。`:pairedName()?`${pairedName()} 已完成配对，当前未连接。`:"尚未配对设备。请刷新二维码，用 iPhone 扫码建立连接。";
-    const showPage=id=>{state.page=id;pages.forEach(p=>p.classList.toggle("active",p.id===id));navItems.forEach(i=>i.classList.toggle("active",i.dataset.page===id))};
-    navItems.forEach(i=>i.addEventListener("click",()=>showPage(i.dataset.page)));
-    function renderStatus(){const dot=document.getElementById("side-dot");dot.className="dot";if(state.listening)dot.classList.add("listening");else if(state.connected)dot.classList.add("connected");document.getElementById("side-title").textContent=label();document.getElementById("side-detail").textContent=detail();document.getElementById("stat-connection").textContent=label();document.getElementById("stat-listening").textContent=state.listening?"进行中":"空闲";document.getElementById("stat-note").textContent=String(state.noteText.length);document.getElementById("home-badge").textContent=state.connected?"设备在线":"服务运行中";document.getElementById("collab-summary").textContent=summary();document.getElementById("collab-connection").textContent=label();document.getElementById("collab-device").textContent=pairedName()||"暂无";document.getElementById("collab-network").textContent=state.pairingIp?`${state.pairingIp}:${state.pairingPort||"-"}`:"待加载";micButton.classList.toggle("listening",state.listening);micButton.textContent=state.listening?"停止监听":"开始监听";document.getElementById("mic-hint").textContent=state.listening?"Windows 已向 iPhone 发送会话控制指令。":state.connected?"设备已连接，可以从这里发起监听。":pairedName()?"设备已配对，等待重新连接。":"请先完成配对，再发起监听。"}
-    function renderNote(){notePreview.textContent=state.noteText||"等待识别结果..."}
-    function item(title,detail,meta,action){const el=document.createElement("div");el.className="item";const main=document.createElement("div");main.className="item-main";main.innerHTML=`<div class="item-title">${title}</div><div class="item-detail">${detail}</div>`;const side=document.createElement("div");side.className="item-meta";side.textContent=meta||"";if(action){side.appendChild(document.createElement("br"));side.appendChild(action)}el.append(main,side);return el}
-    function renderList(container,items,emptyText,builder){container.innerHTML="";if(!items.length){container.innerHTML=`<div class="empty">${emptyText}</div>`;return}items.forEach(x=>container.appendChild(builder(x)))}
-    function addActivity(title,detail,kind){const sig=`${kind}::${title}::${detail}`;if(state.activity[0]&&state.activity[0].sig===sig)return;state.activity.unshift({sig,title,detail,time:new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})});state.activity=state.activity.slice(0,50);renderActivity()}
-    function renderActivity(){renderList(activityList,state.activity,"暂无活动记录",x=>item(x.title,x.detail,x.time))}
-    function renderHistory(){renderList(historyList,state.history,"暂无识别历史",x=>item(x.text||"(空内容)",x.source||"",x.timestamp||""))}
-    function renderDevices(){renderList(devicesList,state.devices,"暂无已配对设备",d=>{const btn=document.createElement("button");btn.className="btn secondary";btn.type="button";btn.textContent="移除";btn.addEventListener("click",async()=>{try{await invoke("remove_paired_device",{id:d.id});addActivity("设备已移除",`${d.name}`,"pairing");await refreshDevices()}catch(e){toast(`移除设备失败: ${e}`)}});return item(d.name||"未命名设备",d.last_seen?`最后在线: ${d.last_seen}`:`设备 ID: ${d.id}`,"",btn)})}
-    function updateSpeech(){document.getElementById("speech-language").textContent=state.settings&&state.settings.asr?state.settings.asr.asr_language||"zh-CN":"待加载";document.getElementById("speech-injection").textContent=state.settings?state.settings.injection_method||"keyboard":"待加载";document.getElementById("speech-port").textContent=state.settings?String(state.settings.server_port||8765):"待加载"}
-    function toast(message){const old=document.querySelector(".toast");if(old)old.remove();const el=document.createElement("div");el.className="toast";el.textContent=message;document.body.appendChild(el);setTimeout(()=>el.remove(),2800)}
-    async function refreshConnection(){if(!state.isTauri)return;try{const s=await invoke("get_connection_status");const nextConnected=Boolean(s&&s.connected),nextName=s&&s.name?s.name:null,changed=state.connected!==nextConnected||state.deviceName!==nextName;state.connected=nextConnected;state.deviceName=nextName;state.deviceId=s&&s.device_id?s.device_id:null;if(changed)addActivity(nextConnected?"连接已建立":"连接已断开",nextConnected?`${nextName||"iPhone"} 已连接到 Windows`:"当前没有活动设备连接。","connection");renderStatus()}catch(e){console.error("Failed to get connection status",e)}}
-    async function refreshPairing(){if(!state.isTauri)return;try{const r=await invoke("start_pairing");if(!r||!r.success){toast(r&&r.message?r.message:"生成配对码失败");return}state.pairingCode=r.pairing_code||"";state.pairingIp=r.ip||null;state.pairingPort=r.port||null;document.getElementById("pairing-code").textContent=state.pairingCode||"------";document.getElementById("pairing-meta").textContent=`IP: ${state.pairingIp||"未知"}  端口: ${state.pairingPort||"-"}`;const qr=document.getElementById("qr-box");qr.innerHTML="";if(r.qr_content){const img=document.createElement("img");img.src=r.qr_content;img.alt="Pairing QR";qr.appendChild(img)}else qr.innerHTML=`<div class="empty">二维码尚未生成</div>`;addActivity("配对码已刷新",`新的验证码为 ${state.pairingCode}`,"pairing");renderStatus()}catch(e){console.error("Failed to start pairing",e);toast(`生成配对码失败: ${e}`)}}
-    async function refreshDevices(){if(!state.isTauri)return;try{const ds=await invoke("get_paired_devices");state.devices=Array.isArray(ds)?ds:[];renderDevices();renderStatus()}catch(e){console.error("Failed to refresh devices",e)}}
-    async function syncStatus(){if(!state.isTauri)return;await Promise.all([refreshConnection(),refreshDevices()])}
-    async function refreshHistory(){if(!state.isTauri)return;try{const h=await invoke("get_history");state.history=Array.isArray(h)?h:[];renderHistory()}catch(e){console.error("Failed to refresh history",e)}}
-    async function loadSettings(){if(!state.isTauri)return;try{const s=await invoke("get_settings");state.settings=s||null;if(!s)return;document.getElementById("setting-language").value=s.language||"zh-CN";document.getElementById("setting-injection").value=s.injection_method||"keyboard";document.getElementById("setting-port").value=s.server_port||8765;document.getElementById("setting-hotkey").value=s.hotkey||"";document.getElementById("setting-asr-language").value=s.asr&&s.asr.asr_language?s.asr.asr_language:"zh-CN";updateSpeech()}catch(e){console.error("Failed to load settings",e)}}
-    async function saveSettings(){if(!state.isTauri)return;const next={...(state.settings||{}),language:document.getElementById("setting-language").value,injection_method:document.getElementById("setting-injection").value,server_port:Number(document.getElementById("setting-port").value||8765),hotkey:document.getElementById("setting-hotkey").value,bonjour:state.settings&&state.settings.bonjour||{enabled:true},asr:{provider:state.settings&&state.settings.asr?state.settings.asr.provider||"":"" ,app_id:state.settings&&state.settings.asr?state.settings.asr.app_id||"":"" ,access_key_id:state.settings&&state.settings.asr?state.settings.asr.access_key_id||"":"" ,access_key_secret:state.settings&&state.settings.asr?state.settings.asr.access_key_secret||"":"" ,cluster:state.settings&&state.settings.asr?state.settings.asr.cluster||"":"" ,asr_language:document.getElementById("setting-asr-language").value}};try{await invoke("save_settings",{settings:next});state.settings=next;updateSpeech();addActivity("设置已保存","Windows 配置已写入本地存储。","settings");toast("设置已保存")}catch(e){console.error("Failed to save settings",e);toast(`保存设置失败: ${e}`)}}
-    async function toggleListening(){if(!state.isTauri)return;try{if(state.listening){const r=await invoke("stop_listening");if(r&&r.success){state.listening=false;renderStatus();addActivity("监听已停止",`会话 ${r.session_id||"-"}`,"voice");toast("已停止监听")}return}const r=await invoke("start_listening");if(r&&r.success){state.listening=true;renderStatus();addActivity("监听已开始",`会话 ${r.session_id||"-"}`,"voice");toast("已开始监听")}}catch(e){console.error("Failed to toggle listening",e);toast(`监听操作失败: ${e}`)}}
-    async function bindEvents(){const listen=listenApi();if(!listen)return;
-      await listen("connection-changed",async event=>{const p=event.payload||{},nextConnected=Boolean(p.connected),nextName=p.device_name||p.name||null,changed=state.connected!==nextConnected||state.deviceName!==nextName;state.connected=nextConnected;state.deviceName=nextName;state.deviceId=p.device_id||p.deviceId||null;if(!nextConnected)state.listening=false;if(changed)addActivity(nextConnected?"连接状态更新":"设备已断开",nextConnected?`${nextName||"iPhone"} 已完成连接。`:"配对设备已断开连接。","connection");renderStatus();await syncStatus()});
-      await listen("listening-started",event=>{const p=event.payload||{};state.listening=true;renderStatus();addActivity("收到监听开始事件",`${p.device_name||state.deviceName||"iPhone"} 已进入监听状态。`,"voice")});
-      await listen("listening-stopped",event=>{const p=event.payload||{};state.listening=false;renderStatus();addActivity("收到监听结束事件",`会话 ${p.session_id||"-"}`,"voice")});
-      await listen("recognition-result",async event=>{const p=event.payload||{};state.noteText=p.text||"";renderNote();renderStatus();addActivity("识别结果",p.text||"(空内容)","voice");await refreshHistory()});
-      await listen("partial-result",event=>{const p=event.payload||{};if(p.text){state.noteText=p.text;renderNote();renderStatus()}});
+    /* ===== State ===== */
+    const state = {
+      isTauri: Boolean(window.__TAURI__),
+      page: "home",
+      connected: false,
+      listening: false,
+      deviceName: null,
+      deviceId: null,
+      pairingCode: "",
+      pairingIp: null,
+      pairingPort: null,
+      noteText: "",
+      settings: null,
+      history: [],
+      devices: [],
+      activity: [],
+      dataFilter: "all",
+      recordsSearch: ""
+    };
+
+    /* ===== DOM refs ===== */
+    const pages = [...document.querySelectorAll(".page")];
+    const navItems = [...document.querySelectorAll(".nav-item")];
+    const banner = document.getElementById("banner");
+    const notePreview = document.getElementById("note-preview");
+    const historyList = document.getElementById("history-list");
+    const devicesList = document.getElementById("devices-list");
+    const activityList = document.getElementById("activity-list");
+
+    if (!state.isTauri) banner.style.display = "block";
+
+    /* ===== Tauri helpers ===== */
+    const invoke = (cmd, payload) => {
+      const api = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke;
+      return api ? api(cmd, payload) : Promise.reject(new Error("Tauri invoke unavailable"));
+    };
+    const listenApi = () =>
+      window.__TAURI__ && window.__TAURI__.event && typeof window.__TAURI__.event.listen === "function"
+        ? window.__TAURI__.event.listen
+        : window.__TAURI__ && window.__TAURI__.core && typeof window.__TAURI__.core.listen === "function"
+          ? window.__TAURI__.core.listen : null;
+
+    /* ===== Helpers ===== */
+    const pairedName = () => state.deviceName || (state.devices[0] && state.devices[0].name) || null;
+    const connLabel = () => state.listening ? "监听中" : state.connected ? "已连接" : "未连接";
+
+    function summary() {
+      if (state.deviceName) return `${state.deviceName} 已完成配对，当前${state.listening ? "正在传输音频" : "处于可用连接状态"}。`;
+      if (pairedName()) return `${pairedName()} 已完成配对，当前未连接。`;
+      return "尚未配对设备。请刷新二维码，用 iPhone 扫码建立连接。";
     }
-    micButton.addEventListener("click",toggleListening);document.getElementById("refresh-history").addEventListener("click",refreshHistory);document.getElementById("refresh-pairing").addEventListener("click",refreshPairing);document.getElementById("refresh-pairing-home").addEventListener("click",refreshPairing);document.getElementById("refresh-devices").addEventListener("click",refreshDevices);document.getElementById("save-settings").addEventListener("click",saveSettings);document.getElementById("reload-settings").addEventListener("click",loadSettings);
-    document.getElementById("clear-note").addEventListener("click",()=>{state.noteText="";renderNote();renderStatus()});
-    document.getElementById("clear-history").addEventListener("click",async()=>{if(!state.isTauri)return;try{await invoke("clear_history");state.history=[];renderHistory();addActivity("历史已清空","识别历史记录已删除。","records")}catch(e){toast(`清空历史失败: ${e}`)}});
-    document.getElementById("clear-activity").addEventListener("click",()=>{state.activity=[];renderActivity()});
-    async function init(){renderStatus();renderNote();renderHistory();renderDevices();renderActivity();if(!state.isTauri)return;await bindEvents();await Promise.all([refreshConnection(),refreshPairing(),refreshDevices(),refreshHistory(),loadSettings()]);setInterval(()=>{syncStatus().catch(e=>console.error("Failed to sync status",e))},3000)}
+
+    /* ===== Theme ===== */
+    function applyTheme(theme) {
+      if (theme === "system") {
+        const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+      } else {
+        document.documentElement.setAttribute("data-theme", theme);
+      }
+      localStorage.setItem("voicemind_theme", theme);
+      // Update picker UI
+      document.querySelectorAll("#theme-picker .seg").forEach(s => s.classList.toggle("active", s.dataset.val === theme));
+    }
+    // Init theme
+    applyTheme(localStorage.getItem("voicemind_theme") || "light");
+
+    /* ===== Navigation ===== */
+    function showPage(id) {
+      state.page = id;
+      pages.forEach(p => p.classList.toggle("active", p.id === id));
+      navItems.forEach(i => i.classList.toggle("active", i.dataset.page === id));
+    }
+    navItems.forEach(i => i.addEventListener("click", () => showPage(i.dataset.page)));
+
+    /* ===== Segmented pickers ===== */
+    document.querySelectorAll(".seg-picker").forEach(picker => {
+      picker.querySelectorAll(".seg").forEach(seg => {
+        seg.addEventListener("click", () => {
+          picker.querySelectorAll(".seg").forEach(s => s.classList.remove("active"));
+          seg.classList.add("active");
+          // Theme picker
+          if (picker.id === "theme-picker") applyTheme(seg.dataset.val);
+          // Data filter
+          if (picker.id === "data-filter") { state.dataFilter = seg.dataset.filter; renderActivity(); }
+        });
+      });
+    });
+
+    /* ===== Render ===== */
+    function renderStatus() {
+      // Sidebar
+      const dot = document.getElementById("side-dot");
+      dot.className = "dot";
+      if (state.listening) dot.classList.add("listening");
+      else if (state.connected) dot.classList.add("connected");
+      document.getElementById("side-title").textContent = connLabel();
+      document.getElementById("side-detail").textContent = state.deviceName
+        ? `${state.deviceName}${state.listening ? " 正在发送语音" : " 已连接"}`
+        : "等待 iPhone 接入";
+
+      // Home stats badges
+      const connBadge = document.getElementById("home-badge-conn");
+      connBadge.className = "stat-badge";
+      const connDot = document.getElementById("home-conn-dot");
+      if (state.listening) { connBadge.classList.add("listening"); }
+      else if (state.connected) { connBadge.classList.add("connected"); }
+      else { connBadge.classList.add("disconnected"); }
+      document.getElementById("home-conn-label").textContent = connLabel();
+
+      // Home card
+      document.getElementById("home-summary").textContent = summary();
+      document.getElementById("home-status").textContent = connLabel();
+      document.getElementById("home-device").textContent = pairedName() || "暂无";
+      document.getElementById("home-network").textContent = state.pairingIp ? `${state.pairingIp}:${state.pairingPort || "-"}` : "待加载";
+
+      // Listen button
+      const btn = document.getElementById("btn-toggle-listen");
+      btn.textContent = state.listening ? "停止监听" : "开始监听";
+      btn.classList.toggle("danger", state.listening);
+      btn.classList.toggle("primary", !state.listening);
+    }
+
+    function renderNote() {
+      notePreview.textContent = state.noteText || "等待识别结果...";
+    }
+
+    function renderRecordsCount() {
+      document.getElementById("home-records-count").textContent = `记录: ${state.history.length}`;
+    }
+
+    function escHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+    function createItem(title, detail, meta, action) {
+      const el = document.createElement("div");
+      el.className = "item";
+      const main = document.createElement("div");
+      main.className = "item-main";
+      main.innerHTML = `<div class="item-title">${escHtml(title)}</div><div class="item-detail">${escHtml(detail)}</div>`;
+      const side = document.createElement("div");
+      side.className = "item-meta";
+      side.textContent = meta || "";
+      if (action) { side.appendChild(document.createElement("br")); side.appendChild(action); }
+      el.append(main, side);
+      return el;
+    }
+
+    function renderList(container, items, emptyText, builder) {
+      container.innerHTML = "";
+      if (!items.length) { container.innerHTML = `<div class="empty">${escHtml(emptyText)}</div>`; return; }
+      items.forEach(x => container.appendChild(builder(x)));
+    }
+
+    /* ===== Activity with category/severity ===== */
+    function addActivity(title, detail, category, severity) {
+      category = category || "info";
+      severity = severity || "info";
+      const sig = `${category}::${title}::${detail}`;
+      if (state.activity[0] && state.activity[0].sig === sig) return;
+      state.activity.unshift({
+        sig, title, detail, category, severity,
+        time: new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+      });
+      state.activity = state.activity.slice(0, 50);
+      renderActivity();
+    }
+
+    function renderActivity() {
+      let items = state.activity;
+      // Filter
+      if (state.dataFilter !== "all") {
+        items = items.filter(a => a.category === state.dataFilter);
+      }
+      // Search
+      const q = document.getElementById("data-search").value.toLowerCase();
+      if (q) items = items.filter(a => a.title.toLowerCase().includes(q) || a.detail.toLowerCase().includes(q));
+
+      renderList(activityList, items, "暂无活动记录", x => {
+        const el = createItem(x.title, x.detail, x.time);
+        const sev = document.createElement("span");
+        sev.className = `sev ${x.severity}`;
+        sev.textContent = x.severity === "warning" ? "警告" : x.severity === "error" ? "错误" : "信息";
+        el.querySelector(".item-meta").prepend(sev);
+        return el;
+      });
+      renderDataSummary();
+    }
+
+    function renderDataSummary() {
+      const all = state.activity;
+      document.getElementById("data-total").textContent = `总计: ${all.length}`;
+      document.getElementById("data-voice").textContent = `语音: ${all.filter(a => a.category === "voice").length}`;
+      document.getElementById("data-pairing").textContent = `配对: ${all.filter(a => a.category === "pairing" || a.category === "connection").length}`;
+      document.getElementById("data-errors").textContent = `错误: ${all.filter(a => a.severity === "error").length}`;
+    }
+
+    /* ===== Records with date grouping + search ===== */
+    function renderHistory() {
+      let items = state.history;
+      const q = state.recordsSearch.toLowerCase();
+      if (q) items = items.filter(h => (h.text || "").toLowerCase().includes(q));
+
+      historyList.innerHTML = "";
+      if (!items.length) {
+        historyList.innerHTML = `<div class="empty">暂无识别历史</div>`;
+        return;
+      }
+
+      // Group by date
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      const groups = {};
+      items.forEach(r => {
+        const d = r.timestamp ? new Date(r.timestamp.replace(/-/g, "/")).toDateString() : today;
+        const label = d === today ? "今天" : d === yesterday ? "昨天" : d;
+        if (!groups[label]) groups[label] = [];
+        groups[label].push(r);
+      });
+
+      Object.entries(groups).forEach(([label, records]) => {
+        const group = document.createElement("div");
+        group.className = "date-group";
+        group.innerHTML = `<div class="date-label">${escHtml(label)}</div>`;
+        const list = document.createElement("div");
+        list.className = "list";
+        records.forEach(r => {
+          const src = r.source || "";
+          const badge = src && src !== "asr" ? `<span class="source-badge ios">${escHtml(src)}</span>` : `<span class="source-badge local">Local</span>`;
+          const el = document.createElement("div");
+          el.className = "item";
+          const time = r.timestamp ? r.timestamp.split(" ")[1] || r.timestamp : "";
+          el.innerHTML = `<div class="item-main"><div class="item-title">${badge} ${escHtml(r.text || "(空内容)")}</div></div><div class="item-meta">${escHtml(time)}</div>`;
+          list.appendChild(el);
+        });
+        group.appendChild(list);
+        historyList.appendChild(group);
+      });
+      renderRecordsCount();
+    }
+
+    /* ===== Devices ===== */
+    function renderDevices() {
+      renderList(devicesList, state.devices, "暂无已配对设备", d => {
+        const btn = document.createElement("button");
+        btn.className = "btn secondary";
+        btn.type = "button";
+        btn.textContent = "移除";
+        btn.addEventListener("click", async () => {
+          try {
+            await invoke("remove_paired_device", { id: d.id });
+            addActivity("设备已移除", d.name, "pairing");
+            await refreshDevices();
+          } catch (e) { toast(`移除设备失败: ${e}`); }
+        });
+        return createItem(d.name || "未命名设备", d.last_seen ? `最后在线: ${d.last_seen}` : `设备 ID: ${d.id}`, "", btn);
+      });
+    }
+
+    /* ===== Tauri async ===== */
+    async function refreshConnection() {
+      if (!state.isTauri) return;
+      try {
+        const s = await invoke("get_connection_status");
+        const next = Boolean(s && s.connected);
+        const nextName = s && s.name ? s.name : null;
+        const changed = state.connected !== next || state.deviceName !== nextName;
+        state.connected = next;
+        state.deviceName = nextName;
+        state.deviceId = s && s.device_id ? s.device_id : null;
+        if (changed) addActivity(next ? "连接已建立" : "连接已断开", next ? `${nextName || "iPhone"} 已连接` : "设备断开", "connection");
+        renderStatus();
+      } catch (e) { console.error("refreshConnection", e); }
+    }
+
+    async function refreshPairing() {
+      if (!state.isTauri) return;
+      try {
+        const r = await invoke("start_pairing");
+        if (!r || !r.success) { toast(r && r.message ? r.message : "生成配对码失败"); return; }
+        state.pairingCode = r.pairing_code || "";
+        state.pairingIp = r.ip || null;
+        state.pairingPort = r.port || null;
+        document.getElementById("pairing-code").textContent = state.pairingCode || "------";
+        document.getElementById("pairing-meta").textContent = `IP: ${state.pairingIp || "未知"}  端口: ${state.pairingPort || "-"}`;
+        const qr = document.getElementById("qr-box");
+        qr.innerHTML = "";
+        if (r.qr_content) {
+          const img = document.createElement("img");
+          img.src = r.qr_content;
+          img.alt = "Pairing QR";
+          qr.appendChild(img);
+        } else {
+          qr.innerHTML = `<div class="empty">二维码尚未生成</div>`;
+        }
+        addActivity("配对码已刷新", `验证码: ${state.pairingCode}`, "pairing");
+        renderStatus();
+      } catch (e) { console.error("refreshPairing", e); toast(`生成配对码失败: ${e}`); }
+    }
+
+    async function refreshDevices() {
+      if (!state.isTauri) return;
+      try {
+        const ds = await invoke("get_paired_devices");
+        state.devices = Array.isArray(ds) ? ds : [];
+        renderDevices();
+        renderStatus();
+      } catch (e) { console.error("refreshDevices", e); }
+    }
+
+    async function refreshHistory() {
+      if (!state.isTauri) return;
+      try {
+        const h = await invoke("get_history");
+        state.history = Array.isArray(h) ? h : [];
+        renderHistory();
+      } catch (e) { console.error("refreshHistory", e); }
+    }
+
+    async function loadSettings() {
+      if (!state.isTauri) return;
+      try {
+        const s = await invoke("get_settings");
+        state.settings = s || null;
+        if (!s) return;
+        // Injection
+        const inj = (s.injection_method || "keyboard");
+        document.querySelectorAll(`input[name="injection"]`).forEach(r => r.checked = r.value === inj);
+        // Language
+        document.querySelectorAll("#lang-picker .seg").forEach(seg => seg.classList.toggle("active", seg.dataset.val === (s.language || "zh-CN")));
+        // Port
+        document.getElementById("setting-port").value = s.server_port || 8765;
+        // ASR
+        if (s.asr) {
+          document.getElementById("setting-asr-appid").value = s.asr.app_id || "";
+          document.getElementById("setting-asr-keyid").value = s.asr.access_key_id || "";
+          document.getElementById("setting-asr-keysecret").value = s.asr.access_key_secret || "";
+          document.getElementById("setting-asr-cluster").value = s.asr.cluster || "";
+          document.getElementById("setting-asr-language").value = s.asr.asr_language || "zh-CN";
+        }
+        // Engine status
+        const configured = s.asr && s.asr.access_key_id;
+        const statusEl = document.getElementById("engine-status");
+        if (configured) { statusEl.textContent = "已配置"; statusEl.className = "engine-status available"; }
+        else { statusEl.textContent = "未配置"; statusEl.className = "engine-status"; statusEl.style.background = "rgba(239,68,68,0.12)"; statusEl.style.color = "var(--accentRed)"; }
+        // Theme
+        if (s.theme) applyTheme(s.theme);
+      } catch (e) { console.error("loadSettings", e); }
+    }
+
+    async function saveSettings() {
+      if (!state.isTauri) return;
+      const inj = document.querySelector('input[name="injection"]:checked').value;
+      const lang = document.querySelector("#lang-picker .seg.active").dataset.val;
+      const next = {
+        ...(state.settings || {}),
+        language: lang,
+        injection_method: inj,
+        server_port: Number(document.getElementById("setting-port").value || 8765),
+        hotkey: state.settings && state.settings.hotkey || "",
+        bonjour: state.settings && state.settings.bonjour || { enabled: true },
+        theme: localStorage.getItem("voicemind_theme") || "light",
+        asr: {
+          provider: state.settings && state.settings.asr ? state.settings.asr.provider || "" : "",
+          app_id: state.settings && state.settings.asr ? state.settings.asr.app_id || "" : "",
+          access_key_id: state.settings && state.settings.asr ? state.settings.asr.access_key_id || "" : "",
+          access_key_secret: state.settings && state.settings.asr ? state.settings.asr.access_key_secret || "" : "",
+          cluster: state.settings && state.settings.asr ? state.settings.asr.cluster || "" : "",
+          asr_language: document.getElementById("setting-asr-language").value
+        }
+      };
+      try {
+        await invoke("save_settings", { settings: next });
+        state.settings = next;
+        addActivity("设置已保存", "配置已写入", "settings");
+        toast("设置已保存");
+      } catch (e) { toast(`保存失败: ${e}`); }
+    }
+
+    async function saveASR() {
+      if (!state.isTauri) return;
+      const config = {
+        provider: "volcengine",
+        app_id: document.getElementById("setting-asr-appid").value,
+        access_key_id: document.getElementById("setting-asr-keyid").value,
+        access_key_secret: document.getElementById("setting-asr-keysecret").value,
+        cluster: document.getElementById("setting-asr-cluster").value,
+        asr_language: document.getElementById("setting-asr-language").value
+      };
+      try {
+        await invoke("save_asr_config", { config });
+        addActivity("ASR 配置已保存", `语言: ${config.asr_language}`, "settings");
+        toast("ASR 配置已保存");
+        await loadSettings();
+      } catch (e) { toast(`ASR 保存失败: ${e}`); }
+    }
+
+    async function toggleListening() {
+      if (!state.isTauri) return;
+      try {
+        if (state.listening) {
+          const r = await invoke("stop_listening");
+          if (r && r.success) { state.listening = false; renderStatus(); addActivity("监听已停止", `会话 ${r.session_id || "-"}`, "voice"); toast("已停止监听"); }
+        } else {
+          const r = await invoke("start_listening");
+          if (r && r.success) { state.listening = true; renderStatus(); addActivity("监听已开始", `会话 ${r.session_id || "-"}`, "voice"); toast("已开始监听"); }
+        }
+      } catch (e) { toast(`监听操作失败: ${e}`); }
+    }
+
+    function toast(message) {
+      const old = document.querySelector(".toast");
+      if (old) old.remove();
+      const el = document.createElement("div");
+      el.className = "toast";
+      el.textContent = message;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2800);
+    }
+
+    /* ===== Event bindings ===== */
+    document.getElementById("btn-toggle-listen").addEventListener("click", toggleListening);
+    document.getElementById("btn-pairing").addEventListener("click", refreshPairing);
+    document.getElementById("btn-refresh-devices").addEventListener("click", refreshDevices);
+    document.getElementById("refresh-history").addEventListener("click", refreshHistory);
+    document.getElementById("clear-history").addEventListener("click", async () => {
+      if (!state.isTauri) return;
+      try { await invoke("clear_history"); state.history = []; renderHistory(); addActivity("历史已清空", "识别记录已删除", "records"); } catch (e) { toast(`清空失败: ${e}`); }
+    });
+    document.getElementById("clear-note").addEventListener("click", () => { state.noteText = ""; renderNote(); });
+    document.getElementById("save-settings").addEventListener("click", saveSettings);
+    document.getElementById("save-asr").addEventListener("click", saveASR);
+    document.getElementById("reload-settings").addEventListener("click", loadSettings);
+    document.getElementById("clear-activity").addEventListener("click", () => { state.activity = []; renderActivity(); });
+
+    // Records search
+    document.getElementById("records-search").addEventListener("input", e => { state.recordsSearch = e.target.value; renderHistory(); });
+    // Data search
+    document.getElementById("data-search").addEventListener("input", () => renderActivity());
+
+    // Permission buttons
+    document.getElementById("btn-check-perm").addEventListener("click", async () => {
+      if (!state.isTauri) { toast("已授权（预览模式）"); return; }
+      try { const s = await invoke("get_accessibility_status"); toast(`权限状态: ${s}`); } catch (e) { toast(`检查失败: ${e}`); }
+    });
+    document.getElementById("btn-open-settings").addEventListener("click", async () => {
+      if (!state.isTauri) { toast("仅桌面端可用"); return; }
+      try { await invoke("open_accessibility_settings"); } catch (e) { toast(`打开失败: ${e}`); }
+    });
+
+    /* ===== Tauri events ===== */
+    async function bindEvents() {
+      const listen = listenApi();
+      if (!listen) return;
+      await listen("connection-changed", async event => {
+        const p = event.payload || {};
+        const next = Boolean(p.connected);
+        const nextName = p.device_name || p.name || null;
+        const changed = state.connected !== next || state.deviceName !== nextName;
+        state.connected = next;
+        state.deviceName = nextName;
+        state.deviceId = p.device_id || p.deviceId || null;
+        if (!next) state.listening = false;
+        if (changed) addActivity(next ? "连接已建立" : "设备已断开", next ? `${nextName || "iPhone"} 已连接` : "设备断开", "connection");
+        renderStatus();
+        await Promise.all([refreshConnection(), refreshDevices()]);
+      });
+      await listen("listening-started", event => {
+        state.listening = true; renderStatus();
+        addActivity("监听已开始", `${(event.payload || {}).device_name || state.deviceName || "iPhone"}`, "voice");
+      });
+      await listen("listening-stopped", event => {
+        state.listening = false; renderStatus();
+        addActivity("监听已停止", `会话 ${(event.payload || {}).session_id || "-"}`, "voice");
+      });
+      await listen("recognition-result", async event => {
+        const p = event.payload || {};
+        state.noteText = p.text || "";
+        renderNote(); renderStatus();
+        addActivity("识别结果", p.text || "(空)", "voice");
+        await refreshHistory();
+      });
+      await listen("partial-result", event => {
+        const p = event.payload || {};
+        if (p.text) { state.noteText = p.text; renderNote(); renderStatus(); }
+      });
+    }
+
+    /* ===== Init ===== */
+    async function init() {
+      renderStatus(); renderNote(); renderHistory(); renderDevices(); renderActivity();
+      if (!state.isTauri) return;
+      await bindEvents();
+      await Promise.all([refreshConnection(), refreshPairing(), refreshDevices(), refreshHistory(), loadSettings()]);
+      setInterval(() => { Promise.all([refreshConnection(), refreshDevices()]).catch(e => console.error("syncStatus", e)); }, 3000);
+    }
     init();
   </script>
 </body>
