@@ -303,7 +303,11 @@ impl ConnectionManager {
 
     pub async fn get_connected_device(&self) -> Option<ConnectionStatus> {
         let connections = self.connections.read().await;
-        connections.values().find_map(|conn| {
+        info!("get_connected_device: checking {} connections", connections.len());
+        for (id, conn) in connections.iter() {
+            info!("  conn {}: state={:?}, device_id={:?}, device_name={:?}", id, conn.state, conn.device_id, conn.device_name);
+        }
+        let result = connections.values().find_map(|conn| {
             if matches!(
                 conn.state,
                 ConnectionState::Paired | ConnectionState::Listening
@@ -316,7 +320,9 @@ impl ConnectionManager {
             } else {
                 None
             }
-        })
+        });
+        info!("get_connected_device result: {:?}", result);
+        result
     }
 
     pub async fn start_listening(&self) -> Result<String, String> {

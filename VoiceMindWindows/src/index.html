@@ -901,10 +901,11 @@
     });
 
     /* ===== Tauri events ===== */
+    const unlisteners = [];
     async function bindEvents() {
       const listen = listenApi();
       if (!listen) return;
-      await listen("connection-changed", async event => {
+      unlisteners.push(await listen("connection-changed", async event => {
         const p = event.payload || {};
         const next = Boolean(p.connected);
         const nextName = p.device_name || p.name || null;
@@ -916,26 +917,26 @@
         if (changed) addActivity(next ? "连接已建立" : "设备已断开", next ? `${nextName || "iPhone"} 已连接` : "设备断开", "connection");
         renderStatus();
         await Promise.all([refreshConnection(), refreshDevices()]);
-      });
-      await listen("listening-started", event => {
+      }));
+      unlisteners.push(await listen("listening-started", event => {
         state.listening = true; renderStatus();
         addActivity("监听已开始", `${(event.payload || {}).device_name || state.deviceName || "iPhone"}`, "voice");
-      });
-      await listen("listening-stopped", event => {
+      }));
+      unlisteners.push(await listen("listening-stopped", event => {
         state.listening = false; renderStatus();
         addActivity("监听已停止", `会话 ${(event.payload || {}).session_id || "-"}`, "voice");
-      });
-      await listen("recognition-result", async event => {
+      }));
+      unlisteners.push(await listen("recognition-result", async event => {
         const p = event.payload || {};
         state.noteText = p.text || "";
         renderNote(); renderStatus();
         addActivity("识别结果", p.text || "(空)", "voice");
         await refreshHistory();
-      });
-      await listen("partial-result", event => {
+      }));
+      unlisteners.push(await listen("partial-result", event => {
         const p = event.payload || {};
         if (p.text) { state.noteText = p.text; renderNote(); renderStatus(); }
-      });
+      }));
     }
 
     /* ===== Init ===== */
