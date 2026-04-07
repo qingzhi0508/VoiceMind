@@ -47,8 +47,18 @@ fn setup_logging() {
     let file_appender = RollingFileAppender::new(Rotation::DAILY, &log_dir, "voicemind.log");
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 
+    // Use stdout for console output + file for persistent logs
     tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_writer(std::io::stdout)  // Console output
+                .with_ansi(true)
+        )
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_writer(non_blocking)  // File output
+                .with_ansi(false)
+        )
         .with(tracing_subscriber::EnvFilter::new("info"))
         .init();
 

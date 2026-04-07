@@ -2,11 +2,281 @@ use crate::{asr, AppState, speech::HistoryItem};
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use std::net::UdpSocket;
+use tracing::info;
+
+fn is_valid_local_ip(ip: &str) -> bool {
+    // Filter out invalid/loopback/link-local IPs
+    // Real network IPs (including 172.20.x.x, 192.168.x.x, 10.x.x.x) are accepted
+    ip != "127.0.0.1"
+        && ip != "0.0.0.0"
+        && !ip.starts_with("127.")     // Loopback
+        && !ip.starts_with("169.254.")  // Link-local (not routable)
+}
 
 fn get_local_ip() -> Option<String> {
-    let socket = UdpSocket::bind("0.0.0.0:0").ok()?;
-    socket.connect("8.8.8.8:80").ok()?;
-    socket.local_addr().ok()?.ip().to_string().into()
+    // Try multiple methods to get a valid LAN IP, in order of preference
+
+    // Method 1: Enumerate network interfaces (Windows) - most reliable
+    info!("get_local_ip: trying enumerate_adapters");
+    if let Some(ip) = enumerate_adapters() {
+        info!("get_local_ip: enumerate_adapters returned: {}", ip);
+        return Some(ip);
+    }
+
+    // Method 2: UDP socket connection (fallback, may return virtual IP)
+    if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
+        if socket.connect("8.8.8.8:80").is_ok() {
+            if let Ok(ip) = socket.local_addr() {
+                let ip_str = ip.ip().to_string();
+                if is_valid_local_ip(&ip_str) {
+                    info!("get_local_ip: found valid IP via UDP: {}", ip_str);
+                    return Some(ip_str);
+                } else {
+                    info!("get_local_ip: UDP returned invalid IP: {}", ip_str);
+                }
+            }
+        }
+    }
+
+    // Method 3: Try connecting to a different address (114.114.114.114 - DNS)
+    if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
+        if socket.connect("114.114.114.114:80").is_ok() {
+            if let Ok(ip) = socket.local_addr() {
+                let ip_str = ip.ip().to_string();
+                if is_valid_local_ip(&ip_str) {
+                    info!("get_local_ip: found valid IP via 114.114.114.114: {}", ip_str);
+                    return Some(ip_str);
+                }
+            }
+        }
+    }
+
+    info!("get_local_ip: all methods failed");
+    None
+}
+
+#[cfg(windows)]
+fn enumerate_adapters() -> Option<String> {
+    use std::process::Command;
+
+    // First, get the list of interfaces with their admin states
+    let interface_output = Command::new("netsh")
+        .args(["interface", "show", "interface"])
+        .output();
+
+    // Build a map of interface name -> connected state
+    let mut interface_connected: std::collections::HashMap<String, bool> = std::collections::HashMap::new();
+
+    if let Ok(output) = interface_output {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        info!("netsh interface show interface output:\n{}", stdout);
+
+        for line in stdout.lines() {
+            let trimmed = line.trim();
+            let trimmed_lower = trimmed.to_lowercase();
+            // Check for both English and Chinese states
+            if trimmed_lower.starts_with("enabled") || trimmed_lower.starts_with("disabled")
+                || trimmed_lower.starts_with("已启用") || trimmed_lower.starts_with("已断开")
+            {
+                // Check if connected (not disconnected)
+                let is_connected = !trimmed_lower.contains("disconnected")
+                    && !trimmed_lower.contains("已断开");
+
+                // Extract interface name - it's typically at the end
+                let name = trimmed.split_whitespace().last().unwrap_or("").trim().to_string();
+                if !name.is_empty() {
+                    interface_connected.insert(name.clone(), is_connected);
+                    info!("Interface '{}' connected={}", name, is_connected);
+                }
+            }
+        }
+    }
+
+    // Use netsh to get interface IP addresses
+    let output = Command::new("netsh")
+        .args(["interface", "ipv4", "show", "addresses"])
+        .output()
+        .ok()?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    info!("netsh ipv4 show addresses output:\n{}", stdout);
+
+    // Collect all valid interfaces with their info
+    #[derive(Debug)]
+    struct InterfaceInfo {
+        name: String,
+        ip: Option<String>,
+        has_gateway: bool,
+        interface_metric: u32,
+        is_connected: bool,
+    }
+
+    let mut interfaces: Vec<InterfaceInfo> = Vec::new();
+    let mut current_name = String::new();
+    let mut current_ip: Option<String> = None;
+    let mut current_gateway = false;
+    let mut current_metric: u32 = u32::MAX;
+
+    for line in stdout.lines() {
+        let trimmed = line.trim();
+        let trimmed_lower = trimmed.to_lowercase();
+
+        // Interface name line
+        let is_interface_line = trimmed.starts_with("Interface \"")
+            || trimmed.starts_with("Interface '")
+            || (trimmed.starts_with("接口 \"") && trimmed.contains("的配置"));
+
+        if is_interface_line {
+            // Save previous interface
+            if !current_name.is_empty() && current_ip.is_some() {
+                let is_connected = interface_connected.get(&current_name).copied().unwrap_or(true);
+                interfaces.push(InterfaceInfo {
+                    name: current_name.clone(),
+                    ip: current_ip.clone(),
+                    has_gateway: current_gateway,
+                    interface_metric: current_metric,
+                    is_connected,
+                });
+            }
+
+            // Reset for new interface
+            current_name = if let Some(start) = trimmed.find('"').map(|i| i + 1) {
+                if let Some(end) = trimmed[start..].find('"') {
+                    trimmed[start..start + end].to_string()
+                } else {
+                    String::new()
+                }
+            } else if let Some(start) = trimmed.find('\'').map(|i| i + 1) {
+                if let Some(end) = trimmed[start..].find('\'') {
+                    trimmed[start..start + end].to_string()
+                } else {
+                    String::new()
+                }
+            } else {
+                String::new()
+            };
+
+            current_ip = None;
+            current_gateway = false;
+            current_metric = u32::MAX;
+            continue;
+        }
+
+        let name_lower = current_name.to_lowercase();
+
+        // Skip virtual interfaces and empty names
+        if name_lower.contains("loopback")
+            || name_lower.contains("isatap")
+            || name_lower.contains("teredo")
+            || name_lower.contains("vethernet")
+            || name_lower.contains("hyper-v")
+            || name_lower.contains("wsl")
+            || name_lower.contains("docker")
+            || name_lower.contains("virtual")
+            || name_lower.contains("meta")
+            || current_name.is_empty()
+        {
+            continue;
+        }
+
+        // Check for Interface Metric
+        if trimmed_lower.contains("interfacemetric") && trimmed.contains(':') {
+            if let Some(metric_str) = trimmed.split(':').last().map(|s| s.trim()) {
+                if let Ok(metric) = metric_str.parse::<u32>() {
+                    current_metric = metric;
+                }
+            }
+        }
+
+        // Check for default gateway
+        if (trimmed_lower.starts_with("default gateway") || trimmed_lower.starts_with("默认网关"))
+            && trimmed.contains(':')
+        {
+            if let Some(gateway) = trimmed.split(':').last().map(|s| s.trim()) {
+                if !gateway.is_empty() && gateway != "None" && !gateway.contains("::") {
+                    current_gateway = true;
+                }
+            }
+        }
+
+        // Check for IP address
+        if (trimmed_lower.starts_with("ip address") || trimmed_lower.starts_with("ip 地址"))
+            && trimmed.contains(':')
+        {
+            if let Some(ip) = trimmed.split(':').last().map(|s| s.trim()) {
+                if ip.contains('.') && !ip.starts_with("0.") && !ip.is_empty() && ip != "0.0.0.0" {
+                    current_ip = Some(ip.to_string());
+                }
+            }
+        }
+    }
+
+    // Don't forget the last interface
+    if !current_name.is_empty() && current_ip.is_some() {
+        let is_connected = interface_connected.get(&current_name).copied().unwrap_or(true);
+        interfaces.push(InterfaceInfo {
+            name: current_name,
+            ip: current_ip,
+            has_gateway: current_gateway,
+            interface_metric: current_metric,
+            is_connected,
+        });
+    }
+
+    // Filter: only consider connected interfaces with gateways
+    // Also filter out interfaces with virtual/benchmarking IPs (198.18.x.x)
+    interfaces.retain(|i| {
+        let ip_lower = i.ip.as_ref().unwrap_or(&String::new()).to_lowercase();
+        i.has_gateway
+            && i.is_connected
+            && i.interface_metric != u32::MAX
+            && !ip_lower.starts_with("198.18.")
+            && !ip_lower.starts_with("198.19.")
+    });
+
+    // Sort by interface metric (lower = more preferred = currently active)
+    interfaces.sort_by_key(|i| i.interface_metric);
+
+    info!("enumerate_adapters: found {} valid connected interfaces with gateways", interfaces.len());
+    for (i, intf) in interfaces.iter().enumerate() {
+        info!("  {}. '{}' - IP: {:?}, has_gateway: {}, metric: {}, connected: {}",
+              i + 1, intf.name, intf.ip, intf.has_gateway, intf.interface_metric, intf.is_connected);
+    }
+
+    // Select the interface with lowest metric (currently active network)
+    if let Some(intf) = interfaces.first() {
+        info!("enumerate_adapters: selected interface '{}' with IP {} (metric: {})",
+              intf.name, intf.ip.as_ref().unwrap(), intf.interface_metric);
+        return intf.ip.clone();
+    }
+
+    None
+}
+
+/// Extract IPv4 address from an adapter block of ipconfig output
+fn extract_ipv4_from_block(block: &str) -> Option<String> {
+    for line in block.lines() {
+        let trimmed = line.trim();
+        if trimmed.contains("IPv4") && trimmed.contains(":") {
+            if let Some(ip) = trimmed.split(':').last().map(|s| s.trim().to_string()) {
+                if !ip.is_empty()
+                    && ip != "0.0.0.0"
+                    && !ip.starts_with("127.")
+                    && !ip.starts_with("169.254.")
+                    && !ip.starts_with("198.18.")
+                    && !ip.starts_with("198.19.")
+                {
+                    return Some(ip);
+                }
+            }
+        }
+    }
+    None
+}
+
+#[cfg(not(windows))]
+fn enumerate_adapters() -> Option<String> {
+    None
 }
 
 fn get_hostname() -> String {
