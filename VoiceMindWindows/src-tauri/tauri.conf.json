@@ -22,11 +22,7 @@
         "visible": true,
         "dataDirectory": "main"
       }
-    ],
-    "trayIcon": {
-      "iconPath": "icons/icon.ico",
-      "iconAsTemplate": false
-    }
+    ]
   },
   "bundle": {
     "active": true,

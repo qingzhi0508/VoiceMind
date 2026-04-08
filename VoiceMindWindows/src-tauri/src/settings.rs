@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 fn default_theme() -> String { "system".to_string() }
+fn default_retention_days() -> u32 { 30 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
@@ -10,6 +11,10 @@ pub struct Settings {
     pub hotkey: String,
     #[serde(default = "default_theme")]
     pub theme: String,
+    #[serde(default = "default_retention_days")]
+    pub history_retention_days: u32,
+    #[serde(default)]
+    pub asr_engine: String,
     pub bonjour: BonjourSettings,
     pub asr: AsrSettings,
 }
@@ -37,6 +42,8 @@ impl Default for Settings {
             server_port: 8765,
             hotkey: "".to_string(),
             theme: "system".to_string(),
+            history_retention_days: 30,
+            asr_engine: "cloud".to_string(),
             bonjour: BonjourSettings { enabled: true },
             asr: AsrSettings {
                 provider: "".to_string(),

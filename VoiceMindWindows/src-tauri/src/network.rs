@@ -5,6 +5,8 @@ use crate::pairing::PairingManager;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -219,6 +221,9 @@ pub struct Connection {
     pub last_pong: Instant,
     pub secret_key: Option<String>,
     pub current_session_id: Option<String>,
+    pub audio_buffer: Vec<u8>,
+    pub audio_sample_rate: u32,
+    pub audio_channels: u32,
 }
 
 pub struct ConnectionManager {
@@ -226,6 +231,9 @@ pub struct ConnectionManager {
     connections: Arc<RwLock<HashMap<String, Connection>>>,
     running: bool,
     event_emitter: Arc<Mutex<EventEmitter>>,
+    shutdown_tx: Option<tokio::sync::mpsc::Sender<()>>,
+    pairing_manager: Option<Arc<Mutex<PairingManager>>>,
+    history_store: Option<Arc<Mutex<crate::speech::HistoryStore>>>,
 }
 
 impl ConnectionManager {
@@ -235,6 +243,9 @@ impl ConnectionManager {
             connections: Arc::new(RwLock::new(HashMap::new())),
             running: false,
             event_emitter: Arc::new(Mutex::new(EventEmitter::new())),
+            shutdown_tx: None,
+            pairing_manager: None,
+            history_store: None,
         }
     }
 
@@ -255,12 +266,17 @@ impl ConnectionManager {
         pairing_manager: Arc<Mutex<PairingManager>>,
         history_store: Arc<Mutex<crate::speech::HistoryStore>>,
     ) -> Result<(), String> {
+        if self.running { return Ok(()); }
         self.server_port = port;
+        self.pairing_manager = Some(pairing_manager.clone());
+        self.history_store = Some(history_store.clone());
         let addr = format!("0.0.0.0:{port}");
         let listener = TcpListener::bind(&addr)
             .await
             .map_err(|e| format!("Failed to bind to {addr}: {e}"))?;
 
+        let (shutdown_tx, mut shutdown_rx) = tokio::sync::mpsc::channel::<()>(1);
+        self.shutdown_tx = Some(shutdown_tx);
         self.running = true;
         info!("VoiceMind TCP server listening on {}", addr);
 
@@ -268,37 +284,66 @@ impl ConnectionManager {
         let emitter = self.event_emitter.clone();
         tokio::spawn(async move {
             loop {
-                match listener.accept().await {
-                    Ok((stream, peer_addr)) => {
-                        info!("Accepted TCP connection from {}", peer_addr);
-                        let conn_id = Uuid::new_v4().to_string();
-                        let connections = connections.clone();
-                        let pairing_manager = pairing_manager.clone();
-                        let emitter = emitter.clone();
-                        let history_store = history_store.clone();
-                        tokio::spawn(async move {
-                            if let Err(err) = handle_connection(
-                                conn_id,
-                                stream,
-                                connections,
-                                pairing_manager,
-                                emitter,
-                                history_store,
-                            )
-                            .await
-                            {
-                                error!("Connection handling failed: {}", err);
+                tokio::select! {
+                    result = listener.accept() => {
+                        match result {
+                            Ok((stream, peer_addr)) => {
+                                info!("Accepted TCP connection from {}", peer_addr);
+                                let conn_id = Uuid::new_v4().to_string();
+                                let connections = connections.clone();
+                                let pairing_manager = pairing_manager.clone();
+                                let emitter = emitter.clone();
+                                let history_store = history_store.clone();
+                                tokio::spawn(async move {
+                                    if let Err(err) = handle_connection(
+                                        conn_id,
+                                        stream,
+                                        connections,
+                                        pairing_manager,
+                                        emitter,
+                                        history_store,
+                                    )
+                                    .await
+                                    {
+                                        error!("Connection handling failed: {}", err);
+                                    }
+                                });
                             }
-                        });
+                            Err(err) => {
+                                error!("Accept failed: {}", err);
+                            }
+                        }
                     }
-                    Err(err) => {
-                        error!("Accept failed: {}", err);
+                    _ = shutdown_rx.recv() => {
+                        info!("Server shutdown signal received");
+                        break;
                     }
                 }
             }
         });
 
         Ok(())
+    }
+
+    pub async fn stop_server(&mut self) -> Result<(), String> {
+        if !self.running { return Ok(()); }
+        // Send shutdown signal
+        if let Some(tx) = self.shutdown_tx.take() {
+            let _ = tx.send(()).await;
+        }
+        // Close all connections
+        let mut connections = self.connections.write().await;
+        connections.clear();
+        self.running = false;
+        // Emit disconnected event
+        let emitter = self.event_emitter.lock().await;
+        emitter.emit_connection_changed(false, None, None);
+        info!("Server stopped");
+        Ok(())
+    }
+
+    pub fn is_running(&self) -> bool {
+        self.running
     }
 
     pub async fn get_connected_device(&self) -> Option<ConnectionStatus> {
@@ -444,6 +489,9 @@ async fn handle_connection(
                 last_pong: Instant::now(),
                 secret_key: None,
                 current_session_id: None,
+                audio_buffer: Vec::new(),
+                audio_sample_rate: 16000,
+                audio_channels: 1,
             },
         );
     }
@@ -577,8 +625,8 @@ async fn process_message(
         }
         MessageType::PartialResult => handle_partial_result(conn_id, envelope, event_emitter).await,
         MessageType::AudioStart => handle_audio_start(conn_id, envelope, connections, event_emitter).await,
-        MessageType::AudioData => handle_audio_data(conn_id, envelope).await,
-        MessageType::AudioEnd => handle_audio_end(conn_id, envelope, connections, event_emitter).await,
+        MessageType::AudioData => handle_audio_data(conn_id, envelope, connections).await,
+        MessageType::AudioEnd => handle_audio_end(conn_id, envelope, connections, event_emitter, history_store).await,
         MessageType::Error => handle_error(envelope).await,
         MessageType::PairSuccess => {
             info!("Received PairSuccess from conn_id={} - pairing completed on iOS side", conn_id);
@@ -1017,6 +1065,9 @@ async fn handle_audio_start(
     if let Some(conn) = conns.get_mut(conn_id) {
         conn.state = ConnectionState::Listening;
         conn.current_session_id = Some(payload.session_id.clone());
+        conn.audio_buffer.clear();
+        conn.audio_sample_rate = payload.sample_rate;
+        conn.audio_channels = payload.channels;
     }
 
     // Emit listening-started event to frontend
@@ -1026,9 +1077,14 @@ async fn handle_audio_start(
     Ok(())
 }
 
-async fn handle_audio_data(_conn_id: &str, envelope: Envelope) -> Result<(), String> {
-    let _payload: AudioDataPayload = serde_json::from_slice(&envelope.payload)
+async fn handle_audio_data(conn_id: &str, envelope: Envelope, connections: &Arc<RwLock<HashMap<String, Connection>>>) -> Result<(), String> {
+    let payload: AudioDataPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid audioData payload: {}", e))?;
+
+    let mut conns = connections.write().await;
+    if let Some(conn) = conns.get_mut(conn_id) {
+        conn.audio_buffer.extend_from_slice(&payload.audio_data);
+    }
     Ok(())
 }
 
@@ -1037,26 +1093,118 @@ async fn handle_audio_end(
     envelope: Envelope,
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
+    history_store: &Arc<Mutex<crate::speech::HistoryStore>>,
 ) -> Result<(), String> {
     let payload: AudioEndPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid audioEnd payload: {}", e))?;
 
-    let session_id = {
-        let conns = connections.read().await;
-        conns.get(conn_id).and_then(|conn| conn.current_session_id.clone())
+    // Extract audio buffer and device info
+    let (audio_data, sample_rate, channels, device_name, session_id) = {
+        let mut conns = connections.write().await;
+        let conn = conns.get_mut(conn_id).ok_or("Connection not found")?;
+        conn.state = ConnectionState::Paired;
+        let sid = conn.current_session_id.clone().unwrap_or(payload.session_id.clone());
+        conn.current_session_id = None;
+        let buf = std::mem::take(&mut conn.audio_buffer);
+        let sr = conn.audio_sample_rate;
+        let ch = conn.audio_channels;
+        let dn = conn.device_name.clone();
+        (buf, sr, ch, dn, sid)
     };
 
-    let mut conns = connections.write().await;
-    if let Some(conn) = conns.get_mut(conn_id) {
-        conn.state = ConnectionState::Paired;
-        conn.current_session_id = None;
+    // Emit listening-stopped event
+    let emitter = event_emitter.lock().await;
+    emitter.emit_listening_stopped(session_id.clone());
+    drop(emitter);
+
+    // Process buffered audio with local SAPI recognition
+    if !audio_data.is_empty() {
+        info!("Local ASR: processing {} bytes of audio ({}Hz, {}ch)", audio_data.len(), sample_rate, channels);
+
+        // Write WAV file
+        let wav_path = std::env::temp_dir().join("voicemind_local_asr.wav");
+        if let Err(e) = write_wav_file(&wav_path, &audio_data, sample_rate, channels) {
+            warn!("Failed to write WAV file: {}", e);
+            return Ok(());
+        }
+
+        // Recognize using PowerShell + SAPI
+        let text = recognize_with_sapi(&wav_path);
+        let _ = std::fs::remove_file(&wav_path);
+
+        match text {
+            Ok(ref t) if !t.trim().is_empty() => {
+                info!("Local ASR result: {}", t);
+                crate::injection::inject_text_with_fallback(t).ok();
+                let mut store = history_store.lock().await;
+                store.add(t.clone(), device_name.clone().unwrap_or_else(|| "iOS".to_string()), Some(session_id.clone()));
+                let emitter = event_emitter.lock().await;
+                emitter.emit_recognition_result(t.clone(), "zh-CN".to_string(), session_id, device_name);
+            }
+            Ok(_) => { info!("Local ASR: empty result"); }
+            Err(e) => { warn!("Local ASR failed: {}", e); }
+        }
     }
 
-    // Emit listening-stopped event to frontend
-    let emitter = event_emitter.lock().await;
-    emitter.emit_listening_stopped(session_id.unwrap_or(payload.session_id));
-
     Ok(())
+}
+
+fn write_wav_file(path: &std::path::Path, pcm_data: &[u8], sample_rate: u32, channels: u32) -> Result<(), String> {
+    use std::io::Write;
+    let data_len = pcm_data.len() as u32;
+    let file = std::fs::File::create(path).map_err(|e| e.to_string())?;
+    let mut writer = std::io::BufWriter::new(file);
+    let bits_per_sample: u16 = 16;
+    let byte_rate = sample_rate * channels * (bits_per_sample as u32 / 8);
+    let block_align = (channels * (bits_per_sample as u32 / 8)) as u16;
+    // RIFF header
+    writer.write_all(b"RIFF").map_err(|e| e.to_string())?;
+    writer.write_all(&(36 + data_len).to_le_bytes()).map_err(|e| e.to_string())?;
+    writer.write_all(b"WAVE").map_err(|e| e.to_string())?;
+    // fmt chunk
+    writer.write_all(b"fmt ").map_err(|e| e.to_string())?;
+    writer.write_all(&16u32.to_le_bytes()).map_err(|e| e.to_string())?;
+    writer.write_all(&1u16.to_le_bytes()).map_err(|e| e.to_string())?; // PCM
+    writer.write_all(&(channels as u16).to_le_bytes()).map_err(|e| e.to_string())?;
+    writer.write_all(&sample_rate.to_le_bytes()).map_err(|e| e.to_string())?;
+    writer.write_all(&byte_rate.to_le_bytes()).map_err(|e| e.to_string())?;
+    writer.write_all(&block_align.to_le_bytes()).map_err(|e| e.to_string())?;
+    writer.write_all(&bits_per_sample.to_le_bytes()).map_err(|e| e.to_string())?;
+    // data chunk
+    writer.write_all(b"data").map_err(|e| e.to_string())?;
+    writer.write_all(&data_len.to_le_bytes()).map_err(|e| e.to_string())?;
+    writer.write_all(pcm_data).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+fn recognize_with_sapi(wav_path: &std::path::Path) -> Result<String, String> {
+    let path_str = wav_path.to_string_lossy().to_string();
+    let script = format!(
+        r#"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+Add-Type -AssemblyName System.Speech
+$rec = New-Object System.Speech.Recognition.SpeechRecognitionEngine
+$grammar = New-Object System.Speech.Recognition.DictationGrammar
+$rec.LoadGrammar($grammar)
+$rec.SetInputToWaveFile("{}")
+$result = $rec.Recognize([System.TimeSpan]::FromSeconds(15))
+if ($result -and $result.Text) {{ Write-Output $result.Text }} else {{ Write-Output "" }}
+"#,
+        path_str.replace("\\", "\\\\").replace("\"", "\\\"")
+    );
+    let output = std::process::Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", &script])
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW
+        .output()
+        .map_err(|e| format!("PowerShell execution failed: {}", e))?;
+
+    let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    info!("SAPI recognition output: {:?}, stderr: {:?}", text, String::from_utf8_lossy(&output.stderr));
+    if text.is_empty() {
+        return Err("No recognition result".to_string());
+    }
+    Ok(text)
 }
 
 async fn handle_error(envelope: Envelope) -> Result<(), String> {

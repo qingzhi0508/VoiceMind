@@ -494,6 +494,34 @@ pub async fn get_listening_status(state: State<'_, AppState>) -> Result<bool, St
 }
 
 #[tauri::command]
+pub async fn start_service(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    let mut conn_mgr = state.connection_manager.lock().await;
+    let settings = state.settings_store.lock().await;
+    let port = settings.get().server_port;
+    drop(settings);
+
+    let pairing_mgr = state.pairing_manager.clone();
+    let history_store = state.history_store.clone();
+    conn_mgr.start_server(port, pairing_mgr, history_store).await?;
+    tracing::info!("Service started on port {}", port);
+    Ok(serde_json::json!({ "success": true, "port": port }))
+}
+
+#[tauri::command]
+pub async fn stop_service(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    let mut conn_mgr = state.connection_manager.lock().await;
+    conn_mgr.stop_server().await?;
+    tracing::info!("Service stopped");
+    Ok(serde_json::json!({ "success": true }))
+}
+
+#[tauri::command]
+pub async fn get_service_status(state: State<'_, AppState>) -> Result<bool, String> {
+    let conn_mgr = state.connection_manager.lock().await;
+    Ok(conn_mgr.is_running())
+}
+
+#[tauri::command]
 pub async fn get_pairing_status(state: State<'_, AppState>) -> Result<PairingStatus, String> {
     let mut manager = state.pairing_manager.lock().await;
 
@@ -641,6 +669,29 @@ pub async fn save_asr_config(state: State<'_, AppState>, config: AsrConfig) -> R
     }));
 
     Ok(())
+}
+
+#[tauri::command]
+pub async fn set_history_retention(state: State<'_, AppState>, days: u32) -> Result<(), String> {
+    {
+        let mut settings = state.settings_store.lock().await;
+        let mut s = settings.get();
+        s.history_retention_days = days;
+        settings.update(s)?;
+    }
+    {
+        let mut store = state.history_store.lock().await;
+        store.cleanup_expired_with_days(days);
+        store.save();
+    }
+    tracing::info!("History retention set to {} days", days);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn check_local_asr() -> Result<bool, String> {
+    // Windows SAPI is available on all modern Windows versions
+    Ok(true)
 }
 
 #[tauri::command]

@@ -164,7 +164,13 @@ fn main() {
 
             let menu = Menu::with_items(app, &[&show_item, &pair_item, &quit_item])?;
 
+            let tray_img = image::load_from_memory(include_bytes!("../icons/32x32.png"))
+                .expect("Failed to load tray icon image");
+            let rgba = tray_img.to_rgba8();
+            let (w, h) = rgba.dimensions();
+            let icon = tauri::image::Image::new_owned(rgba.into_raw(), w, h);
             let _tray = TrayIconBuilder::new()
+                .icon(icon)
                 .menu(&menu)
                 .tooltip("VoiceMind - iPhone as Microphone")
                 .on_menu_event(|app, event| {
@@ -255,6 +261,11 @@ fn main() {
             commands::open_accessibility_settings,
             commands::get_inbound_data_records,
             commands::clear_inbound_data_records,
+            commands::set_history_retention,
+            commands::start_service,
+            commands::stop_service,
+            commands::get_service_status,
+            commands::check_local_asr,
         ])
         .run(tauri::generate_context!());
 

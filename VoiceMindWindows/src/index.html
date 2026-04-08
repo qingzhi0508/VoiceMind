@@ -291,7 +291,7 @@
               <div class="mini"><div class="label">服务地址</div><div id="home-network" class="value">待加载</div></div>
             </div>
             <div class="toolbar">
-              <button id="btn-toggle-listen" class="btn primary" type="button">开始监听</button>
+              <button id="btn-toggle-service" class="btn primary" type="button">启动服务</button>
               <button id="btn-pairing" class="btn secondary" type="button">刷新配对</button>
               <button id="btn-refresh-devices" class="btn secondary" type="button">刷新设备</button>
             </div>
@@ -308,11 +308,6 @@
               <div id="devices-list" class="list"></div>
             </div>
           </div>
-          <div class="card">
-            <h3>最近识别</h3>
-            <div id="note-preview" class="preview">等待识别结果...</div>
-            <div class="toolbar"><button id="clear-note" class="btn secondary" type="button">清空</button></div>
-          </div>
         </section>
 
         <!-- RECORDS -->
@@ -322,6 +317,14 @@
             <input id="records-search" type="text" class="search-input" placeholder="搜索记录...">
             <button id="refresh-history" class="btn secondary" type="button">刷新</button>
             <button id="clear-history" class="btn danger" type="button">清空</button>
+          </div>
+          <div class="search-row" style="margin-top:8px">
+            <span style="font-size:13px;color:var(--text-secondary);white-space:nowrap">保存时间</span>
+            <div class="seg-picker" id="retention-picker">
+              <button class="seg" data-days="7">7 天</button>
+              <button class="seg active" data-days="30">30 天</button>
+              <button class="seg" data-days="100">100 天</button>
+            </div>
           </div>
           <div id="history-list"></div>
         </section>
@@ -353,16 +356,24 @@
           <div class="card">
             <h3>识别引擎</h3>
             <div class="engine-list">
-              <div class="engine-row selected">
+              <div class="engine-row selected" data-engine="cloud">
                 <div class="engine-radio"></div>
                 <div class="engine-info">
                   <div class="engine-name">Volcengine ASR (火山引擎)</div>
-                  <div class="engine-langs">支持: zh-CN, en-US</div>
+                  <div class="engine-langs">云端识别 · 支持: zh-CN, en-US</div>
                 </div>
-                <span class="engine-status available" id="engine-status">可用</span>
+                <span class="engine-status available" id="engine-status-cloud">可用</span>
+              </div>
+              <div class="engine-row" data-engine="local">
+                <div class="engine-radio"></div>
+                <div class="engine-info">
+                  <div class="engine-name">Windows 语音识别 (本地)</div>
+                  <div class="engine-langs">离线识别 · 无需网络 · 系统内置</div>
+                </div>
+                <span class="engine-status" id="engine-status-local">检测中</span>
               </div>
             </div>
-            <p style="margin-top:12px;font-size:13px;color:var(--secondaryText)">引擎配置请前往 设置 → ASR 配置。</p>
+            <p style="margin-top:12px;font-size:13px;color:var(--secondaryText)">点击选择引擎。云端引擎配置请前往 设置 → ASR 配置。</p>
           </div>
         </section>
 
@@ -468,14 +479,14 @@
       devices: [],
       activity: [],
       dataFilter: "all",
-      recordsSearch: ""
+      recordsSearch: "",
+      serviceRunning: false
     };
 
     /* ===== DOM refs ===== */
     const pages = [...document.querySelectorAll(".page")];
     const navItems = [...document.querySelectorAll(".nav-item")];
     const banner = document.getElementById("banner");
-    const notePreview = document.getElementById("note-preview");
     const historyList = document.getElementById("history-list");
     const devicesList = document.getElementById("devices-list");
     const activityList = document.getElementById("activity-list");
@@ -495,7 +506,7 @@
 
     /* ===== Helpers ===== */
     const pairedName = () => state.deviceName || (state.devices[0] && state.devices[0].name) || null;
-    const connLabel = () => state.listening ? "监听中" : state.connected ? "已连接" : "未连接";
+    const connLabel = () => !state.serviceRunning ? "服务已停止" : state.listening ? "监听中" : state.connected ? "已连接" : "未连接";
 
     function summary() {
       if (state.deviceName) return `${state.deviceName} 已完成配对，当前${state.listening ? "正在传输音频" : "处于可用连接状态"}。`;
@@ -523,6 +534,8 @@
       state.page = id;
       pages.forEach(p => p.classList.toggle("active", p.id === id));
       navItems.forEach(i => i.classList.toggle("active", i.dataset.page === id));
+      // Load data when switching to specific pages
+      if (id === "records") refreshHistory();
     }
     navItems.forEach(i => i.addEventListener("click", () => showPage(i.dataset.page)));
 
@@ -567,15 +580,11 @@
       document.getElementById("home-device").textContent = pairedName() || "暂无";
       document.getElementById("home-network").textContent = state.pairingIp ? `${state.pairingIp}:${state.pairingPort || "-"}` : "待加载";
 
-      // Listen button
-      const btn = document.getElementById("btn-toggle-listen");
-      btn.textContent = state.listening ? "停止监听" : "开始监听";
-      btn.classList.toggle("danger", state.listening);
-      btn.classList.toggle("primary", !state.listening);
-    }
-
-    function renderNote() {
-      notePreview.textContent = state.noteText || "等待识别结果...";
+      // Service button
+      const btn = document.getElementById("btn-toggle-service");
+      btn.textContent = state.serviceRunning ? "停止服务" : "启动服务";
+      btn.classList.toggle("danger", state.serviceRunning);
+      btn.classList.toggle("primary", !state.serviceRunning);
     }
 
     function renderRecordsCount() {
@@ -720,9 +729,9 @@
         state.connected = next;
         state.deviceName = nextName;
         state.deviceId = s && s.device_id ? s.device_id : null;
-        if (changed) addActivity(next ? "连接已建立" : "连接已断开", next ? `${nextName || "iPhone"} 已连接` : "设备断开", "connection");
+        if (changed) { addActivity(next ? "连接已建立" : "连接已断开", next ? `${nextName || "iPhone"} 已连接` : "设备断开", "connection"); console.log("Connection state changed:", next, nextName); }
         renderStatus();
-      } catch (e) { console.error("refreshConnection", e); }
+      } catch (e) { console.error("refreshConnection error:", e); }
     }
 
     async function refreshPairing() {
@@ -763,10 +772,12 @@
     async function refreshHistory() {
       if (!state.isTauri) return;
       try {
+        console.log("refreshHistory: fetching...");
         const h = await invoke("get_history");
         state.history = Array.isArray(h) ? h : [];
+        console.log("refreshHistory: got", state.history.length, "records");
         renderHistory();
-      } catch (e) { console.error("refreshHistory", e); }
+      } catch (e) { console.error("refreshHistory error:", e); }
     }
 
     async function loadSettings() {
@@ -790,11 +801,26 @@
           document.getElementById("setting-asr-cluster").value = s.asr.cluster || "";
           document.getElementById("setting-asr-language").value = s.asr.asr_language || "zh-CN";
         }
-        // Engine status
+        // Retention
+        const rd = s.history_retention_days || 30;
+        document.querySelectorAll("#retention-picker .seg").forEach(seg => seg.classList.toggle("active", parseInt(seg.dataset.days) === rd));
+        // Engine status - cloud
         const configured = s.asr && s.asr.access_key_id;
-        const statusEl = document.getElementById("engine-status");
-        if (configured) { statusEl.textContent = "已配置"; statusEl.className = "engine-status available"; }
-        else { statusEl.textContent = "未配置"; statusEl.className = "engine-status"; statusEl.style.background = "rgba(239,68,68,0.12)"; statusEl.style.color = "var(--accentRed)"; }
+        const cloudEl = document.getElementById("engine-status-cloud");
+        if (configured) { cloudEl.textContent = "已配置"; cloudEl.className = "engine-status available"; }
+        else { cloudEl.textContent = "未配置"; cloudEl.className = "engine-status"; cloudEl.style.background = "rgba(239,68,68,0.12)"; cloudEl.style.color = "var(--accentRed)"; }
+        // Engine status - local
+        try {
+          const localOk = await invoke("check_local_asr");
+          const localEl = document.getElementById("engine-status-local");
+          if (localOk) { localEl.textContent = "可用"; localEl.className = "engine-status available"; }
+          else { localEl.textContent = "不可用"; localEl.className = "engine-status"; }
+        } catch(e) {}
+        // Engine selection
+        const currentEngine = s.asr_engine || "cloud";
+        document.querySelectorAll(".engine-row").forEach(row => {
+          row.classList.toggle("selected", row.dataset.engine === currentEngine);
+        });
         // Theme
         if (s.theme) applyTheme(s.theme);
       } catch (e) { console.error("loadSettings", e); }
@@ -847,18 +873,38 @@
       } catch (e) { toast(`ASR 保存失败: ${e}`); }
     }
 
-    async function toggleListening() {
+    async function toggleService() {
       if (!state.isTauri) return;
       try {
-        if (state.listening) {
-          const r = await invoke("stop_listening");
-          if (r && r.success) { state.listening = false; renderStatus(); addActivity("监听已停止", `会话 ${r.session_id || "-"}`, "voice"); toast("已停止监听"); }
+        if (state.serviceRunning) {
+          await invoke("stop_service");
+          state.serviceRunning = false;
+          state.connected = false;
+          state.listening = false;
+          addActivity("服务已停止", "本地服务已关闭", "connection");
+          toast("服务已停止");
         } else {
-          const r = await invoke("start_listening");
-          if (r && r.success) { state.listening = true; renderStatus(); addActivity("监听已开始", `会话 ${r.session_id || "-"}`, "voice"); toast("已开始监听"); }
+          const r = await invoke("start_service");
+          state.serviceRunning = true;
+          addActivity("服务已启动", `端口: ${r && r.port || "-"}`, "connection");
+          toast("服务已启动");
         }
-      } catch (e) { toast(`监听操作失败: ${e}`); }
+        renderStatus();
+      } catch (e) { toast(`服务操作失败: ${e}`); }
     }
+
+    // Engine row click handler
+    document.querySelectorAll(".engine-row").forEach(row => {
+      row.addEventListener("click", async () => {
+        const engine = row.dataset.engine;
+        document.querySelectorAll(".engine-row").forEach(r => r.classList.remove("selected"));
+        row.classList.add("selected");
+        if (state.isTauri && state.settings) {
+          try { await invoke("save_settings", { settings: { ...state.settings, asr_engine: engine } }); state.settings.asr_engine = engine; toast(engine === "local" ? "已切换到本地识别" : "已切换到云端识别"); }
+          catch (e) { toast(`切换失败: ${e}`); }
+        }
+      });
+    });
 
     function toast(message) {
       const old = document.querySelector(".toast");
@@ -871,7 +917,7 @@
     }
 
     /* ===== Event bindings ===== */
-    document.getElementById("btn-toggle-listen").addEventListener("click", toggleListening);
+    document.getElementById("btn-toggle-service").addEventListener("click", toggleService);
     document.getElementById("btn-pairing").addEventListener("click", refreshPairing);
     document.getElementById("btn-refresh-devices").addEventListener("click", refreshDevices);
     document.getElementById("refresh-history").addEventListener("click", refreshHistory);
@@ -879,7 +925,6 @@
       if (!state.isTauri) return;
       try { await invoke("clear_history"); state.history = []; renderHistory(); addActivity("历史已清空", "识别记录已删除", "records"); } catch (e) { toast(`清空失败: ${e}`); }
     });
-    document.getElementById("clear-note").addEventListener("click", () => { state.noteText = ""; renderNote(); });
     document.getElementById("save-settings").addEventListener("click", saveSettings);
     document.getElementById("save-asr").addEventListener("click", saveASR);
     document.getElementById("reload-settings").addEventListener("click", loadSettings);
@@ -887,6 +932,18 @@
 
     // Records search
     document.getElementById("records-search").addEventListener("input", e => { state.recordsSearch = e.target.value; renderHistory(); });
+    // Retention picker
+    document.querySelectorAll("#retention-picker .seg").forEach(seg => {
+      seg.addEventListener("click", async () => {
+        const days = parseInt(seg.dataset.days);
+        document.querySelectorAll("#retention-picker .seg").forEach(s => s.classList.remove("active"));
+        seg.classList.add("active");
+        if (state.isTauri) {
+          try { await invoke("set_history_retention", { days }); toast(`保存时间已设为 ${days} 天`); await refreshHistory(); }
+          catch (e) { toast(`设置失败: ${e}`); }
+        }
+      });
+    });
     // Data search
     document.getElementById("data-search").addEventListener("input", () => renderActivity());
 
@@ -907,6 +964,7 @@
       if (!listen) return;
       unlisteners.push(await listen("connection-changed", async event => {
         const p = event.payload || {};
+        console.log("connection-changed event received:", p);
         const next = Boolean(p.connected);
         const nextName = p.device_name || p.name || null;
         const changed = state.connected !== next || state.deviceName !== nextName;
@@ -929,30 +987,41 @@
       unlisteners.push(await listen("recognition-result", async event => {
         const p = event.payload || {};
         state.noteText = p.text || "";
-        renderNote(); renderStatus();
+        renderStatus();
         addActivity("识别结果", p.text || "(空)", "voice");
         await refreshHistory();
       }));
       unlisteners.push(await listen("partial-result", event => {
         const p = event.payload || {};
-        if (p.text) { state.noteText = p.text; renderNote(); renderStatus(); }
+        if (p.text) { state.noteText = p.text; renderStatus(); }
       }));
     }
 
     /* ===== Init ===== */
     async function init() {
-      renderStatus(); renderNote(); renderHistory(); renderDevices(); renderActivity();
-      // Wait for Tauri to be ready (it may not be available immediately in some webview versions)
-      let tauriReady = false;
-      for (let i = 0; i < 20; i++) {
-        if (window.__TAURI__) { tauriReady = true; break; }
-        await new Promise(r => setTimeout(r, 50));
-      }
-      if (!tauriReady) { console.warn("Tauri not available, running in preview mode"); return; }
+      renderStatus(); renderHistory(); renderDevices(); renderActivity();
+      // Check Tauri via invoke availability
+      const hasInvoke = window.__TAURI__ && window.__TAURI__.core && typeof window.__TAURI__.core.invoke === "function";
+      console.log("init: Tauri available:", !!window.__TAURI__, "hasInvoke:", hasInvoke);
+      if (!hasInvoke) { console.warn("Tauri not available, running in preview mode"); return; }
       state.isTauri = true;
-      await bindEvents();
-      await Promise.all([refreshConnection(), refreshPairing(), refreshDevices(), refreshHistory(), loadSettings()]);
-      setInterval(() => { Promise.all([refreshConnection(), refreshDevices()]).catch(e => console.error("syncStatus", e)); }, 3000);
+
+      // Primary: polling sync every 2 seconds (always works, no event dependency)
+      async function syncStatus() {
+        try { state.serviceRunning = await invoke("get_service_status"); } catch(e) {}
+        await Promise.all([refreshConnection(), refreshDevices()]).catch(e => console.error("syncStatus", e));
+        renderStatus();
+      }
+      // Initial load
+      await syncStatus();
+      await Promise.all([refreshPairing(), refreshHistory(), loadSettings()]);
+      console.log("init: initial load done, connected:", state.connected);
+      // Start polling
+      setInterval(syncStatus, 2000);
+
+      // Secondary: try event listeners for real-time updates (optional)
+      try { await bindEvents(); console.log("init: event listeners registered"); }
+      catch (e) { console.warn("init: event listeners failed, polling only:", e); }
     }
     init();
   </script>

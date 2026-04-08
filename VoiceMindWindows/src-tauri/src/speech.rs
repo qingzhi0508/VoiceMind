@@ -78,7 +78,11 @@ impl HistoryStore {
     }
 
     pub fn cleanup_expired(&mut self) {
-        let expiry = chrono::Utc::now() - chrono::Duration::days(EXPIRY_DAYS);
+        self.cleanup_expired_with_days(EXPIRY_DAYS as u32);
+    }
+
+    pub fn cleanup_expired_with_days(&mut self, days: u32) {
+        let expiry = chrono::Utc::now() - chrono::Duration::days(days as i64);
         if let Ok(expiry_dt) = DateTime::parse_from_rfc3339(&expiry.to_rfc3339()) {
             let expiry_naive = expiry_dt.naive_utc();
             self.records.retain(|r| {
@@ -114,7 +118,7 @@ impl HistoryStore {
         self.save();
     }
 
-    fn save(&self) {
+    pub fn save(&self) {
         if let Some(parent) = self.storage_path.parent() {
             std::fs::create_dir_all(parent).ok();
         }
