@@ -25,5 +25,7 @@ export const state = {
   currentVersion: "",
   updateInfo: null,
   updateChecking: false,
+  updateInstalling: false,
+  updateProgress: null,
   updateBannerDismissed: false,
 };

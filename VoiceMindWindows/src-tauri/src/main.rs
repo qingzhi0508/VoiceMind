@@ -76,6 +76,8 @@ fn main() {
     std::thread::sleep(std::time::Duration::from_millis(500));
 
     let result = tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             info!("Setting up VoiceMind...");

@@ -4,6 +4,8 @@ import { invoke, listenApi } from "./tauri.js";
 import { pairedName, connLabel, summary, escHtml } from "./helpers.js";
 import { applyTheme } from "./theme.js";
 import { initSpeechAsrLayout, bindNavigation, bindSegmentedPickers } from "./layout.js";
+import { check as checkForAppUpdate } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 
 if (!state.isTauri) banner.style.display = "block";
 
@@ -27,10 +29,12 @@ const recordsBatchToolbar = document.getElementById("records-batch-toolbar");
 const recordsBatchCount = document.getElementById("records-batch-count");
 const updateResult = document.getElementById("update-result");
 const btnCheckUpdate = document.getElementById("btn-check-update");
+const btnOpenReleases = document.getElementById("btn-open-releases");
 const btnUserGuide = document.getElementById("btn-user-guide");
 const updateBanner = document.getElementById("update-banner");
 const updateBannerText = document.getElementById("update-banner-text");
 const updateBannerClose = document.getElementById("update-banner-close");
+const RELEASES_URL = "https://github.com/qingzhi0508/VoiceMind/releases";
 
 function getFilteredHistoryItems() {
   let items = state.history;
@@ -584,125 +588,143 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       setTimeout(() => el.remove(), 2800);
     }
 
-    /* ===== Version compare ===== */
-    function parseVersion(v) {
-      const parts = v.replace(/^v/, "").split(".").map(Number);
-      return [parts[0] || 0, parts[1] || 0, parts[2] || 0];
-    }
+    /* ===== App update ===== */
+    async function installUpdate() {
+      if (!state.updateInfo || state.updateInstalling) return;
+      state.updateInstalling = true;
+      state.updateProgress = null;
+      renderUpdateResult("installing");
 
-    function isNewer(remote, local) {
-      const r = parseVersion(remote);
-      const l = parseVersion(local);
-      for (let i = 0; i < 3; i++) {
-        if (r[i] > l[i]) return true;
-        if (r[i] < l[i]) return false;
+      try {
+        await state.updateInfo.downloadAndInstall(event => {
+          if (event.event === "Started") {
+            state.updateProgress = { downloaded: 0, total: event.data.contentLength || 0 };
+          } else if (event.event === "Progress") {
+            const current = state.updateProgress || { downloaded: 0, total: 0 };
+            current.downloaded += event.data.chunkLength;
+            state.updateProgress = current;
+            renderUpdateResult("installing");
+          } else if (event.event === "Finished") {
+            state.updateProgress = { ...(state.updateProgress || { downloaded: 0, total: 0 }), finished: true };
+            renderUpdateResult("installing");
+          }
+        });
+
+        renderUpdateResult("installed");
+        toast("\u66f4\u65b0\u5df2\u4e0b\u8f7d\u5b89\u88c5\uff0c\u6b63\u5728\u91cd\u542f\u5e94\u7528");
+        setTimeout(() => {
+          relaunch().catch(error => {
+            console.error("relaunch failed:", error);
+            toast("\u66f4\u65b0\u5df2\u5b89\u88c5\uff0c\u8bf7\u624b\u52a8\u91cd\u542f\u5e94\u7528");
+          });
+        }, 1200);
+      } catch (e) {
+        console.error("installUpdate error:", e);
+        renderUpdateResult("error", e.message || String(e));
+      } finally {
+        state.updateInstalling = false;
       }
-      return false;
     }
 
-    /* ===== Update check ===== */
-    const CACHE_KEY = "voicemind_update_cache";
-    const CACHE_INTERVAL = 4 * 60 * 60 * 1000;
-
-    function getUpdateCache() {
-      try { const raw = localStorage.getItem(CACHE_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
-    }
-
-    function setUpdateCache(data) {
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, ts: Date.now() })); } catch {}
-    }
-
-    async function fetchLatestRelease() {
-      const resp = await fetch("https://api.github.com/repos/qingzhi0508/VoiceMind/releases/latest");
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      return resp.json();
-    }
-
-    function extractUpdateInfo(release) {
-      const version = (release.tag_name || "").replace(/^v/, "");
-      const msiAsset = (release.assets || []).find(a => a.name && a.name.endsWith(".msi") && a.name.includes("x64"))
-        || (release.assets || []).find(a => a.name && a.name.endsWith(".msi"));
-      return {
-        version,
-        downloadUrl: msiAsset ? msiAsset.browser_download_url : null,
-        body: (release.body || "").split("\n").slice(0, 5).join("\n"),
-      };
-    }
-
-    async function checkUpdate({ force = false } = {}) {
-      if (state.updateChecking) return;
+    async function checkUpdate({ silent = false } = {}) {
+      if (state.updateChecking || state.updateInstalling) return;
       state.updateChecking = true;
       renderUpdateResult("checking");
 
       try {
-        let info = null;
-        if (!force) {
-          const cache = getUpdateCache();
-          if (cache && cache.ts && Date.now() - cache.ts < CACHE_INTERVAL && cache.version) {
-            info = cache;
-          }
-        }
+        const update = await checkForAppUpdate({ timeout: 15000 });
+        state.updateInfo = update;
+        state.updateProgress = null;
 
-        if (!info) {
-          const release = await fetchLatestRelease();
-          info = extractUpdateInfo(release);
-          setUpdateCache(info);
-        }
-
-        if (info.version && isNewer(info.version, state.currentVersion)) {
-          state.updateInfo = info;
+        if (update) {
           renderUpdateResult("available");
-          showUpdateBanner(info.version);
+          showUpdateBanner(update.version);
         } else {
-          state.updateInfo = null;
           renderUpdateResult("up-to-date");
         }
       } catch (e) {
         console.error("checkUpdate error:", e);
-        renderUpdateResult("error", e.message);
+        if (silent) {
+          renderUpdateResult("idle");
+        } else {
+          renderUpdateResult("error", e.message || String(e));
+        }
       } finally {
         state.updateChecking = false;
       }
     }
 
-    function renderUpdateResult(status, detail) {
+    function formatDownloadProgress() {
+      if (!state.updateProgress) return "";
+      const downloaded = state.updateProgress.downloaded || 0;
+      const total = state.updateProgress.total || 0;
+      if (!total) return "\u6b63\u5728\u4e0b\u8f7d\u66f4\u65b0\u5305...";
+      const percent = Math.max(0, Math.min(100, Math.round(downloaded / total * 100)));
+      return `\u4e0b\u8f7d\u8fdb\u5ea6 ${percent}% (${Math.round(downloaded / 1024)} KB / ${Math.round(total / 1024)} KB)`;
+    }
+
+    function renderUpdateResult(status, detail = "") {
       if (!updateResult) return;
+
+      if (status === "idle") {
+        updateResult.hidden = true;
+        updateResult.innerHTML = "";
+        return;
+      }
+
       updateResult.hidden = false;
 
       if (status === "checking") {
-        updateResult.innerHTML = `<div class="update-status checking">正在检查更新...</div>`;
-      } else if (status === "up-to-date") {
-        updateResult.innerHTML = `<div class="update-status up-to-date">&#10003; 当前已是最新版本 (v${escHtml(state.currentVersion)})</div>`;
-      } else if (status === "error") {
-        updateResult.innerHTML = `<div class="update-status error">检查失败，请稍后重试${detail ? ` (${escHtml(detail)})` : ""}</div>`;
-      } else if (status === "available") {
+        updateResult.innerHTML = `<div class="update-status checking">\u6b63\u5728\u68c0\u67e5\u66f4\u65b0...</div>`;
+        return;
+      }
+
+      if (status === "up-to-date") {
+        updateResult.innerHTML = `<div class="update-status up-to-date">&#10003; \u5f53\u524d\u5df2\u662f\u6700\u65b0\u7248\u672c (v${escHtml(state.currentVersion || "-")})</div>`;
+        return;
+      }
+
+      if (status === "error") {
+        updateResult.innerHTML = `<div class="update-status error">\u66f4\u65b0\u68c0\u67e5\u5931\u8d25${detail ? `: ${escHtml(detail)}` : ""}</div>`;
+        return;
+      }
+
+      if (status === "available") {
         const info = state.updateInfo;
         updateResult.innerHTML = `
           <div class="update-card">
-            <h4>发现新版本 v${escHtml(info.version)}</h4>
+            <h4>\u53d1\u73b0\u65b0\u7248\u672c v${escHtml(info.version)}</h4>
+            <p>\u5f53\u524d\u7248\u672c v${escHtml(info.currentVersion)} \u53ef\u5347\u7ea7\u81f3 v${escHtml(info.version)}${info.date ? `\n\u53d1\u5e03\u65f6\u95f4: ${escHtml(info.date)}` : ""}</p>
             ${info.body ? `<p>${escHtml(info.body)}</p>` : ""}
             <div class="toolbar" style="margin-top:0">
-              ${info.downloadUrl ? `<button class="btn primary" type="button" id="btn-download-update">下载更新</button>` : ""}
-              <a href="https://github.com/qingzhi0508/VoiceMind/releases/latest" target="_blank" rel="noopener" style="font-size:13px;color:var(--accent)">查看 Release 页</a>
+              <button class="btn primary" type="button" id="btn-install-update">\u4e0b\u8f7d\u5e76\u5b89\u88c5</button>
+              <a href="${RELEASES_URL}" target="_blank" rel="noopener" style="font-size:13px;color:var(--accent)">\u67e5\u770b Releases</a>
             </div>
           </div>`;
-        const dlBtn = document.getElementById("btn-download-update");
-        if (dlBtn && info.downloadUrl) {
-          dlBtn.addEventListener("click", () => {
-            if (window.__TAURI__ && window.__TAURI__.shell) {
-              window.__TAURI__.shell.open(info.downloadUrl);
-            } else {
-              window.open(info.downloadUrl, "_blank");
-            }
-          });
-        }
+        const installButton = document.getElementById("btn-install-update");
+        if (installButton) installButton.addEventListener("click", installUpdate);
+        return;
+      }
+
+      if (status === "installing") {
+        updateResult.innerHTML = `
+          <div class="update-card">
+            <h4>\u6b63\u5728\u5b89\u88c5\u66f4\u65b0</h4>
+            <p>${escHtml(formatDownloadProgress())}</p>
+            <div class="update-status checking">\u8bf7\u4fdd\u6301\u5e94\u7528\u8fd0\u884c\uff0c\u5b89\u88c5\u5b8c\u6210\u540e\u5c06\u81ea\u52a8\u91cd\u542f\u3002</div>
+          </div>`;
+        return;
+      }
+
+      if (status === "installed") {
+        updateResult.innerHTML = `<div class="update-status up-to-date">\u66f4\u65b0\u5df2\u5b89\u88c5\uff0c\u6b63\u5728\u91cd\u542f...</div>`;
       }
     }
 
     function showUpdateBanner(version) {
       if (state.updateBannerDismissed) return;
       if (!updateBanner || !updateBannerText) return;
-      updateBannerText.textContent = `发现新版本 v${version}，点击查看`;
+      updateBannerText.textContent = `\u53d1\u73b0\u65b0\u7248\u672c v${version}\uff0c\u70b9\u51fb\u67e5\u770b`;
       updateBanner.hidden = false;
     }
 
@@ -721,15 +743,18 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       });
     }
 
+    if (btnOpenReleases) {
+      btnOpenReleases.addEventListener("click", () => window.open(RELEASES_URL, "_blank", "noopener"));
+    }
+
     if (btnUserGuide) {
-      btnUserGuide.addEventListener("click", () => toast("使用指南功能开发中"));
+      btnUserGuide.addEventListener("click", () => toast("\u4f7f\u7528\u6307\u5357\u529f\u80fd\u5f00\u53d1\u4e2d"));
     }
 
     if (btnCheckUpdate) {
-      btnCheckUpdate.addEventListener("click", () => checkUpdate({ force: true }));
+      btnCheckUpdate.addEventListener("click", () => checkUpdate());
     }
-
-    /* ===== Event bindings ===== */
+/* ===== Event bindings ===== */
     document.getElementById("btn-toggle-service").addEventListener("click", toggleService);
     document.getElementById("btn-pairing").addEventListener("click", refreshPairing);
     document.getElementById("btn-refresh-devices").addEventListener("click", refreshDevices);
@@ -901,8 +926,8 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         if (verEl) verEl.textContent = `Version ${state.currentVersion}`;
       } catch (e) { console.warn("get_version failed:", e); }
 
-      // Auto check update after 3s
-      setTimeout(() => checkUpdate(), 3000);
+      // Auto check update after startup; keep failures silent until user checks manually.
+      setTimeout(() => checkUpdate({ silent: true }), 3000);
 
       console.log("init: initial load done, connected:", state.connected);
       // Start polling
@@ -913,3 +938,4 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       catch (e) { console.warn("init: event listeners failed, polling only:", e); }
     }
     init();
+

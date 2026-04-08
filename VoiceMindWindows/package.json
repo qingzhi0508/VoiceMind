@@ -9,6 +9,8 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.10.1",
     "qrcode": "^1.5.3"
   },
   "devDependencies": {
