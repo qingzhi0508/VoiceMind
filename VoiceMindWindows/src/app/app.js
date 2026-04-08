@@ -23,6 +23,100 @@ const cloudEngineStatus = document.getElementById("engine-status-cloud");
 const speechAsrModal = document.getElementById("speech-asr-modal");
 const speechConfigCancel = document.getElementById("speech-config-cancel");
 const speechConfigClose = document.getElementById("speech-config-close");
+const recordsBatchToolbar = document.getElementById("records-batch-toolbar");
+const recordsBatchCount = document.getElementById("records-batch-count");
+const updateResult = document.getElementById("update-result");
+const btnCheckUpdate = document.getElementById("btn-check-update");
+const btnUserGuide = document.getElementById("btn-user-guide");
+const updateBanner = document.getElementById("update-banner");
+const updateBannerText = document.getElementById("update-banner-text");
+const updateBannerClose = document.getElementById("update-banner-close");
+
+function getFilteredHistoryItems() {
+  let items = state.history;
+  const q = state.recordsSearch.toLowerCase();
+  if (q) items = items.filter(h => (h.text || "").toLowerCase().includes(q));
+  return items;
+}
+
+function setRecordsBatchMode(enabled) {
+  state.recordsBatchMode = enabled;
+  if (!enabled) state.selectedHistoryIds = [];
+  renderHistory();
+}
+
+function toggleHistorySelection(id) {
+  const selected = new Set(state.selectedHistoryIds);
+  if (selected.has(id)) selected.delete(id);
+  else selected.add(id);
+  state.selectedHistoryIds = [...selected];
+  renderHistory();
+}
+
+function selectAllVisibleHistory() {
+  state.selectedHistoryIds = getFilteredHistoryItems().map(item => item.id);
+  renderHistory();
+}
+
+function updateRecordsBatchToolbar() {
+  if (!recordsBatchToolbar || !recordsBatchCount) return;
+  recordsBatchToolbar.hidden = !state.recordsBatchMode;
+  recordsBatchCount.textContent = `\u5df2\u9009\u4e2d: ${state.selectedHistoryIds.length}`;
+}
+
+async function copySelectedHistory() {
+  const selectedItems = getFilteredHistoryItems().filter(item => state.selectedHistoryIds.includes(item.id));
+  if (!selectedItems.length) {
+    toast("\u8bf7\u5148\u9009\u62e9\u8981\u590d\u5236\u7684\u8bb0\u5f55");
+    return;
+  }
+
+  const content = selectedItems.map(item => {
+    const time = item.timestamp || "";
+    return `${time}\n${item.text || ""}`;
+  }).join("\n\n");
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(content);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = content;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+    toast(`\u5df2\u590d\u5236 ${selectedItems.length} \u6761\u8bb0\u5f55`);
+  } catch (e) {
+    toast(`\u590d\u5236\u5931\u8d25: ${e}`);
+  }
+}
+
+async function deleteSelectedHistory() {
+  const ids = [...state.selectedHistoryIds];
+  if (!ids.length) {
+    toast("\u8bf7\u5148\u9009\u62e9\u8981\u5220\u9664\u7684\u8bb0\u5f55");
+    return;
+  }
+
+  if (!state.isTauri) {
+    state.history = state.history.filter(item => !ids.includes(item.id));
+    addActivity("\u6279\u91cf\u5220\u9664\u8bb0\u5f55", `\u5df2\u5220\u9664 ${ids.length} \u6761`, "records");
+    setRecordsBatchMode(false);
+    return;
+  }
+
+  try {
+    await Promise.all(ids.map(id => invoke("delete_history_item", { id })));
+    addActivity("\u6279\u91cf\u5220\u9664\u8bb0\u5f55", `\u5df2\u5220\u9664 ${ids.length} \u6761`, "records");
+    await refreshHistory();
+    setRecordsBatchMode(false);
+    toast(`\u5df2\u5220\u9664 ${ids.length} \u6761\u8bb0\u5f55`);
+  } catch (e) {
+    toast(`\u6279\u91cf\u5220\u9664\u5931\u8d25: ${e}`);
+  }
+}
 
 function isCloudConfigured(settings = state.settings) {
   const asr = settings && settings.asr;
@@ -216,10 +310,9 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
 
     /* ===== Records with date grouping + search ===== */
     function renderHistory() {
-      let items = state.history;
-      const q = state.recordsSearch.toLowerCase();
-      if (q) items = items.filter(h => (h.text || "").toLowerCase().includes(q));
+      let items = getFilteredHistoryItems();
       historyList.innerHTML = "";
+      updateRecordsBatchToolbar();
       if (!items.length) {
         historyList.innerHTML = `<div class="empty">&#x6682;&#x65e0;&#x8bc6;&#x522b;&#x5386;&#x53f2;</div>`;
         return;
@@ -243,9 +336,28 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
           const src = r.source || "";
           const badge = src && src !== "asr" ? `<span class="source-badge ios">${escHtml(src)}</span>` : `<span class="source-badge local">Local</span>`;
           const el = document.createElement("div");
-          el.className = "item";
+          const selected = state.selectedHistoryIds.includes(r.id);
+          el.className = `item${state.recordsBatchMode ? " selectable" : ""}${selected ? " selected" : ""}`;
           const time = r.timestamp ? (r.timestamp.split(" ")[1] || r.timestamp) : "";
-          el.innerHTML = `<div class="item-main"><div class="item-title">${badge} ${escHtml(r.text || "(\u7a7a\u5185\u5bb9)")}</div></div><div class="item-meta">${escHtml(time)}</div>`;
+          if (state.recordsBatchMode) {
+            const check = document.createElement("label");
+            check.className = "item-check";
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.checked = selected;
+            input.addEventListener("click", event => event.stopPropagation());
+            input.addEventListener("change", () => toggleHistorySelection(r.id));
+            check.appendChild(input);
+            el.appendChild(check);
+            el.addEventListener("click", () => toggleHistorySelection(r.id));
+          }
+          const main = document.createElement("div");
+          main.className = "item-main";
+          main.innerHTML = `<div class="item-title">${badge} ${escHtml(r.text || "(\u7a7a\u5185\u5bb9)")}</div>`;
+          const meta = document.createElement("div");
+          meta.className = "item-meta";
+          meta.textContent = time;
+          el.append(main, meta);
           list.appendChild(el);
         });
         group.appendChild(list);
@@ -472,16 +584,170 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       setTimeout(() => el.remove(), 2800);
     }
 
+    /* ===== Version compare ===== */
+    function parseVersion(v) {
+      const parts = v.replace(/^v/, "").split(".").map(Number);
+      return [parts[0] || 0, parts[1] || 0, parts[2] || 0];
+    }
+
+    function isNewer(remote, local) {
+      const r = parseVersion(remote);
+      const l = parseVersion(local);
+      for (let i = 0; i < 3; i++) {
+        if (r[i] > l[i]) return true;
+        if (r[i] < l[i]) return false;
+      }
+      return false;
+    }
+
+    /* ===== Update check ===== */
+    const CACHE_KEY = "voicemind_update_cache";
+    const CACHE_INTERVAL = 4 * 60 * 60 * 1000;
+
+    function getUpdateCache() {
+      try { const raw = localStorage.getItem(CACHE_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
+    }
+
+    function setUpdateCache(data) {
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, ts: Date.now() })); } catch {}
+    }
+
+    async function fetchLatestRelease() {
+      const resp = await fetch("https://api.github.com/repos/qingzhi0508/VoiceMind/releases/latest");
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      return resp.json();
+    }
+
+    function extractUpdateInfo(release) {
+      const version = (release.tag_name || "").replace(/^v/, "");
+      const msiAsset = (release.assets || []).find(a => a.name && a.name.endsWith(".msi") && a.name.includes("x64"))
+        || (release.assets || []).find(a => a.name && a.name.endsWith(".msi"));
+      return {
+        version,
+        downloadUrl: msiAsset ? msiAsset.browser_download_url : null,
+        body: (release.body || "").split("\n").slice(0, 5).join("\n"),
+      };
+    }
+
+    async function checkUpdate({ force = false } = {}) {
+      if (state.updateChecking) return;
+      state.updateChecking = true;
+      renderUpdateResult("checking");
+
+      try {
+        let info = null;
+        if (!force) {
+          const cache = getUpdateCache();
+          if (cache && cache.ts && Date.now() - cache.ts < CACHE_INTERVAL && cache.version) {
+            info = cache;
+          }
+        }
+
+        if (!info) {
+          const release = await fetchLatestRelease();
+          info = extractUpdateInfo(release);
+          setUpdateCache(info);
+        }
+
+        if (info.version && isNewer(info.version, state.currentVersion)) {
+          state.updateInfo = info;
+          renderUpdateResult("available");
+          showUpdateBanner(info.version);
+        } else {
+          state.updateInfo = null;
+          renderUpdateResult("up-to-date");
+        }
+      } catch (e) {
+        console.error("checkUpdate error:", e);
+        renderUpdateResult("error", e.message);
+      } finally {
+        state.updateChecking = false;
+      }
+    }
+
+    function renderUpdateResult(status, detail) {
+      if (!updateResult) return;
+      updateResult.hidden = false;
+
+      if (status === "checking") {
+        updateResult.innerHTML = `<div class="update-status checking">正在检查更新...</div>`;
+      } else if (status === "up-to-date") {
+        updateResult.innerHTML = `<div class="update-status up-to-date">&#10003; 当前已是最新版本 (v${escHtml(state.currentVersion)})</div>`;
+      } else if (status === "error") {
+        updateResult.innerHTML = `<div class="update-status error">检查失败，请稍后重试${detail ? ` (${escHtml(detail)})` : ""}</div>`;
+      } else if (status === "available") {
+        const info = state.updateInfo;
+        updateResult.innerHTML = `
+          <div class="update-card">
+            <h4>发现新版本 v${escHtml(info.version)}</h4>
+            ${info.body ? `<p>${escHtml(info.body)}</p>` : ""}
+            <div class="toolbar" style="margin-top:0">
+              ${info.downloadUrl ? `<button class="btn primary" type="button" id="btn-download-update">下载更新</button>` : ""}
+              <a href="https://github.com/qingzhi0508/VoiceMind/releases/latest" target="_blank" rel="noopener" style="font-size:13px;color:var(--accent)">查看 Release 页</a>
+            </div>
+          </div>`;
+        const dlBtn = document.getElementById("btn-download-update");
+        if (dlBtn && info.downloadUrl) {
+          dlBtn.addEventListener("click", () => {
+            if (window.__TAURI__ && window.__TAURI__.shell) {
+              window.__TAURI__.shell.open(info.downloadUrl);
+            } else {
+              window.open(info.downloadUrl, "_blank");
+            }
+          });
+        }
+      }
+    }
+
+    function showUpdateBanner(version) {
+      if (state.updateBannerDismissed) return;
+      if (!updateBanner || !updateBannerText) return;
+      updateBannerText.textContent = `发现新版本 v${version}，点击查看`;
+      updateBanner.hidden = false;
+    }
+
+    if (updateBanner) {
+      updateBanner.addEventListener("click", e => {
+        if (e.target === updateBannerClose) return;
+        document.querySelector('[data-page="about"]').click();
+        updateBanner.hidden = true;
+      });
+    }
+    if (updateBannerClose) {
+      updateBannerClose.addEventListener("click", e => {
+        e.stopPropagation();
+        updateBanner.hidden = true;
+        state.updateBannerDismissed = true;
+      });
+    }
+
+    if (btnUserGuide) {
+      btnUserGuide.addEventListener("click", () => toast("使用指南功能开发中"));
+    }
+
+    if (btnCheckUpdate) {
+      btnCheckUpdate.addEventListener("click", () => checkUpdate({ force: true }));
+    }
+
     /* ===== Event bindings ===== */
     document.getElementById("btn-toggle-service").addEventListener("click", toggleService);
     document.getElementById("btn-pairing").addEventListener("click", refreshPairing);
     document.getElementById("btn-refresh-devices").addEventListener("click", refreshDevices);
     document.getElementById("refresh-history").addEventListener("click", refreshHistory);
+    document.getElementById("toggle-records-batch").addEventListener("click", () => {
+      setRecordsBatchMode(!state.recordsBatchMode);
+    });
+    document.getElementById("cancel-records-batch").addEventListener("click", () => setRecordsBatchMode(false));
+    document.getElementById("select-all-records").addEventListener("click", selectAllVisibleHistory);
+    document.getElementById("copy-selected-records").addEventListener("click", copySelectedHistory);
+    document.getElementById("delete-selected-records").addEventListener("click", deleteSelectedHistory);
     document.getElementById("clear-history").addEventListener("click", async () => {
       if (!state.isTauri) return;
       try {
         await invoke("clear_history");
         state.history = [];
+        state.selectedHistoryIds = [];
+        state.recordsBatchMode = false;
         renderHistory();
         addActivity("\u5386\u53f2\u5df2\u6e05\u7a7a", "\u8bc6\u522b\u8bb0\u5f55\u5df2\u5220\u9664", "records");
       } catch (e) {
@@ -627,6 +893,17 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       // Initial load
       await syncStatus();
       await Promise.all([refreshPairing(), refreshHistory(), loadSettings()]);
+
+      // Load app version
+      try {
+        state.currentVersion = await invoke("get_version");
+        const verEl = document.getElementById("about-version");
+        if (verEl) verEl.textContent = `Version ${state.currentVersion}`;
+      } catch (e) { console.warn("get_version failed:", e); }
+
+      // Auto check update after 3s
+      setTimeout(() => checkUpdate(), 3000);
+
       console.log("init: initial load done, connected:", state.connected);
       // Start polling
       setInterval(syncStatus, 2000);
