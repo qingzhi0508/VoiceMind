@@ -59,10 +59,10 @@
     .canvas { min-height: calc(100vh - 28px); border-radius: 20px; border: 1px solid var(--canvasBorder); background: var(--canvasBg); box-shadow: var(--shadowLg); padding: 28px; }
 
     /* Brand */
-    .brand { display: flex; gap: 12px; align-items: center; }
-    .brand-icon { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #ff9b2f, #f5d34d 55%, #39c783); font-size: 16px; font-weight: 700; }
-    .brand h1 { margin: 0; font-size: 20px; color: var(--title); }
-    .brand p { margin: 2px 0 0; font-size: 12px; color: var(--secondaryText); }
+    .brand { display: flex; gap: 12px; align-items: center; padding: 6px 2px 10px; }
+    .brand-copy { min-width: 0; }
+    .brand-icon { width: 38px; height: 38px; border-radius: 10px; display: block; object-fit: cover; box-shadow: var(--shadow); flex-shrink: 0; }
+    .brand h1 { margin: 0; font-size: 21px; line-height: 1.1; letter-spacing: 0.01em; color: var(--title); }
 
     /* Navigation */
     .nav { display: grid; gap: 4px; }
@@ -220,7 +220,7 @@
 
     /* About hero */
     .about-hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px 20px; }
-    .about-icon { width: 72px; height: 72px; border-radius: 20px; display: grid; place-items: center; font-size: 36px; background: linear-gradient(135deg, var(--accent), var(--accentOrange)); color: #fff; margin-bottom: 16px; }
+    .about-icon { width: 72px; height: 72px; border-radius: 20px; display: block; object-fit: cover; box-shadow: var(--shadowLg); margin-bottom: 16px; }
     .about-hero h2 { margin: 0; font-size: 28px; color: var(--title); }
     .about-version { margin: 6px 0 0; color: var(--secondaryText); font-size: 14px; }
     .about-divider { width: 60px; height: 2px; background: var(--cardBorder); margin: 20px 0; border-radius: 1px; }
