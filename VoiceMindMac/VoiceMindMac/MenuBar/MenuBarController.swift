@@ -698,6 +698,7 @@ extension MenuBarController: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         if let window = notification.object as? NSWindow {
             if window === pairingWindow {
+                connectionManager.cancelPairing()
                 pairingWindow = nil
             } else if window === statusWindow {
                 statusWindow = nil
