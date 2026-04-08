@@ -31,9 +31,6 @@ const updateResult = document.getElementById("update-result");
 const btnCheckUpdate = document.getElementById("btn-check-update");
 const btnOpenReleases = document.getElementById("btn-open-releases");
 const btnUserGuide = document.getElementById("btn-user-guide");
-const updateBanner = document.getElementById("update-banner");
-const updateBannerText = document.getElementById("update-banner-text");
-const updateBannerClose = document.getElementById("update-banner-close");
 const RELEASES_URL = "https://github.com/qingzhi0508/VoiceMind/releases";
 
 function getFilteredHistoryItems() {
@@ -638,7 +635,6 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
 
         if (update) {
           renderUpdateResult("available");
-          showUpdateBanner(update.version);
         } else {
           renderUpdateResult("up-to-date");
         }
@@ -719,28 +715,6 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       if (status === "installed") {
         updateResult.innerHTML = `<div class="update-status up-to-date">\u66f4\u65b0\u5df2\u5b89\u88c5\uff0c\u6b63\u5728\u91cd\u542f...</div>`;
       }
-    }
-
-    function showUpdateBanner(version) {
-      if (state.updateBannerDismissed) return;
-      if (!updateBanner || !updateBannerText) return;
-      updateBannerText.textContent = `\u53d1\u73b0\u65b0\u7248\u672c v${version}\uff0c\u70b9\u51fb\u67e5\u770b`;
-      updateBanner.hidden = false;
-    }
-
-    if (updateBanner) {
-      updateBanner.addEventListener("click", e => {
-        if (e.target === updateBannerClose) return;
-        document.querySelector('[data-page="about"]').click();
-        updateBanner.hidden = true;
-      });
-    }
-    if (updateBannerClose) {
-      updateBannerClose.addEventListener("click", e => {
-        e.stopPropagation();
-        updateBanner.hidden = true;
-        state.updateBannerDismissed = true;
-      });
     }
 
     if (btnOpenReleases) {
