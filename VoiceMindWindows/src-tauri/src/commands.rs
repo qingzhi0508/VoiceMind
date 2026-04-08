@@ -720,3 +720,8 @@ pub async fn clear_inbound_data_records(state: State<'_, AppState>) -> Result<()
     records.clear();
     Ok(())
 }
+
+#[tauri::command]
+pub fn get_version(app: tauri::AppHandle) -> String {
+    app.config().version.clone().unwrap_or_else(|| "0.0.0".to_string())
+}
