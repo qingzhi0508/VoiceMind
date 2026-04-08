@@ -30,6 +30,7 @@ class MenuBarController: NSObject, ObservableObject {
 
     var currentSessionId: String?
     var sessionTimer: Timer?
+    var pendingInjectionTargetAppPID: pid_t?
 
     var pairingWindow: NSWindow?
     var statusWindow: NSWindow?
@@ -105,6 +106,42 @@ class MenuBarController: NSObject, ObservableObject {
         connectionManager.delegate = self
     }
 
+    func captureInjectionTargetApplication() {
+        guard let app = NSWorkspace.shared.frontmostApplication else {
+            pendingInjectionTargetAppPID = nil
+            return
+        }
+
+        if app.bundleIdentifier == Bundle.main.bundleIdentifier {
+            pendingInjectionTargetAppPID = nil
+            return
+        }
+
+        pendingInjectionTargetAppPID = app.processIdentifier
+    }
+
+    func restoreInjectionTargetApplicationIfNeeded(completion: @escaping () -> Void) {
+        guard let pid = pendingInjectionTargetAppPID,
+              let app = NSRunningApplication(processIdentifier: pid) else {
+            pendingInjectionTargetAppPID = nil
+            completion()
+            return
+        }
+
+        let isAlreadyFrontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier == pid
+        pendingInjectionTargetAppPID = nil
+
+        guard !isAlreadyFrontmost else {
+            completion()
+            return
+        }
+
+        app.activate(options: [.activateIgnoringOtherApps])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            completion()
+        }
+    }
+
     func startServices() {
         guard !isServiceRunning else { return }
 
@@ -136,6 +173,8 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     @objc private func showStatus() {
+        captureInjectionTargetApplication()
+
         if let existingWindow = existingMainAppWindow() {
             if existingWindow.isMiniaturized {
                 existingWindow.deminiaturize(nil)
@@ -221,6 +260,8 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func showOnboarding() {
+        captureInjectionTargetApplication()
+
         if onboardingWindow == nil {
             let contentView = OnboardingFlowView(controller: self)
 
@@ -243,6 +284,8 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func showUsageGuide() {
+        captureInjectionTargetApplication()
+
         if usageGuideWindow == nil {
             let contentView = UsageGuideView(
                 onStartPairing: { [weak self] in
@@ -301,6 +344,7 @@ class MenuBarController: NSObject, ObservableObject {
     func prepareForQuit() {
         sessionTimer?.invalidate()
         sessionTimer = nil
+        pendingInjectionTargetAppPID = nil
 
         stopNetworkServices()
 
@@ -316,6 +360,8 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func showPairingWindow(code: String) {
+        captureInjectionTargetApplication()
+
         // Close existing pairing window if any
         if let existingWindow = pairingWindow {
             existingWindow.close()
@@ -403,6 +449,14 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func handleAutoInjectedText(_ text: String, missingTargetTitle: String) {
+        handleAutoInjectedText(text, missingTargetTitle: missingTargetTitle, remainingRetries: 4)
+    }
+
+    private func handleAutoInjectedText(
+        _ text: String,
+        missingTargetTitle: String,
+        remainingRetries: Int
+    ) {
         switch textInjectionCoordinator.deliver(text: text) {
         case .injected:
             appendInboundDataRecord(
@@ -422,20 +476,49 @@ class MenuBarController: NSObject, ObservableObject {
             )
             showTextInjectionPermissionError(with: text)
         case .fallbackToCopy(let reason):
+            if reason == "No focused input target", remainingRetries > 0 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
+                    self?.handleAutoInjectedText(
+                        text,
+                        missingTargetTitle: missingTargetTitle,
+                        remainingRetries: remainingRetries - 1
+                    )
+                }
+                return
+            }
+
             let titleKey = reason == "No focused input target"
                 ? missingTargetTitle
                 : AppLocalization.localizedString("text_copy_alert_title")
-            appendInboundDataRecord(
-                title: titleKey,
-                detail: String(
+            let detail = reason == "No focused input target"
+                ? textInjectionFailureDetail(for: reason)
+                : String(
                     format: AppLocalization.localizedString("text_copy_alert_message_format"),
                     reason
-                ),
+                )
+            appendInboundDataRecord(
+                title: titleKey,
+                detail: detail,
                 category: .connection,
                 severity: .warning
             )
             showTextCopyAlert(text, error: reason)
         }
+    }
+
+    private func textInjectionFailureDetail(for reason: String) -> String {
+        let baseDetail = String(
+            format: AppLocalization.localizedString("text_copy_alert_message_format"),
+            reason
+        )
+        let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
+
+        return """
+        \(baseDetail)
+
+        Debug Context
+        \(focusedElementSummary)
+        """
     }
 
     func showTextCopyAlert(_ text: String, error: String) {
@@ -684,6 +767,13 @@ extension MenuBarController: SpeechRecognitionEngineDelegate {
 
 // MARK: - NSWindowDelegate
 extension MenuBarController: NSWindowDelegate {
+    func windowDidBecomeKey(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        let transientWindows = [pairingWindow, onboardingWindow, usageGuideWindow, statusWindow]
+        let isTransientWindow = transientWindows.contains { $0 === window }
+        guard isTransientWindow else { return }
+    }
+
     func windowDidExitFullScreen(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
         let transientWindows = [pairingWindow, onboardingWindow, usageGuideWindow, statusWindow]
