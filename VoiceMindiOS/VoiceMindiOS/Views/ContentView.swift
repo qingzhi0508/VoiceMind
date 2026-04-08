@@ -709,6 +709,7 @@ struct ContentView: View {
     @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
     @FocusState private var focusedField: FocusField?
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack {
@@ -934,13 +935,21 @@ struct ContentView: View {
             }
             .onAppear {
                 viewModel.preparePrimaryExperience()
+                syncIdleTimerState()
                 if !hasLaunchedBefore {
                     showOnboarding = true
                     hasLaunchedBefore = true
                 }
             }
+            .onDisappear {
+                AppIdleTimerController.shared.setKeepsScreenAwake(false)
+            }
             .onChange(of: selectedTab) { _, _ in
                 dismissKeyboard()
+                syncIdleTimerState()
+            }
+            .onChange(of: scenePhase) { _, _ in
+                syncIdleTimerState()
             }
         }
     }
@@ -1032,6 +1041,14 @@ struct ContentView: View {
 
     private func dismissKeyboard() {
         focusedField = nil
+    }
+
+    private func syncIdleTimerState() {
+        let shouldKeepScreenAwake = HomeIdleTimerPolicy.shouldKeepScreenAwake(
+            selectedTab: selectedTab,
+            scenePhase: scenePhase
+        )
+        AppIdleTimerController.shared.setKeepsScreenAwake(shouldKeepScreenAwake)
     }
 }
 
