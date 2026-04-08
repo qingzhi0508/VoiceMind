@@ -4,241 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VoiceMind Windows</title>
-  <style>
-    :root {
-      --pageBg: #F2F4FA;
-      --sidebarBgTop: #F6F7FC;
-      --sidebarBgBottom: #ECEEF7;
-      --sidebarSelectedFill: #DDE4F2;
-      --sidebarSelectedBorder: #5B9AB5;
-      --sidebarText: #4D5C78;
-      --sidebarTextSelected: #17203A;
-      --canvasBg: #FFFFFF;
-      --canvasBorder: rgba(0,0,0,0.08);
-      --cardSurface: #FFFFFF;
-      --cardBorder: rgba(0,0,0,0.10);
-      --softSurface: #F5F6FA;
-      --title: #17203A;
-      --primaryText: #2E3A52;
-      --secondaryText: #6B7A96;
-      --accent: #00B4DD;
-      --accentOrange: #E07830;
-      --accentGreen: #22C55E;
-      --accentRed: #EF4444;
-      --accentSoft: rgba(0,180,221,0.12);
-      --shadow: 0 2px 8px rgba(0,0,0,0.08);
-      --shadowLg: 0 8px 24px rgba(0,0,0,0.10);
-      --radius: 16px;
-      --side: 200px;
-      --font: "Segoe UI","Microsoft YaHei",sans-serif;
-    }
-    [data-theme="dark"] {
-      --pageBg: #141828;
-      --sidebarBgTop: #19222E;
-      --sidebarBgBottom: #141C28;
-      --sidebarSelectedFill: #2E3D56;
-      --sidebarSelectedBorder: #619FAF;
-      --sidebarText: #9EB2C8;
-      --sidebarTextSelected: #EEEEFF;
-      --canvasBg: #1C2130;
-      --canvasBorder: #2A3448;
-      --cardSurface: #212840;
-      --cardBorder: #3A4860;
-      --softSurface: #1E2636;
-      --title: #EEEEFF;
-      --primaryText: #D0D8EE;
-      --secondaryText: #9EB2C8;
-      --accent: #00D4FF;
-      --accentOrange: #FF8C42;
-      --accentGreen: #4ADE80;
-      --accentRed: #F87171;
-      --accentSoft: rgba(0,212,255,0.12);
-      --shadow: 0 2px 8px rgba(0,0,0,0.2);
-      --shadowLg: 0 8px 24px rgba(0,0,0,0.25);
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; font-family: var(--font); color: var(--primaryText); background: var(--pageBg); }
-
-    /* Layout */
-    .app { display: grid; grid-template-columns: var(--side) 1fr; min-height: 100vh; }
-    .sidebar { display: flex; flex-direction: column; gap: 16px; padding: 16px; background: linear-gradient(180deg, var(--sidebarBgTop), var(--sidebarBgBottom)); border-right: 1px solid var(--canvasBorder); }
-    .content { padding: 14px; }
-    .canvas { min-height: calc(100vh - 28px); border-radius: 20px; border: 1px solid var(--canvasBorder); background: var(--canvasBg); box-shadow: var(--shadowLg); padding: 28px; }
-
-    /* Brand */
-    .brand { display: flex; gap: 12px; align-items: center; }
-    .brand-icon { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #ff9b2f, #f5d34d 55%, #39c783); font-size: 16px; font-weight: 700; }
-    .brand h1 { margin: 0; font-size: 20px; color: var(--title); }
-    .brand p { margin: 2px 0 0; font-size: 12px; color: var(--secondaryText); }
-
-    /* Navigation */
-    .nav { display: grid; gap: 4px; }
-    .nav.secondary { margin-top: auto; }
-    .nav-item { display: flex; gap: 10px; align-items: center; width: 100%; border: 0; background: transparent; border-radius: 12px; padding: 12px 14px; font: inherit; font-size: 13px; color: var(--sidebarText); text-align: left; cursor: pointer; transition: background 0.15s ease; }
-    .nav-item:hover { background: var(--sidebarSelectedFill); color: var(--sidebarTextSelected); }
-    .nav-item.active { color: var(--sidebarTextSelected); background: var(--sidebarSelectedFill); box-shadow: inset 0 0 0 2px var(--sidebarSelectedBorder); }
-    .nav-icon { width: 20px; height: 20px; display: grid; place-items: center; font-size: 14px; }
-
-    /* Sidebar status */
-    .sidebar-status { padding: 12px; border-radius: 12px; border: 1px solid var(--cardBorder); background: var(--softSurface); }
-    .sidebar-status-top { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
-    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--secondaryText); }
-    .dot.connected { background: var(--accentGreen); }
-    .dot.listening { background: var(--accentRed); }
-    .dot.connecting { background: var(--accentOrange); }
-    .sidebar-status strong { color: var(--title); font-size: 13px; }
-    .sidebar-status p { margin: 0; font-size: 12px; color: var(--secondaryText); line-height: 1.4; }
-
-    /* Pages */
-    .page { display: none; }
-    .page.active { display: block; }
-
-    /* Head */
-    .head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 24px; }
-    .head h2 { margin: 0; font-size: 28px; color: var(--title); font-weight: 700; }
-    .head p { margin: 6px 0 0; color: var(--secondaryText); max-width: 640px; line-height: 1.5; font-size: 14px; }
-
-    /* Cards */
-    .card { padding: 20px; border-radius: var(--radius); border: 1px solid var(--cardBorder); background: var(--cardSurface); margin-bottom: 16px; }
-    .card h3 { margin: 0 0 10px; color: var(--title); font-size: 16px; font-weight: 600; }
-    .card > p { margin: 0; color: var(--secondaryText); line-height: 1.5; font-size: 14px; }
-
-    /* Grids */
-    .grid2, .grid3, .grid2x2 { display: grid; gap: 12px; }
-    .grid2 { grid-template-columns: 1fr 1fr; }
-    .grid3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
-    .grid2x2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
-
-    /* Mini cards */
-    .mini { padding: 14px; border-radius: 12px; border: 1px solid var(--cardBorder); background: var(--softSurface); }
-    .mini .label { font-size: 13px; color: var(--secondaryText); }
-    .mini .value { margin-top: 6px; color: var(--title); font-size: 16px; font-weight: 700; line-height: 1.4; }
-
-    /* Stats badges */
-    .stats-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-    .stat-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; background: var(--softSurface); border: 1px solid var(--cardBorder); color: var(--primaryText); }
-    .stat-badge .badge-dot { width: 8px; height: 8px; border-radius: 50%; }
-    .stat-badge.connected { background: rgba(34,197,94,0.12); color: var(--accentGreen); }
-    .stat-badge.connected .badge-dot { background: var(--accentGreen); }
-    .stat-badge.disconnected .badge-dot { background: var(--secondaryText); }
-    .stat-badge.listening { background: rgba(239,68,68,0.12); color: var(--accentRed); }
-    .stat-badge.listening .badge-dot { background: var(--accentRed); }
-    .stat-badge.success { background: rgba(34,197,94,0.12); color: var(--accentGreen); }
-    .stat-badge.accent { background: var(--accentSoft); color: var(--accent); }
-
-    /* Buttons */
-    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-    .btn { border: 0; border-radius: 12px; padding: 10px 18px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
-    .btn:hover { opacity: 0.85; }
-    .btn.primary { background: var(--accent); color: #1a1a2e; }
-    .btn.secondary { background: var(--softSurface); color: var(--primaryText); border: 1px solid var(--cardBorder); }
-    .btn.danger { background: var(--accentRed); color: #fff; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* Segmented picker */
-    .seg-picker { display: inline-flex; border-radius: 10px; border: 1px solid var(--cardBorder); overflow: hidden; background: var(--softSurface); }
-    .seg { padding: 8px 16px; border: 0; background: transparent; color: var(--secondaryText); font: inherit; font-size: 13px; cursor: pointer; transition: all 0.15s; }
-    .seg.active { background: var(--accent); color: #1a1a2e; font-weight: 600; }
-
-    /* Radio group */
-    .radio-group { display: grid; gap: 10px; margin-top: 8px; }
-    .radio-option { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--cardBorder); background: var(--softSurface); cursor: pointer; font-size: 14px; color: var(--primaryText); }
-    .radio-option:hover { border-color: var(--accent); }
-    .radio-option input[type="radio"] { accent-color: var(--accent); }
-    .radio-option .radio-hint { font-size: 12px; color: var(--secondaryText); margin-left: auto; }
-
-    /* Engine list */
-    .engine-row { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 12px; border: 1px solid var(--cardBorder); margin-bottom: 8px; cursor: default; }
-    .engine-row.selected { border-color: var(--accent); background: var(--accentSoft); }
-    .engine-radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--cardBorder); display: grid; place-items: center; }
-    .engine-row.selected .engine-radio { border-color: var(--accent); }
-    .engine-radio::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: transparent; }
-    .engine-row.selected .engine-radio::after { background: var(--accent); }
-    .engine-info { flex: 1; }
-    .engine-name { font-weight: 600; color: var(--title); font-size: 14px; }
-    .engine-langs { font-size: 12px; color: var(--secondaryText); margin-top: 2px; }
-    .engine-status { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
-    .engine-status.available { background: rgba(34,197,94,0.12); color: var(--accentGreen); }
-
-    /* List */
-    .list { display: grid; gap: 10px; margin-top: 14px; }
-    .item { display: flex; gap: 14px; justify-content: space-between; border-radius: 12px; border: 1px solid var(--cardBorder); background: var(--softSurface); padding: 14px; }
-    .item-main { min-width: 0; flex: 1; }
-    .item-title { color: var(--title); font-weight: 600; font-size: 14px; margin-bottom: 4px; }
-    .item-detail { color: var(--secondaryText); line-height: 1.5; font-size: 13px; word-break: break-word; }
-    .item-meta { width: 130px; color: var(--secondaryText); font-size: 12px; line-height: 1.5; text-align: right; flex-shrink: 0; }
-    .empty { padding: 24px; border-radius: 12px; border: 1px dashed var(--cardBorder); color: var(--secondaryText); background: var(--softSurface); text-align: center; font-size: 14px; }
-
-    /* Date group */
-    .date-group { margin-bottom: 12px; }
-    .date-label { font-size: 13px; font-weight: 600; color: var(--secondaryText); margin-bottom: 8px; padding-left: 2px; }
-
-    /* Source badge */
-    .source-badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; }
-    .source-badge.ios { background: rgba(0,180,221,0.12); color: var(--accent); }
-    .source-badge.local { background: rgba(224,120,48,0.12); color: var(--accentOrange); }
-
-    /* Severity badge */
-    .sev { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; margin-right: 6px; }
-    .sev.info { background: rgba(34,197,94,0.12); color: var(--accentGreen); }
-    .sev.warning { background: rgba(224,120,48,0.12); color: var(--accentOrange); }
-    .sev.error { background: rgba(239,68,68,0.12); color: var(--accentRed); }
-
-    /* Search */
-    .search-input { width: 100%; border-radius: 10px; border: 1px solid var(--cardBorder); padding: 10px 14px; font: inherit; font-size: 13px; color: var(--primaryText); background: var(--softSurface); }
-    .search-input:focus { outline: none; border-color: var(--accent); }
-    .search-row { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
-    .search-row .search-input { flex: 1; }
-
-    /* Summary badges */
-    .summary-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-    .summary-badge { padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: 600; background: var(--softSurface); border: 1px solid var(--cardBorder); color: var(--primaryText); }
-    .summary-badge.green { color: var(--accentGreen); border-color: rgba(34,197,94,0.3); }
-    .summary-badge.blue { color: var(--accent); border-color: rgba(0,180,221,0.3); }
-    .summary-badge.red { color: var(--accentRed); border-color: rgba(239,68,68,0.3); }
-
-    /* QR */
-    .qr { display: grid; place-items: center; min-height: 200px; margin-top: 14px; border-radius: 12px; border: 1px dashed var(--cardBorder); background: var(--softSurface); overflow: hidden; }
-    .qr img { width: 200px; height: 200px; object-fit: contain; }
-    .code { margin-top: 14px; text-align: center; font-size: 30px; font-weight: 700; letter-spacing: 8px; color: var(--title); }
-
-    /* Form */
-    .form { display: grid; gap: 12px; max-width: 560px; margin-top: 14px; }
-    .form label { display: grid; gap: 6px; color: var(--secondaryText); font-size: 13px; }
-    .form input, .form select { width: 100%; border-radius: 10px; border: 1px solid var(--cardBorder); padding: 10px 14px; font: inherit; font-size: 14px; color: var(--primaryText); background: var(--softSurface); }
-    .form input:focus, .form select:focus { outline: none; border-color: var(--accent); }
-
-    /* About hero */
-    .about-hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 40px 20px; }
-    .about-icon { width: 72px; height: 72px; border-radius: 20px; display: grid; place-items: center; font-size: 36px; background: linear-gradient(135deg, var(--accent), var(--accentOrange)); color: #fff; margin-bottom: 16px; }
-    .about-hero h2 { margin: 0; font-size: 28px; color: var(--title); }
-    .about-version { margin: 6px 0 0; color: var(--secondaryText); font-size: 14px; }
-    .about-divider { width: 60px; height: 2px; background: var(--cardBorder); margin: 20px 0; border-radius: 1px; }
-    .about-desc { color: var(--primaryText); font-size: 16px; margin: 0 0 20px; }
-
-    /* Permission status */
-    .perm-status { display: flex; align-items: center; gap: 10px; padding: 16px; border-radius: 12px; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); margin-bottom: 12px; }
-    .perm-icon { font-size: 20px; color: var(--accentGreen); }
-    .perm-label { font-weight: 600; color: var(--accentGreen); }
-
-    /* Preview (note) */
-    .preview { min-height: 120px; margin-top: 14px; border-radius: 12px; border: 1px solid var(--cardBorder); background: var(--softSurface); padding: 14px; color: var(--title); line-height: 1.7; white-space: pre-wrap; word-break: break-word; font-size: 14px; }
-
-    /* Banner */
-    .banner { display: none; margin-bottom: 16px; border-radius: 12px; border: 1px solid rgba(217,151,30,0.3); background: rgba(217,151,30,0.12); color: #86611d; padding: 12px 14px; font-size: 13px; }
-
-    /* Toast */
-    .toast { position: fixed; right: 20px; bottom: 20px; z-index: 1000; max-width: 300px; padding: 12px 16px; border-radius: 12px; background: var(--title); color: var(--canvasBg); font-size: 13px; box-shadow: var(--shadowLg); }
-
-    /* Responsive */
-    @media (max-width: 900px) {
-      .app { grid-template-columns: 1fr; }
-      .sidebar { border-right: 0; border-bottom: 1px solid var(--canvasBorder); }
-      .grid2, .grid3, .grid2x2 { grid-template-columns: 1fr; }
-      .item { flex-direction: column; }
-      .item-meta { width: auto; text-align: left; }
-    }
-  </style>
+    <link rel="stylesheet" href="./styles/app.css">
 </head>
 <body>
   <div class="app">
@@ -248,63 +14,63 @@
         <div><h1>VoiceMind</h1><p>Windows</p></div>
       </div>
       <div class="nav primary">
-        <button class="nav-item active" data-page="home"><span class="nav-icon">&#9679;</span><span>首页</span></button>
-        <button class="nav-item" data-page="records"><span class="nav-icon">&#8635;</span><span>记录</span></button>
-        <button class="nav-item" data-page="data"><span class="nav-icon">&#9776;</span><span>数据</span></button>
-        <button class="nav-item" data-page="speech"><span class="nav-icon">&#9898;</span><span>语音</span></button>
-        <button class="nav-item" data-page="permissions"><span class="nav-icon">&#128274;</span><span>权限</span></button>
+        <button class="nav-item active" data-page="home"><span class="nav-icon">&#9679;</span><span>&#x9996;&#x9875;</span></button>
+        <button class="nav-item" data-page="records"><span class="nav-icon">&#8635;</span><span>&#x8bb0;&#x5f55;</span></button>
+        <button class="nav-item" data-page="data"><span class="nav-icon">&#9776;</span><span>&#x6570;&#x636e;</span></button>
+        <button class="nav-item" data-page="speech"><span class="nav-icon">&#9898;</span><span>&#x8bed;&#x97f3;</span></button>
+        <button class="nav-item" data-page="permissions"><span class="nav-icon">&#128274;</span><span>&#x6743;&#x9650;</span></button>
       </div>
       <div class="nav secondary">
-        <button class="nav-item" data-page="settings"><span class="nav-icon">&#9881;</span><span>设置</span></button>
-        <button class="nav-item" data-page="about"><span class="nav-icon">&#8263;</span><span>关于</span></button>
+        <button class="nav-item" data-page="settings"><span class="nav-icon">&#9881;</span><span>&#x8bbe;&#x7f6e;</span></button>
+        <button class="nav-item" data-page="about"><span class="nav-icon">&#8263;</span><span>&#x5173;&#x4e8e;</span></button>
       </div>
       <div class="sidebar-status">
         <div class="sidebar-status-top">
           <span id="side-dot" class="dot"></span>
-          <strong id="side-title">未连接</strong>
+          <strong id="side-title">&#x672a;&#x8fde;&#x63a5;</strong>
         </div>
-        <p id="side-detail">等待 iPhone 接入</p>
+        <p id="side-detail">&#x7b49;&#x5f85; iPhone &#x63a5;&#x5165;</p>
       </div>
     </aside>
 
     <main class="content">
       <div class="canvas">
-        <div id="banner" class="banner">当前是浏览器预览模式，只显示静态页面；桌面命令和连接状态只会在 Tauri 中工作。</div>
+        <div id="banner" class="banner">&#x5f53;&#x524d;&#x662f;&#x6d4f;&#x89c8;&#x5668;&#x9884;&#x89c8;&#x6a21;&#x5f0f;&#xff0c;&#x53ea;&#x663e;&#x793a;&#x9759;&#x6001;&#x9875;&#x9762;&#xff1b;&#x684c;&#x9762;&#x547d;&#x4ee4;&#x548c;&#x8fde;&#x63a5;&#x72b6;&#x6001;&#x53ea;&#x4f1a;&#x5728; Tauri &#x4e2d;&#x5de5;&#x4f5c;&#x3002;</div>
 
         <!-- HOME -->
         <section id="home" class="page active">
           <div class="head">
-            <div><h2>首页</h2><p>连接状态与协作控制面板</p></div>
+            <div><h2>&#x9996;&#x9875;</h2><p>&#x8fde;&#x63a5;&#x72b6;&#x6001;&#x4e0e;&#x534f;&#x4f5c;&#x63a7;&#x5236;&#x9762;&#x677f;</p></div>
           </div>
           <div class="stats-row">
-            <div class="stat-badge" id="home-badge-conn"><span class="badge-dot" id="home-conn-dot"></span><span id="home-conn-label">未连接</span></div>
-            <div class="stat-badge success"><span>&#9654;</span><span>服务运行中</span></div>
-            <div class="stat-badge accent"><span>&#9998;</span><span id="home-records-count">记录: 0</span></div>
+            <div class="stat-badge" id="home-badge-conn"><span class="badge-dot" id="home-conn-dot"></span><span id="home-conn-label">&#x672a;&#x8fde;&#x63a5;</span></div>
+            <div class="stat-badge success"><span>&#9654;</span><span>&#x670d;&#x52a1;&#x8fd0;&#x884c;&#x4e2d;</span></div>
+            <div class="stat-badge accent"><span>&#9998;</span><span id="home-records-count">&#x8bb0;&#x5f55;: 0</span></div>
           </div>
           <div class="card">
-            <h3>连接状态</h3>
-            <p id="home-summary">尚未配对设备。请刷新二维码，用 iPhone 扫码建立连接。</p>
+            <h3>&#x8fde;&#x63a5;&#x72b6;&#x6001;</h3>
+            <p id="home-summary">&#x5c1a;&#x672a;&#x914d;&#x5bf9;&#x8bbe;&#x5907;&#x3002;&#x8bf7;&#x5237;&#x65b0;&#x4e8c;&#x7ef4;&#x7801;&#xff0c;&#x5e76;&#x7528; iPhone &#x626b;&#x7801;&#x5efa;&#x7acb;&#x8fde;&#x63a5;&#x3002;</p>
             <div class="grid2x2" style="margin-top:14px">
-              <div class="mini"><div class="label">状态</div><div id="home-status" class="value">未连接</div></div>
-              <div class="mini"><div class="label">服务</div><div class="value">运行中</div></div>
-              <div class="mini"><div class="label">已配对设备</div><div id="home-device" class="value">暂无</div></div>
-              <div class="mini"><div class="label">服务地址</div><div id="home-network" class="value">待加载</div></div>
+              <div class="mini"><div class="label">&#x72b6;&#x6001;</div><div id="home-status" class="value">&#x672a;&#x8fde;&#x63a5;</div></div>
+              <div class="mini"><div class="label">&#x670d;&#x52a1;</div><div class="value">&#x670d;&#x52a1;&#x8fd0;&#x884c;&#x4e2d;</div></div>
+              <div class="mini"><div class="label">&#x5df2;&#x914d;&#x5bf9;&#x8bbe;&#x5907;</div><div id="home-device" class="value">&#x6682;&#x65e0;</div></div>
+              <div class="mini"><div class="label">&#x670d;&#x52a1;&#x5730;&#x5740;</div><div id="home-network" class="value">&#x5f85;&#x52a0;&#x8f7d;</div></div>
             </div>
             <div class="toolbar">
-              <button id="btn-toggle-service" class="btn primary" type="button">启动服务</button>
-              <button id="btn-pairing" class="btn secondary" type="button">刷新配对</button>
-              <button id="btn-refresh-devices" class="btn secondary" type="button">刷新设备</button>
+              <button id="btn-toggle-service" class="btn primary" type="button">&#x542f;&#x52a8;&#x670d;&#x52a1;</button>
+              <button id="btn-pairing" class="btn secondary" type="button">&#x5237;&#x65b0;&#x914d;&#x5bf9;</button>
+              <button id="btn-refresh-devices" class="btn secondary" type="button">&#x5237;&#x65b0;&#x8bbe;&#x5907;</button>
             </div>
           </div>
           <div class="grid2">
             <div class="card">
-              <h3>二维码配对</h3>
+              <h3>&#x4e8c;&#x7ef4;&#x7801;&#x914d;&#x5bf9;</h3>
               <div id="qr-box" class="qr"></div>
               <div id="pairing-code" class="code">------</div>
-              <p id="pairing-meta" style="margin-top:10px;text-align:center;font-size:13px;color:var(--secondaryText)">服务信息待加载</p>
+              <p id="pairing-meta" style="margin-top:10px;text-align:center;font-size:13px;color:var(--secondaryText)">&#x670d;&#x52a1;&#x4fe1;&#x606f;&#x5f85;&#x52a0;&#x8f7d;</p>
             </div>
             <div class="card">
-              <h3>已配对设备</h3>
+              <h3>&#x5df2;&#x914d;&#x5bf9;&#x8bbe;&#x5907;</h3>
               <div id="devices-list" class="list"></div>
             </div>
           </div>
@@ -312,18 +78,18 @@
 
         <!-- RECORDS -->
         <section id="records" class="page">
-          <div class="head"><div><h2>记录</h2><p>语音识别历史记录</p></div></div>
+          <div class="head"><div><h2>&#x8bb0;&#x5f55;</h2><p>&#x8bed;&#x97f3;&#x8bc6;&#x522b;&#x5386;&#x53f2;&#x8bb0;&#x5f55;</p></div></div>
           <div class="search-row">
-            <input id="records-search" type="text" class="search-input" placeholder="搜索记录...">
-            <button id="refresh-history" class="btn secondary" type="button">刷新</button>
-            <button id="clear-history" class="btn danger" type="button">清空</button>
+            <input id="records-search" type="text" class="search-input" placeholder="&#x641c;&#x7d22;&#x8bb0;&#x5f55;...">
+            <button id="refresh-history" class="btn secondary" type="button">&#x5237;&#x65b0;</button>
+            <button id="clear-history" class="btn danger" type="button">&#x6e05;&#x7a7a;</button>
           </div>
           <div class="search-row" style="margin-top:8px">
-            <span style="font-size:13px;color:var(--text-secondary);white-space:nowrap">保存时间</span>
+            <span style="font-size:13px;color:var(--text-secondary);white-space:nowrap">&#x4fdd;&#x5b58;&#x65f6;&#x95f4;</span>
             <div class="seg-picker" id="retention-picker">
-              <button class="seg" data-days="7">7 天</button>
-              <button class="seg active" data-days="30">30 天</button>
-              <button class="seg" data-days="100">100 天</button>
+              <button class="seg" data-days="7">7 &#x5929;</button>
+              <button class="seg active" data-days="30">30 &#x5929;</button>
+              <button class="seg" data-days="100">100 &#x5929;</button>
             </div>
           </div>
           <div id="history-list"></div>
@@ -331,117 +97,97 @@
 
         <!-- DATA -->
         <section id="data" class="page">
-          <div class="head"><div><h2>数据</h2><p>连接、配对和识别事件日志</p></div></div>
+          <div class="head"><div><h2>&#x6570;&#x636e;</h2><p>&#x8fde;&#x63a5;&#x3001;&#x914d;&#x5bf9;&#x548c;&#x8bc6;&#x522b;&#x4e8b;&#x4ef6;&#x65e5;&#x5fd7;</p></div></div>
           <div class="search-row">
             <div class="seg-picker" id="data-filter">
-              <button class="seg active" data-filter="all">全部</button>
-              <button class="seg" data-filter="voice">语音</button>
-              <button class="seg" data-filter="pairing">配对</button>
+              <button class="seg active" data-filter="all">&#x5168;&#x90e8;</button>
+              <button class="seg" data-filter="voice">&#x8bed;&#x97f3;</button>
+              <button class="seg" data-filter="pairing">&#x914d;&#x5bf9;</button>
             </div>
-            <input id="data-search" type="text" class="search-input" placeholder="搜索...">
-            <button id="clear-activity" class="btn secondary" type="button">清空</button>
+            <input id="data-search" type="text" class="search-input" placeholder="&#x641c;&#x7d22;...">
+            <button id="clear-activity" class="btn secondary" type="button">&#x6e05;&#x7a7a;</button>
           </div>
           <div class="summary-row">
-            <span class="summary-badge" id="data-total">总计: 0</span>
-            <span class="summary-badge green" id="data-voice">语音: 0</span>
-            <span class="summary-badge blue" id="data-pairing">配对: 0</span>
-            <span class="summary-badge red" id="data-errors">错误: 0</span>
+            <span class="summary-badge" id="data-total">&#x603b;&#x8ba1;: 0</span>
+            <span class="summary-badge green" id="data-voice">&#x8bed;&#x97f3;: 0</span>
+            <span class="summary-badge blue" id="data-pairing">&#x914d;&#x5bf9;: 0</span>
+            <span class="summary-badge red" id="data-errors">&#x9519;&#x8bef;: 0</span>
           </div>
           <div id="activity-list" class="list"></div>
         </section>
 
         <!-- SPEECH -->
         <section id="speech" class="page">
-          <div class="head"><div><h2>语音</h2><p>语音识别引擎选择</p></div></div>
+          <div class="head"><div><h2>&#x8bed;&#x97f3;</h2><p>&#x8bed;&#x97f3;&#x8bc6;&#x522b;&#x5f15;&#x64ce;&#x9009;&#x62e9;&#x4e0e; ASR &#x914d;&#x7f6e;</p></div></div>
           <div class="card">
-            <h3>识别引擎</h3>
+            <h3>&#x8bc6;&#x522b;&#x5f15;&#x64ce;</h3>
             <div class="engine-list">
-              <div class="engine-row selected" data-engine="cloud">
+              <div class="engine-row selected" data-engine="local">
                 <div class="engine-radio"></div>
                 <div class="engine-info">
-                  <div class="engine-name">Volcengine ASR (火山引擎)</div>
-                  <div class="engine-langs">云端识别 · 支持: zh-CN, en-US</div>
+                  <div class="engine-name">Windows &#x8bed;&#x97f3;&#x8bc6;&#x522b; (&#x672c;&#x5730;)</div>
+                  <div class="engine-langs">&#x79bb;&#x7ebf;&#x8bc6;&#x522b; &#xb7; &#x65e0;&#x9700;&#x7f51;&#x7edc; &#xb7; &#x7cfb;&#x7edf;&#x5185;&#x7f6e;</div>
                 </div>
-                <span class="engine-status available" id="engine-status-cloud">可用</span>
+                <span class="engine-status" id="engine-status-local">&#x68c0;&#x6d4b;&#x4e2d;</span>
               </div>
-              <div class="engine-row" data-engine="local">
+              <div class="engine-row" data-engine="cloud">
                 <div class="engine-radio"></div>
                 <div class="engine-info">
-                  <div class="engine-name">Windows 语音识别 (本地)</div>
-                  <div class="engine-langs">离线识别 · 无需网络 · 系统内置</div>
+                  <div class="engine-name">Volcengine ASR (&#x706b;&#x5c71;&#x5f15;&#x64ce;)</div>
+                  <div class="engine-langs">&#x4e91;&#x7aef;&#x8bc6;&#x522b; &#xb7; &#x652f;&#x6301;: zh-CN, en-US</div>
                 </div>
-                <span class="engine-status" id="engine-status-local">检测中</span>
+                <button class="engine-status available" id="engine-status-cloud" type="button">&#x53ef;&#x7528;</button>
               </div>
             </div>
-            <p style="margin-top:12px;font-size:13px;color:var(--secondaryText)">点击选择引擎。云端引擎配置请前往 设置 → ASR 配置。</p>
+            <div id="speech-engine-hint" class="engine-hint">&#x70b9;&#x51fb;&#x5f15;&#x64ce;&#x67e5;&#x770b;&#x53ef;&#x7528;&#x72b6;&#x6001;&#x548c;&#x914d;&#x7f6e;&#x5165;&#x53e3;&#x3002;</div>
           </div>
         </section>
 
         <!-- PERMISSIONS -->
         <section id="permissions" class="page">
-          <div class="head"><div><h2>权限</h2><p>Windows 文本注入所需的权限</p></div></div>
+          <div class="head"><div><h2>&#x6743;&#x9650;</h2><p>Windows &#x6587;&#x672c;&#x6ce8;&#x5165;&#x6240;&#x9700;&#x7684;&#x6743;&#x9650;</p></div></div>
           <div class="card">
-            <h3>辅助功能权限</h3>
+            <h3>&#x8f85;&#x52a9;&#x529f;&#x80fd;&#x6743;&#x9650;</h3>
             <div class="perm-status">
               <span class="perm-icon">&#10003;</span>
-              <span class="perm-label">状态: 已授权</span>
+              <span class="perm-label">&#x72b6;&#x6001;: &#x5df2;&#x6388;&#x6743;</span>
             </div>
-            <p>Windows 键盘注入通过 SendInput 实现，无需额外权限授予。</p>
+            <p>Windows &#x952e;&#x76d8;&#x6ce8;&#x5165;&#x901a;&#x8fc7; SendInput &#x5b9e;&#x73b0;&#xff0c;&#x65e0;&#x9700;&#x989d;&#x5916;&#x6743;&#x9650;&#x6388;&#x4e88;&#x3002;</p>
             <div class="toolbar">
-              <button id="btn-check-perm" class="btn secondary" type="button">检查状态</button>
-              <button id="btn-open-settings" class="btn secondary" type="button">打开系统设置</button>
+              <button id="btn-check-perm" class="btn secondary" type="button">&#x68c0;&#x67e5;&#x72b6;&#x6001;</button>
+              <button id="btn-open-settings" class="btn secondary" type="button">&#x6253;&#x5f00;&#x7cfb;&#x7edf;&#x8bbe;&#x7f6e;</button>
             </div>
           </div>
         </section>
 
         <!-- SETTINGS -->
         <section id="settings" class="page">
-          <div class="head"><div><h2>设置</h2><p>应用配置</p></div></div>
+          <div class="head"><div><h2>&#x8bbe;&#x7f6e;</h2><p>&#x5e94;&#x7528;&#x914d;&#x7f6e;</p></div></div>
           <div class="card">
-            <h3>文本注入</h3>
+            <h3>&#x6587;&#x672c;&#x6ce8;&#x5165;</h3>
             <div class="radio-group">
-              <label class="radio-option"><input type="radio" name="injection" value="keyboard" checked> 键盘模拟 <span class="radio-hint">推荐</span></label>
-              <label class="radio-option"><input type="radio" name="injection" value="clipboard"> 剪贴板</label>
+              <label class="radio-option"><input type="radio" name="injection" value="keyboard" checked> &#x952e;&#x76d8;&#x6a21;&#x62df; <span class="radio-hint">&#x63a8;&#x8350;</span></label>
+              <label class="radio-option"><input type="radio" name="injection" value="clipboard"> &#x526a;&#x8d34;&#x677f;</label>
             </div>
           </div>
           <div class="card">
-            <h3>界面语言</h3>
+            <h3>&#x754c;&#x9762;&#x8bed;&#x8a00;</h3>
             <div class="seg-picker" id="lang-picker">
-              <button class="seg active" data-val="zh-CN">简体中文</button>
+              <button class="seg active" data-val="zh-CN">&#x7b80;&#x4f53;&#x4e2d;&#x6587;</button>
               <button class="seg" data-val="en-US">English</button>
             </div>
           </div>
           <div class="card">
-            <h3>主题</h3>
+            <h3>&#x4e3b;&#x9898;</h3>
             <div class="seg-picker" id="theme-picker">
-              <button class="seg" data-val="system">跟随系统</button>
-              <button class="seg active" data-val="light">浅色</button>
-              <button class="seg" data-val="dark">深色</button>
+              <button class="seg" data-val="system">&#x8ddf;&#x968f;&#x7cfb;&#x7edf;</button>
+              <button class="seg active" data-val="light">&#x6d45;&#x8272;</button>
+              <button class="seg" data-val="dark">&#x6df1;&#x8272;</button>
             </div>
           </div>
           <div class="card">
-            <h3>服务端口</h3>
+            <h3>&#x670d;&#x52a1;&#x7aef;&#x53e3;</h3>
             <input id="setting-port" type="number" min="1024" max="65535" value="8765" style="border-radius:10px;border:1px solid var(--cardBorder);padding:10px 14px;font:inherit;font-size:14px;color:var(--primaryText);background:var(--softSurface);max-width:200px">
-          </div>
-          <div class="card">
-            <h3>ASR 配置</h3>
-            <div class="form">
-              <label>App ID<input id="setting-asr-appid" type="text"></label>
-              <label>Access Key ID<input id="setting-asr-keyid" type="text"></label>
-              <label>Access Key Secret<input id="setting-asr-keysecret" type="password"></label>
-              <label>Cluster<input id="setting-asr-cluster" type="text"></label>
-              <label>识别语言
-                <select id="setting-asr-language">
-                  <option value="zh-CN">中文</option>
-                  <option value="en-US">English</option>
-                </select>
-              </label>
-            </div>
-            <div class="toolbar">
-              <button id="save-settings" class="btn primary" type="button">保存设置</button>
-              <button id="save-asr" class="btn secondary" type="button">保存 ASR 配置</button>
-              <button id="reload-settings" class="btn secondary" type="button">重新加载</button>
-            </div>
           </div>
         </section>
 
@@ -452,8 +198,8 @@
             <h2>VoiceMind</h2>
             <p class="about-version">Version 0.1.0</p>
             <div class="about-divider"></div>
-            <p class="about-desc">iPhone 无线麦克风 · Windows 端</p>
-            <button class="btn primary" type="button" onclick="toast('使用指南功能开发中')">使用指南</button>
+            <p class="about-desc">iPhone &#x65e0;&#x7ebf;&#x9ea6;&#x514b;&#x98ce; &#xb7; Windows &#x7aef;</p>
+            <button class="btn primary" type="button" onclick="toast('使用指南功能开发中;')">&#x4f7f;&#x7528;&#x6307;&#x5357;</button>
           </div>
         </section>
 
@@ -461,569 +207,35 @@
     </main>
   </div>
 
-  <script>
-    /* ===== State ===== */
-    const state = {
-      isTauri: Boolean(window.__TAURI__),
-      page: "home",
-      connected: false,
-      listening: false,
-      deviceName: null,
-      deviceId: null,
-      pairingCode: "",
-      pairingIp: null,
-      pairingPort: null,
-      noteText: "",
-      settings: null,
-      history: [],
-      devices: [],
-      activity: [],
-      dataFilter: "all",
-      recordsSearch: "",
-      serviceRunning: false
-    };
+  <div id="speech-asr-modal" class="modal-backdrop" hidden>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="speech-asr-modal-title">
+      <div class="modal-header">
+        <div>
+          <h3 id="speech-asr-modal-title">ASR &#x914d;&#x7f6e;</h3>
+          <p id="speech-asr-config-desc">&#x914d;&#x7f6e; Volcengine ASR &#x51ed;&#x636e;&#x540e;&#xff0c;&#x624d;&#x53ef;&#x5207;&#x6362;&#x5230;&#x4e91;&#x7aef;&#x8bc6;&#x522b;&#x3002;</p>
+        </div>
+        <button id="speech-config-close" class="btn secondary modal-close" type="button">&#x5173;&#x95ed;</button>
+      </div>
+      <div class="form">
+        <label>App ID<input id="setting-asr-appid" type="text"></label>
+        <label>Access Key ID<input id="setting-asr-keyid" type="text"></label>
+        <label>Access Key Secret<input id="setting-asr-keysecret" type="password"></label>
+        <label>Cluster<input id="setting-asr-cluster" type="text"></label>
+        <label>&#x8bc6;&#x522b;&#x8bed;&#x8a00;
+          <select id="setting-asr-language">
+            <option value="zh-CN">&#x4e2d;&#x6587;</option>
+            <option value="en-US">English</option>
+          </select>
+        </label>
+      </div>
+      <div class="toolbar">
+        <button id="save-asr" class="btn primary" type="button">&#x4fdd;&#x5b58; ASR &#x914d;&#x7f6e;</button>
+        <button id="reload-settings" class="btn secondary" type="button">&#x91cd;&#x65b0;&#x52a0;&#x8f7d;</button>
+        <button id="speech-config-cancel" class="btn secondary" type="button">&#x53d6;&#x6d88;</button>
+      </div>
+    </div>
+  </div>
 
-    /* ===== DOM refs ===== */
-    const pages = [...document.querySelectorAll(".page")];
-    const navItems = [...document.querySelectorAll(".nav-item")];
-    const banner = document.getElementById("banner");
-    const historyList = document.getElementById("history-list");
-    const devicesList = document.getElementById("devices-list");
-    const activityList = document.getElementById("activity-list");
-
-    if (!state.isTauri) banner.style.display = "block";
-
-    /* ===== Tauri helpers ===== */
-    const invoke = (cmd, payload) => {
-      const api = window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke;
-      return api ? api(cmd, payload) : Promise.reject(new Error("Tauri invoke unavailable"));
-    };
-    const listenApi = () =>
-      window.__TAURI__ && window.__TAURI__.event && typeof window.__TAURI__.event.listen === "function"
-        ? window.__TAURI__.event.listen
-        : window.__TAURI__ && window.__TAURI__.core && typeof window.__TAURI__.core.listen === "function"
-          ? window.__TAURI__.core.listen : null;
-
-    /* ===== Helpers ===== */
-    const pairedName = () => state.deviceName || (state.devices[0] && state.devices[0].name) || null;
-    const connLabel = () => !state.serviceRunning ? "服务已停止" : state.listening ? "监听中" : state.connected ? "已连接" : "未连接";
-
-    function summary() {
-      if (state.deviceName) return `${state.deviceName} 已完成配对，当前${state.listening ? "正在传输音频" : "处于可用连接状态"}。`;
-      if (pairedName()) return `${pairedName()} 已完成配对，当前未连接。`;
-      return "尚未配对设备。请刷新二维码，用 iPhone 扫码建立连接。";
-    }
-
-    /* ===== Theme ===== */
-    function applyTheme(theme) {
-      if (theme === "system") {
-        const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
-      } else {
-        document.documentElement.setAttribute("data-theme", theme);
-      }
-      localStorage.setItem("voicemind_theme", theme);
-      // Update picker UI
-      document.querySelectorAll("#theme-picker .seg").forEach(s => s.classList.toggle("active", s.dataset.val === theme));
-    }
-    // Init theme
-    applyTheme(localStorage.getItem("voicemind_theme") || "light");
-
-    /* ===== Navigation ===== */
-    function showPage(id) {
-      state.page = id;
-      pages.forEach(p => p.classList.toggle("active", p.id === id));
-      navItems.forEach(i => i.classList.toggle("active", i.dataset.page === id));
-      // Load data when switching to specific pages
-      if (id === "records") refreshHistory();
-    }
-    navItems.forEach(i => i.addEventListener("click", () => showPage(i.dataset.page)));
-
-    /* ===== Segmented pickers ===== */
-    document.querySelectorAll(".seg-picker").forEach(picker => {
-      picker.querySelectorAll(".seg").forEach(seg => {
-        seg.addEventListener("click", () => {
-          picker.querySelectorAll(".seg").forEach(s => s.classList.remove("active"));
-          seg.classList.add("active");
-          // Theme picker
-          if (picker.id === "theme-picker") applyTheme(seg.dataset.val);
-          // Data filter
-          if (picker.id === "data-filter") { state.dataFilter = seg.dataset.filter; renderActivity(); }
-        });
-      });
-    });
-
-    /* ===== Render ===== */
-    function renderStatus() {
-      // Sidebar
-      const dot = document.getElementById("side-dot");
-      dot.className = "dot";
-      if (state.listening) dot.classList.add("listening");
-      else if (state.connected) dot.classList.add("connected");
-      document.getElementById("side-title").textContent = connLabel();
-      document.getElementById("side-detail").textContent = state.deviceName
-        ? `${state.deviceName}${state.listening ? " 正在发送语音" : " 已连接"}`
-        : "等待 iPhone 接入";
-
-      // Home stats badges
-      const connBadge = document.getElementById("home-badge-conn");
-      connBadge.className = "stat-badge";
-      const connDot = document.getElementById("home-conn-dot");
-      if (state.listening) { connBadge.classList.add("listening"); }
-      else if (state.connected) { connBadge.classList.add("connected"); }
-      else { connBadge.classList.add("disconnected"); }
-      document.getElementById("home-conn-label").textContent = connLabel();
-
-      // Home card
-      document.getElementById("home-summary").textContent = summary();
-      document.getElementById("home-status").textContent = connLabel();
-      document.getElementById("home-device").textContent = pairedName() || "暂无";
-      document.getElementById("home-network").textContent = state.pairingIp ? `${state.pairingIp}:${state.pairingPort || "-"}` : "待加载";
-
-      // Service button
-      const btn = document.getElementById("btn-toggle-service");
-      btn.textContent = state.serviceRunning ? "停止服务" : "启动服务";
-      btn.classList.toggle("danger", state.serviceRunning);
-      btn.classList.toggle("primary", !state.serviceRunning);
-    }
-
-    function renderRecordsCount() {
-      document.getElementById("home-records-count").textContent = `记录: ${state.history.length}`;
-    }
-
-    function escHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
-
-    function createItem(title, detail, meta, action) {
-      const el = document.createElement("div");
-      el.className = "item";
-      const main = document.createElement("div");
-      main.className = "item-main";
-      main.innerHTML = `<div class="item-title">${escHtml(title)}</div><div class="item-detail">${escHtml(detail)}</div>`;
-      const side = document.createElement("div");
-      side.className = "item-meta";
-      side.textContent = meta || "";
-      if (action) { side.appendChild(document.createElement("br")); side.appendChild(action); }
-      el.append(main, side);
-      return el;
-    }
-
-    function renderList(container, items, emptyText, builder) {
-      container.innerHTML = "";
-      if (!items.length) { container.innerHTML = `<div class="empty">${escHtml(emptyText)}</div>`; return; }
-      items.forEach(x => container.appendChild(builder(x)));
-    }
-
-    /* ===== Activity with category/severity ===== */
-    function addActivity(title, detail, category, severity) {
-      category = category || "info";
-      severity = severity || "info";
-      const sig = `${category}::${title}::${detail}`;
-      if (state.activity[0] && state.activity[0].sig === sig) return;
-      state.activity.unshift({
-        sig, title, detail, category, severity,
-        time: new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-      });
-      state.activity = state.activity.slice(0, 50);
-      renderActivity();
-    }
-
-    function renderActivity() {
-      let items = state.activity;
-      // Filter
-      if (state.dataFilter !== "all") {
-        items = items.filter(a => a.category === state.dataFilter);
-      }
-      // Search
-      const q = document.getElementById("data-search").value.toLowerCase();
-      if (q) items = items.filter(a => a.title.toLowerCase().includes(q) || a.detail.toLowerCase().includes(q));
-
-      renderList(activityList, items, "暂无活动记录", x => {
-        const el = createItem(x.title, x.detail, x.time);
-        const sev = document.createElement("span");
-        sev.className = `sev ${x.severity}`;
-        sev.textContent = x.severity === "warning" ? "警告" : x.severity === "error" ? "错误" : "信息";
-        el.querySelector(".item-meta").prepend(sev);
-        return el;
-      });
-      renderDataSummary();
-    }
-
-    function renderDataSummary() {
-      const all = state.activity;
-      document.getElementById("data-total").textContent = `总计: ${all.length}`;
-      document.getElementById("data-voice").textContent = `语音: ${all.filter(a => a.category === "voice").length}`;
-      document.getElementById("data-pairing").textContent = `配对: ${all.filter(a => a.category === "pairing" || a.category === "connection").length}`;
-      document.getElementById("data-errors").textContent = `错误: ${all.filter(a => a.severity === "error").length}`;
-    }
-
-    /* ===== Records with date grouping + search ===== */
-    function renderHistory() {
-      let items = state.history;
-      const q = state.recordsSearch.toLowerCase();
-      if (q) items = items.filter(h => (h.text || "").toLowerCase().includes(q));
-
-      historyList.innerHTML = "";
-      if (!items.length) {
-        historyList.innerHTML = `<div class="empty">暂无识别历史</div>`;
-        return;
-      }
-
-      // Group by date
-      const today = new Date().toDateString();
-      const yesterday = new Date(Date.now() - 86400000).toDateString();
-      const groups = {};
-      items.forEach(r => {
-        const d = r.timestamp ? new Date(r.timestamp.replace(/-/g, "/")).toDateString() : today;
-        const label = d === today ? "今天" : d === yesterday ? "昨天" : d;
-        if (!groups[label]) groups[label] = [];
-        groups[label].push(r);
-      });
-
-      Object.entries(groups).forEach(([label, records]) => {
-        const group = document.createElement("div");
-        group.className = "date-group";
-        group.innerHTML = `<div class="date-label">${escHtml(label)}</div>`;
-        const list = document.createElement("div");
-        list.className = "list";
-        records.forEach(r => {
-          const src = r.source || "";
-          const badge = src && src !== "asr" ? `<span class="source-badge ios">${escHtml(src)}</span>` : `<span class="source-badge local">Local</span>`;
-          const el = document.createElement("div");
-          el.className = "item";
-          const time = r.timestamp ? r.timestamp.split(" ")[1] || r.timestamp : "";
-          el.innerHTML = `<div class="item-main"><div class="item-title">${badge} ${escHtml(r.text || "(空内容)")}</div></div><div class="item-meta">${escHtml(time)}</div>`;
-          list.appendChild(el);
-        });
-        group.appendChild(list);
-        historyList.appendChild(group);
-      });
-      renderRecordsCount();
-    }
-
-    /* ===== Devices ===== */
-    function renderDevices() {
-      renderList(devicesList, state.devices, "暂无已配对设备", d => {
-        const btn = document.createElement("button");
-        btn.className = "btn secondary";
-        btn.type = "button";
-        btn.textContent = "移除";
-        btn.addEventListener("click", async () => {
-          try {
-            await invoke("remove_paired_device", { id: d.id });
-            addActivity("设备已移除", d.name, "pairing");
-            await refreshDevices();
-          } catch (e) { toast(`移除设备失败: ${e}`); }
-        });
-        return createItem(d.name || "未命名设备", d.last_seen ? `最后在线: ${d.last_seen}` : `设备 ID: ${d.id}`, "", btn);
-      });
-    }
-
-    /* ===== Tauri async ===== */
-    async function refreshConnection() {
-      if (!state.isTauri) return;
-      try {
-        const s = await invoke("get_connection_status");
-        const next = Boolean(s && s.connected);
-        const nextName = s && s.name ? s.name : null;
-        const changed = state.connected !== next || state.deviceName !== nextName;
-        state.connected = next;
-        state.deviceName = nextName;
-        state.deviceId = s && s.device_id ? s.device_id : null;
-        if (changed) { addActivity(next ? "连接已建立" : "连接已断开", next ? `${nextName || "iPhone"} 已连接` : "设备断开", "connection"); console.log("Connection state changed:", next, nextName); }
-        renderStatus();
-      } catch (e) { console.error("refreshConnection error:", e); }
-    }
-
-    async function refreshPairing() {
-      if (!state.isTauri) return;
-      try {
-        const r = await invoke("start_pairing");
-        if (!r || !r.success) { toast(r && r.message ? r.message : "生成配对码失败"); return; }
-        state.pairingCode = r.pairing_code || "";
-        state.pairingIp = r.ip || null;
-        state.pairingPort = r.port || null;
-        document.getElementById("pairing-code").textContent = state.pairingCode || "------";
-        document.getElementById("pairing-meta").textContent = `IP: ${state.pairingIp || "未知"}  端口: ${state.pairingPort || "-"}`;
-        const qr = document.getElementById("qr-box");
-        qr.innerHTML = "";
-        if (r.qr_content) {
-          const img = document.createElement("img");
-          img.src = r.qr_content;
-          img.alt = "Pairing QR";
-          qr.appendChild(img);
-        } else {
-          qr.innerHTML = `<div class="empty">二维码尚未生成</div>`;
-        }
-        addActivity("配对码已刷新", `验证码: ${state.pairingCode}`, "pairing");
-        renderStatus();
-      } catch (e) { console.error("refreshPairing", e); toast(`生成配对码失败: ${e}`); }
-    }
-
-    async function refreshDevices() {
-      if (!state.isTauri) return;
-      try {
-        const ds = await invoke("get_paired_devices");
-        state.devices = Array.isArray(ds) ? ds : [];
-        renderDevices();
-        renderStatus();
-      } catch (e) { console.error("refreshDevices", e); }
-    }
-
-    async function refreshHistory() {
-      if (!state.isTauri) return;
-      try {
-        console.log("refreshHistory: fetching...");
-        const h = await invoke("get_history");
-        state.history = Array.isArray(h) ? h : [];
-        console.log("refreshHistory: got", state.history.length, "records");
-        renderHistory();
-      } catch (e) { console.error("refreshHistory error:", e); }
-    }
-
-    async function loadSettings() {
-      if (!state.isTauri) return;
-      try {
-        const s = await invoke("get_settings");
-        state.settings = s || null;
-        if (!s) return;
-        // Injection
-        const inj = (s.injection_method || "keyboard");
-        document.querySelectorAll(`input[name="injection"]`).forEach(r => r.checked = r.value === inj);
-        // Language
-        document.querySelectorAll("#lang-picker .seg").forEach(seg => seg.classList.toggle("active", seg.dataset.val === (s.language || "zh-CN")));
-        // Port
-        document.getElementById("setting-port").value = s.server_port || 8765;
-        // ASR
-        if (s.asr) {
-          document.getElementById("setting-asr-appid").value = s.asr.app_id || "";
-          document.getElementById("setting-asr-keyid").value = s.asr.access_key_id || "";
-          document.getElementById("setting-asr-keysecret").value = s.asr.access_key_secret || "";
-          document.getElementById("setting-asr-cluster").value = s.asr.cluster || "";
-          document.getElementById("setting-asr-language").value = s.asr.asr_language || "zh-CN";
-        }
-        // Retention
-        const rd = s.history_retention_days || 30;
-        document.querySelectorAll("#retention-picker .seg").forEach(seg => seg.classList.toggle("active", parseInt(seg.dataset.days) === rd));
-        // Engine status - cloud
-        const configured = s.asr && s.asr.access_key_id;
-        const cloudEl = document.getElementById("engine-status-cloud");
-        if (configured) { cloudEl.textContent = "已配置"; cloudEl.className = "engine-status available"; }
-        else { cloudEl.textContent = "未配置"; cloudEl.className = "engine-status"; cloudEl.style.background = "rgba(239,68,68,0.12)"; cloudEl.style.color = "var(--accentRed)"; }
-        // Engine status - local
-        try {
-          const localOk = await invoke("check_local_asr");
-          const localEl = document.getElementById("engine-status-local");
-          if (localOk) { localEl.textContent = "可用"; localEl.className = "engine-status available"; }
-          else { localEl.textContent = "不可用"; localEl.className = "engine-status"; }
-        } catch(e) {}
-        // Engine selection
-        const currentEngine = s.asr_engine || "cloud";
-        document.querySelectorAll(".engine-row").forEach(row => {
-          row.classList.toggle("selected", row.dataset.engine === currentEngine);
-        });
-        // Theme
-        if (s.theme) applyTheme(s.theme);
-      } catch (e) { console.error("loadSettings", e); }
-    }
-
-    async function saveSettings() {
-      if (!state.isTauri) return;
-      const inj = document.querySelector('input[name="injection"]:checked').value;
-      const lang = document.querySelector("#lang-picker .seg.active").dataset.val;
-      const next = {
-        ...(state.settings || {}),
-        language: lang,
-        injection_method: inj,
-        server_port: Number(document.getElementById("setting-port").value || 8765),
-        hotkey: state.settings && state.settings.hotkey || "",
-        bonjour: state.settings && state.settings.bonjour || { enabled: true },
-        theme: localStorage.getItem("voicemind_theme") || "light",
-        asr: {
-          provider: state.settings && state.settings.asr ? state.settings.asr.provider || "" : "",
-          app_id: state.settings && state.settings.asr ? state.settings.asr.app_id || "" : "",
-          access_key_id: state.settings && state.settings.asr ? state.settings.asr.access_key_id || "" : "",
-          access_key_secret: state.settings && state.settings.asr ? state.settings.asr.access_key_secret || "" : "",
-          cluster: state.settings && state.settings.asr ? state.settings.asr.cluster || "" : "",
-          asr_language: document.getElementById("setting-asr-language").value
-        }
-      };
-      try {
-        await invoke("save_settings", { settings: next });
-        state.settings = next;
-        addActivity("设置已保存", "配置已写入", "settings");
-        toast("设置已保存");
-      } catch (e) { toast(`保存失败: ${e}`); }
-    }
-
-    async function saveASR() {
-      if (!state.isTauri) return;
-      const config = {
-        provider: "volcengine",
-        app_id: document.getElementById("setting-asr-appid").value,
-        access_key_id: document.getElementById("setting-asr-keyid").value,
-        access_key_secret: document.getElementById("setting-asr-keysecret").value,
-        cluster: document.getElementById("setting-asr-cluster").value,
-        asr_language: document.getElementById("setting-asr-language").value
-      };
-      try {
-        await invoke("save_asr_config", { config });
-        addActivity("ASR 配置已保存", `语言: ${config.asr_language}`, "settings");
-        toast("ASR 配置已保存");
-        await loadSettings();
-      } catch (e) { toast(`ASR 保存失败: ${e}`); }
-    }
-
-    async function toggleService() {
-      if (!state.isTauri) return;
-      try {
-        if (state.serviceRunning) {
-          await invoke("stop_service");
-          state.serviceRunning = false;
-          state.connected = false;
-          state.listening = false;
-          addActivity("服务已停止", "本地服务已关闭", "connection");
-          toast("服务已停止");
-        } else {
-          const r = await invoke("start_service");
-          state.serviceRunning = true;
-          addActivity("服务已启动", `端口: ${r && r.port || "-"}`, "connection");
-          toast("服务已启动");
-        }
-        renderStatus();
-      } catch (e) { toast(`服务操作失败: ${e}`); }
-    }
-
-    // Engine row click handler
-    document.querySelectorAll(".engine-row").forEach(row => {
-      row.addEventListener("click", async () => {
-        const engine = row.dataset.engine;
-        document.querySelectorAll(".engine-row").forEach(r => r.classList.remove("selected"));
-        row.classList.add("selected");
-        if (state.isTauri && state.settings) {
-          try { await invoke("save_settings", { settings: { ...state.settings, asr_engine: engine } }); state.settings.asr_engine = engine; toast(engine === "local" ? "已切换到本地识别" : "已切换到云端识别"); }
-          catch (e) { toast(`切换失败: ${e}`); }
-        }
-      });
-    });
-
-    function toast(message) {
-      const old = document.querySelector(".toast");
-      if (old) old.remove();
-      const el = document.createElement("div");
-      el.className = "toast";
-      el.textContent = message;
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 2800);
-    }
-
-    /* ===== Event bindings ===== */
-    document.getElementById("btn-toggle-service").addEventListener("click", toggleService);
-    document.getElementById("btn-pairing").addEventListener("click", refreshPairing);
-    document.getElementById("btn-refresh-devices").addEventListener("click", refreshDevices);
-    document.getElementById("refresh-history").addEventListener("click", refreshHistory);
-    document.getElementById("clear-history").addEventListener("click", async () => {
-      if (!state.isTauri) return;
-      try { await invoke("clear_history"); state.history = []; renderHistory(); addActivity("历史已清空", "识别记录已删除", "records"); } catch (e) { toast(`清空失败: ${e}`); }
-    });
-    document.getElementById("save-settings").addEventListener("click", saveSettings);
-    document.getElementById("save-asr").addEventListener("click", saveASR);
-    document.getElementById("reload-settings").addEventListener("click", loadSettings);
-    document.getElementById("clear-activity").addEventListener("click", () => { state.activity = []; renderActivity(); });
-
-    // Records search
-    document.getElementById("records-search").addEventListener("input", e => { state.recordsSearch = e.target.value; renderHistory(); });
-    // Retention picker
-    document.querySelectorAll("#retention-picker .seg").forEach(seg => {
-      seg.addEventListener("click", async () => {
-        const days = parseInt(seg.dataset.days);
-        document.querySelectorAll("#retention-picker .seg").forEach(s => s.classList.remove("active"));
-        seg.classList.add("active");
-        if (state.isTauri) {
-          try { await invoke("set_history_retention", { days }); toast(`保存时间已设为 ${days} 天`); await refreshHistory(); }
-          catch (e) { toast(`设置失败: ${e}`); }
-        }
-      });
-    });
-    // Data search
-    document.getElementById("data-search").addEventListener("input", () => renderActivity());
-
-    // Permission buttons
-    document.getElementById("btn-check-perm").addEventListener("click", async () => {
-      if (!state.isTauri) { toast("已授权（预览模式）"); return; }
-      try { const s = await invoke("get_accessibility_status"); toast(`权限状态: ${s}`); } catch (e) { toast(`检查失败: ${e}`); }
-    });
-    document.getElementById("btn-open-settings").addEventListener("click", async () => {
-      if (!state.isTauri) { toast("仅桌面端可用"); return; }
-      try { await invoke("open_accessibility_settings"); } catch (e) { toast(`打开失败: ${e}`); }
-    });
-
-    /* ===== Tauri events ===== */
-    const unlisteners = [];
-    async function bindEvents() {
-      const listen = listenApi();
-      if (!listen) return;
-      unlisteners.push(await listen("connection-changed", async event => {
-        const p = event.payload || {};
-        console.log("connection-changed event received:", p);
-        const next = Boolean(p.connected);
-        const nextName = p.device_name || p.name || null;
-        const changed = state.connected !== next || state.deviceName !== nextName;
-        state.connected = next;
-        state.deviceName = nextName;
-        state.deviceId = p.device_id || p.deviceId || null;
-        if (!next) state.listening = false;
-        if (changed) addActivity(next ? "连接已建立" : "设备已断开", next ? `${nextName || "iPhone"} 已连接` : "设备断开", "connection");
-        renderStatus();
-        await Promise.all([refreshConnection(), refreshDevices()]);
-      }));
-      unlisteners.push(await listen("listening-started", event => {
-        state.listening = true; renderStatus();
-        addActivity("监听已开始", `${(event.payload || {}).device_name || state.deviceName || "iPhone"}`, "voice");
-      }));
-      unlisteners.push(await listen("listening-stopped", event => {
-        state.listening = false; renderStatus();
-        addActivity("监听已停止", `会话 ${(event.payload || {}).session_id || "-"}`, "voice");
-      }));
-      unlisteners.push(await listen("recognition-result", async event => {
-        const p = event.payload || {};
-        state.noteText = p.text || "";
-        renderStatus();
-        addActivity("识别结果", p.text || "(空)", "voice");
-        await refreshHistory();
-      }));
-      unlisteners.push(await listen("partial-result", event => {
-        const p = event.payload || {};
-        if (p.text) { state.noteText = p.text; renderStatus(); }
-      }));
-    }
-
-    /* ===== Init ===== */
-    async function init() {
-      renderStatus(); renderHistory(); renderDevices(); renderActivity();
-      // Check Tauri via invoke availability
-      const hasInvoke = window.__TAURI__ && window.__TAURI__.core && typeof window.__TAURI__.core.invoke === "function";
-      console.log("init: Tauri available:", !!window.__TAURI__, "hasInvoke:", hasInvoke);
-      if (!hasInvoke) { console.warn("Tauri not available, running in preview mode"); return; }
-      state.isTauri = true;
-
-      // Primary: polling sync every 2 seconds (always works, no event dependency)
-      async function syncStatus() {
-        try { state.serviceRunning = await invoke("get_service_status"); } catch(e) {}
-        await Promise.all([refreshConnection(), refreshDevices()]).catch(e => console.error("syncStatus", e));
-        renderStatus();
-      }
-      // Initial load
-      await syncStatus();
-      await Promise.all([refreshPairing(), refreshHistory(), loadSettings()]);
-      console.log("init: initial load done, connected:", state.connected);
-      // Start polling
-      setInterval(syncStatus, 2000);
-
-      // Secondary: try event listeners for real-time updates (optional)
-      try { await bindEvents(); console.log("init: event listeners registered"); }
-      catch (e) { console.warn("init: event listeners failed, polling only:", e); }
-    }
-    init();
-  </script>
+    <script type="module" src="./app/app.js"></script>
 </body>
 </html>
