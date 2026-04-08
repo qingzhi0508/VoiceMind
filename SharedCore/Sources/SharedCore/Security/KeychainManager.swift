@@ -20,53 +20,38 @@ public class KeychainManager {
     ) throws {
         let encoder = JSONEncoder()
         let data = try encoder.encode(pairing)
+        try saveData(data, service: service, account: account)
+    }
 
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecValueData as String: data
-        ]
-
-        // Delete existing item if present
-        SecItemDelete(query as CFDictionary)
-
-        let status = SecItemAdd(query as CFDictionary, nil)
-        guard status == errSecSuccess else {
-            try savePairingFallback(data, service: service, account: account)
-            return
+    public static func saveString(
+        _ value: String,
+        service: String,
+        account: String
+    ) throws {
+        guard let data = value.data(using: .utf8) else {
+            throw KeychainError.invalidData
         }
-
-        UserDefaults.standard.removeObject(forKey: fallbackKey(service: service, account: account))
+        try saveData(data, service: service, account: account)
     }
 
     public static func retrievePairing(
         service: String,
         account: String
     ) throws -> PairingData {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true
-        ]
-
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-
-        guard status == errSecSuccess else {
-            if status == errSecItemNotFound {
-                return try retrievePairingFallback(service: service, account: account)
-            }
-            return try retrievePairingFallback(service: service, account: account)
-        }
-
-        guard let data = result as? Data else {
-            throw KeychainError.invalidData
-        }
-
+        let data = try retrieveData(service: service, account: account)
         let decoder = JSONDecoder()
         return try decoder.decode(PairingData.self, from: data)
+    }
+
+    public static func retrieveString(
+        service: String,
+        account: String
+    ) throws -> String {
+        let data = try retrieveData(service: service, account: account)
+        guard let value = String(data: data, encoding: .utf8), !value.isEmpty else {
+            throw KeychainError.invalidData
+        }
+        return value
     }
 
     public static func delete(service: String, account: String) throws {
@@ -100,7 +85,7 @@ public class KeychainManager {
 
         let status = SecItemAdd(query as CFDictionary, nil)
         guard status == errSecSuccess else {
-            try savePairingFallback(data, service: service, account: account)
+            try saveDataFallback(data, service: service, account: account)
             return
         }
 
@@ -122,7 +107,7 @@ public class KeychainManager {
         let status = SecItemCopyMatching(query as CFDictionary, &result)
 
         guard status == errSecSuccess else {
-            return try retrievePairingFallbackData(service: service, account: account)
+            return try retrieveDataFallback(service: service, account: account)
         }
 
         guard let data = result as? Data else {
@@ -132,7 +117,7 @@ public class KeychainManager {
         return data
     }
 
-    private static func savePairingFallback(
+    private static func saveDataFallback(
         _ data: Data,
         service: String,
         account: String
@@ -140,16 +125,7 @@ public class KeychainManager {
         UserDefaults.standard.set(data, forKey: fallbackKey(service: service, account: account))
     }
 
-    private static func retrievePairingFallback(
-        service: String,
-        account: String
-    ) throws -> PairingData {
-        let data = try retrievePairingFallbackData(service: service, account: account)
-        let decoder = JSONDecoder()
-        return try decoder.decode(PairingData.self, from: data)
-    }
-
-    private static func retrievePairingFallbackData(
+    private static func retrieveDataFallback(
         service: String,
         account: String
     ) throws -> Data {

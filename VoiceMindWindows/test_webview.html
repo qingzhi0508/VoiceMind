@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceMind Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .status {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #4ade80;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ VoiceMind</h1>
+        <div class="status success">✅ WebView2测试成功</div>
+        <div class="status">应用正在运行...</div>
+        <div class="status">服务端口: 8765</div>
+        <div class="status">配对码: 123456</div>
+    </div>
+    <script>
+        console.log('VoiceMind test page loaded');
+        setTimeout(() => {
+            console.log('Test page initialized');
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceMind</title>
+    <link rel="icon" type="image/png" href="./assets/app-icon.png">
+    <link rel="stylesheet" href="./styles/app.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <img class="brand-icon" src="./assets/app-icon.png" alt="VoiceMind icon">
+        <div class="brand-copy"><h1>VoiceMind</h1></div>
+      </div>
+      <div class="nav primary">
+        <button class="nav-item active" data-page="home"><span class="nav-icon">&#9679;</span><span>&#x9996;&#x9875;</span></button>
+        <button class="nav-item" data-page="records"><span class="nav-icon">&#8635;</span><span>&#x8bb0;&#x5f55;</span></button>
+        <button class="nav-item" data-page="data"><span class="nav-icon">&#9776;</span><span>&#x6570;&#x636e;</span></button>
+        <button class="nav-item" data-page="speech"><span class="nav-icon">&#9898;</span><span>&#x8bed;&#x97f3;</span></button>
+        <button class="nav-item" data-page="permissions"><span class="nav-icon">&#128274;</span><span>&#x6743;&#x9650;</span></button>
+      </div>
+      <div class="nav secondary">
+        <button class="nav-item" data-page="settings"><span class="nav-icon">&#9881;</span><span>&#x8bbe;&#x7f6e;</span></button>
+        <button class="nav-item" data-page="about"><span class="nav-icon">&#8263;</span><span>&#x5173;&#x4e8e;</span></button>
+      </div>
+      <div class="sidebar-status">
+        <div class="sidebar-status-top">
+          <span id="side-dot" class="dot"></span>
+          <strong id="side-title">&#x672a;&#x8fde;&#x63a5;</strong>
+        </div>
+        <p id="side-detail">&#x7b49;&#x5f85; iPhone &#x63a5;&#x5165;</p>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="canvas">
+        <div id="banner" class="banner">&#x5f53;&#x524d;&#x662f;&#x6d4f;&#x89c8;&#x5668;&#x9884;&#x89c8;&#x6a21;&#x5f0f;&#xff0c;&#x53ea;&#x663e;&#x793a;&#x9759;&#x6001;&#x9875;&#x9762;&#xff1b;&#x684c;&#x9762;&#x547d;&#x4ee4;&#x548c;&#x8fde;&#x63a5;&#x72b6;&#x6001;&#x53ea;&#x4f1a;&#x5728; Tauri &#x4e2d;&#x5de5;&#x4f5c;&#x3002;</div>
+        <!-- HOME -->
+        <section id="home" class="page active">
+          <div class="head">
+            <div><h2>&#x9996;&#x9875;</h2><p>&#x8fde;&#x63a5;&#x72b6;&#x6001;&#x4e0e;&#x534f;&#x4f5c;&#x63a7;&#x5236;&#x9762;&#x677f;</p></div>
+          </div>
+          <div class="stats-row">
+            <div class="stat-badge" id="home-badge-conn"><span class="badge-dot" id="home-conn-dot"></span><span id="home-conn-label">&#x672a;&#x8fde;&#x63a5;</span></div>
+            <div class="stat-badge success"><span>&#9654;</span><span>&#x670d;&#x52a1;&#x8fd0;&#x884c;&#x4e2d;</span></div>
+            <div class="stat-badge accent"><span>&#9998;</span><span id="home-records-count">&#x8bb0;&#x5f55;: 0</span></div>
+          </div>
+          <div class="card">
+            <h3>&#x8fde;&#x63a5;&#x72b6;&#x6001;</h3>
+            <p id="home-summary">&#x5c1a;&#x672a;&#x914d;&#x5bf9;&#x8bbe;&#x5907;&#x3002;&#x8bf7;&#x5237;&#x65b0;&#x4e8c;&#x7ef4;&#x7801;&#xff0c;&#x5e76;&#x7528; iPhone &#x626b;&#x7801;&#x5efa;&#x7acb;&#x8fde;&#x63a5;&#x3002;</p>
+            <div class="grid2x2" style="margin-top:14px">
+              <div class="mini"><div class="label">&#x72b6;&#x6001;</div><div id="home-status" class="value">&#x672a;&#x8fde;&#x63a5;</div></div>
+              <div class="mini"><div class="label">&#x670d;&#x52a1;</div><div class="value">&#x670d;&#x52a1;&#x8fd0;&#x884c;&#x4e2d;</div></div>
+              <div class="mini"><div class="label">&#x5df2;&#x914d;&#x5bf9;&#x8bbe;&#x5907;</div><div id="home-device" class="value">&#x6682;&#x65e0;</div></div>
+              <div class="mini"><div class="label">&#x670d;&#x52a1;&#x5730;&#x5740;</div><div id="home-network" class="value">&#x5f85;&#x52a0;&#x8f7d;</div></div>
+            </div>
+            <div class="toolbar">
+              <button id="btn-toggle-service" class="btn primary" type="button">&#x542f;&#x52a8;&#x670d;&#x52a1;</button>
+              <button id="btn-pairing" class="btn secondary" type="button">&#x5237;&#x65b0;&#x914d;&#x5bf9;</button>
+              <button id="btn-refresh-devices" class="btn secondary" type="button">&#x5237;&#x65b0;&#x8bbe;&#x5907;</button>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="card">
+              <h3>&#x4e8c;&#x7ef4;&#x7801;&#x914d;&#x5bf9;</h3>
+              <div id="qr-box" class="qr"></div>
+              <div id="pairing-code" class="code">------</div>
+              <p id="pairing-meta" style="margin-top:10px;text-align:center;font-size:13px;color:var(--secondaryText)">&#x670d;&#x52a1;&#x4fe1;&#x606f;&#x5f85;&#x52a0;&#x8f7d;</p>
+            </div>
+            <div class="card">
+              <h3>&#x5df2;&#x914d;&#x5bf9;&#x8bbe;&#x5907;</h3>
+              <div id="devices-list" class="list"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RECORDS -->
+        <section id="records" class="page">
+          <div class="head"><div><h2>&#x8bb0;&#x5f55;</h2><p>&#x8bed;&#x97f3;&#x8bc6;&#x522b;&#x5386;&#x53f2;&#x8bb0;&#x5f55;</p></div></div>
+          <div class="search-row">
+            <input id="records-search" type="text" class="search-input" placeholder="&#x641c;&#x7d22;&#x8bb0;&#x5f55;...">
+            <button id="toggle-records-batch" class="btn secondary" type="button">&#x6279;&#x91cf;&#x9009;&#x62e9;</button>
+            <button id="refresh-history" class="btn secondary" type="button">&#x5237;&#x65b0;</button>
+            <button id="clear-history" class="btn danger" type="button">&#x6e05;&#x7a7a;</button>
+          </div>
+          <div id="records-batch-toolbar" class="batch-toolbar" hidden>
+            <span id="records-batch-count" class="summary-badge">&#x5df2;&#x9009;&#x4e2d;: 0</span>
+            <button id="select-all-records" class="btn secondary" type="button">&#x5168;&#x9009;</button>
+            <button id="copy-selected-records" class="btn secondary" type="button">&#x6279;&#x91cf;&#x590d;&#x5236;</button>
+            <button id="delete-selected-records" class="btn danger" type="button">&#x6279;&#x91cf;&#x5220;&#x9664;</button>
+            <button id="cancel-records-batch" class="btn secondary" type="button">&#x53d6;&#x6d88;</button>
+          </div>
+          <div class="search-row" style="margin-top:8px">
+            <span style="font-size:13px;color:var(--text-secondary);white-space:nowrap">&#x4fdd;&#x5b58;&#x65f6;&#x95f4;</span>
+            <div class="seg-picker" id="retention-picker">
+              <button class="seg" data-days="7">7 &#x5929;</button>
+              <button class="seg active" data-days="30">30 &#x5929;</button>
+              <button class="seg" data-days="100">100 &#x5929;</button>
+            </div>
+          </div>
+          <div id="history-list"></div>
+        </section>
+
+        <!-- DATA -->
+        <section id="data" class="page">
+          <div class="head"><div><h2>&#x6570;&#x636e;</h2><p>&#x8fde;&#x63a5;&#x3001;&#x914d;&#x5bf9;&#x548c;&#x8bc6;&#x522b;&#x4e8b;&#x4ef6;&#x65e5;&#x5fd7;</p></div></div>
+          <div class="search-row">
+            <div class="seg-picker" id="data-filter">
+              <button class="seg active" data-filter="all">&#x5168;&#x90e8;</button>
+              <button class="seg" data-filter="voice">&#x8bed;&#x97f3;</button>
+              <button class="seg" data-filter="pairing">&#x914d;&#x5bf9;</button>
+            </div>
+            <input id="data-search" type="text" class="search-input" placeholder="&#x641c;&#x7d22;...">
+            <button id="clear-activity" class="btn secondary" type="button">&#x6e05;&#x7a7a;</button>
+          </div>
+          <div class="summary-row">
+            <span class="summary-badge" id="data-total">&#x603b;&#x8ba1;: 0</span>
+            <span class="summary-badge green" id="data-voice">&#x8bed;&#x97f3;: 0</span>
+            <span class="summary-badge blue" id="data-pairing">&#x914d;&#x5bf9;: 0</span>
+            <span class="summary-badge red" id="data-errors">&#x9519;&#x8bef;: 0</span>
+          </div>
+          <div id="activity-list" class="list"></div>
+        </section>
+
+        <!-- SPEECH -->
+        <section id="speech" class="page">
+          <div class="head"><div><h2>&#x8bed;&#x97f3;</h2><p>&#x8bed;&#x97f3;&#x8bc6;&#x522b;&#x5f15;&#x64ce;&#x9009;&#x62e9;&#x4e0e; ASR &#x914d;&#x7f6e;</p></div></div>
+          <div class="card">
+            <h3>&#x8bc6;&#x522b;&#x5f15;&#x64ce;</h3>
+            <div class="engine-list">
+              <div class="engine-row selected" data-engine="local">
+                <div class="engine-radio"></div>
+                <div class="engine-info">
+                  <div class="engine-name">Windows &#x8bed;&#x97f3;&#x8bc6;&#x522b; (&#x672c;&#x5730;)</div>
+                  <div class="engine-langs">&#x79bb;&#x7ebf;&#x8bc6;&#x522b; &#xb7; &#x65e0;&#x9700;&#x7f51;&#x7edc; &#xb7; &#x7cfb;&#x7edf;&#x5185;&#x7f6e;</div>
+                </div>
+                <span class="engine-status" id="engine-status-local">&#x68c0;&#x6d4b;&#x4e2d;</span>
+              </div>
+              <div class="engine-row" data-engine="cloud">
+                <div class="engine-radio"></div>
+                <div class="engine-info">
+                  <div class="engine-name">Volcengine ASR (&#x706b;&#x5c71;&#x5f15;&#x64ce;)</div>
+                  <div class="engine-langs">&#x4e91;&#x7aef;&#x8bc6;&#x522b; &#xb7; &#x652f;&#x6301;: zh-CN, en-US</div>
+                </div>
+                <button class="engine-status available" id="engine-status-cloud" type="button">&#x53ef;&#x7528;</button>
+              </div>
+            </div>
+            <div id="speech-engine-hint" class="engine-hint">&#x70b9;&#x51fb;&#x5f15;&#x64ce;&#x67e5;&#x770b;&#x53ef;&#x7528;&#x72b6;&#x6001;&#x548c;&#x914d;&#x7f6e;&#x5165;&#x53e3;&#x3002;</div>
+          </div>
+        </section>
+
+        <!-- PERMISSIONS -->
+        <section id="permissions" class="page">
+          <div class="head"><div><h2>&#x6743;&#x9650;</h2><p>Windows &#x6587;&#x672c;&#x6ce8;&#x5165;&#x6240;&#x9700;&#x7684;&#x6743;&#x9650;</p></div></div>
+          <div class="card">
+            <h3>&#x8f85;&#x52a9;&#x529f;&#x80fd;&#x6743;&#x9650;</h3>
+            <div class="perm-status">
+              <span class="perm-icon">&#10003;</span>
+              <span class="perm-label">&#x72b6;&#x6001;: &#x5df2;&#x6388;&#x6743;</span>
+            </div>
+            <p>Windows &#x952e;&#x76d8;&#x6ce8;&#x5165;&#x901a;&#x8fc7; SendInput &#x5b9e;&#x73b0;&#xff0c;&#x65e0;&#x9700;&#x989d;&#x5916;&#x6743;&#x9650;&#x6388;&#x4e88;&#x3002;</p>
+            <div class="toolbar">
+              <button id="btn-check-perm" class="btn secondary" type="button">&#x68c0;&#x67e5;&#x72b6;&#x6001;</button>
+              <button id="btn-open-settings" class="btn secondary" type="button">&#x6253;&#x5f00;&#x7cfb;&#x7edf;&#x8bbe;&#x7f6e;</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="settings" class="page">
+          <div class="head"><div><h2>&#x8bbe;&#x7f6e;</h2><p>&#x5e94;&#x7528;&#x914d;&#x7f6e;</p></div></div>
+          <div class="card">
+            <h3>&#x6587;&#x672c;&#x6ce8;&#x5165;</h3>
+            <div class="radio-group">
+              <label class="radio-option"><input type="radio" name="injection" value="keyboard" checked> &#x952e;&#x76d8;&#x6a21;&#x62df; <span class="radio-hint">&#x63a8;&#x8350;</span></label>
+              <label class="radio-option"><input type="radio" name="injection" value="clipboard"> &#x526a;&#x8d34;&#x677f;</label>
+            </div>
+          </div>
+          <div class="card">
+            <h3>&#x754c;&#x9762;&#x8bed;&#x8a00;</h3>
+            <div class="seg-picker" id="lang-picker">
+              <button class="seg active" data-val="zh-CN">&#x7b80;&#x4f53;&#x4e2d;&#x6587;</button>
+              <button class="seg" data-val="en-US">English</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>&#x4e3b;&#x9898;</h3>
+            <div class="seg-picker" id="theme-picker">
+              <button class="seg" data-val="system">&#x8ddf;&#x968f;&#x7cfb;&#x7edf;</button>
+              <button class="seg active" data-val="light">&#x6d45;&#x8272;</button>
+              <button class="seg" data-val="dark">&#x6df1;&#x8272;</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>&#x670d;&#x52a1;&#x7aef;&#x53e3;</h3>
+            <input id="setting-port" type="number" min="1024" max="65535" value="8765" style="border-radius:10px;border:1px solid var(--cardBorder);padding:10px 14px;font:inherit;font-size:14px;color:var(--primaryText);background:var(--softSurface);max-width:200px">
+          </div>
+        </section>
+
+        <!-- ABOUT -->
+        <section id="about" class="page">
+          <div class="about-hero">
+            <img class="about-icon" src="./assets/app-icon.png" alt="VoiceMind icon">
+            <h2>VoiceMind</h2>
+            <p class="about-version" id="about-version">Version ...</p>
+            <div class="about-divider"></div>
+            <p class="about-desc">iPhone &#x65e0;&#x7ebf;&#x9ea6;&#x514b;&#x98ce; &#xb7; Windows &#x7aef;</p>
+            <div class="about-actions">
+              <button class="btn primary" type="button" id="btn-check-update">&#x68c0;&#x67e5;&#x66f4;&#x65b0;</button>
+              <button class="btn secondary" type="button" id="btn-open-releases">&#x6253;&#x5f00; Releases</button>
+              <button class="btn secondary" type="button" id="btn-user-guide">&#x4f7f;&#x7528;&#x6307;&#x5357;</button>
+            </div>
+            <div id="update-result" class="update-result" hidden></div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <div id="speech-asr-modal" class="modal-backdrop" hidden>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="speech-asr-modal-title">
+      <div class="modal-header">
+        <div>
+          <h3 id="speech-asr-modal-title">ASR &#x914d;&#x7f6e;</h3>
+          <p id="speech-asr-config-desc">&#x914d;&#x7f6e; Volcengine ASR &#x51ed;&#x636e;&#x540e;&#xff0c;&#x624d;&#x53ef;&#x5207;&#x6362;&#x5230;&#x4e91;&#x7aef;&#x8bc6;&#x522b;&#x3002;</p>
+        </div>
+        <button id="speech-config-close" class="btn secondary modal-close" type="button">&#x5173;&#x95ed;</button>
+      </div>
+      <div class="form">
+        <label>App ID<input id="setting-asr-appid" type="text"></label>
+        <label>Access Key ID<input id="setting-asr-keyid" type="text"></label>
+        <label>Access Key Secret<input id="setting-asr-keysecret" type="password"></label>
+        <label>Cluster<input id="setting-asr-cluster" type="text"></label>
+        <label>&#x8bc6;&#x522b;&#x8bed;&#x8a00;
+          <select id="setting-asr-language">
+            <option value="zh-CN">&#x4e2d;&#x6587;</option>
+            <option value="en-US">English</option>
+          </select>
+        </label>
+      </div>
+      <div class="toolbar">
+        <button id="save-asr" class="btn primary" type="button">&#x4fdd;&#x5b58; ASR &#x914d;&#x7f6e;</button>
+        <button id="reload-settings" class="btn secondary" type="button">&#x91cd;&#x65b0;&#x52a0;&#x8f7d;</button>
+        <button id="speech-config-cancel" class="btn secondary" type="button">&#x53d6;&#x6d88;</button>
+      </div>
+    </div>
+  </div>
+
+    <script type="module" src="./app/app.js"></script>
+</body>
+</html>
+

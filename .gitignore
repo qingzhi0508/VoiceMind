@@ -12,6 +12,13 @@
 # Xcode user state
 *.xcuserstate
 xcuserdata/
+/VoiceMindWindows/node_modules
+/VoiceMindWindows/src-tauri/target/
+VoiceMindWindows/src-tauri/logs/
+VoiceMindWindows/dist/index.html
+VoiceMindWindows/src-tauri/history.json
+VoiceMindWindows/src-tauri/settings.json
+VoiceMindWindows/.claude/
 
 # Local macOS app artifacts
 /VoiceMindMac/VoiceMindMac/Resources/Models/
