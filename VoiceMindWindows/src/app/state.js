@@ -20,4 +20,10 @@ export const state = {
   localAsrAvailable: true,
   pendingEngine: null,
   asrConfigExpanded: false,
+  recordsBatchMode: false,
+  selectedHistoryIds: [],
+  currentVersion: "",
+  updateInfo: null,
+  updateChecking: false,
+  updateBannerDismissed: false,
 };
