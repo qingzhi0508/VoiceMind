@@ -14,8 +14,8 @@ class MenuBarController: NSObject, ObservableObject {
     let settings = AppSettings.shared
     private let textInjectionCoordinator: TextInjectionCoordinator
 
-    // 本地语音识别
-    private let localSpeechRecognizer = LocalSpeechRecognizer()
+    private let speechRecognitionManager: SpeechRecognitionManager
+    private let localAudioRecorder = LocalAudioStreamingRecorder()
 
     @Published var pairingState: PairingState
     @Published var connectionState: ConnectionState
@@ -41,7 +41,8 @@ class MenuBarController: NSObject, ObservableObject {
 
     init(
         voiceRecognitionHistoryStore: VoiceRecognitionHistoryStore = VoiceRecognitionHistoryStore(),
-        textInjector: TextInjecting = AccessibilityTextInjector()
+        textInjector: TextInjecting = AccessibilityTextInjector(),
+        speechRecognitionManager: SpeechRecognitionManager = .shared
     ) {
         self.pairingState = connectionManager.pairingState
         self.connectionState = connectionManager.connectionState
@@ -50,10 +51,8 @@ class MenuBarController: NSObject, ObservableObject {
         self.voiceRecognitionRecords = []
         self.voiceRecognitionHistoryStore = voiceRecognitionHistoryStore
         self.textInjectionCoordinator = TextInjectionCoordinator(injector: textInjector)
+        self.speechRecognitionManager = speechRecognitionManager
         super.init()
-
-        // 设置本地语音识别代理
-        localSpeechRecognizer.delegate = self
 
         settings.$serverPort
             .dropFirst()
@@ -568,25 +567,16 @@ extension MenuBarController {
     func startLocalRecording() {
         guard !isLocalRecording else { return }
 
-        if LocalSpeechRecognitionStartPolicy.shouldStartImmediately(
-            microphoneGranted: localSpeechRecognizer.checkMicrophonePermission(),
-            speechRecognitionGranted: localSpeechRecognizer.checkSpeechRecognitionPermission()
-        ) {
+        if localAudioRecorder.checkMicrophonePermission() {
             beginLocalRecording()
             return
         }
 
-        // 请求权限
-        localSpeechRecognizer.requestPermissions { [weak self] micGranted, speechGranted in
+        localAudioRecorder.requestMicrophonePermission { [weak self] micGranted in
             guard let self = self else { return }
 
             guard micGranted else {
                 print("❌ 本地录音需要麦克风权限")
-                return
-            }
-
-            guard speechGranted else {
-                print("❌ 本地录音需要语音识别权限，请在系统设置中授权")
                 return
             }
 
@@ -598,7 +588,10 @@ extension MenuBarController {
     func stopLocalRecording() {
         guard isLocalRecording else { return }
 
-        localSpeechRecognizer.stopRecording()
+        localAudioRecorder.stopStreaming()
+        try? speechRecognitionManager.stopRecognition()
+        connectionManager.setupSpeechRecognition()
+        currentSessionId = nil
         isLocalRecording = false
         print("✅ 本地录音已停止")
     }
@@ -619,34 +612,72 @@ extension MenuBarController {
 
     private func beginLocalRecording() {
         do {
-            try localSpeechRecognizer.startRecording()
+            let sessionId = UUID().uuidString
+            let language = settings.language
+
+            speechRecognitionManager.currentEngine?.delegate = self
+            try speechRecognitionManager.startRecognition(sessionId: sessionId, language: language)
+            speechRecognitionManager.currentEngine?.delegate = self
+
+            try localAudioRecorder.startStreaming { [weak self] audioData in
+                guard let self = self else { return }
+
+                do {
+                    try self.speechRecognitionManager.processAudioData(audioData)
+                } catch {
+                    print("❌ 本地音频投递失败: \(error.localizedDescription)")
+                }
+            }
+
+            currentSessionId = sessionId
             isLocalRecording = true
             noteText = ""
-            print("✅ 本地录音已开始")
+            print("✅ 本地录音已开始 - 引擎: \(speechRecognitionManager.currentEngine?.displayName ?? "未知")")
         } catch {
+            localAudioRecorder.stopStreaming()
+            try? speechRecognitionManager.stopRecognition()
+            connectionManager.setupSpeechRecognition()
             print("❌ 开始本地录音失败: \(error.localizedDescription)")
         }
     }
 }
 
-// MARK: - LocalSpeechRecognizerDelegate
+// MARK: - SpeechRecognitionEngineDelegate
 
-extension MenuBarController: LocalSpeechRecognizerDelegate {
-    func localSpeechRecognizer(_ recognizer: LocalSpeechRecognizer, didRecognizeText text: String, isFinal: Bool) {
+extension MenuBarController: SpeechRecognitionEngineDelegate {
+    func engine(
+        _ engine: SpeechRecognitionEngine,
+        didRecognizeText text: String,
+        sessionId: String,
+        language: String
+    ) {
         DispatchQueue.main.async {
             self.noteText = text
-
-            if isFinal {
-                self.isLocalRecording = false
-                self.appendVoiceRecognitionRecord(text, source: .localMac)
-            }
+            self.appendVoiceRecognitionRecord(text, source: .localMac)
         }
     }
 
-    func localSpeechRecognizer(_ recognizer: LocalSpeechRecognizer, didFailWithError error: Error) {
+    func engine(
+        _ engine: SpeechRecognitionEngine,
+        didFailWithError error: Error,
+        sessionId: String
+    ) {
         DispatchQueue.main.async {
             self.isLocalRecording = false
+            self.currentSessionId = nil
+            self.localAudioRecorder.stopStreaming()
+            self.connectionManager.setupSpeechRecognition()
             print("❌ 本地语音识别失败: \(error.localizedDescription)")
+        }
+    }
+
+    func engine(
+        _ engine: SpeechRecognitionEngine,
+        didReceivePartialResult text: String,
+        sessionId: String
+    ) {
+        DispatchQueue.main.async {
+            self.noteText = text
         }
     }
 }

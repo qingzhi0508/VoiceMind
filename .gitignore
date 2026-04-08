@@ -12,3 +12,13 @@
 # Xcode user state
 *.xcuserstate
 xcuserdata/
+
+# Local macOS app artifacts
+/VoiceMindMac/VoiceMindMac/Resources/Models/
+/VoiceMindMac/VoiceMindMac.xcodeproj/xcuserdata.codex-backup-*/
+
+# Local sherpa build workspace
+/VoiceMindMac/scripts/build-sherpa-onnx/
+
+# Generated onnxruntime symlink/helper artifacts
+/VoiceMindMac/Frameworks/onnxruntime.xcframework/**/libonnxruntime.*.dylib

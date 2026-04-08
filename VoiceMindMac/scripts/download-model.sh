@@ -26,15 +26,14 @@ MODEL_DIR="${HOME}/Library/Application Support/VoiceMind/Models/SherpaOnnx"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# 模型定义 (URL, 大小, 语言)
-declare -A MODELS
-MODELS["whisper-tiny"]="https://huggingface.co/csukuangfj/sherpa-onnx-whisper-en/resolve/main/sherpa-onnx-whisper-tiny.en.tar.bz2|39MB|英文"
-MODELS["whisper-small"]="https://huggingface.co/csukuangfj/sherpa-onnx-whisper-en/resolve/main/sherpa-onnx-whisper-small.en.tar.bz2|149MB|英文"
-MODELS["whisper-base"]="https://huggingface.co/csukuangfj/sherpa-onnx-whisper-en/resolve/main/sherpa-onnx-whisper-base.en.tar.bz2|74MB|英文"
-MODELS["whisper-medium"]="https://huggingface.co/csukuangfj/sherpa-onnx-whisper-ct2/resolve/main/sherpa-onnx-whisper-medium-ct2.tar.bz2|1.5GB|多语言"
-MODELS["whisper-large"]="https://huggingface.co/csukuangfj/sherpa-onnx-whisper-ct2/resolve/main/sherpa-onnx-whisper-large-ct2.tar.bz2|3GB|多语言"
-MODELS["conformer-zh"]="https://huggingface.co/csukuangfj/sherpa-onnx-conformer/resolve/main/sherpa-onnx-conformer-zh.tar.bz2|400MB|中文"
-MODELS["paraformer-zh"]="https://huggingface.co/csukuangfj/sherpa-onnx-paraformer/resolve/main/sherpa-onnx-paraformer-zh.tar.bz2|400MB|中文"
+# 模型定义: 名称|URL|大小|语言
+MODEL_WHISPER_TINY="whisper-tiny|https://huggingface.co/csukuangfj/sherpa-onnx-whisper-en/resolve/main/sherpa-onnx-whisper-tiny.en.tar.bz2|39MB|英文"
+MODEL_WHISPER_SMALL="whisper-small|https://huggingface.co/csukuangfj/sherpa-onnx-whisper-en/resolve/main/sherpa-onnx-whisper-small.en.tar.bz2|149MB|英文"
+MODEL_WHISPER_BASE="whisper-base|https://huggingface.co/csukuangfj/sherpa-onnx-whisper-en/resolve/main/sherpa-onnx-whisper-base.en.tar.bz2|74MB|英文"
+MODEL_WHISPER_MEDIUM="whisper-medium|https://huggingface.co/csukuangfj/sherpa-onnx-whisper-ct2/resolve/main/sherpa-onnx-whisper-medium-ct2.tar.bz2|1.5GB|多语言"
+MODEL_WHISPER_LARGE="whisper-large|https://huggingface.co/csukuangfj/sherpa-onnx-whisper-ct2/resolve/main/sherpa-onnx-whisper-large-ct2.tar.bz2|3GB|多语言"
+MODEL_CONFORMER_ZH="conformer-zh|https://huggingface.co/csukuangfj/sherpa-onnx-conformer/resolve/main/sherpa-onnx-conformer-zh.tar.bz2|400MB|中文"
+MODEL_PARAFORMER_ZH="paraformer-zh|https://huggingface.co/csukuangfj/sherpa-onnx-paraformer/resolve/main/sherpa-onnx-paraformer-zh.tar.bz2|400MB|中文"
 
 # 默认模型
 DEFAULT_MODEL="paraformer-zh"
@@ -42,28 +41,41 @@ DEFAULT_MODEL="paraformer-zh"
 # 解析参数
 MODEL_NAME="${1:-$DEFAULT_MODEL}"
 
+# 获取模型信息
+get_model_info() {
+    case "$1" in
+        whisper-tiny)    echo "$MODEL_WHISPER_TINY" ;;
+        whisper-small)   echo "$MODEL_WHISPER_SMALL" ;;
+        whisper-base)    echo "$MODEL_WHISPER_BASE" ;;
+        whisper-medium)  echo "$MODEL_WHISPER_MEDIUM" ;;
+        whisper-large)   echo "$MODEL_WHISPER_LARGE" ;;
+        conformer-zh)    echo "$MODEL_CONFORMER_ZH" ;;
+        paraformer-zh)   echo "$MODEL_PARAFORMER_ZH" ;;
+        *) echo "" ;;
+    esac
+}
+
+MODEL_INFO=$(get_model_info "$MODEL_NAME")
+
 # 检查模型是否有效
-if [[ -z "${MODELS[$MODEL_NAME]}" ]]; then
+if [[ -z "$MODEL_INFO" ]]; then
     echo "❌ 未知模型: $MODEL_NAME"
     echo ""
     echo "可用模型:"
-    for key in "${!MODELS[@]}"; do
-        info="${MODELS[$key]}"
-        url="${info%%|*}"
-        rest="${info#*|}"
-        size="${rest%%|*}"
-        lang="${rest##*|}"
-        echo "  $key - $lang (~$size)"
-    done
+    echo "  whisper-tiny   - 英文 (~39MB)"
+    echo "  whisper-small  - 英文 (~149MB)"
+    echo "  whisper-base  - 英文 (~74MB)"
+    echo "  whisper-medium- 多语言 (~1.5GB)"
+    echo "  whisper-large - 多语言 (~3GB)"
+    echo "  conformer-zh  - 中文 (~400MB)"
+    echo "  paraformer-zh - 中文 (~400MB, 推荐)"
     exit 1
 fi
 
 # 解析模型信息
-info="${MODELS[$MODEL_NAME]}"
-url="${info%%|*}"
-rest="${info#*|}"
-size="${rest%%|*}"
-lang="${rest##*|}"
+url=$(echo "$MODEL_INFO" | cut -d'|' -f2)
+size=$(echo "$MODEL_INFO" | cut -d'|' -f3)
+lang=$(echo "$MODEL_INFO" | cut -d'|' -f4)
 
 echo "=========================================="
 echo "Sherpa-ONNX 模型下载"
