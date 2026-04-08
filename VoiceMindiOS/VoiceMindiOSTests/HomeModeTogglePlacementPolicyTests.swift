@@ -10,8 +10,8 @@ struct HomeModeTogglePlacementPolicyTests {
 
     @Test
     func bottomToggleUsesOnlyModeIcons() {
-        #expect(HomeModeTogglePlacementPolicy.systemImage(for: .local) == "desktopcomputer")
-        #expect(HomeModeTogglePlacementPolicy.systemImage(for: .mac) == "iphone")
+        #expect(HomeModeTogglePlacementPolicy.systemImage(for: .local) == "iphone")
+        #expect(HomeModeTogglePlacementPolicy.systemImage(for: .mac) == "desktopcomputer")
     }
 
     @Test

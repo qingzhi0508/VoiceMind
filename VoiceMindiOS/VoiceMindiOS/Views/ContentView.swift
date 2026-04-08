@@ -480,9 +480,9 @@ enum HomeModeTogglePlacementPolicy {
     static func systemImage(for mode: HomeTranscriptionMode) -> String {
         switch mode {
         case .local:
-            return "desktopcomputer"
-        case .mac:
             return "iphone"
+        case .mac:
+            return "desktopcomputer"
         }
     }
 }
