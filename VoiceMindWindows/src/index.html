@@ -942,7 +942,14 @@
     /* ===== Init ===== */
     async function init() {
       renderStatus(); renderNote(); renderHistory(); renderDevices(); renderActivity();
-      if (!state.isTauri) return;
+      // Wait for Tauri to be ready (it may not be available immediately in some webview versions)
+      let tauriReady = false;
+      for (let i = 0; i < 20; i++) {
+        if (window.__TAURI__) { tauriReady = true; break; }
+        await new Promise(r => setTimeout(r, 50));
+      }
+      if (!tauriReady) { console.warn("Tauri not available, running in preview mode"); return; }
+      state.isTauri = true;
       await bindEvents();
       await Promise.all([refreshConnection(), refreshPairing(), refreshDevices(), refreshHistory(), loadSettings()]);
       setInterval(() => { Promise.all([refreshConnection(), refreshDevices()]).catch(e => console.error("syncStatus", e)); }, 3000);
