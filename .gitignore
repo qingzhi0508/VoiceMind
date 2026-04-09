@@ -15,7 +15,8 @@ xcuserdata/
 /VoiceMindWindows/node_modules
 /VoiceMindWindows/src-tauri/target/
 VoiceMindWindows/src-tauri/logs/
-VoiceMindWindows/dist/index.html
+VoiceMindWindows/dist/
 VoiceMindWindows/src-tauri/history.json
 VoiceMindWindows/src-tauri/settings.json
 VoiceMindWindows/.claude/
+/logs/
