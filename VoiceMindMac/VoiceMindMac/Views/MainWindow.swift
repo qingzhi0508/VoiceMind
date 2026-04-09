@@ -444,7 +444,7 @@ struct MainWindow: View {
             }
             .padding(34)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .padding(14)
     }
 
@@ -453,12 +453,12 @@ struct MainWindow: View {
         switch MainWindowNavigationPolicy.contentSection(for: section) {
         case .notes:
             NotesTab(controller: controller, showsInlineHeader: false)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         case .records:
             WindowPageShell(section: section) {
                 VoiceRecognitionRecordsTab(controller: controller, showsInlineHeader: false)
             }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         case .collaboration:
             WindowPageShell(section: section) {
                 HomeDashboardView(
@@ -470,12 +470,12 @@ struct MainWindow: View {
             WindowPageShell(section: section) {
                 DataRecordsTab(controller: controller, showsInlineHeader: false)
             }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         case .speech:
             WindowPageShell(section: section) {
                 SpeechRecognitionTab(controller: controller, showsInlineHeader: false)
             }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         case .about:
             WindowPageShell(section: section) {
                 AboutTab(
@@ -486,12 +486,12 @@ struct MainWindow: View {
                     onRevealDebug: {}
                 )
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         case .settings:
             WindowPageShell(section: section) {
                 SettingsTab(settings: settings, controller: controller)
             }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         }
     }
 }
@@ -515,33 +515,18 @@ private struct VoiceRecognitionRecordsTab: View {
 
             MainWindowSurface(emphasized: true) {
                 VStack(alignment: .leading, spacing: 20) {
-                    HStack(alignment: .top, spacing: 18) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(AppLocalization.localizedString("main_nav_records"))
-                                .font(.system(size: 30, weight: .semibold))
-                                .foregroundColor(MainWindowColors.title)
-
-                            Text(AppLocalization.localizedString("main_records_subtitle"))
-                                .font(.subheadline)
-                                .foregroundColor(MainWindowColors.secondaryText)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-
-                        Spacer(minLength: 16)
-
-                        MainWindowStatusChip(
-                            title: String(format: AppLocalization.localizedString("records_summary_count_format"), filteredRecords.count),
-                            systemImage: "waveform.badge.magnifyingglass",
-                            tint: filteredRecords.isEmpty ? MainWindowColors.secondaryText : .blue
-                        )
-                    }
-
                     HStack(spacing: 12) {
                         TextField(AppLocalization.localizedString("records_search_placeholder"), text: $keyword)
                             .textFieldStyle(.roundedBorder)
                             .frame(maxWidth: 280)
 
                         Spacer(minLength: 0)
+
+                        MainWindowStatusChip(
+                            title: String(format: AppLocalization.localizedString("records_summary_count_format"), filteredRecords.count),
+                            systemImage: "waveform.badge.magnifyingglass",
+                            tint: filteredRecords.isEmpty ? MainWindowColors.secondaryText : .blue
+                        )
 
                         Button(isEditing ? AppLocalization.localizedString("records_action_done") : AppLocalization.localizedString("records_action_edit")) {
                             if isEditing {
@@ -586,7 +571,7 @@ private struct VoiceRecognitionRecordsTab: View {
                     systemImage: "text.magnifyingglass",
                     description: Text(AppLocalization.localizedString(recordsEmptyDescriptionKey))
                 )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 22, pinnedViews: [.sectionHeaders]) {
@@ -1550,7 +1535,6 @@ struct SettingsTab: View {
     @StateObject private var purchaseStore = TwoDeviceSyncPurchaseStore.shared
     var showsInlineHeader = false
     @State private var serverPortText = ""
-    @State private var languageSelection = "zh-CN"
     @State private var uiLanguageSelection = "zh-CN"
     @State private var themeSelection: AppThemePreference = .system
 
@@ -1564,11 +1548,6 @@ struct SettingsTab: View {
                 }
 
                 HStack(spacing: 10) {
-                    settingsOverviewBadge(
-                        title: AppLocalization.localizedString("settings_language_title"),
-                        value: localizedLanguageName(for: languageSelection)
-                    )
-
                     settingsOverviewBadge(
                         title: AppLocalization.localizedString("settings_ui_language_title"),
                         value: localizedLanguageName(for: uiLanguageSelection)
@@ -1590,21 +1569,6 @@ struct SettingsTab: View {
                     description: AppLocalization.localizedString("settings_preferences_description")
                 ) {
                     VStack(alignment: .leading, spacing: 0) {
-                        settingsRow(
-                            title: AppLocalization.localizedString("settings_language_picker"),
-                            detail: nil
-                        ) {
-                            Picker(AppLocalization.localizedString("settings_language_picker"), selection: $languageSelection) {
-                                Text(AppLocalization.localizedString("settings_language_zh")).tag("zh-CN")
-                                Text(AppLocalization.localizedString("settings_language_en")).tag("en-US")
-                            }
-                            .labelsHidden()
-                            .pickerStyle(.menu)
-                            .frame(width: 140)
-                        }
-
-                        settingsDivider()
-
                         settingsRow(
                             title: AppLocalization.localizedString("settings_ui_language_picker"),
                             detail: nil
@@ -1744,12 +1708,6 @@ struct SettingsTab: View {
         .task {
             await purchaseStore.prepare()
         }
-        .onChange(of: languageSelection) { _, newValue in
-            guard settings.language != newValue else { return }
-            DispatchQueue.main.async {
-                settings.language = newValue
-            }
-        }
         .onChange(of: uiLanguageSelection) { _, newValue in
             guard settings.uiLanguage != newValue else { return }
             DispatchQueue.main.async {
@@ -1789,7 +1747,6 @@ struct SettingsTab: View {
     }
 
     private func syncLocalSettingsState() {
-        languageSelection = settings.language
         uiLanguageSelection = settings.uiLanguage
         themeSelection = settings.themePreference
         serverPortText = String(settings.serverPort)
@@ -2081,71 +2038,37 @@ struct DataRecordsTab: View {
                 }
             }
 
-            MainWindowSurface(emphasized: true) {
-                VStack(alignment: .leading, spacing: 20) {
-                    HStack(alignment: .top, spacing: 18) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(AppLocalization.localizedString("data_title"))
-                                .font(.system(size: 30, weight: .semibold))
-                                .foregroundColor(MainWindowColors.title)
-
-                            Text(AppLocalization.localizedString("data_subtitle"))
-                                .font(.subheadline)
-                                .foregroundColor(MainWindowColors.secondaryText)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-
-                        Spacer(minLength: 16)
-
-                        MainWindowStatusChip(
-                            title: groupBySession
-                                ? AppLocalization.localizedString("data_group_by_session")
-                                : AppLocalization.localizedString("data_filter_picker"),
-                            systemImage: groupBySession ? "square.stack.3d.up" : "line.3.horizontal.decrease.circle",
-                            tint: .blue
-                        )
-                    }
-
-                    HStack(spacing: 12) {
-                        summaryBadge(title: AppLocalization.localizedString("data_summary_total"), value: "\(filteredRecords.count)", color: MainWindowColors.title, systemImage: "tray.full")
-                        summaryBadge(title: AppLocalization.localizedString("data_summary_voice"), value: "\(filteredVoiceCount)", color: .accentColor, systemImage: "waveform")
-                        summaryBadge(title: AppLocalization.localizedString("data_summary_pairing"), value: "\(filteredPairingCount)", color: .blue, systemImage: "link")
-                        summaryBadge(title: AppLocalization.localizedString("data_summary_failure"), value: "\(filteredFailureCount)", color: .red, systemImage: "exclamationmark.triangle")
-                    }
-                }
-            }
-
             MainWindowSurface {
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack(alignment: .center, spacing: 12) {
-                        Text(AppLocalization.localizedString("data_filter_picker"))
-                            .font(.headline)
-                            .foregroundColor(MainWindowColors.secondaryText)
+                HStack(alignment: .center, spacing: 12) {
+                    TextField(AppLocalization.localizedString("data_search_placeholder"), text: $searchText)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 420)
 
-                        Picker(AppLocalization.localizedString("data_filter_picker"), selection: $selectedFilter) {
-                            ForEach(DataRecordFilter.allCases) { filter in
-                                Text(filter.title).tag(filter)
-                            }
+                    Picker(AppLocalization.localizedString("data_filter_picker"), selection: $selectedFilter) {
+                        ForEach(DataRecordFilter.allCases) { filter in
+                            Text(filter.title).tag(filter)
                         }
-                        .pickerStyle(.segmented)
-                        .frame(width: 260)
-
-                        Spacer(minLength: 0)
-
-                        Button(AppLocalization.localizedString("data_action_clear")) {
-                            controller.clearInboundDataRecords()
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(controller.inboundDataRecords.isEmpty)
                     }
+                    .pickerStyle(.segmented)
+                    .frame(width: 240)
 
-                    HStack(spacing: 12) {
-                        TextField(AppLocalization.localizedString("data_search_placeholder"), text: $searchText)
-                            .textFieldStyle(.roundedBorder)
+                    Toggle(AppLocalization.localizedString("data_group_by_session"), isOn: $groupBySession)
+                        .toggleStyle(.checkbox)
 
-                        Toggle(AppLocalization.localizedString("data_group_by_session"), isOn: $groupBySession)
-                            .toggleStyle(.checkbox)
+                    Spacer(minLength: 0)
+
+                    summaryBadge(
+                        title: AppLocalization.localizedString("data_summary_total"),
+                        value: "\(filteredRecords.count)",
+                        color: MainWindowColors.title,
+                        systemImage: "tray.full"
+                    )
+
+                    Button(AppLocalization.localizedString("data_action_clear")) {
+                        controller.clearInboundDataRecords()
                     }
+                    .buttonStyle(.bordered)
+                    .disabled(controller.inboundDataRecords.isEmpty)
                 }
             }
 
@@ -2155,7 +2078,7 @@ struct DataRecordsTab: View {
                     systemImage: "tray",
                     description: Text(emptyStateDescription)
                 )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -2585,49 +2508,10 @@ struct NotesTab: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                heroSection
-
-                LazyVGrid(
-                    columns: [
-                        GridItem(.flexible(), spacing: 16),
-                        GridItem(.flexible(), spacing: 16),
-                        GridItem(.flexible(), spacing: 16)
-                    ],
-                    spacing: 16
-                ) {
-                    MainWindowMetricCard(
-                        title: AppLocalization.localizedString("status_label"),
-                        value: connectionSummary,
-                        detail: pairingDetail,
-                        systemImage: "dot.radiowaves.left.and.right",
-                        tint: connectionTint
-                    )
-
-                    MainWindowMetricCard(
-                        title: AppLocalization.localizedString("speech_engine_title"),
-                        value: AppLocalization.localizedString("tab_speech"),
-                        detail: AppLocalization.localizedString("main_speech_subtitle"),
-                        systemImage: "waveform.circle",
-                        tint: .blue
-                    )
-
-                    MainWindowMetricCard(
-                        title: AppLocalization.localizedString("note_title"),
-                        value: String(format: AppLocalization.localizedString("main_home_note_count_format"), controller.noteText.count),
-                        detail: controller.isLocalRecording
-                            ? AppLocalization.localizedString("note_recording")
-                            : AppLocalization.localizedString("main_home_recent_activity"),
-                        systemImage: "mic",
-                        tint: controller.isLocalRecording ? .red : .green
-                    )
-                }
-
                 noteWorkspaceCard
-
-                recentActivityCard
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private var heroSection: some View {

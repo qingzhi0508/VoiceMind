@@ -184,12 +184,11 @@ class SherpaOnnxModelManager: ObservableObject {
 
                 // 清理非 int8 的 onnx 文件（节省空间）
                 let modelDir = configDir.appendingPathComponent(model.modelName)
-                self.cleanupLargeOnnxFiles(in: modelDir)
-
-                // 写 model.config
-                self.writeModelConfig(for: model, in: configDir)
+                Self.cleanupLargeOnnxFiles(in: modelDir)
 
                 Task { @MainActor in
+                    // 写 model.config
+                    self.writeModelConfig(for: model, in: configDir)
                     self.modelStates[model.id] = .installed
                     self.engine.reloadModelConfiguration()
                 }
@@ -202,7 +201,7 @@ class SherpaOnnxModelManager: ObservableObject {
     }
 
     /// 删除非 int8 的 .onnx 文件以节省磁盘空间
-    private func cleanupLargeOnnxFiles(in directory: URL) {
+    nonisolated private static func cleanupLargeOnnxFiles(in directory: URL) {
         guard let contents = try? FileManager.default.contentsOfDirectory(
             at: directory, includingPropertiesForKeys: nil, options: .skipsHiddenFiles
         ) else { return }

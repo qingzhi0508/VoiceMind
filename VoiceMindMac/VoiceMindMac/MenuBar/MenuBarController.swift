@@ -3,6 +3,28 @@ import Combine
 import SwiftUI
 import SharedCore
 
+private enum AutoSpeechRecognitionLanguagePolicy {
+    static let fallbackLanguage = "zh-CN"
+
+    static func resolvedLanguage(
+        for engine: SpeechRecognitionEngine?,
+        selectedSherpaModelId: String?
+    ) -> String {
+        if engine?.identifier == "sherpa-onnx",
+           let selectedSherpaModelId,
+           let model = SherpaOnnxModelDefinition.catalog.first(where: { $0.id == selectedSherpaModelId }),
+           let modelLanguage = model.languages.first {
+            return modelLanguage
+        }
+
+        if let preferred = Locale.preferredLanguages.first, !preferred.isEmpty {
+            return preferred
+        }
+
+        return fallbackLanguage
+    }
+}
+
 class MenuBarController: NSObject, ObservableObject {
     private enum MainWindowSizingPolicy {
         static let defaultWidth: CGFloat = 850
@@ -136,7 +158,11 @@ class MenuBarController: NSObject, ObservableObject {
             return
         }
 
-        app.activate(options: [.activateIgnoringOtherApps])
+        if #available(macOS 14.0, *) {
+            app.activate()
+        } else {
+            app.activate(options: [.activateIgnoringOtherApps])
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             completion()
         }
@@ -696,7 +722,10 @@ extension MenuBarController {
     private func beginLocalRecording() {
         do {
             let sessionId = UUID().uuidString
-            let language = settings.language
+            let language = AutoSpeechRecognitionLanguagePolicy.resolvedLanguage(
+                for: speechRecognitionManager.currentEngine,
+                selectedSherpaModelId: SherpaOnnxModelManager.shared.selectedModelId
+            )
 
             speechRecognitionManager.currentEngine?.delegate = self
             try speechRecognitionManager.startRecognition(sessionId: sessionId, language: language)
