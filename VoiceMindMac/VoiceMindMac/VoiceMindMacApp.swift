@@ -46,6 +46,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     self.controller.showUsageGuide()
                 }
             }
+
+            await MacAppUpdateManager.shared.performAutomaticUpdateCheckIfNeeded()
         }
     }
 

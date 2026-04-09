@@ -71,6 +71,8 @@ class AppSettings: ObservableObject {
         static let serverPort = "serverPort"
         static let hasCustomizedServerPort = "hasCustomizedServerPort"
         static let themePreference = "themePreference"
+        static let automaticallyChecksForUpdates = "automaticallyChecksForUpdates"
+        static let lastUpdateCheckDate = "lastUpdateCheckDate"
         static let hasLaunchedBefore = "hasLaunchedBefore"
         static let hasShownUsageGuide = "hasShownUsageGuide"
     }
@@ -111,6 +113,18 @@ class AppSettings: ObservableObject {
     @Published var themePreference: AppThemePreference {
         didSet {
             defaults.set(themePreference.rawValue, forKey: Keys.themePreference)
+        }
+    }
+
+    @Published var automaticallyChecksForUpdates: Bool {
+        didSet {
+            defaults.set(automaticallyChecksForUpdates, forKey: Keys.automaticallyChecksForUpdates)
+        }
+    }
+
+    @Published var lastUpdateCheckDate: Date? {
+        didSet {
+            defaults.set(lastUpdateCheckDate, forKey: Keys.lastUpdateCheckDate)
         }
     }
 
@@ -167,6 +181,9 @@ class AppSettings: ObservableObject {
         } else {
             self.themePreference = .system
         }
+
+        self.automaticallyChecksForUpdates = defaults.object(forKey: Keys.automaticallyChecksForUpdates) as? Bool ?? false
+        self.lastUpdateCheckDate = defaults.object(forKey: Keys.lastUpdateCheckDate) as? Date
     }
 
     // MARK: - Helper Methods
@@ -179,5 +196,7 @@ class AppSettings: ObservableObject {
         serverPort = ListeningPortMigrationPolicy.defaultPort
         defaults.set(false, forKey: Keys.hasCustomizedServerPort)
         themePreference = .system
+        automaticallyChecksForUpdates = false
+        lastUpdateCheckDate = nil
     }
 }

@@ -2355,6 +2355,9 @@ enum NotesTextSelectionPolicy {
 // MARK: - About Tab
 
 struct AboutTab: View {
+    @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var updateManager = MacAppUpdateManager.shared
+
     var showsInlineHeader = true
     let onOpenGuide: () -> Void
     let onRevealDebug: () -> Void
@@ -2363,6 +2366,7 @@ struct AboutTab: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 aboutHero
+                aboutUpdateCard
                 aboutHighlights
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -2406,7 +2410,7 @@ struct AboutTab: View {
 
                     HStack(spacing: 10) {
                         MainWindowStatusChip(
-                            title: AppLocalization.localizedString("about_version"),
+                            title: "\(AppLocalization.localizedString("about_version")) \(updateManager.currentVersionDisplay)",
                             systemImage: "number.circle",
                             tint: MainWindowColors.secondaryText
                         )
@@ -2436,6 +2440,110 @@ struct AboutTab: View {
                 }
 
                 Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private var aboutUpdateCard: some View {
+        MainWindowSurface {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(alignment: .top, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(AppLocalization.localizedString("about_update_section_title"))
+                            .font(.headline.weight(.semibold))
+                            .foregroundColor(MainWindowColors.title)
+
+                        Text(
+                            String(
+                                format: AppLocalization.localizedString("about_update_current_version_format"),
+                                updateManager.currentVersionDisplay
+                            )
+                        )
+                        .font(.subheadline)
+                        .foregroundColor(MainWindowColors.secondaryText)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle(
+                        AppLocalization.localizedString("about_update_auto_toggle"),
+                        isOn: $settings.automaticallyChecksForUpdates
+                    )
+                    .toggleStyle(.switch)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(MainWindowColors.title)
+
+                    Text(updateManager.statusMessage)
+                        .font(.subheadline)
+                        .foregroundColor(MainWindowColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if let latestVersionSummary = updateManager.latestVersionSummary {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(
+                            String(
+                                format: AppLocalization.localizedString("about_update_latest_version_format"),
+                                latestVersionSummary
+                            )
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(MainWindowColors.title)
+
+                        if let latestPublishedDateDescription = updateManager.latestPublishedDateDescription {
+                            Text(
+                                String(
+                                    format: AppLocalization.localizedString("about_update_published_at_format"),
+                                    latestPublishedDateDescription
+                                )
+                            )
+                            .font(.footnote)
+                            .foregroundColor(MainWindowColors.secondaryText)
+                        }
+
+                        if let releaseNotesSummary = updateManager.latestReleaseNotesSummary {
+                            Text(releaseNotesSummary)
+                                .font(.footnote)
+                                .foregroundColor(MainWindowColors.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(MainWindowColors.softSurface)
+                    )
+                }
+
+                HStack(spacing: 12) {
+                    Button(
+                        updateManager.isCheckingForUpdates
+                            ? AppLocalization.localizedString("about_update_checking_button")
+                            : AppLocalization.localizedString("about_update_check_button")
+                    ) {
+                        Task {
+                            await updateManager.checkForUpdates()
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(updateManager.isCheckingForUpdates || updateManager.isDownloadingUpdate)
+
+                    if updateManager.selectedAsset != nil {
+                        Button(
+                            updateManager.isDownloadingUpdate
+                                ? AppLocalization.localizedString("about_update_downloading_button")
+                                : AppLocalization.localizedString("about_update_install_button")
+                        ) {
+                            Task {
+                                await updateManager.downloadAndInstallLatestRelease()
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(updateManager.isCheckingForUpdates || updateManager.isDownloadingUpdate)
+                    }
+                }
             }
         }
     }
