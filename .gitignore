@@ -29,3 +29,8 @@ VoiceMindWindows/.claude/
 
 # Generated onnxruntime symlink/helper artifacts
 /VoiceMindMac/Frameworks/onnxruntime.xcframework/**/libonnxruntime.*.dylib
+
+# Local release packaging artifacts
+/VoiceMindMac/.dmg-staging-*/
+/VoiceMindMac/.release-*/
+/dist/
