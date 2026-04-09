@@ -169,7 +169,10 @@
 "settings_theme_system" = "跟随系统";
 "settings_theme_light" = "浅色";
 "settings_theme_dark" = "深色";
+"settings_preferences_header" = "偏好设置";
+"settings_preferences_description" = "调整识别语言、界面语言和显示主题。";
 "settings_network_title" = "网络服务";
+"settings_network_section_description" = "管理本机服务监听端口。";
 "settings_network_port_label" = "监听端口";
 "settings_network_port_placeholder" = "18661";
 "settings_network_port_desc" = "默认端口已改为 18661。修改后如果服务正在运行，会自动重启到新端口。";
@@ -284,11 +287,16 @@
 "mac_onboarding_start_badge" = "启动 VOICEMIND";
 "mac_onboarding_start_title" = "启动电脑端 VoiceMind，准备开始第一段协同。";
 "billing_two_device_sync_header" = "双端协同";
+"billing_two_device_sync_section_description" = "查看当前协同权限，并在需要时升级或恢复购买。";
 "billing_two_device_sync_actions_title" = "解锁方式";
 "billing_two_device_sync_restore_button" = "恢复购买";
 "billing_two_device_sync_monthly_button" = "月度无限次 %@";
 "billing_two_device_sync_yearly_button" = "年度无限次 %@";
 "billing_two_device_sync_lifetime_button" = "终身解锁 %@";
+"billing_two_device_sync_plan_monthly_caption" = "适合短期高频协同。";
+"billing_two_device_sync_plan_yearly_caption" = "适合长期稳定使用。";
+"billing_two_device_sync_plan_lifetime_caption" = "一次购买，长期可用。";
+"billing_two_device_sync_free_badge" = "免费版";
 "billing_two_device_sync_monthly_fallback" = "月度无限次";
 "billing_two_device_sync_yearly_fallback" = "年度无限次";
 "billing_two_device_sync_lifetime_fallback" = "终身解锁";

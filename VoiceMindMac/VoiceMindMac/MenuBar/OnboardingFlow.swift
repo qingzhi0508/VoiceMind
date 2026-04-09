@@ -80,26 +80,8 @@ struct OnboardingScaffold<Content: View>: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.95, green: 0.97, blue: 1.0),
-                    Color(red: 0.98, green: 0.99, blue: 1.0),
-                    Color.white
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-
-            Circle()
-                .fill(Color.blue.opacity(0.10))
-                .frame(width: 280, height: 280)
-                .offset(x: 210, y: -250)
-
-            Circle()
-                .fill(Color.cyan.opacity(0.08))
-                .frame(width: 240, height: 240)
-                .offset(x: -220, y: 230)
+            MainWindowColors.pageBackground
+                .ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 24) {
                 HStack {
@@ -119,8 +101,8 @@ struct OnboardingScaffold<Content: View>: View {
                 }
 
                 Text(L(badgeKey))
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .tracking(1.0)
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(0.8)
                     .foregroundStyle(Color.accentColor)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
@@ -129,12 +111,12 @@ struct OnboardingScaffold<Content: View>: View {
 
                 VStack(alignment: .leading, spacing: 12) {
                     Text(L(titleKey))
-                        .font(.system(size: 33, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.primary)
+                        .font(.system(size: 31, weight: .semibold))
+                        .foregroundStyle(MainWindowColors.title)
 
                     Text(L(subtitleKey))
-                        .font(.title3.weight(.medium))
-                        .foregroundStyle(Color.secondary)
+                        .font(.subheadline)
+                        .foregroundStyle(MainWindowColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -193,13 +175,12 @@ struct HeroFeatureCard: View {
             Spacer()
         }
         .padding(18)
-        .background(.white.opacity(0.72))
+        .background(MainWindowColors.cardSurface)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.85), lineWidth: 1)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.04), radius: 16, x: 0, y: 10)
     }
 }
 
@@ -263,11 +244,11 @@ struct DeviceBridgePanel: View {
         }
         .padding(22)
         .frame(maxWidth: .infinity)
-        .background(.white.opacity(0.76))
+        .background(MainWindowColors.cardSurface)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.white.opacity(0.85), lineWidth: 1)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
         )
     }
 }
@@ -303,9 +284,9 @@ struct PairingStepCard: View {
         HStack(alignment: .top, spacing: 14) {
             Text("\(index)")
                 .font(.caption.weight(.bold))
-                .foregroundStyle(.white)
-                .frame(width: 26, height: 26)
-                .background(Color.accentColor)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 28, height: 28)
+                .background(Color.accentColor.opacity(0.12))
                 .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 6) {
@@ -325,8 +306,12 @@ struct PairingStepCard: View {
             Spacer()
         }
         .padding(18)
-        .background(Color.gray.opacity(0.07))
+        .background(MainWindowColors.softSurface)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
     }
 }
 
@@ -513,8 +498,12 @@ struct ReadyView: View {
                     InstructionStep(number: 3, text: L("mac_onboarding_start_step3"))
                 }
                 .padding(18)
-                .background(Color.accentColor.opacity(0.06))
+                .background(MainWindowColors.softSurface)
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+                )
             }
         }
         .onAppear {
@@ -543,9 +532,11 @@ struct InfoCard: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .font(.title2)
+                .font(.title3)
                 .foregroundColor(color)
-                .frame(width: 40)
+                .frame(width: 36, height: 36)
+                .background(color.opacity(0.12))
+                .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
@@ -558,9 +549,13 @@ struct InfoCard: View {
 
             Spacer()
         }
-        .padding()
-        .background(Color.gray.opacity(0.05))
-        .cornerRadius(12)
+        .padding(16)
+        .background(MainWindowColors.softSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
     }
 }
 
@@ -571,15 +566,15 @@ struct InstructionStep: View {
     var body: some View {
         HStack(spacing: 12) {
             Text("\(number)")
-                .font(.caption)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
+                .font(.caption.weight(.bold))
+                .foregroundColor(.accentColor)
                 .frame(width: 24, height: 24)
-                .background(Color.blue)
+                .background(Color.accentColor.opacity(0.12))
                 .clipShape(Circle())
 
             Text(text)
                 .font(.subheadline)
+                .foregroundStyle(MainWindowColors.title)
 
             Spacer()
         }
@@ -596,24 +591,20 @@ struct RunningStatusView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Status Header
                 StatusHeader(
                     pairingState: controller.pairingState,
                     connectionState: controller.connectionState
                 )
 
-                // System Info
                 SystemInfoCard(
                     localIP: localIPAddress
                 )
 
-                // Device Connection
                 DeviceConnectionCard(
                     pairingState: controller.pairingState,
                     connectionState: controller.connectionState
                 )
 
-                // Quick Actions
                 QuickActionsCard(
                     pairingState: controller.pairingState,
                     onStartPairing: {
@@ -627,7 +618,7 @@ struct RunningStatusView: View {
                     }
                 )
             }
-            .padding()
+            .padding(20)
         }
         .onAppear {
             fetchLocalIPAddress()
@@ -665,14 +656,19 @@ struct StatusHeader: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            Image(systemName: statusIcon)
-                .font(.system(size: 48))
-                .foregroundColor(statusColor)
+            ZStack {
+                Circle()
+                    .fill(statusColor.opacity(0.12))
+                    .frame(width: 64, height: 64)
+
+                Image(systemName: statusIcon)
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundColor(statusColor)
+            }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(L("mac_onboarding_product_name"))
-                    .font(.title)
-                    .fontWeight(.bold)
+                    .font(.title2.weight(.semibold))
 
                 Text(statusText)
                     .font(.subheadline)
@@ -681,9 +677,13 @@ struct StatusHeader: View {
 
             Spacer()
         }
-        .padding()
-        .background(statusColor.opacity(0.1))
-        .cornerRadius(12)
+        .padding(20)
+        .background(MainWindowColors.cardSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
     }
 
     private var statusIcon: String {
@@ -726,16 +726,20 @@ struct SystemInfoCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L("system_info_title"))
-                .font(.headline)
+                .font(.headline.weight(.semibold))
 
             VStack(spacing: 8) {
                 SimpleInfoRow(icon: "network", title: L("system_ip_title"), value: localIP, color: .blue)
                 SimpleInfoRow(icon: "doc.text", title: L("mac_onboarding_start_mode_title"), value: L("mac_onboarding_results_location"), color: .purple)
             }
         }
-        .padding()
-        .background(Color.gray.opacity(0.05))
-        .cornerRadius(12)
+        .padding(18)
+        .background(MainWindowColors.cardSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
     }
 }
 
@@ -746,7 +750,7 @@ struct DeviceConnectionCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L("device_connection_title"))
-                .font(.headline)
+                .font(.headline.weight(.semibold))
 
             VStack(spacing: 8) {
                 SimpleInfoRow(icon: "iphone", title: L("device_pairing_status"), value: pairingStatusText, color: pairingStatusColor)
@@ -758,9 +762,13 @@ struct DeviceConnectionCard: View {
                 SimpleInfoRow(icon: "wifi", title: L("device_connection_status"), value: connectionStatusText, color: connectionStatusColor)
             }
         }
-        .padding()
-        .background(Color.gray.opacity(0.05))
-        .cornerRadius(12)
+        .padding(18)
+        .background(MainWindowColors.cardSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
     }
 
     private var pairingStatusText: String {
@@ -849,6 +857,13 @@ struct QuickActionsCard: View {
             .buttonStyle(.bordered)
             .foregroundColor(.red)
         }
+        .padding(18)
+        .background(MainWindowColors.cardSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
     }
 }
 
@@ -862,7 +877,9 @@ struct SimpleInfoRow: View {
         HStack {
             Image(systemName: icon)
                 .foregroundColor(color)
-                .frame(width: 24)
+                .frame(width: 26, height: 26)
+                .background(color.opacity(0.12))
+                .clipShape(Circle())
 
             Text(title)
                 .foregroundColor(.secondary)

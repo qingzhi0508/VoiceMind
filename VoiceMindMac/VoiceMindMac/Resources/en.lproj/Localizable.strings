@@ -168,7 +168,10 @@
 "settings_theme_system" = "Follow System";
 "settings_theme_light" = "Light";
 "settings_theme_dark" = "Dark";
+"settings_preferences_header" = "Preferences";
+"settings_preferences_description" = "Choose recognition language, interface language, and display appearance.";
 "settings_network_title" = "Network Service";
+"settings_network_section_description" = "Manage the local listening port for desktop connectivity.";
 "settings_network_port_label" = "Listening Port";
 "settings_network_port_placeholder" = "18661";
 "settings_network_port_desc" = "The default port is now 18661. If the service is running, it will restart on the new port.";
@@ -280,11 +283,16 @@
 "mac_onboarding_connect_step3_title" = "Confirm on phone";
 "mac_onboarding_connect_step3_desc" = "Scan the code, approve the session, and let VoiceMind keep both sides in sync.";
 "billing_two_device_sync_header" = "Two-Device Sync";
+"billing_two_device_sync_section_description" = "Review your current sync access and upgrade or restore when needed.";
 "billing_two_device_sync_actions_title" = "Unlock options";
 "billing_two_device_sync_restore_button" = "Restore Purchases";
 "billing_two_device_sync_monthly_button" = "Monthly Unlimited %@";
 "billing_two_device_sync_yearly_button" = "Yearly Unlimited %@";
 "billing_two_device_sync_lifetime_button" = "Lifetime Unlock %@";
+"billing_two_device_sync_plan_monthly_caption" = "Best for short-term frequent sync.";
+"billing_two_device_sync_plan_yearly_caption" = "Best for long-term everyday use.";
+"billing_two_device_sync_plan_lifetime_caption" = "One purchase for ongoing access.";
+"billing_two_device_sync_free_badge" = "Free";
 "billing_two_device_sync_monthly_fallback" = "Monthly Unlimited";
 "billing_two_device_sync_yearly_fallback" = "Yearly Unlimited";
 "billing_two_device_sync_lifetime_fallback" = "Lifetime Unlock";

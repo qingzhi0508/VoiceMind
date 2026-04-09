@@ -42,82 +42,118 @@ struct QRCodePairingView: View {
     @State private var qrCodeImage: NSImage?
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text(AppLocalization.localizedString("qr_pairing_title"))
-                .font(.title)
+        ZStack {
+            MainWindowColors.pageBackground
+                .ignoresSafeArea()
 
-            Text(AppLocalization.localizedString("qr_scan_instruction"))
-                .font(.headline)
-
-            // QR Code
-            if let image = qrCodeImage {
-                Image(nsImage: image)
-                    .interpolation(.none)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 250, height: 250)
-                    .background(Color.white)
-                    .cornerRadius(10)
-            } else {
-                ProgressView()
-                    .frame(width: 250, height: 250)
-            }
-
-            VStack(spacing: 8) {
-                Text(AppLocalization.localizedString("qr_manual_code_label"))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                Text(pairingCode)
-                    .font(.system(size: 32, weight: .bold, design: .monospaced))
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(8)
-            }
-
-            VStack(spacing: 4) {
-                Text(AppLocalization.localizedString("qr_connection_info_label"))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Text(String(format: AppLocalization.localizedString("qr_ip_label_format"), connectionInfo.ip))
-                    .font(.system(.caption, design: .monospaced))
-                Text(String(format: AppLocalization.localizedString("qr_port_label_format"), "\(connectionInfo.port)"))
-                    .font(.system(.caption, design: .monospaced))
-            }
-
-            GroupBox(label: Label(AppLocalization.localizedString("qr_progress_title"), systemImage: "list.bullet.clipboard")) {
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: progressIconName)
-                        .foregroundColor(progressColor)
-                        .font(.title3)
-
-                    Text(
-                        PairingProgressDisplay.message(
-                            pairingState: controller.pairingState,
-                            connectionState: controller.connectionState,
-                            progressMessage: controller.pairingProgressMessage
-                        ) ?? AppLocalization.localizedString("qr_progress_waiting")
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 10) {
+                    MainWindowStatusChip(
+                        title: progressStatusTitle,
+                        systemImage: progressIconName,
+                        tint: progressColor
                     )
-                        .font(.callout)
-                        .foregroundColor(.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text(AppLocalization.localizedString("qr_pairing_title"))
+                        .font(.system(size: 30, weight: .semibold))
+                        .foregroundColor(MainWindowColors.title)
+
+                    Text(AppLocalization.localizedString("qr_scan_instruction"))
+                        .font(.subheadline)
+                        .foregroundColor(MainWindowColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(12)
-            }
 
-            Text(String(format: AppLocalization.localizedString("qr_time_remaining_format"), "\(pairingTimer.timeRemaining)"))
-                .font(.caption)
-                .foregroundColor(.secondary)
+                MainWindowSurface(emphasized: true) {
+                    HStack(alignment: .top, spacing: 24) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .fill(Color.white)
 
-            Button(AppLocalization.localizedString("cancel_button")) {
-                pairingTimer.stop()
-                onCancel()
+                            if let image = qrCodeImage {
+                                Image(nsImage: image)
+                                    .interpolation(.none)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .padding(22)
+                            } else {
+                                ProgressView()
+                            }
+                        }
+                        .frame(width: 240, height: 240)
+
+                        VStack(alignment: .leading, spacing: 18) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(AppLocalization.localizedString("qr_manual_code_label"))
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundColor(MainWindowColors.secondaryText)
+
+                                Text(pairingCode)
+                                    .font(.system(size: 30, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(MainWindowColors.title)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 10)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                            .fill(MainWindowColors.softSurface)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                            .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+                                    )
+                            }
+
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(AppLocalization.localizedString("qr_connection_info_label"))
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundColor(MainWindowColors.secondaryText)
+
+                                VStack(spacing: 8) {
+                                    pairingMetaRow(
+                                        title: "IP",
+                                        value: connectionInfo.ip
+                                    )
+
+                                    pairingMetaRow(
+                                        title: "Port",
+                                        value: "\(connectionInfo.port)"
+                                    )
+                                }
+                            }
+
+                            Text(String(format: AppLocalization.localizedString("qr_time_remaining_format"), "\(pairingTimer.timeRemaining)"))
+                                .font(.caption.weight(.medium))
+                                .foregroundColor(MainWindowColors.secondaryText)
+                        }
+                    }
+                }
+
+                MainWindowSurface {
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: progressIconName)
+                            .foregroundColor(progressColor)
+                            .font(.title3)
+
+                        Text(progressMessage)
+                            .font(.subheadline)
+                            .foregroundColor(MainWindowColors.primaryText)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
+                HStack {
+                    Spacer()
+
+                    Button(AppLocalization.localizedString("cancel_button")) {
+                        pairingTimer.stop()
+                        onCancel()
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
-            .buttonStyle(.bordered)
+            .padding(24)
         }
         .frame(width: 450, height: 550)
-        .padding()
         .onAppear {
             generateQRCode()
             pairingTimer.onTimeout = { [onCancel] in
@@ -146,6 +182,22 @@ struct QRCodePairingView: View {
         return .orange
     }
 
+    private var progressMessage: String {
+        PairingProgressDisplay.message(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState,
+            progressMessage: controller.pairingProgressMessage
+        ) ?? AppLocalization.localizedString("qr_progress_waiting")
+    }
+
+    private var progressStatusTitle: String {
+        if case .paired = controller.pairingState {
+            return AppLocalization.localizedString("pairing_status_paired")
+        }
+
+        return AppLocalization.localizedString("pairing_status_pairing")
+    }
+
     private func generateQRCode() {
         guard let qrString = connectionInfo.toQRCodeString() else {
             print("❌ 无法生成二维码数据")
@@ -168,5 +220,26 @@ struct QRCodePairingView: View {
                 qrCodeImage = NSImage(cgImage: cgImage, size: NSSize(width: 250, height: 250))
             }
         }
+    }
+
+    @ViewBuilder
+    private func pairingMetaRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundColor(MainWindowColors.secondaryText)
+
+            Spacer()
+
+            Text(value)
+                .font(.system(.subheadline, design: .monospaced))
+                .foregroundColor(MainWindowColors.primaryText)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(MainWindowColors.softSurface)
+        )
     }
 }

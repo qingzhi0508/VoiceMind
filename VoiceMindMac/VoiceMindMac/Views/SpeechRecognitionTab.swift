@@ -7,20 +7,55 @@ struct SpeechRecognitionTab: View {
     @StateObject private var modelManager = SherpaOnnxModelManager.shared
 
     var body: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 20) {
             if showsInlineHeader {
                 Text(AppLocalization.localizedString("speech_engine_title"))
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundColor(MainWindowColors.title)
             }
+
+            speechHero
 
             engineSelectionSection
 
             Spacer()
         }
-        .padding()
+        .padding(.bottom, 8)
+        }
         .onAppear {
             refreshEngines()
+        }
+    }
+
+    private var speechHero: some View {
+        MainWindowSurface(emphasized: true) {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(AppLocalization.localizedString("speech_engine_title"))
+                        .font(.title3.weight(.semibold))
+                        .foregroundColor(MainWindowColors.title)
+
+                    Text(AppLocalization.localizedString("main_speech_subtitle"))
+                        .font(.subheadline)
+                        .foregroundColor(MainWindowColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                HStack(spacing: 10) {
+                    MainWindowStatusChip(
+                        title: selectedEngineDisplayName,
+                        systemImage: "waveform.circle",
+                        tint: .blue
+                    )
+
+                    MainWindowStatusChip(
+                        title: modelStatusSummary,
+                        systemImage: "internaldrive",
+                        tint: isSherpaModelSelected ? .green : .orange
+                    )
+                }
+            }
         }
     }
 
@@ -28,21 +63,46 @@ struct SpeechRecognitionTab: View {
 
     @ViewBuilder
     private var engineSelectionSection: some View {
-        GroupBox(label: Label(AppLocalization.localizedString("speech_engine_select_title"), systemImage: "waveform.circle")) {
-            VStack(alignment: .leading, spacing: 12) {
-                // Apple Speech 引擎
-                ForEach(availableEngines.filter { $0.identifier == "apple-speech" }, id: \.identifier) { engine in
-                    engineRow(engine)
+        MainWindowSurface {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label(AppLocalization.localizedString("speech_engine_select_title"), systemImage: "waveform.circle")
+                        .font(.title3.weight(.semibold))
+                        .foregroundColor(MainWindowColors.title)
+
+                    Text(AppLocalization.localizedString("main_speech_subtitle"))
+                        .font(.subheadline)
+                        .foregroundColor(MainWindowColors.secondaryText)
                 }
 
-                Divider()
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Apple Speech")
+                        .font(.headline)
+                        .foregroundColor(MainWindowColors.title)
 
-                // Sherpa-ONNX 可下载模型
-                ForEach(SherpaOnnxModelDefinition.catalog) { model in
-                    modelRow(model)
+                    ForEach(availableEngines.filter { $0.identifier == "apple-speech" }, id: \.identifier) { engine in
+                        engineRow(engine)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("Sherpa-ONNX")
+                            .font(.headline)
+                            .foregroundColor(MainWindowColors.title)
+
+                        Spacer()
+
+                        Text("\(installedModelCount)/\(SherpaOnnxModelDefinition.catalog.count)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(MainWindowColors.secondaryText)
+                    }
+
+                    ForEach(SherpaOnnxModelDefinition.catalog) { model in
+                        modelRow(model)
+                    }
                 }
             }
-            .padding()
         }
     }
 
@@ -61,8 +121,9 @@ struct SpeechRecognitionTab: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(engine.displayName)
                     .font(.headline)
+                    .foregroundColor(MainWindowColors.title)
 
-                HStack {
+                HStack(spacing: 10) {
                     if engine.isAvailable {
                         Label(AppLocalization.localizedString("engine_available"), systemImage: "checkmark.circle.fill")
                             .foregroundColor(.green)
@@ -80,8 +141,26 @@ struct SpeechRecognitionTab: View {
             }
 
             Spacer()
+
+            if selectedEngineId == engine.identifier && !isSherpaModelSelected {
+                Image(systemName: "checkmark")
+                    .font(.caption.weight(.bold))
+                    .foregroundColor(.accentColor)
+                    .padding(8)
+                    .background(MainWindowColors.cardSurface)
+                    .clipShape(Circle())
+            }
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(MainWindowColors.softSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
     }
 
     // MARK: - Sherpa Model Row
@@ -90,8 +169,7 @@ struct SpeechRecognitionTab: View {
     private func modelRow(_ model: SherpaOnnxModelDefinition) -> some View {
         let state = modelManager.modelStates[model.id] ?? .notDownloaded
 
-        HStack(spacing: 12) {
-            // Radio button - 只有已安装时可选
+        HStack(alignment: .center, spacing: 12) {
             RadioButton(
                 isSelected: modelManager.selectedModelId == model.id,
                 action: {
@@ -103,8 +181,13 @@ struct SpeechRecognitionTab: View {
             .disabled(state != .installed)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(model.displayName)
-                    .font(.headline)
+                HStack(spacing: 8) {
+                    Text(model.displayName)
+                        .font(.headline)
+                        .foregroundColor(MainWindowColors.title)
+
+                    statePill(for: state)
+                }
 
                 HStack(spacing: 8) {
                     Text(model.estimatedSize)
@@ -114,37 +197,18 @@ struct SpeechRecognitionTab: View {
                     Text(model.languages.prefix(3).joined(separator: ", "))
                         .font(.caption)
                         .foregroundColor(MainWindowColors.secondaryText)
+                }
 
-                    // 状态标签
-                    switch state {
-                    case .installed:
-                        Label("已安装", systemImage: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                            .font(.caption)
-                    case .notDownloaded:
-                        Text("需下载")
-                            .font(.caption)
-                            .foregroundColor(.orange)
-                    case .downloading(let progress):
-                        Text(String(format: "下载中 %.0f%%", progress * 100))
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                    case .extracting:
-                        Text("解压中...")
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                    case .failed(let msg):
-                        Text("失败: \(msg)")
-                            .font(.caption)
-                            .foregroundColor(.red)
-                            .lineLimit(1)
-                    }
+                if case .failed(let msg) = state {
+                    Text("失败: \(msg)")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .lineLimit(1)
                 }
             }
 
             Spacer()
 
-            // 操作按钮
             switch state {
             case .notDownloaded, .failed:
                 Button(action: { modelManager.download(model: model) }) {
@@ -155,16 +219,18 @@ struct SpeechRecognitionTab: View {
                 .controlSize(.small)
 
             case .downloading(let progress):
-                Button(action: { modelManager.cancelDownload(modelId: model.id) }) {
-                    Label("取消", systemImage: "xmark.circle")
-                        .font(.caption)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .foregroundColor(.red)
+                VStack(alignment: .trailing, spacing: 8) {
+                    Button(action: { modelManager.cancelDownload(modelId: model.id) }) {
+                        Label("取消", systemImage: "xmark.circle")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .foregroundColor(.red)
 
-                ProgressView(value: progress)
-                    .frame(width: 80)
+                    ProgressView(value: progress)
+                        .frame(width: 96)
+                }
 
             case .extracting:
                 ProgressView()
@@ -180,7 +246,42 @@ struct SpeechRecognitionTab: View {
                 .foregroundColor(.red)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(MainWindowColors.softSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
+    }
+
+    @ViewBuilder
+    private func statePill(for state: ModelState) -> some View {
+        switch state {
+        case .installed:
+            miniPill(title: "已安装", tint: .green)
+        case .notDownloaded:
+            miniPill(title: "需下载", tint: .orange)
+        case .downloading(let progress):
+            miniPill(title: String(format: "下载中 %.0f%%", progress * 100), tint: .blue)
+        case .extracting:
+            miniPill(title: "解压中", tint: .blue)
+        case .failed:
+            miniPill(title: "失败", tint: .red)
+        }
+    }
+
+    private func miniPill(title: String, tint: Color) -> some View {
+        Text(title)
+            .font(.caption.weight(.semibold))
+            .foregroundColor(tint)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(tint.opacity(0.10))
+            .clipShape(Capsule())
     }
 
     // MARK: - Actions
@@ -215,6 +316,33 @@ private extension SpeechRecognitionTab {
 
     var selectedEngineId: String {
         engineListStore.selectedEngineId
+    }
+
+    var selectedEngineDisplayName: String {
+        if let selectedModelId = modelManager.selectedModelId,
+           let model = SherpaOnnxModelDefinition.catalog.first(where: { $0.id == selectedModelId }) {
+            return model.displayName
+        }
+
+        return availableEngines.first(where: { $0.identifier == selectedEngineId })?.displayName
+            ?? AppLocalization.localizedString("speech_engine_title")
+    }
+
+    var modelStatusSummary: String {
+        if isSherpaModelSelected {
+            return "Sherpa-ONNX"
+        }
+
+        return "Apple Speech"
+    }
+
+    var installedModelCount: Int {
+        SherpaOnnxModelDefinition.catalog.filter {
+            if case .installed = modelManager.modelStates[$0.id] ?? .notDownloaded {
+                return true
+            }
+            return false
+        }.count
     }
 }
 
