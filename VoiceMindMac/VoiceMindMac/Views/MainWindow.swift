@@ -1529,6 +1529,7 @@ struct StatusTab: View {
                 .padding(.vertical, 12)
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(style.fillColor)
@@ -2623,8 +2624,6 @@ struct NotesTab: View {
 
                 noteWorkspaceCard
 
-                collaborationQuickActions
-
                 recentActivityCard
             }
         }
@@ -2772,40 +2771,6 @@ struct NotesTab: View {
         }
     }
 
-    private var collaborationQuickActions: some View {
-        MainWindowSurface {
-            VStack(alignment: .leading, spacing: 14) {
-                Text(AppLocalization.localizedString("main_nav_collaboration"))
-                    .font(.title3.weight(.semibold))
-                    .foregroundColor(MainWindowColors.title)
-
-                Text(pairingDetail)
-                    .font(.subheadline)
-                    .foregroundColor(MainWindowColors.secondaryText)
-
-                HStack(spacing: 12) {
-                    if controlsPolicy.showsStartPairing {
-                        spotlightHomeButton(
-                            title: AppLocalization.localizedString("status_action_start_pairing"),
-                            role: .primary
-                        ) {
-                            controller.showPairingWindowFromUI()
-                        }
-                    }
-
-                    if controlsPolicy.showsUnpair {
-                        spotlightHomeButton(
-                            title: AppLocalization.localizedString("status_action_unpair"),
-                            role: .secondary
-                        ) {
-                            controller.unpairDeviceFromUI()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     private var recentActivityCard: some View {
         MainWindowSurface {
             VStack(alignment: .leading, spacing: 14) {
@@ -2908,6 +2873,7 @@ struct NotesTab: View {
                 .padding(.vertical, 10)
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(style.fillColor)

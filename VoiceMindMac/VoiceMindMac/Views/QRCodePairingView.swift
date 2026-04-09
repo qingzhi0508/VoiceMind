@@ -65,7 +65,7 @@ struct QRCodePairingView: View {
                 }
 
                 MainWindowSurface(emphasized: true) {
-                    HStack(alignment: .top, spacing: 24) {
+                    HStack(alignment: .top, spacing: 20) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 20, style: .continuous)
                                 .fill(Color.white)
@@ -80,7 +80,7 @@ struct QRCodePairingView: View {
                                 ProgressView()
                             }
                         }
-                        .frame(width: 240, height: 240)
+                        .frame(width: 216, height: 216)
 
                         VStack(alignment: .leading, spacing: 18) {
                             VStack(alignment: .leading, spacing: 8) {
@@ -91,6 +91,10 @@ struct QRCodePairingView: View {
                                 Text(pairingCode)
                                     .font(.system(size: 30, weight: .semibold, design: .monospaced))
                                     .foregroundColor(MainWindowColors.title)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.65)
+                                    .textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 10)
                                     .background(
@@ -125,6 +129,7 @@ struct QRCodePairingView: View {
                                 .font(.caption.weight(.medium))
                                 .foregroundColor(MainWindowColors.secondaryText)
                         }
+                        .frame(width: 220, alignment: .leading)
                     }
                 }
 
@@ -153,7 +158,7 @@ struct QRCodePairingView: View {
             }
             .padding(24)
         }
-        .frame(width: 450, height: 550)
+        .frame(width: 560, height: 540)
         .onAppear {
             generateQRCode()
             pairingTimer.onTimeout = { [onCancel] in
@@ -224,22 +229,28 @@ struct QRCodePairingView: View {
 
     @ViewBuilder
     private func pairingMetaRow(title: String, value: String) -> some View {
-        HStack {
+        VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.caption.weight(.semibold))
                 .foregroundColor(MainWindowColors.secondaryText)
 
-            Spacer()
-
             Text(value)
                 .font(.system(.subheadline, design: .monospaced))
                 .foregroundColor(MainWindowColors.primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(MainWindowColors.softSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
         )
     }
 }
