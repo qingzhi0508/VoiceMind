@@ -33,7 +33,7 @@ pub struct AppState {
     pub history_store: Arc<Mutex<speech::HistoryStore>>,
     pub settings_store: Arc<Mutex<settings::SettingsStore>>,
     pub bonjour_service: Arc<Mutex<Option<bonjour::BonjourService>>>,
-    pub asr_provider: Arc<Mutex<Option<asr::VeAnchorProvider>>>,
+    pub asr_provider: Arc<Mutex<Option<asr::VolcengineProvider>>>,
     pub inbound_data_records: Arc<Mutex<std::collections::VecDeque<crate::commands::InboundDataRecord>>>,
 }
 
@@ -103,6 +103,8 @@ fn main() {
             let conn_mgr = app.state::<AppState>().connection_manager.clone();
             let pairing_mgr = app.state::<AppState>().pairing_manager.clone();
             let history_store = app.state::<AppState>().history_store.clone();
+            let asr_provider = app.state::<AppState>().asr_provider.clone();
+            let settings_store = app.state::<AppState>().settings_store.clone();
             let app_handle = app.handle().clone();
             let server_port = init_settings.server_port;
             
@@ -115,7 +117,7 @@ fn main() {
                 
                 // Start WebSocket server
                 let mut conn_mgr_guard = conn_mgr.lock().await;
-                match conn_mgr_guard.start_server(server_port, pairing_mgr, history_store.clone()).await {
+                match conn_mgr_guard.start_server(server_port, pairing_mgr, history_store.clone(), asr_provider, settings_store).await {
                     Ok(_) => {
                         info!("WebSocket server started on port {}", server_port);
                     }
@@ -143,12 +145,11 @@ fn main() {
             }
 
             // Initialize ASR provider if configured
-            if !init_settings.asr.access_key_id.is_empty() {
-                let provider = asr::VeAnchorProvider::new(asr::VeAnchorConfig {
+            if !init_settings.asr.access_key.is_empty() {
+                let provider = asr::VolcengineProvider::new(asr::VolcengineConfig {
                     app_id: init_settings.asr.app_id.clone(),
-                    access_key_id: init_settings.asr.access_key_id.clone(),
-                    access_key_secret: init_settings.asr.access_key_secret.clone(),
-                    cluster: init_settings.asr.cluster.clone(),
+                    access_key: init_settings.asr.access_key.clone(),
+                    resource_id: init_settings.asr.resource_id.clone(),
                     language: init_settings.asr.asr_language.clone(),
                 });
                 let asr_provider_arc = app.state::<AppState>().asr_provider.clone();

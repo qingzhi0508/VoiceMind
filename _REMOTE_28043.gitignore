@@ -15,7 +15,7 @@ xcuserdata/
 /VoiceMindWindows/node_modules
 /VoiceMindWindows/src-tauri/target/
 VoiceMindWindows/src-tauri/logs/
-VoiceMindWindows/dist/
+VoiceMindWindows/dist/index.html
 VoiceMindWindows/src-tauri/history.json
 VoiceMindWindows/src-tauri/settings.json
 VoiceMindWindows/.claude/
@@ -34,5 +34,3 @@ VoiceMindWindows/.claude/
 /VoiceMindMac/.dmg-staging-*/
 /VoiceMindMac/.release-*/
 /dist/
-/logs/
-.idea/.gitignore

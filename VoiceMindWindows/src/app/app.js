@@ -121,7 +121,7 @@ async function deleteSelectedHistory() {
 
 function isCloudConfigured(settings = state.settings) {
   const asr = settings && settings.asr;
-  return Boolean(asr && asr.app_id && asr.access_key_id && asr.access_key_secret && asr.cluster);
+  return Boolean(asr && asr.app_id && asr.access_key && asr.resource_id);
 }
 
 function isEngineSelectable(engine) {
@@ -457,9 +457,8 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         document.getElementById("setting-port").value = s.server_port || 8765;
         if (s.asr) {
           document.getElementById("setting-asr-appid").value = s.asr.app_id || "";
-          document.getElementById("setting-asr-keyid").value = s.asr.access_key_id || "";
-          document.getElementById("setting-asr-keysecret").value = s.asr.access_key_secret || "";
-          document.getElementById("setting-asr-cluster").value = s.asr.cluster || "";
+          document.getElementById("setting-asr-accesskey").value = s.asr.access_key || "";
+          document.getElementById("setting-asr-resourceid").value = s.asr.resource_id || "";
           document.getElementById("setting-asr-language").value = s.asr.asr_language || "zh-CN";
         }
         const rd = s.history_retention_days || 30;
@@ -499,9 +498,9 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         asr: {
           provider: state.settings && state.settings.asr ? state.settings.asr.provider || "" : "",
           app_id: state.settings && state.settings.asr ? state.settings.asr.app_id || "" : "",
-          access_key_id: state.settings && state.settings.asr ? state.settings.asr.access_key_id || "" : "",
+          access_key: state.settings && state.settings.asr ? state.settings.asr.access_key || "" : "",
           access_key_secret: state.settings && state.settings.asr ? state.settings.asr.access_key_secret || "" : "",
-          cluster: state.settings && state.settings.asr ? state.settings.asr.cluster || "" : "",
+          resource_id: state.settings && state.settings.asr ? state.settings.asr.resource_id || "" : "",
           asr_language: document.getElementById("setting-asr-language").value
         }
       };
@@ -518,9 +517,9 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       const config = {
         provider: "volcengine",
         app_id: document.getElementById("setting-asr-appid").value,
-        access_key_id: document.getElementById("setting-asr-keyid").value,
-        access_key_secret: document.getElementById("setting-asr-keysecret").value,
-        cluster: document.getElementById("setting-asr-cluster").value,
+        access_key: document.getElementById("setting-asr-accesskey").value,
+        access_key_secret: "",
+        resource_id: document.getElementById("setting-asr-resourceid").value,
         asr_language: document.getElementById("setting-asr-language").value
       };
       try {

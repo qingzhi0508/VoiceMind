@@ -19,6 +19,10 @@ VoiceMindWindows/dist/
 VoiceMindWindows/src-tauri/history.json
 VoiceMindWindows/src-tauri/settings.json
 VoiceMindWindows/.claude/
+<<<<<<< HEAD
+/logs/
+.idea/.gitignore
+=======
 
 # Local macOS app artifacts
 /VoiceMindMac/VoiceMindMac/Resources/Models/
@@ -34,5 +38,4 @@ VoiceMindWindows/.claude/
 /VoiceMindMac/.dmg-staging-*/
 /VoiceMindMac/.release-*/
 /dist/
-/logs/
-.idea/.gitignore
+>>>>>>> master

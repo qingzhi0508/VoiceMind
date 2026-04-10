@@ -1,6 +1,74 @@
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 use tracing::{info, error, warn};
 
+fn is_private_ipv4(ip: &str) -> bool {
+    ip.starts_with("10.")
+        || ip.starts_with("192.168.")
+        || ip.starts_with("172.16.")
+        || ip.starts_with("172.17.")
+        || ip.starts_with("172.18.")
+        || ip.starts_with("172.19.")
+        || ip.starts_with("172.20.")
+        || ip.starts_with("172.21.")
+        || ip.starts_with("172.22.")
+        || ip.starts_with("172.23.")
+        || ip.starts_with("172.24.")
+        || ip.starts_with("172.25.")
+        || ip.starts_with("172.26.")
+        || ip.starts_with("172.27.")
+        || ip.starts_with("172.28.")
+        || ip.starts_with("172.29.")
+        || ip.starts_with("172.30.")
+        || ip.starts_with("172.31.")
+}
+
+fn is_likely_virtual_interface(name_lower: &str) -> bool {
+    name_lower.contains("loopback")
+        || name_lower.contains("isatap")
+        || name_lower.contains("teredo")
+        || name_lower.contains("vethernet")
+        || name_lower.contains("hyper-v")
+        || name_lower.contains("wsl")
+        || name_lower.contains("docker")
+        || name_lower.contains("virtual")
+        || name_lower.contains("meta")
+        || name_lower.contains("vmware")
+        || name_lower.contains("virtualbox")
+        || name_lower.contains("tap")
+        || name_lower.contains("tun")
+        || name_lower.contains("tunnel")
+        || name_lower.contains("vpn")
+        || name_lower.contains("tailscale")
+        || name_lower.contains("zerotier")
+        || name_lower.contains("wireguard")
+        || name_lower.contains("ktconnect")
+}
+
+fn parse_interface_state_line(line: &str) -> Option<(String, bool)> {
+    let trimmed = line.trim();
+    let trimmed_lower = trimmed.to_lowercase();
+    if !(trimmed_lower.starts_with("enabled")
+        || trimmed_lower.starts_with("disabled")
+        || trimmed_lower.starts_with("宸插惎鐢?")
+        || trimmed_lower.starts_with("宸叉柇寮€"))
+    {
+        return None;
+    }
+
+    let tokens: Vec<&str> = trimmed.split_whitespace().collect();
+    if tokens.len() < 4 {
+        return None;
+    }
+
+    let is_connected = !trimmed_lower.contains("disconnected")
+        && !trimmed_lower.contains("宸叉柇寮€");
+    let name = tokens[3..].join(" ").trim().to_string();
+    if name.is_empty() {
+        return None;
+    }
+    Some((name, is_connected))
+}
+
 pub struct BonjourService {
     service_name: String,
     port: u16,
@@ -132,11 +200,15 @@ impl BonjourService {
 
     #[cfg(windows)]
     fn enumerate_adapters(&self) -> Option<String> {
+        use std::os::windows::process::CommandExt;
         use std::process::Command;
+
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
 
         // First, get the list of interfaces with their admin states
         let interface_output = Command::new("netsh")
             .args(["interface", "show", "interface"])
+            .creation_flags(CREATE_NO_WINDOW)
             .output();
 
         // Build a map of interface name -> connected state
@@ -147,6 +219,11 @@ impl BonjourService {
             info!("Bonjour netsh interface show interface:\n{}", stdout);
 
             for line in stdout.lines() {
+                if let Some((name, is_connected)) = parse_interface_state_line(line) {
+                    interface_connected.insert(name.clone(), is_connected);
+                    info!("Bonjour: interface '{}' connected={} (robust parse)", name, is_connected);
+                    continue;
+                }
                 let trimmed = line.trim();
                 let trimmed_lower = trimmed.to_lowercase();
                 // Check for both English "Enabled/Disabled" and Chinese "已启用/已断开连接"
@@ -170,6 +247,7 @@ impl BonjourService {
         // Use netsh to get interface IP addresses
         let output = Command::new("netsh")
             .args(["interface", "ipv4", "show", "addresses"])
+            .creation_flags(CREATE_NO_WINDOW)
             .output()
             .ok()?;
 
@@ -240,17 +318,7 @@ impl BonjourService {
             let name_lower = current_name.to_lowercase();
 
             // Skip virtual interfaces
-            if name_lower.contains("loopback")
-                || name_lower.contains("isatap")
-                || name_lower.contains("teredo")
-                || name_lower.contains("vethernet")
-                || name_lower.contains("hyper-v")
-                || name_lower.contains("wsl")
-                || name_lower.contains("docker")
-                || name_lower.contains("virtual")
-                || name_lower.contains("meta")
-                || current_name.is_empty()
-            {
+            if is_likely_virtual_interface(&name_lower) || current_name.is_empty() {
                 continue;
             }
 
@@ -308,17 +376,30 @@ impl BonjourService {
                 && !ip_lower.starts_with("198.18.")
                 && !ip_lower.starts_with("198.19.")
         });
-        interfaces.sort_by_key(|i| i.interface_metric);
+        interfaces.sort_by_key(|i| {
+            let ip = i.ip.as_deref().unwrap_or("");
+            let private_rank = if is_private_ipv4(ip) { 0 } else { 1 };
+            let virtual_rank = if is_likely_virtual_interface(&i.name.to_lowercase()) { 1 } else { 0 };
+            (private_rank, virtual_rank, i.interface_metric)
+        });
 
         info!("Bonjour enumerate_adapters: found {} valid connected interfaces", interfaces.len());
 
         // Select interface with lowest metric (currently active network)
         if let Some(intf) = interfaces.first() {
-            info!("Bonjour enumerate_adapters: selected interface '{}' with IP {} (metric: {})",
-                  intf.name, intf.ip.as_ref().unwrap(), intf.interface_metric);
+            let ip = intf.ip.as_deref().unwrap_or("");
+            info!(
+                "Bonjour enumerate_adapters: selected interface '{}' with IP {} (metric: {}, private_lan: {}, virtual_like: {})",
+                intf.name,
+                ip,
+                intf.interface_metric,
+                is_private_ipv4(ip),
+                is_likely_virtual_interface(&intf.name.to_lowercase())
+            );
             return intf.ip.clone();
         }
 
+        info!("Bonjour enumerate_adapters: no eligible interface found after filtering");
         None
     }
 
