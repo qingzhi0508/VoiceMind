@@ -67,11 +67,15 @@ fn get_local_ip() -> Option<String> {
 
 #[cfg(windows)]
 fn enumerate_adapters() -> Option<String> {
+    use std::os::windows::process::CommandExt;
     use std::process::Command;
+
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
 
     // First, get the list of interfaces with their admin states
     let interface_output = Command::new("netsh")
         .args(["interface", "show", "interface"])
+        .creation_flags(CREATE_NO_WINDOW)
         .output();
 
     // Build a map of interface name -> connected state
@@ -105,6 +109,7 @@ fn enumerate_adapters() -> Option<String> {
     // Use netsh to get interface IP addresses
     let output = Command::new("netsh")
         .args(["interface", "ipv4", "show", "addresses"])
+        .creation_flags(CREATE_NO_WINDOW)
         .output()
         .ok()?;
 

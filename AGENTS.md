@@ -11,6 +11,7 @@
 
 ## 开发约定
 - 提交前确保代码可以编译
+- 完成修改后，默认自动进行编译与运行验证；如条件允许，优先做与本次改动直接相关的实际交互验证
 - Swift 项目使用 xcodebuild 或 swiftc 验证语法
 - 涉及 UI / 视觉 / 页面设计时，默认遵循 `docs/design/README.md`
 - Apple 风格设计基线来源于 `docs/design/vendor/apple-design-md/DESIGN.md`

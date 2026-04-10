@@ -50,13 +50,14 @@
       --shadowLg: 0 8px 24px rgba(0,0,0,0.25);
     }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; font-family: var(--font); color: var(--primaryText); background: var(--pageBg); }
+    html, body { height: 100%; }
+    body { margin: 0; min-height: 100vh; font-family: var(--font); color: var(--primaryText); background: var(--pageBg); overflow: hidden; }
 
     /* Layout */
-    .app { display: grid; grid-template-columns: var(--side) 1fr; min-height: 100vh; }
-    .sidebar { display: flex; flex-direction: column; gap: 16px; padding: 16px; background: linear-gradient(180deg, var(--sidebarBgTop), var(--sidebarBgBottom)); border-right: 1px solid var(--canvasBorder); }
-    .content { padding: 14px; }
-    .canvas { min-height: calc(100vh - 28px); border-radius: 20px; border: 1px solid var(--canvasBorder); background: var(--canvasBg); box-shadow: var(--shadowLg); padding: 28px; }
+    .app { display: grid; grid-template-columns: var(--side) minmax(0, 1fr); height: 100vh; overflow: hidden; }
+    .sidebar { display: flex; flex-direction: column; gap: 16px; height: 100vh; padding: 16px; background: linear-gradient(180deg, var(--sidebarBgTop), var(--sidebarBgBottom)); border-right: 1px solid var(--canvasBorder); overflow: hidden; }
+    .content { min-width: 0; height: 100vh; padding: 14px; overflow: hidden; }
+    .canvas { height: calc(100vh - 28px); overflow-y: auto; overflow-x: hidden; border-radius: 20px; border: 1px solid var(--canvasBorder); background: var(--canvasBg); box-shadow: var(--shadowLg); padding: 28px; }
 
     /* Brand */
     .brand { display: flex; gap: 12px; align-items: center; padding: 6px 2px 10px; }
@@ -262,8 +263,11 @@
 
     /* Responsive */
     @media (max-width: 900px) {
+      body { overflow: auto; }
       .app { grid-template-columns: 1fr; }
-      .sidebar { border-right: 0; border-bottom: 1px solid var(--canvasBorder); }
+      .sidebar { height: auto; border-right: 0; border-bottom: 1px solid var(--canvasBorder); }
+      .content { height: auto; overflow: visible; }
+      .canvas { height: auto; overflow: visible; min-height: calc(100vh - 28px); }
       .grid2, .grid3, .grid2x2 { grid-template-columns: 1fr; }
       .item { flex-direction: column; }
       .item-meta { width: auto; text-align: left; }
