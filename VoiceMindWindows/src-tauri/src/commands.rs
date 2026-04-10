@@ -23,6 +23,75 @@ fn is_valid_local_ip(ip: &str) -> bool {
         && !ip.starts_with("169.254.")  // Link-local (not routable)
 }
 
+fn is_private_ipv4(ip: &str) -> bool {
+    ip.starts_with("10.")
+        || ip.starts_with("192.168.")
+        || ip.starts_with("172.16.")
+        || ip.starts_with("172.17.")
+        || ip.starts_with("172.18.")
+        || ip.starts_with("172.19.")
+        || ip.starts_with("172.20.")
+        || ip.starts_with("172.21.")
+        || ip.starts_with("172.22.")
+        || ip.starts_with("172.23.")
+        || ip.starts_with("172.24.")
+        || ip.starts_with("172.25.")
+        || ip.starts_with("172.26.")
+        || ip.starts_with("172.27.")
+        || ip.starts_with("172.28.")
+        || ip.starts_with("172.29.")
+        || ip.starts_with("172.30.")
+        || ip.starts_with("172.31.")
+}
+
+fn is_likely_virtual_interface(name_lower: &str) -> bool {
+    name_lower.contains("loopback")
+        || name_lower.contains("isatap")
+        || name_lower.contains("teredo")
+        || name_lower.contains("vethernet")
+        || name_lower.contains("hyper-v")
+        || name_lower.contains("wsl")
+        || name_lower.contains("docker")
+        || name_lower.contains("virtual")
+        || name_lower.contains("meta")
+        || name_lower.contains("vmware")
+        || name_lower.contains("virtualbox")
+        || name_lower.contains("tap")
+        || name_lower.contains("tun")
+        || name_lower.contains("tunnel")
+        || name_lower.contains("vpn")
+        || name_lower.contains("tailscale")
+        || name_lower.contains("zerotier")
+        || name_lower.contains("wireguard")
+        || name_lower.contains("ktconnect")
+}
+
+fn parse_interface_state_line(line: &str) -> Option<(String, bool)> {
+    let trimmed = line.trim();
+    let trimmed_lower = trimmed.to_lowercase();
+    if !(trimmed_lower.starts_with("enabled")
+        || trimmed_lower.starts_with("disabled")
+        || trimmed_lower.starts_with("宸插惎鐢?")
+        || trimmed_lower.starts_with("宸叉柇寮€"))
+    {
+        return None;
+    }
+
+    // netsh "show interface" output includes four columns and interface names can contain spaces.
+    let tokens: Vec<&str> = trimmed.split_whitespace().collect();
+    if tokens.len() < 4 {
+        return None;
+    }
+
+    let is_connected = !trimmed_lower.contains("disconnected")
+        && !trimmed_lower.contains("宸叉柇寮€");
+    let name = tokens[3..].join(" ").trim().to_string();
+    if name.is_empty() {
+        return None;
+    }
+    Some((name, is_connected))
+}
+
 fn get_local_ip() -> Option<String> {
     // Try multiple methods to get a valid LAN IP, in order of preference
 
@@ -86,6 +155,11 @@ fn enumerate_adapters() -> Option<String> {
         info!("netsh interface show interface output:\n{}", stdout);
 
         for line in stdout.lines() {
+            if let Some((name, is_connected)) = parse_interface_state_line(line) {
+                interface_connected.insert(name.clone(), is_connected);
+                info!("Interface '{}' connected={} (robust parse)", name, is_connected);
+                continue;
+            }
             let trimmed = line.trim();
             let trimmed_lower = trimmed.to_lowercase();
             // Check for both English and Chinese states
@@ -179,18 +253,8 @@ fn enumerate_adapters() -> Option<String> {
 
         let name_lower = current_name.to_lowercase();
 
-        // Skip virtual interfaces and empty names
-        if name_lower.contains("loopback")
-            || name_lower.contains("isatap")
-            || name_lower.contains("teredo")
-            || name_lower.contains("vethernet")
-            || name_lower.contains("hyper-v")
-            || name_lower.contains("wsl")
-            || name_lower.contains("docker")
-            || name_lower.contains("virtual")
-            || name_lower.contains("meta")
-            || current_name.is_empty()
-        {
+        // Skip obviously virtual interfaces and empty names
+        if is_likely_virtual_interface(&name_lower) || current_name.is_empty() {
             continue;
         }
 
@@ -249,22 +313,35 @@ fn enumerate_adapters() -> Option<String> {
             && !ip_lower.starts_with("198.19.")
     });
 
-    // Sort by interface metric (lower = more preferred = currently active)
-    interfaces.sort_by_key(|i| i.interface_metric);
-
     info!("enumerate_adapters: found {} valid connected interfaces with gateways", interfaces.len());
     for (i, intf) in interfaces.iter().enumerate() {
         info!("  {}. '{}' - IP: {:?}, has_gateway: {}, metric: {}, connected: {}",
               i + 1, intf.name, intf.ip, intf.has_gateway, intf.interface_metric, intf.is_connected);
     }
 
+    // Prefer private LAN IP + non-virtual interface, then metric.
+    interfaces.sort_by_key(|i| {
+        let ip = i.ip.as_deref().unwrap_or("");
+        let private_rank = if is_private_ipv4(ip) { 0 } else { 1 };
+        let virtual_rank = if is_likely_virtual_interface(&i.name.to_lowercase()) { 1 } else { 0 };
+        (private_rank, virtual_rank, i.interface_metric)
+    });
+
     // Select the interface with lowest metric (currently active network)
     if let Some(intf) = interfaces.first() {
-        info!("enumerate_adapters: selected interface '{}' with IP {} (metric: {})",
-              intf.name, intf.ip.as_ref().unwrap(), intf.interface_metric);
+        let ip = intf.ip.as_deref().unwrap_or("");
+        info!(
+            "enumerate_adapters: selected interface '{}' with IP {} (metric: {}, private_lan: {}, virtual_like: {})",
+            intf.name,
+            ip,
+            intf.interface_metric,
+            is_private_ipv4(ip),
+            is_likely_virtual_interface(&intf.name.to_lowercase())
+        );
         return intf.ip.clone();
     }
 
+    info!("enumerate_adapters: no eligible interface found after filtering");
     None
 }
 
@@ -304,6 +381,10 @@ fn build_pairing_qr_payload(ip: Option<&str>, port: u16, code: &str) -> Result<S
     let ip = ip.ok_or_else(|| "Unable to determine local IP address".to_string())?;
     let device_name = get_hostname();
     let device_id = format!("windows-{}", device_name.to_lowercase().replace(' ', "-"));
+    info!(
+        "build_pairing_qr_payload: ip={}, port={}, code={}, device_name={}, device_id={}",
+        ip, port, code, device_name, device_id
+    );
 
     serde_json::to_string(&serde_json::json!({
         "ip": ip,
@@ -381,6 +462,13 @@ pub async fn get_pairing_qr_code(state: State<'_, AppState>) -> Result<PairingQR
     let port = manager.get_port();
     let expires_in = 120u64;
     let ip = get_local_ip();
+    info!(
+        "get_pairing_qr_code: pairing_mode={}, code={}, port={}, selected_ip={:?}",
+        manager.is_pairing_mode(),
+        code,
+        port,
+        ip
+    );
     
     let qr_content = build_pairing_qr_payload(ip.as_deref(), port, &code)?;
 
@@ -448,6 +536,13 @@ pub async fn start_pairing(state: State<'_, AppState>) -> Result<StartPairingRes
     );
 
     tracing::info!("Start pairing - generated code: {}, ip: {:?}, port: {}", code, ip, port);
+    if let Some(selected_ip) = ip.as_deref() {
+        tracing::info!(
+            "Start pairing network diagnostic - selected_ip={}, private_lan={}",
+            selected_ip,
+            is_private_ipv4(selected_ip)
+        );
+    }
     tracing::info!("QR content length: {}", qr_content.len());
 
     Ok(StartPairingResult {
