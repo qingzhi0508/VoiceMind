@@ -58,6 +58,19 @@ class ConnectionManager: NSObject {
     private let speechManager = SpeechRecognitionManager.shared
     private let remoteMicrophoneMonitorController = RemoteMicrophoneMonitorController()
 
+    /// 当前是否正在通过 Mac 喇叭播放手机麦克风音频
+    var isMicMonitorActive: Bool {
+        remoteMicrophoneMonitorController.isRelayActive
+    }
+
+    /// 记录以 playThrough 模式启动的 session，即使播放结束仍保留，用于结果到达时判断是否跳过注入
+    private var playThroughSessions: Set<String> = []
+
+    /// 判断指定 session 是否为麦克风播放模式
+    func isPlayThroughSession(_ sessionId: String) -> Bool {
+        playThroughSessions.contains(sessionId)
+    }
+
     // 当前会话 ID（用于匹配识别结果）
     private var currentSessionId: String?
 
@@ -489,6 +502,10 @@ extension ConnectionManager: WebSocketServerDelegate {
                 format: payload.format,
                 playThroughMacSpeaker: payload.playThroughMacSpeaker
             )
+
+            if payload.playThroughMacSpeaker {
+                playThroughSessions.insert(payload.sessionId)
+            }
         } catch {
             print("⚠️ 启动远端麦克风播放失败，已降级为仅识别: \(error)")
         }

@@ -102,13 +102,20 @@ extension MenuBarController: ConnectionManagerDelegate {
         sessionTimer = nil
 
         DispatchQueue.main.async {
+            self.noteText = payload.text
+            self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
+
+            // 麦克风播放模式的 session 不自动注入到光标位置
+            if self.connectionManager.isPlayThroughSession(payload.sessionId) {
+                print("🔊 麦克风播放模式 (session: \(payload.sessionId))，跳过文本注入")
+                return
+            }
+
             self.restoreInjectionTargetApplicationIfNeeded {
                 self.handleAutoInjectedText(
                     payload.text,
                     missingTargetTitle: AppLocalization.localizedString("text_injection_missing_target_title")
                 )
-                self.noteText = payload.text
-                self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
             }
         }
     }

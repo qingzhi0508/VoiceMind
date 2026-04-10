@@ -39,8 +39,9 @@ final class RemoteMicrophoneMonitorPlayer: RemoteMicrophoneMonitorPlaying {
 
         stop()
 
+        // Use Float32 non-interleaved — AVAudioEngine's native format
         guard let audioFormat = AVAudioFormat(
-            commonFormat: .pcmFormatInt16,
+            commonFormat: .pcmFormatFloat32,
             sampleRate: sampleRate,
             channels: channels,
             interleaved: false
@@ -88,38 +89,24 @@ final class RemoteMicrophoneMonitorPlayer: RemoteMicrophoneMonitorPlaying {
 
         buffer.frameLength = AVAudioFrameCount(frameCount)
 
-        guard let channelData = buffer.int16ChannelData else {
-            throw MonitorPlaybackError.invalidPCMData
-        }
-
+        // Convert PCM16 → Float32 with gain, de-interleaving into non-interleaved buffer
         data.withUnsafeBytes { rawBuffer in
-            guard let samples = rawBuffer.bindMemory(to: Int16.self).baseAddress else {
+            guard let srcSamples = rawBuffer.bindMemory(to: Int16.self).baseAddress else {
                 return
             }
 
-            if channelCount == 1 {
-                applyGain(samples: samples, output: channelData[0], count: frameCount)
-                return
-            }
+            guard let floatData = buffer.floatChannelData else { return }
 
-            // De-interleave with gain
             for frameIndex in 0..<frameCount {
-                for channelIndex in 0..<channelCount {
-                    let sampleIndex = frameIndex * channelCount + channelIndex
-                    let boosted = Float(samples[sampleIndex]) * gain
-                    channelData[channelIndex][frameIndex] = Int16(clamping: Int32(boosted))
+                for ch in 0..<channelCount {
+                    let srcIndex = frameIndex * channelCount + ch
+                    let sample = Float(srcSamples[srcIndex]) / Float(Int16.max)
+                    floatData[ch][frameIndex] = sample * gain
                 }
             }
         }
 
         playerNode.scheduleBuffer(buffer)
-    }
-
-    private func applyGain(samples: UnsafePointer<Int16>, output: UnsafeMutablePointer<Int16>, count: Int) {
-        for i in 0..<count {
-            let boosted = Float(samples[i]) * gain
-            output[i] = Int16(clamping: Int32(boosted))
-        }
     }
 
     func stop() {
