@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "release:github": "powershell -ExecutionPolicy Bypass -File ./scripts/publish-github-release.ps1"
   },
   "dependencies": {
     "@tauri-apps/plugin-process": "^2.3.1",
