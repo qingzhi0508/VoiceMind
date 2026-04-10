@@ -46,6 +46,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     self.controller.showUsageGuide()
                 }
             }
+
+            await MacAppUpdateManager.shared.performAutomaticUpdateCheckIfNeeded()
         }
     }
 
@@ -59,15 +61,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             print("❌ Apple Speech 引擎初始化失败: \(error.localizedDescription)")
         }
 
-        // 注册 Sherpa-ONNX 引擎
-        let sherpaOnnx = SherpaOnnxEngine()
+        // 注册 Sherpa-ONNX 引擎（使用 ModelManager 持有的单例）
+        // 不直接显示为可选引擎，而是通过模型管理器选择模型后间接使用
+        let sherpaOnnx = SherpaOnnxModelManager.shared.engine
         do {
             try await sherpaOnnx.initialize()
             SpeechRecognitionManager.shared.registerEngine(sherpaOnnx)
             print("✅ Sherpa-ONNX 引擎已注册")
         } catch {
             print("⚠️ Sherpa-ONNX 引擎初始化失败: \(error.localizedDescription)")
-            // 即使初始化失败也注册，让引擎显示为"不可用"状态
+            // 即使初始化失败也注册，模型下载后可能变为可用
             SpeechRecognitionManager.shared.registerEngine(sherpaOnnx)
         }
 

@@ -1,6 +1,5 @@
 import SwiftUI
 import SharedCore
-import Network
 
 struct StatusWindow: View {
     @ObservedObject var controller: MenuBarController
@@ -8,50 +7,99 @@ struct StatusWindow: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                // Header with App Status
-                HeaderSection(
+            VStack(alignment: .leading, spacing: 18) {
+                StatusHeroCard(
                     pairingState: controller.pairingState,
                     connectionState: controller.connectionState
                 )
 
-                // System Information
-                SystemInfoSection(
-                    localIP: localIPAddress
-                )
-
-                // Device Connection Status
-                DeviceConnectionSection(
-                    pairingState: controller.pairingState,
-                    connectionState: controller.connectionState
-                )
-
-                // Quick Start Guide (only show when unpaired)
-                if case .unpaired = controller.pairingState {
-                    QuickStartSection(
-                        onStartPairing: {
-                            controller.showPairingWindowFromUI()
-                        }
+                StatusPanel(
+                    title: AppLocalization.localizedString("system_info_title"),
+                    description: AppLocalization.localizedString("status_service_title")
+                ) {
+                    StatusValueRow(
+                        icon: "network",
+                        title: AppLocalization.localizedString("system_ip_title"),
+                        value: localIPAddress,
+                        tint: .blue
                     )
                 }
 
-                // Action Buttons
-                ActionButtonsSection(
-                    pairingState: controller.pairingState,
-                    onStartPairing: {
-                        controller.showPairingWindowFromUI()
-                    },
-                    onUnpair: {
-                        controller.unpairDeviceFromUI()
+                StatusPanel(
+                    title: AppLocalization.localizedString("device_connection_title"),
+                    description: AppLocalization.localizedString("status_connection_title")
+                ) {
+                    VStack(spacing: 12) {
+                        StatusValueRow(
+                            icon: "iphone",
+                            title: AppLocalization.localizedString("device_pairing_status"),
+                            value: pairingStatusText,
+                            tint: pairingStatusTint
+                        )
+
+                        if case .paired(_, let deviceName) = controller.pairingState {
+                            StatusValueRow(
+                                icon: "person.circle",
+                                title: AppLocalization.localizedString("device_name"),
+                                value: deviceName,
+                                tint: .blue
+                            )
+                        }
+
+                        StatusValueRow(
+                            icon: "wifi",
+                            title: AppLocalization.localizedString("device_connection_status"),
+                            value: connectionStatusText,
+                            tint: connectionStatusTint
+                        )
                     }
-                )
+                }
+
+                if case .unpaired = controller.pairingState {
+                    StatusPanel(
+                        title: AppLocalization.localizedString("quickstart_title"),
+                        description: AppLocalization.localizedString("status_unpaired_need_pair")
+                    ) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            StatusGuideStep(number: 1, text: String(format: AppLocalization.localizedString("quickstart_step1_format"), AppLocalization.localizedString("app_title")))
+                            StatusGuideStep(number: 2, text: AppLocalization.localizedString("quickstart_step2"))
+                            StatusGuideStep(number: 3, text: AppLocalization.localizedString("quickstart_step3"))
+                            StatusGuideStep(number: 4, text: AppLocalization.localizedString("quickstart_step4"))
+                        }
+                    }
+                }
+
+                StatusPanel(
+                    title: AppLocalization.localizedString("action_start_pairing"),
+                    description: AppLocalization.localizedString("main_nav_collaboration")
+                ) {
+                    VStack(spacing: 12) {
+                        if case .unpaired = controller.pairingState {
+                            StatusActionButton(
+                                title: AppLocalization.localizedString("action_start_pairing"),
+                                systemImage: "link",
+                                emphasized: true,
+                                action: { controller.showPairingWindowFromUI() }
+                            )
+                        }
+
+                        if case .paired = controller.pairingState {
+                            StatusActionButton(
+                                title: AppLocalization.localizedString("action_unpair"),
+                                systemImage: "link.badge.minus",
+                                emphasized: false,
+                                action: { controller.unpairDeviceFromUI() }
+                            )
+                        }
+                    }
+                }
             }
-            .padding()
+            .padding(18)
         }
-        .frame(width: 480, height: 500)
+        .frame(width: 480, height: 520)
+        .background(StatusWindowPalette.pageBackground)
         .onAppear {
             fetchLocalIPAddress()
-            // Refresh every 5 seconds
             Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
                 fetchLocalIPAddress()
                 controller.refreshPublishedState()
@@ -60,53 +108,123 @@ struct StatusWindow: View {
     }
 
     private func fetchLocalIPAddress() {
-        localIPAddress = getLocalIPAddress() ?? AppLocalization.localizedString("status_unavailable")
+        localIPAddress = LocalNetworkAccessPolicy.preferredLocalIPv4() ?? AppLocalization.localizedString("status_unavailable")
     }
 
-    private func getLocalIPAddress() -> String? {
-        LocalNetworkAccessPolicy.preferredLocalIPv4()
+    private var pairingStatusText: String {
+        switch controller.pairingState {
+        case .unpaired:
+            return AppLocalization.localizedString("pairing_status_unpaired")
+        case .pairing:
+            return AppLocalization.localizedString("pairing_status_pairing")
+        case .paired:
+            return AppLocalization.localizedString("pairing_status_paired")
+        }
+    }
+
+    private var pairingStatusTint: Color {
+        switch controller.pairingState {
+        case .unpaired:
+            return StatusWindowPalette.secondaryText
+        case .pairing:
+            return .orange
+        case .paired:
+            return .green
+        }
+    }
+
+    private var connectionStatusText: String {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
+        case .disconnected:
+            return AppLocalization.localizedString("connection_status_disconnected")
+        case .connecting:
+            return AppLocalization.localizedString("connection_status_connecting")
+        case .connected:
+            return AppLocalization.localizedString("connection_status_connected")
+        case .error(let error):
+            return String(format: AppLocalization.localizedString("connection_status_error_format"), error.localizedDescription)
+        }
+    }
+
+    private var connectionStatusTint: Color {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
+        case .disconnected:
+            return StatusWindowPalette.secondaryText
+        case .connecting:
+            return .orange
+        case .connected:
+            return .green
+        case .error:
+            return .red
+        }
     }
 }
 
-// MARK: - Header Section
+private enum StatusWindowPalette {
+    static let pageBackground = Color(nsColor: .windowBackgroundColor)
+    static let cardBackground = Color(nsColor: .controlBackgroundColor)
+    static let softBackground = Color(nsColor: .underPageBackgroundColor)
+    static let border = Color.black.opacity(0.08)
+    static let title = Color.primary
+    static let secondaryText = Color.secondary
+    static let accent = Color.accentColor
+}
 
-struct HeaderSection: View {
+private struct StatusHeroCard: View {
     let pairingState: PairingState
     let connectionState: ConnectionState
 
     var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: statusIcon)
-                .font(.system(size: 48))
-                .foregroundColor(statusColor)
+        HStack(alignment: .top, spacing: 18) {
+            ZStack {
+                Circle()
+                    .fill(statusTint.opacity(0.14))
+                    .frame(width: 58, height: 58)
 
-            VStack(alignment: .leading, spacing: 4) {
+                Image(systemName: statusIcon)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundColor(statusTint)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
                 Text(AppLocalization.localizedString("app_title"))
-                    .font(.title)
-                    .fontWeight(.bold)
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundColor(StatusWindowPalette.title)
 
                 Text(statusText)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(StatusWindowPalette.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .padding()
-        .background(statusColor.opacity(0.1))
-        .cornerRadius(12)
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(StatusWindowPalette.cardBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(StatusWindowPalette.border, lineWidth: 1)
+        )
     }
 
     private var statusIcon: String {
         switch (pairingState, connectionState) {
         case (.paired, .connected):
             return "checkmark.circle.fill"
-        case (.paired, .connecting):
+        case (.paired, .connecting), (.pairing, _):
             return "arrow.triangle.2.circlepath"
         case (.paired, .disconnected):
             return "exclamationmark.triangle.fill"
-        case (.pairing, _):
-            return "arrow.triangle.2.circlepath"
         case (.unpaired, _):
             return "link.circle"
         default:
@@ -114,20 +232,18 @@ struct HeaderSection: View {
         }
     }
 
-    private var statusColor: Color {
+    private var statusTint: Color {
         switch (pairingState, connectionState) {
         case (.paired, .connected):
             return .green
-        case (.paired, .connecting):
+        case (.paired, .connecting), (.pairing, _):
             return .orange
         case (.paired, .disconnected):
             return .red
-        case (.pairing, _):
-            return .blue
         case (.unpaired, _):
-            return .gray
+            return StatusWindowPalette.accent
         default:
-            return .gray
+            return StatusWindowPalette.secondaryText
         }
     }
 
@@ -149,235 +265,115 @@ struct HeaderSection: View {
     }
 }
 
-// MARK: - System Info Section
+private struct StatusPanel<Content: View>: View {
+    let title: String
+    let description: String
+    @ViewBuilder let content: Content
 
-struct SystemInfoSection: View {
-    let localIP: String
+    init(title: String, description: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.description = description
+        self.content = content()
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(AppLocalization.localizedString("system_info_title"))
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundColor(StatusWindowPalette.title)
 
-            VStack(spacing: 8) {
-                InfoRow(
-                    icon: "network",
-                    title: AppLocalization.localizedString("system_ip_title"),
-                    value: localIP,
-                    color: .blue
-                )
+                Text(description)
+                    .font(.caption)
+                    .foregroundColor(StatusWindowPalette.secondaryText)
             }
+
+            content
         }
-        .padding()
-        .background(Color.gray.opacity(0.05))
-        .cornerRadius(12)
+        .padding(22)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(StatusWindowPalette.cardBackground.opacity(0.92))
+        )
     }
 }
 
-// MARK: - Device Connection Section
-
-struct DeviceConnectionSection: View {
-    let pairingState: PairingState
-    let connectionState: ConnectionState
+private struct StatusValueRow: View {
+    let icon: String
+    let title: String
+    let value: String
+    let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(AppLocalization.localizedString("device_connection_title"))
-                .font(.headline)
-
-            VStack(spacing: 8) {
-                InfoRow(
-                    icon: "iphone",
-                    title: AppLocalization.localizedString("device_pairing_status"),
-                    value: pairingStatusText,
-                    color: pairingStatusColor
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .foregroundColor(tint)
+                .frame(width: 24, height: 24)
+                .background(
+                    Circle()
+                        .fill(tint.opacity(0.12))
                 )
 
-                if case .paired(_, let deviceName) = pairingState {
-                    InfoRow(
-                        icon: "person.circle",
-                        title: AppLocalization.localizedString("device_name"),
-                        value: deviceName,
-                        color: .blue
-                    )
-                }
+            Text(title)
+                .foregroundColor(StatusWindowPalette.secondaryText)
 
-                InfoRow(
-                    icon: "wifi",
-                    title: AppLocalization.localizedString("device_connection_status"),
-                    value: connectionStatusText,
-                    color: connectionStatusColor
-                )
-            }
-        }
-        .padding()
-        .background(Color.gray.opacity(0.05))
-        .cornerRadius(12)
-    }
+            Spacer()
 
-    private var pairingStatusText: String {
-        switch pairingState {
-        case .unpaired:
-            return AppLocalization.localizedString("pairing_status_unpaired")
-        case .pairing:
-            return AppLocalization.localizedString("pairing_status_pairing")
-        case .paired:
-            return AppLocalization.localizedString("pairing_status_paired")
+            Text(value)
+                .fontWeight(.medium)
+                .foregroundColor(StatusWindowPalette.title)
+                .multilineTextAlignment(.trailing)
         }
-    }
-
-    private var pairingStatusColor: Color {
-        switch pairingState {
-        case .unpaired:
-            return .gray
-        case .pairing:
-            return .blue
-        case .paired:
-            return .green
-        }
-    }
-
-    private var connectionStatusText: String {
-        switch MacConnectionPresentationPolicy.displayState(
-            pairingState: pairingState,
-            connectionState: connectionState
-        ) {
-        case .disconnected:
-            return AppLocalization.localizedString("connection_status_disconnected")
-        case .connecting:
-            return AppLocalization.localizedString("connection_status_connecting")
-        case .connected:
-            return AppLocalization.localizedString("connection_status_connected")
-        case .error(let error):
-            return String(format: AppLocalization.localizedString("connection_status_error_format"), error.localizedDescription)
-        }
-    }
-
-    private var connectionStatusColor: Color {
-        switch MacConnectionPresentationPolicy.displayState(
-            pairingState: pairingState,
-            connectionState: connectionState
-        ) {
-        case .disconnected:
-            return .gray
-        case .connecting:
-            return .orange
-        case .connected:
-            return .green
-        case .error:
-            return .red
-        }
+        .padding(.vertical, 2)
     }
 }
 
-// MARK: - Quick Start Section
-
-struct QuickStartSection: View {
-    let onStartPairing: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(AppLocalization.localizedString("quickstart_title"))
-                .font(.headline)
-
-            VStack(alignment: .leading, spacing: 8) {
-                GuideStep(number: 1, text: String(format: AppLocalization.localizedString("quickstart_step1_format"), AppLocalization.localizedString("app_title")))
-                GuideStep(number: 2, text: AppLocalization.localizedString("quickstart_step2"))
-                GuideStep(number: 3, text: AppLocalization.localizedString("quickstart_step3"))
-                GuideStep(number: 4, text: AppLocalization.localizedString("quickstart_step4"))
-            }
-        }
-        .padding()
-        .background(Color.blue.opacity(0.1))
-        .cornerRadius(12)
-    }
-}
-
-struct GuideStep: View {
+private struct StatusGuideStep: View {
     let number: Int
     let text: String
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Text("\(number)")
-                .font(.caption)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
+                .font(.caption.weight(.bold))
+                .foregroundColor(StatusWindowPalette.accent)
                 .frame(width: 24, height: 24)
-                .background(Color.blue)
+                .background(StatusWindowPalette.accent.opacity(0.12))
                 .clipShape(Circle())
 
             Text(text)
                 .font(.subheadline)
+                .foregroundColor(StatusWindowPalette.title)
 
             Spacer()
         }
     }
 }
 
-// MARK: - Action Buttons Section
-
-struct ActionButtonsSection: View {
-    let pairingState: PairingState
-    let onStartPairing: () -> Void
-    let onUnpair: () -> Void
-
-    var body: some View {
-        VStack(spacing: 12) {
-            if case .unpaired = pairingState {
-                Button(action: onStartPairing) {
-                    HStack {
-                        Image(systemName: "link")
-                        Text(AppLocalization.localizedString("action_start_pairing"))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-            }
-
-            HStack(spacing: 12) {
-                if case .paired = pairingState {
-                    Button(action: onUnpair) {
-                        HStack {
-                            Image(systemName: "link.badge.minus")
-                            Text(AppLocalization.localizedString("action_unpair"))
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .foregroundColor(.red)
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Supporting Views
-
-struct InfoRow: View {
-    let icon: String
+private struct StatusActionButton: View {
     let title: String
-    let value: String
-    let color: Color
+    let systemImage: String
+    let emphasized: Bool
+    let action: () -> Void
 
     var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(color)
-                .frame(width: 24)
-
-            Text(title)
-                .foregroundColor(.secondary)
-
-            Spacer()
-
-            Text(value)
-                .fontWeight(.medium)
-                .foregroundColor(color)
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
         }
-        .padding(.vertical, 2)
+        .buttonStyle(.plain)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(emphasized ? StatusWindowPalette.accent : StatusWindowPalette.softBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(emphasized ? StatusWindowPalette.accent.opacity(0.08) : StatusWindowPalette.border, lineWidth: 1)
+        )
+        .foregroundColor(emphasized ? .white : StatusWindowPalette.title)
     }
 }
 

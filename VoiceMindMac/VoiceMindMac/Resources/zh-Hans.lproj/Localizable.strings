@@ -92,6 +92,15 @@
 
 "action_start_pairing" = "开始配对";
 "action_unpair" = "解除配对";
+"text_injection_success_title" = "文本已自动输入";
+"text_injection_success_message_format" = "已尝试将以下内容注入当前光标位置：%@";
+"text_injection_missing_target_title" = "未找到可输入控件";
+"text_copy_alert_title" = "文本自动输入失败";
+"text_copy_alert_message_format" = "无法自动输入文本：%@";
+"copy_text_button" = "复制文本";
+"text_injection_permission_title" = "需要辅助功能权限";
+"text_injection_permission_message" = "VoiceMind 需要辅助功能权限，才能把识别结果自动输入到当前光标位置。你也可以先复制文本再手动粘贴。";
+"open_system_settings_button" = "打开系统设置";
 
 
 "qr_pairing_title" = "扫码配对";
@@ -160,7 +169,10 @@
 "settings_theme_system" = "跟随系统";
 "settings_theme_light" = "浅色";
 "settings_theme_dark" = "深色";
+"settings_preferences_header" = "偏好设置";
+"settings_preferences_description" = "调整识别语言、界面语言和显示主题。";
 "settings_network_title" = "网络服务";
+"settings_network_section_description" = "管理本机服务监听端口。";
 "settings_network_port_label" = "监听端口";
 "settings_network_port_placeholder" = "18661";
 "settings_network_port_desc" = "默认端口已改为 18661。修改后如果服务正在运行，会自动重启到新端口。";
@@ -209,13 +221,37 @@
 "records_clear_all_confirm_title" = "清空全部记录";
 "records_clear_all_confirm_message" = "将清空最近 30 天的全部语音记录。";
 
-"about_version" = "版本 1.0";
+"about_version" = "版本";
 "about_title" = "语音输入助手";
 "about_description" = "通过设备进行语音识别，并在电脑应用内实时查看结果";
 "about_help_link" = "查看帮助文档";
 "about_open_guide" = "查看操作指引";
 "about_website" = "官方网站";
 "about_privacy_policy" = "隐私政策";
+"about_update_section_title" = "应用更新";
+"about_update_current_version_format" = "当前版本 %@";
+"about_update_latest_version_format" = "发现新版本 %@";
+"about_update_published_at_format" = "发布时间 %@";
+"about_update_auto_toggle" = "自动检查、下载并安装更新";
+"about_update_idle" = "点击“检查更新”后，将从 GitHub Releases 获取最新版本。";
+"about_update_check_button" = "检查更新";
+"about_update_checking_button" = "检查中...";
+"about_update_install_button" = "下载并安装";
+"about_update_downloading_button" = "下载中...";
+"about_update_checking" = "正在检查最新版本...";
+"about_update_available_format" = "已发现新版本 %@，可以立即下载安装。";
+"about_update_up_to_date" = "当前已经是最新版本。";
+"about_update_downloading" = "正在下载并准备更新包...";
+"about_update_installing" = "正在安装更新...";
+"about_update_installed_relaunching" = "更新包已准备完成，VoiceMind 即将重新打开。";
+"about_update_installer_opened" = "安装包已经打开，请按系统提示完成更新。";
+"about_update_no_installer" = "检测到新版本，但当前 Release 里还没有可用的 macOS 安装包。";
+"about_update_error_invalid_response" = "检查更新失败，服务器返回内容无法识别。";
+"about_update_error_http_status_format" = "检查更新失败，服务器状态码为 %@。";
+"about_update_error_invalid_payload" = "检查更新失败，最新 Release 数据无法解析。";
+"about_update_error_repo_unavailable" = "配置的 GitHub Releases 仓库不可访问，或暂时没有公开的 latest Release。";
+"about_update_error_open_installer" = "安装包已下载，但 macOS 无法自动打开它。";
+"about_update_error_prepare_install" = "更新包已下载，但 VoiceMind 无法准备自动安装，已回退为手动打开安装包。";
 "window_title_usage_guide" = "操作指引";
 "usage_guide_title" = "VoiceMind 操作指引";
 "usage_guide_subtitle" = "首次使用时，你可以先按下面步骤完成配对和开始语音输入。后续也可以在“关于”页再次查看这份指引。";
@@ -275,11 +311,16 @@
 "mac_onboarding_start_badge" = "启动 VOICEMIND";
 "mac_onboarding_start_title" = "启动电脑端 VoiceMind，准备开始第一段协同。";
 "billing_two_device_sync_header" = "双端协同";
+"billing_two_device_sync_section_description" = "查看当前协同权限，并在需要时升级或恢复购买。";
 "billing_two_device_sync_actions_title" = "解锁方式";
 "billing_two_device_sync_restore_button" = "恢复购买";
 "billing_two_device_sync_monthly_button" = "月度无限次 %@";
 "billing_two_device_sync_yearly_button" = "年度无限次 %@";
 "billing_two_device_sync_lifetime_button" = "终身解锁 %@";
+"billing_two_device_sync_plan_monthly_caption" = "适合短期高频协同。";
+"billing_two_device_sync_plan_yearly_caption" = "适合长期稳定使用。";
+"billing_two_device_sync_plan_lifetime_caption" = "一次购买，长期可用。";
+"billing_two_device_sync_free_badge" = "免费版";
 "billing_two_device_sync_monthly_fallback" = "月度无限次";
 "billing_two_device_sync_yearly_fallback" = "年度无限次";
 "billing_two_device_sync_lifetime_fallback" = "终身解锁";

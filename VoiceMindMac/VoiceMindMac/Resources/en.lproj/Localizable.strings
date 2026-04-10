@@ -91,6 +91,15 @@
 
 "action_start_pairing" = "Start Pairing";
 "action_unpair" = "Unpair";
+"text_injection_success_title" = "Text Auto-Inserted";
+"text_injection_success_message_format" = "Attempted to insert the following text at the current cursor position: %@";
+"text_injection_missing_target_title" = "No Writable Input Found";
+"text_copy_alert_title" = "Automatic Text Insertion Failed";
+"text_copy_alert_message_format" = "Unable to automatically insert text: %@";
+"copy_text_button" = "Copy Text";
+"text_injection_permission_title" = "Accessibility Permission Required";
+"text_injection_permission_message" = "VoiceMind needs Accessibility permission to insert recognized text at the current cursor position. You can also copy the text and paste it manually.";
+"open_system_settings_button" = "Open System Settings";
 
 
 "qr_pairing_title" = "QR Pairing";
@@ -159,7 +168,10 @@
 "settings_theme_system" = "Follow System";
 "settings_theme_light" = "Light";
 "settings_theme_dark" = "Dark";
+"settings_preferences_header" = "Preferences";
+"settings_preferences_description" = "Choose recognition language, interface language, and display appearance.";
 "settings_network_title" = "Network Service";
+"settings_network_section_description" = "Manage the local listening port for desktop connectivity.";
 "settings_network_port_label" = "Listening Port";
 "settings_network_port_placeholder" = "18661";
 "settings_network_port_desc" = "The default port is now 18661. If the service is running, it will restart on the new port.";
@@ -208,13 +220,37 @@
 "records_clear_all_confirm_title" = "Clear all records";
 "records_clear_all_confirm_message" = "This will remove all voice records from the last 30 days.";
 
-"about_version" = "Version 1.0";
+"about_version" = "Version";
 "about_title" = "Voice Input Assistant";
 "about_description" = "Use your mobile device for speech recognition and review results inside the desktop app in real time.";
 "about_help_link" = "View Help Documentation";
 "about_open_guide" = "View Usage Guide";
 "about_website" = "Official Website";
 "about_privacy_policy" = "Privacy Policy";
+"about_update_section_title" = "App Updates";
+"about_update_current_version_format" = "Current version %@";
+"about_update_latest_version_format" = "New version %@ is available";
+"about_update_published_at_format" = "Published on %@";
+"about_update_auto_toggle" = "Automatically check, download, and install updates";
+"about_update_idle" = "Use Check for Updates to fetch the latest release from GitHub Releases.";
+"about_update_check_button" = "Check for Updates";
+"about_update_checking_button" = "Checking...";
+"about_update_install_button" = "Download and Install";
+"about_update_downloading_button" = "Downloading...";
+"about_update_checking" = "Checking the latest release...";
+"about_update_available_format" = "A new version %@ is ready to install.";
+"about_update_up_to_date" = "You're already on the latest version.";
+"about_update_downloading" = "Downloading and preparing the update package...";
+"about_update_installing" = "Installing the update...";
+"about_update_installed_relaunching" = "The update is ready. VoiceMind will relaunch now.";
+"about_update_installer_opened" = "The installer has been opened. Follow the system prompts to finish updating.";
+"about_update_no_installer" = "A newer release was found, but no macOS installer asset is available yet.";
+"about_update_error_invalid_response" = "Update check failed because the server response could not be validated.";
+"about_update_error_http_status_format" = "Update check failed with server status %@.";
+"about_update_error_invalid_payload" = "The latest release payload could not be parsed.";
+"about_update_error_repo_unavailable" = "The configured GitHub Releases repository is unavailable or has no public latest release.";
+"about_update_error_open_installer" = "The installer was downloaded, but macOS could not open it automatically.";
+"about_update_error_prepare_install" = "The update package was downloaded, but VoiceMind could not prepare the automatic install. The package has been opened instead.";
 "window_title_usage_guide" = "Usage Guide";
 "usage_guide_title" = "How to Use VoiceMind";
 "usage_guide_subtitle" = "On your first launch, follow the steps below to pair your devices and start voice input. You can reopen this guide later from the About tab.";
@@ -271,11 +307,16 @@
 "mac_onboarding_connect_step3_title" = "Confirm on phone";
 "mac_onboarding_connect_step3_desc" = "Scan the code, approve the session, and let VoiceMind keep both sides in sync.";
 "billing_two_device_sync_header" = "Two-Device Sync";
+"billing_two_device_sync_section_description" = "Review your current sync access and upgrade or restore when needed.";
 "billing_two_device_sync_actions_title" = "Unlock options";
 "billing_two_device_sync_restore_button" = "Restore Purchases";
 "billing_two_device_sync_monthly_button" = "Monthly Unlimited %@";
 "billing_two_device_sync_yearly_button" = "Yearly Unlimited %@";
 "billing_two_device_sync_lifetime_button" = "Lifetime Unlock %@";
+"billing_two_device_sync_plan_monthly_caption" = "Best for short-term frequent sync.";
+"billing_two_device_sync_plan_yearly_caption" = "Best for long-term everyday use.";
+"billing_two_device_sync_plan_lifetime_caption" = "One purchase for ongoing access.";
+"billing_two_device_sync_free_badge" = "Free";
 "billing_two_device_sync_monthly_fallback" = "Monthly Unlimited";
 "billing_two_device_sync_yearly_fallback" = "Yearly Unlimited";
 "billing_two_device_sync_lifetime_fallback" = "Lifetime Unlock";

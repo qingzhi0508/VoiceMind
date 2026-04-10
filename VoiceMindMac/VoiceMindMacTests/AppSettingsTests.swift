@@ -57,4 +57,33 @@ final class AppSettingsTests: XCTestCase {
 
         settings.themePreference = originalPreference
     }
+
+    func testAutomaticUpdatePreferencePersists() {
+        let settings = AppSettings.shared
+        let originalValue = settings.automaticallyChecksForUpdates
+
+        settings.automaticallyChecksForUpdates = true
+        XCTAssertTrue(settings.automaticallyChecksForUpdates)
+
+        settings.automaticallyChecksForUpdates = false
+        XCTAssertFalse(settings.automaticallyChecksForUpdates)
+
+        settings.automaticallyChecksForUpdates = originalValue
+    }
+
+    func testResetToDefaultsDisablesAutomaticUpdates() {
+        let settings = AppSettings.shared
+        let originalAutomaticUpdates = settings.automaticallyChecksForUpdates
+        let originalLastCheckDate = settings.lastUpdateCheckDate
+
+        settings.automaticallyChecksForUpdates = true
+        settings.lastUpdateCheckDate = Date()
+        settings.resetToDefaults()
+
+        XCTAssertFalse(settings.automaticallyChecksForUpdates)
+        XCTAssertNil(settings.lastUpdateCheckDate)
+
+        settings.automaticallyChecksForUpdates = originalAutomaticUpdates
+        settings.lastUpdateCheckDate = originalLastCheckDate
+    }
 }

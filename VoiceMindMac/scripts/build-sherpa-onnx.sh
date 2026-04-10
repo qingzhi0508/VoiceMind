@@ -146,20 +146,21 @@ if [[ "$CLEAN_BUILD" == "ON" ]]; then
     rm -rf "$XCFRAMEWORK_OUTPUT"
 fi
 
-mkdir -p "$BUILD_DIR"
-cd "$BUILD_DIR"
+mkdir -p "$BUILD_DIR/src"
 
 #--------------------------------
 # 克隆 Sherpa-ONNX
 #--------------------------------
-if [[ ! -d ".git" ]]; then
+if [[ ! -d "$BUILD_DIR/src/.git" ]]; then
     echo "📥 克隆 Sherpa-ONNX 仓库..."
-    git clone --depth 1 --branch "$SHERPA_ONNX_VERSION" "$SHERPA_ONNX_REPO" .
+    git clone --depth 1 --branch "$SHERPA_ONNX_VERSION" "$SHERPA_ONNX_REPO" "$BUILD_DIR/src"
 else
     echo "✅ Sherpa-ONNX 已存在，更新到指定版本..."
-    git fetch --depth 1 origin "$SHERPA_ONNX_VERSION"
-    git checkout "$SHERPA_ONNX_VERSION"
+    git -C "$BUILD_DIR/src" fetch --depth 1 origin "$SHERPA_ONNX_VERSION"
+    git -C "$BUILD_DIR/src" checkout "$SHERPA_ONNX_VERSION"
 fi
+
+cd "$BUILD_DIR"
 
 #--------------------------------
 # 配置 CMake
@@ -209,7 +210,7 @@ fi
 # CMAKE_ARGS+=(-DONNXRUNTIME_ROOT="$ONNX_RUNTIME_ROOT")
 
 # 运行 CMake
-cmake "${CMAKE_ARGS[@]}" ..
+cmake "${CMAKE_ARGS[@]}" src
 
 #--------------------------------
 # 构建

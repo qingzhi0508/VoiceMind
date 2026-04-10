@@ -3,6 +3,28 @@ import Combine
 import SwiftUI
 import SharedCore
 
+private enum AutoSpeechRecognitionLanguagePolicy {
+    static let fallbackLanguage = "zh-CN"
+
+    static func resolvedLanguage(
+        for engine: SpeechRecognitionEngine?,
+        selectedSherpaModelId: String?
+    ) -> String {
+        if engine?.identifier == "sherpa-onnx",
+           let selectedSherpaModelId,
+           let model = SherpaOnnxModelDefinition.catalog.first(where: { $0.id == selectedSherpaModelId }),
+           let modelLanguage = model.languages.first {
+            return modelLanguage
+        }
+
+        if let preferred = Locale.preferredLanguages.first, !preferred.isEmpty {
+            return preferred
+        }
+
+        return fallbackLanguage
+    }
+}
+
 class MenuBarController: NSObject, ObservableObject {
     private enum MainWindowSizingPolicy {
         static let defaultWidth: CGFloat = 850
@@ -12,9 +34,10 @@ class MenuBarController: NSObject, ObservableObject {
     var statusItem: NSStatusItem!
     let connectionManager = ConnectionManager()
     let settings = AppSettings.shared
+    private let textInjectionCoordinator: TextInjectionCoordinator
 
-    // 本地语音识别
-    private let localSpeechRecognizer = LocalSpeechRecognizer()
+    private let speechRecognitionManager: SpeechRecognitionManager
+    private let localAudioRecorder = LocalAudioStreamingRecorder()
 
     @Published var pairingState: PairingState
     @Published var connectionState: ConnectionState
@@ -29,6 +52,7 @@ class MenuBarController: NSObject, ObservableObject {
 
     var currentSessionId: String?
     var sessionTimer: Timer?
+    var pendingInjectionTargetAppPID: pid_t?
 
     var pairingWindow: NSWindow?
     var statusWindow: NSWindow?
@@ -38,17 +62,20 @@ class MenuBarController: NSObject, ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let voiceRecognitionHistoryStore: VoiceRecognitionHistoryStore
 
-    init(voiceRecognitionHistoryStore: VoiceRecognitionHistoryStore = VoiceRecognitionHistoryStore()) {
+    init(
+        voiceRecognitionHistoryStore: VoiceRecognitionHistoryStore = VoiceRecognitionHistoryStore(),
+        textInjector: TextInjecting = AccessibilityTextInjector(),
+        speechRecognitionManager: SpeechRecognitionManager = .shared
+    ) {
         self.pairingState = connectionManager.pairingState
         self.connectionState = connectionManager.connectionState
         self.pairingProgressMessage = connectionManager.pairingProgressMessage
         self.inboundDataRecords = []
         self.voiceRecognitionRecords = []
         self.voiceRecognitionHistoryStore = voiceRecognitionHistoryStore
+        self.textInjectionCoordinator = TextInjectionCoordinator(injector: textInjector)
+        self.speechRecognitionManager = speechRecognitionManager
         super.init()
-
-        // 设置本地语音识别代理
-        localSpeechRecognizer.delegate = self
 
         settings.$serverPort
             .dropFirst()
@@ -101,6 +128,46 @@ class MenuBarController: NSObject, ObservableObject {
         connectionManager.delegate = self
     }
 
+    func captureInjectionTargetApplication() {
+        guard let app = NSWorkspace.shared.frontmostApplication else {
+            pendingInjectionTargetAppPID = nil
+            return
+        }
+
+        if app.bundleIdentifier == Bundle.main.bundleIdentifier {
+            pendingInjectionTargetAppPID = nil
+            return
+        }
+
+        pendingInjectionTargetAppPID = app.processIdentifier
+    }
+
+    func restoreInjectionTargetApplicationIfNeeded(completion: @escaping () -> Void) {
+        guard let pid = pendingInjectionTargetAppPID,
+              let app = NSRunningApplication(processIdentifier: pid) else {
+            pendingInjectionTargetAppPID = nil
+            completion()
+            return
+        }
+
+        let isAlreadyFrontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier == pid
+        pendingInjectionTargetAppPID = nil
+
+        guard !isAlreadyFrontmost else {
+            completion()
+            return
+        }
+
+        if #available(macOS 14.0, *) {
+            app.activate()
+        } else {
+            app.activate(options: [.activateIgnoringOtherApps])
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            completion()
+        }
+    }
+
     func startServices() {
         guard !isServiceRunning else { return }
 
@@ -132,6 +199,8 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     @objc private func showStatus() {
+        captureInjectionTargetApplication()
+
         if let existingWindow = existingMainAppWindow() {
             if existingWindow.isMiniaturized {
                 existingWindow.deminiaturize(nil)
@@ -217,6 +286,8 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func showOnboarding() {
+        captureInjectionTargetApplication()
+
         if onboardingWindow == nil {
             let contentView = OnboardingFlowView(controller: self)
 
@@ -239,6 +310,8 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func showUsageGuide() {
+        captureInjectionTargetApplication()
+
         if usageGuideWindow == nil {
             let contentView = UsageGuideView(
                 onStartPairing: { [weak self] in
@@ -297,6 +370,7 @@ class MenuBarController: NSObject, ObservableObject {
     func prepareForQuit() {
         sessionTimer?.invalidate()
         sessionTimer = nil
+        pendingInjectionTargetAppPID = nil
 
         stopNetworkServices()
 
@@ -312,6 +386,8 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func showPairingWindow(code: String) {
+        captureInjectionTargetApplication()
+
         // Close existing pairing window if any
         if let existingWindow = pairingWindow {
             existingWindow.close()
@@ -396,6 +472,120 @@ class MenuBarController: NSObject, ObservableObject {
         alert.informativeText = message
         alert.alertStyle = .critical
         alert.runModal()
+    }
+
+    func handleAutoInjectedText(_ text: String, missingTargetTitle: String) {
+        handleAutoInjectedText(text, missingTargetTitle: missingTargetTitle, remainingRetries: 4)
+    }
+
+    private func handleAutoInjectedText(
+        _ text: String,
+        missingTargetTitle: String,
+        remainingRetries: Int
+    ) {
+        switch textInjectionCoordinator.deliver(text: text) {
+        case .injected:
+            appendInboundDataRecord(
+                title: AppLocalization.localizedString("text_injection_success_title"),
+                detail: String(
+                    format: AppLocalization.localizedString("text_injection_success_message_format"),
+                    text
+                ),
+                category: .voice
+            )
+        case .permissionRequired:
+            appendInboundDataRecord(
+                title: AppLocalization.localizedString("text_injection_permission_title"),
+                detail: AppLocalization.localizedString("text_injection_permission_message"),
+                category: .connection,
+                severity: .warning
+            )
+            showTextInjectionPermissionError(with: text)
+        case .fallbackToCopy(let reason):
+            if reason == "No focused input target", remainingRetries > 0 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
+                    self?.handleAutoInjectedText(
+                        text,
+                        missingTargetTitle: missingTargetTitle,
+                        remainingRetries: remainingRetries - 1
+                    )
+                }
+                return
+            }
+
+            let titleKey = reason == "No focused input target"
+                ? missingTargetTitle
+                : AppLocalization.localizedString("text_copy_alert_title")
+            let detail = reason == "No focused input target"
+                ? textInjectionFailureDetail(for: reason)
+                : String(
+                    format: AppLocalization.localizedString("text_copy_alert_message_format"),
+                    reason
+                )
+            appendInboundDataRecord(
+                title: titleKey,
+                detail: detail,
+                category: .connection,
+                severity: .warning
+            )
+            showTextCopyAlert(text, error: reason)
+        }
+    }
+
+    private func textInjectionFailureDetail(for reason: String) -> String {
+        let baseDetail = String(
+            format: AppLocalization.localizedString("text_copy_alert_message_format"),
+            reason
+        )
+        let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
+
+        return """
+        \(baseDetail)
+
+        Debug Context
+        \(focusedElementSummary)
+        """
+    }
+
+    func showTextCopyAlert(_ text: String, error: String) {
+        let alert = NSAlert()
+        alert.messageText = AppLocalization.localizedString("text_copy_alert_title")
+        alert.informativeText = String(
+            format: AppLocalization.localizedString("text_copy_alert_message_format"),
+            error
+        )
+        alert.addButton(withTitle: AppLocalization.localizedString("copy_text_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("cancel_button"))
+        alert.alertStyle = .warning
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            copyTextToPasteboard(text)
+        }
+    }
+
+    func showTextInjectionPermissionError(with text: String) {
+        let alert = NSAlert()
+        alert.messageText = AppLocalization.localizedString("text_injection_permission_title")
+        alert.informativeText = AppLocalization.localizedString("text_injection_permission_message")
+        alert.addButton(withTitle: AppLocalization.localizedString("open_system_settings_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("copy_text_button"))
+        alert.addButton(withTitle: AppLocalization.localizedString("cancel_button"))
+        alert.alertStyle = .warning
+
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            PermissionsManager.requestAccessibility()
+            PermissionsManager.openSystemPreferences(for: .accessibility)
+        case .alertSecondButtonReturn:
+            copyTextToPasteboard(text)
+        default:
+            break
+        }
+    }
+
+    private func copyTextToPasteboard(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
     }
 
     func appendInboundDataRecord(
@@ -486,25 +676,16 @@ extension MenuBarController {
     func startLocalRecording() {
         guard !isLocalRecording else { return }
 
-        if LocalSpeechRecognitionStartPolicy.shouldStartImmediately(
-            microphoneGranted: localSpeechRecognizer.checkMicrophonePermission(),
-            speechRecognitionGranted: localSpeechRecognizer.checkSpeechRecognitionPermission()
-        ) {
+        if localAudioRecorder.checkMicrophonePermission() {
             beginLocalRecording()
             return
         }
 
-        // 请求权限
-        localSpeechRecognizer.requestPermissions { [weak self] micGranted, speechGranted in
+        localAudioRecorder.requestMicrophonePermission { [weak self] micGranted in
             guard let self = self else { return }
 
             guard micGranted else {
                 print("❌ 本地录音需要麦克风权限")
-                return
-            }
-
-            guard speechGranted else {
-                print("❌ 本地录音需要语音识别权限，请在系统设置中授权")
                 return
             }
 
@@ -516,7 +697,10 @@ extension MenuBarController {
     func stopLocalRecording() {
         guard isLocalRecording else { return }
 
-        localSpeechRecognizer.stopRecording()
+        localAudioRecorder.stopStreaming()
+        try? speechRecognitionManager.stopRecognition()
+        connectionManager.setupSpeechRecognition()
+        currentSessionId = nil
         isLocalRecording = false
         print("✅ 本地录音已停止")
     }
@@ -537,40 +721,88 @@ extension MenuBarController {
 
     private func beginLocalRecording() {
         do {
-            try localSpeechRecognizer.startRecording()
+            let sessionId = UUID().uuidString
+            let language = AutoSpeechRecognitionLanguagePolicy.resolvedLanguage(
+                for: speechRecognitionManager.currentEngine,
+                selectedSherpaModelId: SherpaOnnxModelManager.shared.selectedModelId
+            )
+
+            speechRecognitionManager.currentEngine?.delegate = self
+            try speechRecognitionManager.startRecognition(sessionId: sessionId, language: language)
+            speechRecognitionManager.currentEngine?.delegate = self
+
+            try localAudioRecorder.startStreaming { [weak self] audioData in
+                guard let self = self else { return }
+
+                do {
+                    try self.speechRecognitionManager.processAudioData(audioData)
+                } catch {
+                    print("❌ 本地音频投递失败: \(error.localizedDescription)")
+                }
+            }
+
+            currentSessionId = sessionId
             isLocalRecording = true
             noteText = ""
-            print("✅ 本地录音已开始")
+            print("✅ 本地录音已开始 - 引擎: \(speechRecognitionManager.currentEngine?.displayName ?? "未知")")
         } catch {
+            localAudioRecorder.stopStreaming()
+            try? speechRecognitionManager.stopRecognition()
+            connectionManager.setupSpeechRecognition()
             print("❌ 开始本地录音失败: \(error.localizedDescription)")
         }
     }
 }
 
-// MARK: - LocalSpeechRecognizerDelegate
+// MARK: - SpeechRecognitionEngineDelegate
 
-extension MenuBarController: LocalSpeechRecognizerDelegate {
-    func localSpeechRecognizer(_ recognizer: LocalSpeechRecognizer, didRecognizeText text: String, isFinal: Bool) {
+extension MenuBarController: SpeechRecognitionEngineDelegate {
+    func engine(
+        _ engine: SpeechRecognitionEngine,
+        didRecognizeText text: String,
+        sessionId: String,
+        language: String
+    ) {
         DispatchQueue.main.async {
             self.noteText = text
-
-            if isFinal {
-                self.isLocalRecording = false
-                self.appendVoiceRecognitionRecord(text, source: .localMac)
-            }
+            self.appendVoiceRecognitionRecord(text, source: .localMac)
         }
     }
 
-    func localSpeechRecognizer(_ recognizer: LocalSpeechRecognizer, didFailWithError error: Error) {
+    func engine(
+        _ engine: SpeechRecognitionEngine,
+        didFailWithError error: Error,
+        sessionId: String
+    ) {
         DispatchQueue.main.async {
             self.isLocalRecording = false
+            self.currentSessionId = nil
+            self.localAudioRecorder.stopStreaming()
+            self.connectionManager.setupSpeechRecognition()
             print("❌ 本地语音识别失败: \(error.localizedDescription)")
+        }
+    }
+
+    func engine(
+        _ engine: SpeechRecognitionEngine,
+        didReceivePartialResult text: String,
+        sessionId: String
+    ) {
+        DispatchQueue.main.async {
+            self.noteText = text
         }
     }
 }
 
 // MARK: - NSWindowDelegate
 extension MenuBarController: NSWindowDelegate {
+    func windowDidBecomeKey(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else { return }
+        let transientWindows = [pairingWindow, onboardingWindow, usageGuideWindow, statusWindow]
+        let isTransientWindow = transientWindows.contains { $0 === window }
+        guard isTransientWindow else { return }
+    }
+
     func windowDidExitFullScreen(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
         let transientWindows = [pairingWindow, onboardingWindow, usageGuideWindow, statusWindow]
@@ -585,6 +817,7 @@ extension MenuBarController: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         if let window = notification.object as? NSWindow {
             if window === pairingWindow {
+                connectionManager.cancelPairing()
                 pairingWindow = nil
             } else if window === statusWindow {
                 statusWindow = nil

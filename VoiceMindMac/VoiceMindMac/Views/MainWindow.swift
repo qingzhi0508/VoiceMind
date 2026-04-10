@@ -27,48 +27,48 @@ private extension Color {
 
 enum MainWindowColors {
     static let pageBackground = Color.adaptive(
-        light: (0.95, 0.96, 0.985, 1),
-        dark: (0.08, 0.1, 0.14, 1)
+        light: (0.953, 0.953, 0.965, 1),
+        dark: (0.095, 0.095, 0.11, 1)
     )
     static let sidebarBackgroundTop = Color.adaptive(
-        light: (0.965, 0.972, 0.988, 1),
-        dark: (0.1, 0.12, 0.17, 1)
+        light: (0.944, 0.946, 0.958, 1),
+        dark: (0.108, 0.108, 0.125, 1)
     )
     static let sidebarBackgroundBottom = Color.adaptive(
-        light: (0.935, 0.945, 0.972, 1),
-        dark: (0.08, 0.1, 0.15, 1)
+        light: (0.934, 0.936, 0.949, 1),
+        dark: (0.098, 0.098, 0.115, 1)
     )
     static let canvasBackground = Color.adaptive(
-        light: (1, 1, 1, 1),
-        dark: (0.11, 0.13, 0.18, 1)
+        light: (0.985, 0.986, 0.992, 1),
+        dark: (0.122, 0.124, 0.142, 1)
     )
     static let canvasBorder = Color.adaptive(
-        light: (0, 0, 0, 0.08),
-        dark: (1, 1, 1, 0.08)
+        light: (0, 0, 0, 0.075),
+        dark: (1, 1, 1, 0.075)
     )
     static let title = Color.adaptive(
-        light: (0.09, 0.12, 0.2, 1),
-        dark: (0.93, 0.95, 0.99, 1)
+        light: (0.114, 0.114, 0.122, 1),
+        dark: (0.93, 0.93, 0.95, 1)
     )
     static let primaryText = Color.adaptive(
-        light: (0.18, 0.22, 0.3, 1),
-        dark: (0.82, 0.86, 0.94, 1)
+        light: (0.212, 0.218, 0.247, 1),
+        dark: (0.82, 0.83, 0.87, 1)
     )
     static let secondaryText = Color.adaptive(
-        light: (0.42, 0.48, 0.6, 1),
-        dark: (0.61, 0.68, 0.8, 1)
+        light: (0.43, 0.45, 0.51, 1),
+        dark: (0.58, 0.6, 0.67, 1)
     )
     static let sidebarText = Color.adaptive(
-        light: (0.3, 0.36, 0.48, 1),
-        dark: (0.74, 0.79, 0.88, 1)
+        light: (0.295, 0.305, 0.35, 1),
+        dark: (0.72, 0.73, 0.79, 1)
     )
     static let sidebarSelectedFill = Color.adaptive(
-        light: (0.84, 0.89, 0.98, 1),
-        dark: (0.18, 0.24, 0.35, 1)
+        light: (1, 1, 1, 0.92),
+        dark: (0.18, 0.19, 0.23, 1)
     )
     static let sidebarSelectedBorder = Color.adaptive(
-        light: (0.48, 0.74, 0.96, 1),
-        dark: (0.38, 0.63, 0.95, 1)
+        light: (0, 0, 0, 0.065),
+        dark: (1, 1, 1, 0.06)
     )
     static let spotlightTop = Color.adaptive(
         light: (0.99, 0.96, 0.82, 1),
@@ -79,24 +79,24 @@ enum MainWindowColors {
         dark: (0.22, 0.18, 0.08, 1)
     )
     static let cardBorder = Color.adaptive(
-        light: (0.84, 0.88, 0.95, 1),
-        dark: (0.23, 0.29, 0.39, 1)
+        light: (0, 0, 0, 0.07),
+        dark: (1, 1, 1, 0.07)
     )
     static let softSurface = Color.adaptive(
-        light: (0.965, 0.972, 0.988, 1),
-        dark: (0.14, 0.17, 0.23, 1)
+        light: (0.962, 0.964, 0.973, 1),
+        dark: (0.152, 0.155, 0.178, 1)
     )
     static let cardSurface = Color.adaptive(
-        light: (0.975, 0.98, 0.992, 1),
-        dark: (0.13, 0.15, 0.21, 1)
+        light: (1, 1, 1, 0.96),
+        dark: (0.145, 0.147, 0.165, 1)
     )
     static let recentActivitySurface = Color.adaptive(
-        light: (0.99, 0.995, 1.0, 1),
-        dark: (0.16, 0.19, 0.25, 1)
+        light: (0.975, 0.977, 0.984, 1),
+        dark: (0.155, 0.158, 0.182, 1)
     )
     static let secondaryButtonSurface = Color.adaptive(
-        light: (0.94, 0.96, 0.99, 1),
-        dark: (0.18, 0.22, 0.3, 1)
+        light: (0.955, 0.958, 0.97, 1),
+        dark: (0.18, 0.185, 0.21, 1)
     )
 }
 
@@ -325,39 +325,32 @@ struct MainWindow: View {
     }
 
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 28) {
             HStack(spacing: 14) {
                 ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.orange.opacity(0.95),
-                                    Color.yellow.opacity(0.8),
-                                    Color.green.opacity(0.75)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 40, height: 40)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.accentColor.opacity(0.12))
+                        .frame(width: 42, height: 42)
 
                     Image(systemName: "waveform")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.accentColor)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(AppLocalization.localizedString("app_title"))
-                        .font(.system(size: 26, weight: .bold))
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundColor(MainWindowColors.title)
                     Text(AppLocalization.localizedString("main_brand_subtitle"))
-                        .font(.callout)
+                        .font(.subheadline)
                         .foregroundColor(MainWindowColors.secondaryText)
                 }
             }
-            .padding(.top, 8)
+            .padding(.top, 6)
 
-            VStack(spacing: 8) {
+            sidebarGroupTitle("工作区")
+
+            VStack(spacing: 6) {
                 ForEach(MainWindowSection.primaryItems) { item in
                     sidebarItem(item)
                 }
@@ -365,14 +358,17 @@ struct MainWindow: View {
 
             Spacer(minLength: 0)
 
-            VStack(spacing: 10) {
+            sidebarGroupTitle("更多")
+
+            VStack(spacing: 6) {
                 ForEach(MainWindowSection.secondaryItems) { item in
                     sidebarItem(item)
                 }
             }
         }
-        .padding(22)
-        .frame(width: 280)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 24)
+        .frame(width: 246)
         .frame(maxHeight: .infinity, alignment: .topLeading)
         .background(
             LinearGradient(
@@ -394,26 +390,26 @@ struct MainWindow: View {
     private func sidebarItem(_ item: MainWindowSection) -> some View {
         HStack(spacing: 14) {
             Image(systemName: item.systemImage)
-                .font(.system(size: 18, weight: .semibold))
-                .frame(width: 24)
+                .font(.system(size: 16, weight: .semibold))
+                .frame(width: 20)
 
             Text(item.title)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 14, weight: .medium))
 
             Spacer(minLength: 0)
         }
         .foregroundColor(selectedSection == item ? MainWindowColors.title : MainWindowColors.sidebarText)
-        .padding(.horizontal, 18)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(selectedSection == item ? MainWindowColors.sidebarSelectedFill : Color.clear)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(selectedSection == item ? MainWindowColors.sidebarSelectedBorder : Color.clear, lineWidth: 2)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(selectedSection == item ? MainWindowColors.sidebarSelectedBorder : Color.clear, lineWidth: 1)
         )
-        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onTapGesture {
             selectedSection = item
         }
@@ -422,15 +418,23 @@ struct MainWindow: View {
         .accessibilityAddTraits(selectedSection == item ? .isSelected : [])
     }
 
+    private func sidebarGroupTitle(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.system(size: 11, weight: .semibold))
+            .tracking(0.6)
+            .foregroundColor(MainWindowColors.secondaryText)
+            .padding(.horizontal, 8)
+    }
+
     private var contentArea: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(MainWindowColors.canvasBackground)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .stroke(MainWindowColors.canvasBorder, lineWidth: 1)
                 )
-                .shadow(color: Color.black.opacity(0.06), radius: 18, x: 0, y: 10)
+                .shadow(color: Color.black.opacity(0.035), radius: 12, x: 0, y: 6)
 
             ZStack {
                 ForEach(MainWindowPagePersistencePolicy.persistentSections) { section in
@@ -438,10 +442,10 @@ struct MainWindow: View {
                         .modifier(PersistentPageVisibilityModifier(isVisible: selectedSection == section))
                 }
             }
-            .padding(30)
+            .padding(34)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(14)
     }
 
     @ViewBuilder
@@ -449,33 +453,45 @@ struct MainWindow: View {
         switch MainWindowNavigationPolicy.contentSection(for: section) {
         case .notes:
             NotesTab(controller: controller, showsInlineHeader: false)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         case .records:
-            VoiceRecognitionRecordsTab(controller: controller, showsInlineHeader: false)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            WindowPageShell(section: section) {
+                VoiceRecognitionRecordsTab(controller: controller, showsInlineHeader: false)
+            }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         case .collaboration:
-            HomeDashboardView(
-                controller: controller,
-                showsWelcomeHeader: false
-            )
+            WindowPageShell(section: section) {
+                HomeDashboardView(
+                    controller: controller,
+                    showsWelcomeHeader: false
+                )
+            }
         case .data:
-            DataRecordsTab(controller: controller, showsInlineHeader: false)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            WindowPageShell(section: section) {
+                DataRecordsTab(controller: controller, showsInlineHeader: false)
+            }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         case .speech:
-            SpeechRecognitionTab(controller: controller, showsInlineHeader: false)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            WindowPageShell(section: section) {
+                SpeechRecognitionTab(controller: controller, showsInlineHeader: false)
+            }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         case .about:
-            AboutTab(
-                showsInlineHeader: false,
-                onOpenGuide: {
-                    controller.showUsageGuide()
-                },
-                onRevealDebug: {}
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            WindowPageShell(section: section) {
+                AboutTab(
+                    showsInlineHeader: false,
+                    onOpenGuide: {
+                        controller.showUsageGuide()
+                    },
+                    onRevealDebug: {}
+                )
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         case .settings:
-            SettingsTab(settings: settings, controller: controller)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            WindowPageShell(section: section) {
+                SettingsTab(settings: settings, controller: controller)
+            }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
         }
     }
 }
@@ -490,59 +506,62 @@ private struct VoiceRecognitionRecordsTab: View {
     @State private var showsClearAllConfirmation = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 20) {
             if showsInlineHeader {
                 Text(AppLocalization.localizedString("main_nav_records"))
                     .font(.title.weight(.bold))
                     .foregroundColor(MainWindowColors.title)
             }
 
-            HStack(spacing: 12) {
-                Label(
-                    String(format: AppLocalization.localizedString("records_summary_count_format"), filteredRecords.count),
-                    systemImage: "waveform.badge.magnifyingglass"
-                )
-                .font(.subheadline.weight(.medium))
-                .foregroundColor(MainWindowColors.secondaryText)
+            MainWindowSurface(emphasized: true) {
+                VStack(alignment: .leading, spacing: 20) {
+                    HStack(spacing: 12) {
+                        TextField(AppLocalization.localizedString("records_search_placeholder"), text: $keyword)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(maxWidth: 280)
 
-                Spacer()
+                        Spacer(minLength: 0)
 
-                Button(isEditing ? AppLocalization.localizedString("records_action_done") : AppLocalization.localizedString("records_action_edit")) {
-                    if isEditing {
-                        selectedRecordIDs.removeAll()
-                    }
-                    isEditing.toggle()
-                }
-                .buttonStyle(.bordered)
+                        MainWindowStatusChip(
+                            title: String(format: AppLocalization.localizedString("records_summary_count_format"), filteredRecords.count),
+                            systemImage: "waveform.badge.magnifyingglass",
+                            tint: filteredRecords.isEmpty ? MainWindowColors.secondaryText : .blue
+                        )
 
-                TextField(AppLocalization.localizedString("records_search_placeholder"), text: $keyword)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: 260)
-            }
-
-            if bulkActionPolicy.canClearAll || isEditing {
-                HStack(spacing: 12) {
-                    if isEditing {
-                        Button(AppLocalization.localizedString("records_action_select_all")) {
-                            selectedRecordIDs = Set(filteredRecords.map(\.id))
+                        Button(isEditing ? AppLocalization.localizedString("records_action_done") : AppLocalization.localizedString("records_action_edit")) {
+                            if isEditing {
+                                selectedRecordIDs.removeAll()
+                            }
+                            isEditing.toggle()
                         }
                         .buttonStyle(.bordered)
-                        .disabled(filteredRecords.isEmpty || selectedRecordIDs.count == filteredRecords.count)
+                    }
 
-                        Button(AppLocalization.localizedString("records_action_delete_selected")) {
-                            showsDeleteSelectedConfirmation = true
+                    if bulkActionPolicy.canClearAll || isEditing {
+                        HStack(spacing: 12) {
+                            if isEditing {
+                                Button(AppLocalization.localizedString("records_action_select_all")) {
+                                    selectedRecordIDs = Set(filteredRecords.map(\.id))
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(filteredRecords.isEmpty || selectedRecordIDs.count == filteredRecords.count)
+
+                                Button(AppLocalization.localizedString("records_action_delete_selected")) {
+                                    showsDeleteSelectedConfirmation = true
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(!bulkActionPolicy.canDeleteSelection)
+                            }
+
+                            Spacer()
+
+                            Button(AppLocalization.localizedString("records_action_clear_all")) {
+                                showsClearAllConfirmation = true
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(!bulkActionPolicy.canClearAll)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(!bulkActionPolicy.canDeleteSelection)
                     }
-
-                    Spacer()
-
-                    Button(AppLocalization.localizedString("records_action_clear_all")) {
-                        showsClearAllConfirmation = true
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(!bulkActionPolicy.canClearAll)
                 }
             }
 
@@ -552,7 +571,7 @@ private struct VoiceRecognitionRecordsTab: View {
                     systemImage: "text.magnifyingglass",
                     description: Text(AppLocalization.localizedString(recordsEmptyDescriptionKey))
                 )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 22, pinnedViews: [.sectionHeaders]) {
@@ -567,13 +586,16 @@ private struct VoiceRecognitionRecordsTab: View {
                                 HStack {
                                     Text(section.title)
                                         .font(.headline.weight(.semibold))
-                                        .foregroundColor(MainWindowColors.secondaryText)
+                                        .foregroundColor(MainWindowColors.title)
+
                                     Spacer()
+
                                     Text(String(format: AppLocalization.localizedString("records_section_count_format"), section.records.count))
                                         .font(.caption.weight(.medium))
                                         .foregroundColor(MainWindowColors.secondaryText)
                                 }
-                                .padding(.vertical, 4)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 8)
                                 .background(MainWindowColors.canvasBackground)
                             }
                         }
@@ -656,52 +678,44 @@ private struct VoiceRecognitionRecordsTab: View {
     }
 
     private func voiceRecognitionRecordCard(_ record: VoiceRecognitionRecord) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            if isEditing {
-                Image(systemName: selectedRecordIDs.contains(record.id) ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(selectedRecordIDs.contains(record.id) ? .accentColor : MainWindowColors.secondaryText)
-                    .padding(.top, 2)
-            }
-
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(record.createdAt.formatted(date: .omitted, time: .shortened))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(MainWindowColors.title)
-
-                        Text(AppLocalization.localizedString(record.source.localizedTitleKey))
-                            .font(.caption.weight(.medium))
-                            .foregroundColor(MainWindowColors.secondaryText)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule()
-                                    .fill(MainWindowColors.softSurface)
-                            )
-                    }
-
-                    Spacer()
+        MainWindowSurface {
+            HStack(alignment: .top, spacing: 14) {
+                if isEditing {
+                    Image(systemName: selectedRecordIDs.contains(record.id) ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(selectedRecordIDs.contains(record.id) ? .accentColor : MainWindowColors.secondaryText)
+                        .padding(.top, 2)
                 }
 
-                Text(record.text)
-                    .font(.body)
-                    .foregroundColor(MainWindowColors.primaryText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(record.createdAt.formatted(date: .omitted, time: .shortened))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(MainWindowColors.title)
+
+                            Text(AppLocalization.localizedString(record.source.localizedTitleKey))
+                                .font(.caption.weight(.medium))
+                                .foregroundColor(MainWindowColors.secondaryText)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(
+                                    Capsule()
+                                        .fill(MainWindowColors.softSurface)
+                                )
+                        }
+
+                        Spacer()
+                    }
+
+                    Text(record.text)
+                        .font(.body)
+                        .foregroundColor(MainWindowColors.primaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                }
             }
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(MainWindowColors.cardSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
-        )
         .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .onTapGesture {
             guard isEditing else { return }
@@ -746,16 +760,94 @@ private struct WindowPageShell<Content: View>: View {
         VStack(alignment: .leading, spacing: 24) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(section.title)
-                    .font(.system(size: 40, weight: .bold))
+                    .font(.system(size: 34, weight: .semibold))
                     .foregroundColor(MainWindowColors.title)
                 Text(section.subtitle)
-                    .font(.callout)
+                    .font(.subheadline)
                     .foregroundColor(MainWindowColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             content
                 .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+    }
+}
+
+struct MainWindowSurface<Content: View>: View {
+    let emphasized: Bool
+    @ViewBuilder let content: Content
+
+    init(emphasized: Bool = false, @ViewBuilder content: () -> Content) {
+        self.emphasized = emphasized
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .padding(emphasized ? 28 : 22)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: emphasized ? 24 : 20, style: .continuous)
+                    .fill(emphasized ? MainWindowColors.cardSurface : MainWindowColors.recentActivitySurface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: emphasized ? 24 : 20, style: .continuous)
+                    .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+            )
+    }
+}
+
+struct MainWindowStatusChip: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        Label(title, systemImage: systemImage)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundColor(tint)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(
+                Capsule()
+                    .fill(tint.opacity(0.12))
+            )
+    }
+}
+
+private struct MainWindowMetricCard: View {
+    let title: String
+    let value: String
+    let detail: String
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        MainWindowSurface {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    Label(title, systemImage: systemImage)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(MainWindowColors.secondaryText)
+
+                    Spacer()
+                }
+
+                Text(value)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundColor(MainWindowColors.title)
+                    .lineLimit(2)
+
+                Text(detail)
+                    .font(.subheadline)
+                    .foregroundColor(MainWindowColors.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                RoundedRectangle(cornerRadius: 999, style: .continuous)
+                    .fill(tint.opacity(0.14))
+                    .frame(width: 40, height: 4)
+            }
         }
     }
 }
@@ -823,116 +915,99 @@ private struct HomeDashboardView: View {
     }
 
     private var collaborationControlsCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(AppLocalization.localizedString("status_connection_title"))
-                        .font(.title3.weight(.semibold))
-                        .foregroundColor(MainWindowColors.title)
+        MainWindowSurface(emphasized: true) {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(AppLocalization.localizedString("status_connection_title"))
+                            .font(.title3.weight(.semibold))
+                            .foregroundColor(MainWindowColors.title)
 
-                    Text(spotlightDescription)
-                        .font(.callout)
-                        .foregroundColor(MainWindowColors.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                        Text(spotlightDescription)
+                            .font(.subheadline)
+                            .foregroundColor(MainWindowColors.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
 
-                Spacer(minLength: 18)
+                    Spacer(minLength: 18)
 
-                Image(systemName: "iphone.and.arrow.forward")
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundColor(.blue)
-                    .padding(12)
-                    .background(
-                        Circle()
-                            .fill(Color.blue.opacity(0.12))
-                    )
-            }
-
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: 14),
-                    GridItem(.flexible(), spacing: 14)
-                ],
-                spacing: 14
-            ) {
-                collaborationStatusCard(
-                    title: AppLocalization.localizedString("status_label"),
-                    value: connectionSummaryValue,
-                    tint: spotlightTint,
-                    systemImage: "antenna.radiowaves.left.and.right"
-                )
-
-                collaborationStatusCard(
-                    title: AppLocalization.localizedString("status_service_label"),
-                    value: serviceSummaryValue,
-                    tint: controller.isServiceRunning ? .green : .orange,
-                    systemImage: "server.rack"
-                )
-
-                if let deviceName = controlsPolicy.pairedDeviceName {
-                    collaborationStatusCard(
-                        title: AppLocalization.localizedString("status_paired_device_label"),
-                        value: deviceName,
-                        tint: .blue,
-                        systemImage: "iphone"
+                    MainWindowStatusChip(
+                        title: connectionSummaryValue,
+                        systemImage: "dot.radiowaves.left.and.right",
+                        tint: spotlightTint
                     )
                 }
 
-                collaborationStatusCard(
-                    title: AppLocalization.localizedString("status_ip_label"),
-                    value: LocalNetworkAccessPolicy.preferredLocalIPv4() ?? AppLocalization.localizedString("status_unknown_value"),
-                    tint: MainWindowColors.secondaryText,
-                    systemImage: "network"
-                )
-            }
-
-            HStack(spacing: 14) {
-                spotlightAction(
-                    title: controller.isServiceRunning
-                    ? AppLocalization.localizedString("status_action_stop_service")
-                    : AppLocalization.localizedString("status_action_start_service"),
-                    role: controller.isServiceRunning ? .secondary : .primary
+                LazyVGrid(
+                    columns: [
+                        GridItem(.flexible(), spacing: 14),
+                        GridItem(.flexible(), spacing: 14)
+                    ],
+                    spacing: 14
                 ) {
-                    if controller.isServiceRunning {
-                        controller.stopNetworkServices()
-                    } else {
-                        controller.startNetworkServices()
+                    collaborationStatusCard(
+                        title: AppLocalization.localizedString("status_service_label"),
+                        value: serviceSummaryValue,
+                        tint: controller.isServiceRunning ? .green : .orange,
+                        systemImage: "server.rack"
+                    )
+
+                    collaborationStatusCard(
+                        title: AppLocalization.localizedString("status_ip_label"),
+                        value: LocalNetworkAccessPolicy.preferredLocalIPv4() ?? AppLocalization.localizedString("status_unknown_value"),
+                        tint: MainWindowColors.secondaryText,
+                        systemImage: "network"
+                    )
+
+                    if let deviceName = controlsPolicy.pairedDeviceName {
+                        collaborationStatusCard(
+                            title: AppLocalization.localizedString("status_paired_device_label"),
+                            value: deviceName,
+                            tint: .blue,
+                            systemImage: "iphone"
+                        )
                     }
                 }
 
-                if controlsPolicy.showsStartPairing {
+                HStack(spacing: 14) {
                     spotlightAction(
-                        title: AppLocalization.localizedString("status_action_start_pairing"),
-                        role: .secondary
+                        title: controller.isServiceRunning
+                        ? AppLocalization.localizedString("status_action_stop_service")
+                        : AppLocalization.localizedString("status_action_start_service"),
+                        role: controller.isServiceRunning ? .secondary : .primary
                     ) {
-                        controller.showPairingWindowFromUI()
+                        if controller.isServiceRunning {
+                            controller.stopNetworkServices()
+                        } else {
+                            controller.startNetworkServices()
+                        }
                     }
-                }
 
-                if controlsPolicy.showsUnpair {
-                    spotlightAction(
-                        title: AppLocalization.localizedString("status_action_unpair"),
-                        role: .secondary
-                    ) {
-                        controller.unpairDeviceFromUI()
+                    if controlsPolicy.showsStartPairing {
+                        spotlightAction(
+                            title: AppLocalization.localizedString("status_action_start_pairing"),
+                            role: .secondary
+                        ) {
+                            controller.showPairingWindowFromUI()
+                        }
+                    }
+
+                    if controlsPolicy.showsUnpair {
+                        spotlightAction(
+                            title: AppLocalization.localizedString("status_action_unpair"),
+                            role: .secondary
+                        ) {
+                            controller.unpairDeviceFromUI()
+                        }
                     }
                 }
             }
         }
-        .padding(24)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(MainWindowColors.cardSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
-        )
     }
 
     private func collaborationStatusCard(title: String, value: String, tint: Color, systemImage: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        MainWindowSurface {
+            VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: systemImage)
                     .foregroundColor(tint)
@@ -946,17 +1021,8 @@ private struct HomeDashboardView: View {
                 .foregroundColor(MainWindowColors.title)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(MainWindowColors.softSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
-        )
     }
 
     private func dashboardStat(icon: String, value: String, tint: Color) -> some View {
@@ -1116,120 +1182,184 @@ struct StatusTab: View {
     var showsInlineHeader = true
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(alignment: .leading, spacing: 20) {
             if showsInlineHeader {
-                Text("🎤 \(AppLocalization.localizedString("app_title"))")
-                    .font(.system(size: 32, weight: .bold))
+                Text(AppLocalization.localizedString("status_connection_title"))
+                    .font(.system(size: 32, weight: .semibold))
             }
 
-            // Connection Status
-            GroupBox(label: Label(AppLocalization.localizedString("status_connection_title"), systemImage: "network")) {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Text(AppLocalization.localizedString("status_label"))
-                        Spacer()
-                        connectionStatusView
+            MainWindowSurface(emphasized: true) {
+                VStack(alignment: .leading, spacing: 18) {
+                    HStack(alignment: .top, spacing: 18) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(AppLocalization.localizedString("status_connection_title"))
+                                .font(.title3.weight(.semibold))
+                                .foregroundColor(MainWindowColors.title)
+
+                            Text(statusSummaryText)
+                                .font(.subheadline)
+                                .foregroundColor(MainWindowColors.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 16)
+
+                        MainWindowStatusChip(
+                            title: statusChipTitle,
+                            systemImage: statusChipSystemImage,
+                            tint: statusChipTint
+                        )
                     }
 
-                    if case .paired(_, let deviceName) = controller.pairingState {
-                        Divider()
-                        HStack {
-                            Text(AppLocalization.localizedString("status_paired_device_label"))
-                            Spacer()
-                            Text(deviceName)
-                                .foregroundColor(MainWindowColors.secondaryText)
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.flexible(), spacing: 14),
+                            GridItem(.flexible(), spacing: 14)
+                        ],
+                        spacing: 14
+                    ) {
+                        statusSummaryCard(
+                            title: AppLocalization.localizedString("status_label"),
+                            valueView: AnyView(connectionStatusView),
+                            systemImage: "antenna.radiowaves.left.and.right",
+                            tint: statusChipTint
+                        )
+
+                        statusSummaryCard(
+                            title: AppLocalization.localizedString("status_service_label"),
+                            valueView: AnyView(
+                                Text(controller.isServiceRunning ? AppLocalization.localizedString("status_service_running") : AppLocalization.localizedString("status_service_stopped"))
+                                    .foregroundColor(controller.isServiceRunning ? .green : MainWindowColors.secondaryText)
+                            ),
+                            systemImage: "server.rack",
+                            tint: controller.isServiceRunning ? .green : .orange
+                        )
+
+                        statusSummaryCard(
+                            title: AppLocalization.localizedString("status_ip_label"),
+                            valueView: AnyView(
+                                Text(getLocalIPAddress() ?? AppLocalization.localizedString("status_unknown_value"))
+                                    .foregroundColor(MainWindowColors.title)
+                            ),
+                            systemImage: "network",
+                            tint: .blue
+                        )
+
+                        if case .paired(_, let deviceName) = controller.pairingState {
+                            statusSummaryCard(
+                                title: AppLocalization.localizedString("status_paired_device_label"),
+                                valueView: AnyView(
+                                    Text(deviceName)
+                                        .foregroundColor(MainWindowColors.title)
+                                ),
+                                systemImage: "iphone",
+                                tint: .blue
+                            )
                         }
                     }
 
                     if let progressMessage = effectivePairingProgressMessage {
-                        Divider()
-                        HStack(alignment: .top) {
-                            Text(AppLocalization.localizedString("status_pairing_progress_label"))
-                            Spacer()
-                            Label {
-                                Text(progressMessage)
-                                    .multilineTextAlignment(.trailing)
-                            } icon: {
+                        MainWindowSurface {
+                            HStack(alignment: .top, spacing: 12) {
                                 Image(systemName: pairingProgressIconName)
+                                    .foregroundColor(pairingProgressColor)
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(AppLocalization.localizedString("status_pairing_progress_label"))
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundColor(MainWindowColors.title)
+
+                                    Text(progressMessage)
+                                        .font(.subheadline)
+                                        .foregroundColor(MainWindowColors.secondaryText)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+
+                                Spacer()
                             }
-                            .foregroundColor(pairingProgressColor)
                         }
                     }
+                }
+            }
 
-                    Divider()
-                    HStack {
-                        Text(AppLocalization.localizedString("status_ip_label"))
-                        Spacer()
-                        Text(getLocalIPAddress() ?? AppLocalization.localizedString("status_unknown_value"))
+            MainWindowSurface {
+                VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(AppLocalization.localizedString("status_service_title"))
+                            .font(.headline.weight(.semibold))
+                            .foregroundColor(MainWindowColors.title)
+
+                        Text(controller.isServiceRunning
+                            ? AppLocalization.localizedString("status_service_running")
+                            : AppLocalization.localizedString("status_service_stopped"))
+                            .font(.subheadline)
                             .foregroundColor(MainWindowColors.secondaryText)
                     }
-                }
-                .padding()
-            }
 
-            // Service Status
-            GroupBox(label: Label(AppLocalization.localizedString("status_service_title"), systemImage: "server.rack")) {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Text(AppLocalization.localizedString("status_service_label"))
-                        Spacer()
-                        Text(controller.isServiceRunning ? AppLocalization.localizedString("status_service_running") : AppLocalization.localizedString("status_service_stopped"))
-                            .foregroundColor(controller.isServiceRunning ? .green : MainWindowColors.secondaryText)
+                    HStack(spacing: 14) {
+                        if !controller.isServiceRunning {
+                            statusActionButton(
+                                title: AppLocalization.localizedString("status_action_start_service"),
+                                systemImage: "play.fill",
+                                role: .primary
+                            ) {
+                                controller.startNetworkServices()
+                            }
+                        } else {
+                            statusActionButton(
+                                title: AppLocalization.localizedString("status_action_stop_service"),
+                                systemImage: "stop.fill",
+                                role: .secondary
+                            ) {
+                                controller.stopNetworkServices()
+                            }
+                        }
                     }
                 }
-                .padding()
             }
 
-            Spacer()
-
-            // Control Buttons
-            HStack(spacing: 15) {
-                if !controller.isServiceRunning {
-                    Button(action: {
-                        controller.startNetworkServices()
-                    }) {
-                        Label(AppLocalization.localizedString("status_action_start_service"), systemImage: "play.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                } else {
-                    Button(action: {
-                        controller.stopNetworkServices()
-                    }) {
-                        Label(AppLocalization.localizedString("status_action_stop_service"), systemImage: "stop.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
-            .padding(.horizontal)
-
-            // Pairing Button
             if controller.isServiceRunning {
-                if case .unpaired = controller.pairingState {
-                    Button(action: {
-                        controller.showPairingWindowFromUI()
-                    }) {
-                        Label(AppLocalization.localizedString("status_action_start_pairing"), systemImage: "iphone.and.arrow.forward")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .padding(.horizontal)
-                } else if case .paired(_, let deviceName) = controller.pairingState {
-                    HStack {
-                        Text(String(format: AppLocalization.localizedString("status_paired_device_format"), deviceName))
-                            .foregroundColor(MainWindowColors.secondaryText)
-                        Spacer()
-                        Button(AppLocalization.localizedString("status_action_unpair")) {
-                            controller.unpairDeviceFromUI()
+                MainWindowSurface {
+                    VStack(alignment: .leading, spacing: 14) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(AppLocalization.localizedString("main_nav_collaboration"))
+                                .font(.headline.weight(.semibold))
+                                .foregroundColor(MainWindowColors.title)
+
+                            Text(pairingActionSummary)
+                                .font(.subheadline)
+                                .foregroundColor(MainWindowColors.secondaryText)
                         }
-                        .buttonStyle(.bordered)
+
+                        if case .unpaired = controller.pairingState {
+                            statusActionButton(
+                                title: AppLocalization.localizedString("status_action_start_pairing"),
+                                systemImage: "iphone.and.arrow.forward",
+                                role: .primary
+                            ) {
+                                controller.showPairingWindowFromUI()
+                            }
+                        } else if case .paired(_, let deviceName) = controller.pairingState {
+                            HStack {
+                                Text(String(format: AppLocalization.localizedString("status_paired_device_format"), deviceName))
+                                    .foregroundColor(MainWindowColors.secondaryText)
+                                Spacer()
+                                statusActionButton(
+                                    title: AppLocalization.localizedString("status_action_unpair"),
+                                    systemImage: "link.badge.minus",
+                                    role: .secondary
+                                ) {
+                                    controller.unpairDeviceFromUI()
+                                }
+                                .frame(maxWidth: 180)
+                            }
+                        }
                     }
-                    .padding(.horizontal)
                 }
             }
+
+            Spacer(minLength: 0)
         }
-        .padding()
     }
 
     @ViewBuilder
@@ -1280,6 +1410,121 @@ struct StatusTab: View {
     private func getLocalIPAddress() -> String? {
         LocalNetworkAccessPolicy.preferredLocalIPv4()
     }
+
+    private var statusSummaryText: String {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
+        case .connected:
+            return AppLocalization.localizedString("status_connected_ready")
+        case .connecting:
+            return AppLocalization.localizedString("status_connection_connecting")
+        case .disconnected:
+            return AppLocalization.localizedString("status_unpaired_need_pair")
+        case .error:
+            return AppLocalization.localizedString("status_connection_error")
+        }
+    }
+
+    private var statusChipTitle: String {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
+        case .connected:
+            return AppLocalization.localizedString("status_connection_connected")
+        case .connecting:
+            return AppLocalization.localizedString("status_connection_connecting")
+        case .disconnected:
+            return AppLocalization.localizedString("status_connection_disconnected")
+        case .error:
+            return AppLocalization.localizedString("status_connection_error")
+        }
+    }
+
+    private var statusChipSystemImage: String {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
+        case .connected:
+            return "checkmark.circle.fill"
+        case .connecting:
+            return "circle.dotted"
+        case .disconnected:
+            return "circle"
+        case .error:
+            return "exclamationmark.triangle"
+        }
+    }
+
+    private var statusChipTint: Color {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
+        case .connected:
+            return .green
+        case .connecting:
+            return .orange
+        case .disconnected:
+            return MainWindowColors.secondaryText
+        case .error:
+            return .red
+        }
+    }
+
+    private var pairingActionSummary: String {
+        switch controller.pairingState {
+        case .unpaired:
+            return AppLocalization.localizedString("status_unpaired_need_pair")
+        case .pairing:
+            return AppLocalization.localizedString("status_pairing")
+        case .paired(_, let deviceName):
+            return String(format: AppLocalization.localizedString("status_paired_device_format"), deviceName)
+        }
+    }
+
+    private func statusSummaryCard(title: String, valueView: AnyView, systemImage: String, tint: Color) -> some View {
+        MainWindowSurface {
+            VStack(alignment: .leading, spacing: 10) {
+                Label(title, systemImage: systemImage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(MainWindowColors.secondaryText)
+
+                valueView
+                    .font(.body.weight(.semibold))
+            }
+        }
+    }
+
+    private func statusActionButton(
+        title: String,
+        systemImage: String,
+        role: SpotlightButtonRole,
+        action: @escaping () -> Void
+    ) -> some View {
+        let style = SpotlightActionStylePolicy.style(for: role)
+
+        return Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.headline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
+        .focusEffectDisabled()
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(style.fillColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(style.borderColor, lineWidth: style.borderColor == .clear ? 0 : 1)
+        )
+        .foregroundColor(style.foregroundColor)
+    }
 }
 
 // MARK: - Settings Tab
@@ -1290,115 +1535,133 @@ struct SettingsTab: View {
     @StateObject private var purchaseStore = TwoDeviceSyncPurchaseStore.shared
     var showsInlineHeader = false
     @State private var serverPortText = ""
-    @State private var languageSelection = "zh-CN"
     @State private var uiLanguageSelection = "zh-CN"
     @State private var themeSelection: AppThemePreference = .system
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-            if showsInlineHeader {
-                Text(AppLocalization.localizedString("tab_settings"))
-                    .font(.title2)
-                    .fontWeight(.semibold)
-            }
+            VStack(alignment: .leading, spacing: 18) {
+                if showsInlineHeader {
+                    Text(AppLocalization.localizedString("tab_settings"))
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                }
 
-                settingsSectionCard(
-                    title: AppLocalization.localizedString("settings_language_title")
-                ) {
-                    settingsPickerRow(
-                        title: AppLocalization.localizedString("settings_language_picker")
-                    ) {
-                        Picker(AppLocalization.localizedString("settings_language_picker"), selection: $languageSelection) {
-                            Text(AppLocalization.localizedString("settings_language_zh")).tag("zh-CN")
-                            Text(AppLocalization.localizedString("settings_language_en")).tag("en-US")
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(maxWidth: 260)
-                    }
+                HStack(spacing: 10) {
+                    settingsOverviewBadge(
+                        title: AppLocalization.localizedString("settings_ui_language_title"),
+                        value: localizedLanguageName(for: uiLanguageSelection)
+                    )
+
+                    settingsOverviewBadge(
+                        title: AppLocalization.localizedString("settings_theme_title"),
+                        value: AppLocalization.localizedString(themeSelection.localizedTitleKey)
+                    )
+
+                    settingsOverviewBadge(
+                        title: AppLocalization.localizedString("billing_two_device_sync_header"),
+                        value: syncStatusBadgeTitle
+                    )
                 }
 
                 settingsSectionCard(
-                    title: AppLocalization.localizedString("settings_ui_language_title")
+                    title: AppLocalization.localizedString("settings_preferences_header"),
+                    description: AppLocalization.localizedString("settings_preferences_description")
                 ) {
-                    settingsPickerRow(
-                        title: AppLocalization.localizedString("settings_ui_language_picker")
-                    ) {
-                        Picker(AppLocalization.localizedString("settings_ui_language_picker"), selection: $uiLanguageSelection) {
-                            Text(AppLocalization.localizedString("settings_ui_language_zh")).tag("zh-CN")
-                            Text(AppLocalization.localizedString("settings_ui_language_en")).tag("en-US")
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(maxWidth: 260)
-                    }
-                }
-
-                settingsSectionCard(
-                    title: AppLocalization.localizedString("settings_theme_title")
-                ) {
-                    settingsPickerRow(
-                        title: AppLocalization.localizedString("settings_theme_picker")
-                    ) {
-                        Picker(AppLocalization.localizedString("settings_theme_picker"), selection: $themeSelection) {
-                            ForEach(AppThemePreference.allCases) { preference in
-                                Text(AppLocalization.localizedString(preference.localizedTitleKey))
-                                    .tag(preference)
+                    VStack(alignment: .leading, spacing: 0) {
+                        settingsRow(
+                            title: AppLocalization.localizedString("settings_ui_language_picker"),
+                            detail: nil
+                        ) {
+                            Picker(AppLocalization.localizedString("settings_ui_language_picker"), selection: $uiLanguageSelection) {
+                                Text(AppLocalization.localizedString("settings_ui_language_zh")).tag("zh-CN")
+                                Text(AppLocalization.localizedString("settings_ui_language_en")).tag("en-US")
                             }
+                            .labelsHidden()
+                            .pickerStyle(.menu)
+                            .frame(width: 140)
                         }
-                        .pickerStyle(.segmented)
+
+                        settingsDivider()
+
+                        settingsRow(
+                            title: AppLocalization.localizedString("settings_theme_picker"),
+                            detail: nil
+                        ) {
+                            Picker(AppLocalization.localizedString("settings_theme_picker"), selection: $themeSelection) {
+                                ForEach(AppThemePreference.allCases) { preference in
+                                    Text(AppLocalization.localizedString(preference.localizedTitleKey))
+                                        .tag(preference)
+                                }
+                            }
+                            .labelsHidden()
+                            .pickerStyle(.menu)
+                            .frame(width: 140)
+                        }
                     }
                 }
 
                 settingsSectionCard(
-                    title: AppLocalization.localizedString("billing_two_device_sync_header")
+                    title: AppLocalization.localizedString("billing_two_device_sync_header"),
+                    description: AppLocalization.localizedString("billing_two_device_sync_section_description")
                 ) {
                     VStack(alignment: .leading, spacing: 14) {
-                        settingsInfoRow(
-                            title: macBillingStatusTitle,
-                            detail: macBillingStatusDetail
-                        )
+                        syncStatusBanner
 
                         if MacBillingPresentationPolicy.showsUnlockOptions(for: purchaseStore.entitlement) {
-                            settingsPickerRow(
-                                title: AppLocalization.localizedString("billing_two_device_sync_actions_title")
-                            ) {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    billingActionButton(
-                                        title: billingTitle(for: .monthly),
-                                        isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.monthly.rawValue
-                                    ) {
-                                        Task {
-                                            _ = await purchaseStore.purchase(.monthly)
-                                        }
-                                    }
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(AppLocalization.localizedString("billing_two_device_sync_actions_title"))
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundColor(MainWindowColors.secondaryText)
 
-                                    billingActionButton(
-                                        title: billingTitle(for: .yearly),
-                                        isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.yearly.rawValue
-                                    ) {
-                                        Task {
-                                            _ = await purchaseStore.purchase(.yearly)
-                                        }
+                                billingPlanButton(
+                                    title: billingTitle(for: .monthly),
+                                    subtitle: AppLocalization.localizedString("billing_two_device_sync_plan_monthly_caption"),
+                                    isSelected: purchaseStore.entitlement == .monthly,
+                                    isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.monthly.rawValue
+                                ) {
+                                    Task {
+                                        _ = await purchaseStore.purchase(.monthly)
                                     }
+                                }
 
-                                    billingActionButton(
-                                        title: billingTitle(for: .lifetime),
-                                        isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.lifetime.rawValue
-                                    ) {
-                                        Task {
-                                            _ = await purchaseStore.purchase(.lifetime)
-                                        }
+                                billingPlanButton(
+                                    title: billingTitle(for: .yearly),
+                                    subtitle: AppLocalization.localizedString("billing_two_device_sync_plan_yearly_caption"),
+                                    isSelected: purchaseStore.entitlement == .yearly,
+                                    isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.yearly.rawValue
+                                ) {
+                                    Task {
+                                        _ = await purchaseStore.purchase(.yearly)
+                                    }
+                                }
+
+                                billingPlanButton(
+                                    title: billingTitle(for: .lifetime),
+                                    subtitle: AppLocalization.localizedString("billing_two_device_sync_plan_lifetime_caption"),
+                                    isSelected: purchaseStore.entitlement == .lifetime,
+                                    isLoading: purchaseStore.activePurchaseProductID == TwoDeviceSyncProductKind.lifetime.rawValue
+                                ) {
+                                    Task {
+                                        _ = await purchaseStore.purchase(.lifetime)
                                     }
                                 }
                             }
                         }
 
-                        billingActionButton(
-                            title: AppLocalization.localizedString("billing_two_device_sync_restore_button"),
-                            isLoading: purchaseStore.isRestoringPurchases
-                        ) {
-                            Task {
-                                await purchaseStore.restorePurchases()
+                        HStack(spacing: 12) {
+                            Button(AppLocalization.localizedString("billing_two_device_sync_restore_button")) {
+                                Task {
+                                    await purchaseStore.restorePurchases()
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundColor(.accentColor)
+                            .disabled(purchaseStore.activePurchaseProductID != nil || purchaseStore.isRestoringPurchases)
+
+                            if purchaseStore.isRestoringPurchases {
+                                ProgressView()
+                                    .controlSize(.small)
                             }
                         }
 
@@ -1411,12 +1674,16 @@ struct SettingsTab: View {
                 }
 
                 settingsSectionCard(
-                    title: AppLocalization.localizedString("settings_network_title")
+                    title: AppLocalization.localizedString("settings_network_title"),
+                    description: AppLocalization.localizedString("settings_network_section_description")
                 ) {
-                    VStack(alignment: .leading, spacing: 14) {
-                        settingsInputRow(title: AppLocalization.localizedString("settings_network_port_label")) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        settingsRow(
+                            title: AppLocalization.localizedString("settings_network_port_label"),
+                            detail: AppLocalization.localizedString("settings_network_port_desc")
+                        ) {
                             TextField(AppLocalization.localizedString("settings_network_port_placeholder"), text: $serverPortText)
-                                .frame(width: 140)
+                                .frame(width: 120)
                                 .multilineTextAlignment(.center)
                                 .textFieldStyle(.roundedBorder)
                                 .onChange(of: serverPortText) { _, newValue in
@@ -1430,11 +1697,6 @@ struct SettingsTab: View {
                                     updateSettingsPortIfNeeded(port)
                                 }
                         }
-
-                        Text(AppLocalization.localizedString("settings_network_port_desc"))
-                            .font(.caption)
-                            .foregroundColor(SettingsSurfaceStylePolicy.secondaryTextColor)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
@@ -1445,12 +1707,6 @@ struct SettingsTab: View {
         }
         .task {
             await purchaseStore.prepare()
-        }
-        .onChange(of: languageSelection) { _, newValue in
-            guard settings.language != newValue else { return }
-            DispatchQueue.main.async {
-                settings.language = newValue
-            }
         }
         .onChange(of: uiLanguageSelection) { _, newValue in
             guard settings.uiLanguage != newValue else { return }
@@ -1467,8 +1723,30 @@ struct SettingsTab: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
+    private func settingsOverviewBadge(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(MainWindowColors.secondaryText)
+
+            Text(value)
+                .font(.subheadline.weight(.medium))
+                .foregroundColor(MainWindowColors.title)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(MainWindowColors.softSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
+    }
+
     private func syncLocalSettingsState() {
-        languageSelection = settings.language
         uiLanguageSelection = settings.uiLanguage
         themeSelection = settings.themePreference
         serverPortText = String(settings.serverPort)
@@ -1481,90 +1759,102 @@ struct SettingsTab: View {
         }
     }
 
+    private func localizedLanguageName(for language: String) -> String {
+        switch language {
+        case "en-US":
+            return AppLocalization.localizedString("settings_language_en")
+        default:
+            return AppLocalization.localizedString("settings_language_zh")
+        }
+    }
+
     private func settingsSectionCard<Content: View>(
         title: String,
+        description: String? = nil,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(title)
-                .font(.headline.weight(.semibold))
-                .foregroundColor(MainWindowColors.title)
+        MainWindowSurface {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(.headline.weight(.semibold))
+                        .foregroundColor(MainWindowColors.title)
 
-            content()
+                    if let description, !description.isEmpty {
+                        Text(description)
+                            .font(.caption)
+                            .foregroundColor(MainWindowColors.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                content()
+            }
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(SettingsSurfaceStylePolicy.cardFillColor)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(SettingsSurfaceStylePolicy.cardBorderColor, lineWidth: 1)
-        )
     }
 
-    private func settingsInfoRow(title: String, detail: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.body.weight(.semibold))
-                .foregroundColor(MainWindowColors.title)
-
-            Text(detail)
-                .font(.callout)
-                .foregroundColor(SettingsSurfaceStylePolicy.secondaryTextColor)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(SettingsSurfaceStylePolicy.rowFillColor)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(SettingsSurfaceStylePolicy.cardBorderColor, lineWidth: 1)
-        )
-    }
-
-    private func settingsPickerRow<Content: View>(
+    private func settingsRow<Content: View>(
         title: String,
-        @ViewBuilder control: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.body.weight(.semibold))
-                .foregroundColor(MainWindowColors.title)
-
-            control()
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(SettingsSurfaceStylePolicy.rowFillColor)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(SettingsSurfaceStylePolicy.cardBorderColor, lineWidth: 1)
-        )
-    }
-
-    private func settingsInputRow<Content: View>(
-        title: String,
-        @ViewBuilder control: () -> Content
+        detail: String? = nil,
+        @ViewBuilder trailing: () -> Content
     ) -> some View {
         HStack(alignment: .center, spacing: 18) {
-            Text(title)
-                .font(.body.weight(.semibold))
-                .foregroundColor(MainWindowColors.title)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(MainWindowColors.title)
+
+                if let detail, !detail.isEmpty {
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundColor(SettingsSurfaceStylePolicy.secondaryTextColor)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
 
             Spacer(minLength: 0)
 
-            control()
+            trailing()
+        }
+    }
+
+    private func settingsDivider() -> some View {
+        Divider()
+            .overlay(MainWindowColors.cardBorder)
+    }
+
+    private var syncStatusBanner: some View {
+        HStack(alignment: .top, spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(syncStatusTint.opacity(0.14))
+                    .frame(width: 36, height: 36)
+
+                Image(systemName: syncStatusIcon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(syncStatusTint)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(macBillingStatusTitle)
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(MainWindowColors.title)
+
+                Text(macBillingStatusDetail)
+                    .font(.callout)
+                    .foregroundColor(SettingsSurfaceStylePolicy.secondaryTextColor)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+
+            MainWindowStatusChip(
+                title: syncStatusBadgeTitle,
+                systemImage: syncStatusIcon,
+                tint: syncStatusTint
+            )
         }
         .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(SettingsSurfaceStylePolicy.rowFillColor)
@@ -1573,6 +1863,56 @@ struct SettingsTab: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(SettingsSurfaceStylePolicy.cardBorderColor, lineWidth: 1)
         )
+    }
+
+    private func billingPlanButton(
+        title: String,
+        subtitle: String,
+        isSelected: Bool,
+        isLoading: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.body.weight(.medium))
+                        .foregroundColor(MainWindowColors.title)
+
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(MainWindowColors.secondaryText)
+                }
+
+                Spacer()
+
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.green)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(MainWindowColors.secondaryText)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isSelected ? Color.green.opacity(0.08) : SettingsSurfaceStylePolicy.rowFillColor)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(isSelected ? Color.green.opacity(0.3) : SettingsSurfaceStylePolicy.cardBorderColor, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(purchaseStore.activePurchaseProductID != nil || purchaseStore.isRestoringPurchases)
     }
 
     private var macBillingStatusTitle: String {
@@ -1619,24 +1959,35 @@ struct SettingsTab: View {
         }
     }
 
-    private func billingActionButton(
-        title: String,
-        isLoading: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                }
-
-                Text(title)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+    private var syncStatusTint: Color {
+        switch purchaseStore.entitlement {
+        case .free:
+            return .orange
+        case .monthly, .yearly, .lifetime:
+            return .green
         }
-        .buttonStyle(.bordered)
-        .disabled(purchaseStore.activePurchaseProductID != nil || purchaseStore.isRestoringPurchases)
+    }
+
+    private var syncStatusIcon: String {
+        switch purchaseStore.entitlement {
+        case .free:
+            return "lock.open"
+        case .monthly, .yearly, .lifetime:
+            return "checkmark.shield"
+        }
+    }
+
+    private var syncStatusBadgeTitle: String {
+        switch purchaseStore.entitlement {
+        case .free:
+            return AppLocalization.localizedString("billing_two_device_sync_free_badge")
+        case .monthly:
+            return AppLocalization.localizedString("billing_two_device_sync_monthly_fallback")
+        case .yearly:
+            return AppLocalization.localizedString("billing_two_device_sync_yearly_fallback")
+        case .lifetime:
+            return AppLocalization.localizedString("billing_two_device_sync_lifetime_fallback")
+        }
     }
 }
 
@@ -1673,7 +2024,7 @@ struct DataRecordsTab: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
             if showsInlineHeader {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(AppLocalization.localizedString("data_title"))
@@ -1687,41 +2038,38 @@ struct DataRecordsTab: View {
                 }
             }
 
-            HStack(alignment: .center, spacing: 12) {
-                Text(AppLocalization.localizedString("data_filter_picker"))
-                    .font(.headline)
-                    .foregroundColor(MainWindowColors.secondaryText)
+            MainWindowSurface {
+                HStack(alignment: .center, spacing: 12) {
+                    TextField(AppLocalization.localizedString("data_search_placeholder"), text: $searchText)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 420)
 
-                Picker(AppLocalization.localizedString("data_filter_picker"), selection: $selectedFilter) {
-                    ForEach(DataRecordFilter.allCases) { filter in
-                        Text(filter.title).tag(filter)
+                    Picker(AppLocalization.localizedString("data_filter_picker"), selection: $selectedFilter) {
+                        ForEach(DataRecordFilter.allCases) { filter in
+                            Text(filter.title).tag(filter)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .frame(width: 240)
+
+                    Toggle(AppLocalization.localizedString("data_group_by_session"), isOn: $groupBySession)
+                        .toggleStyle(.checkbox)
+
+                    Spacer(minLength: 0)
+
+                    summaryBadge(
+                        title: AppLocalization.localizedString("data_summary_total"),
+                        value: "\(filteredRecords.count)",
+                        color: MainWindowColors.title,
+                        systemImage: "tray.full"
+                    )
+
+                    Button(AppLocalization.localizedString("data_action_clear")) {
+                        controller.clearInboundDataRecords()
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(controller.inboundDataRecords.isEmpty)
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 260)
-
-                Spacer(minLength: 0)
-
-                Button(AppLocalization.localizedString("data_action_clear")) {
-                    controller.clearInboundDataRecords()
-                }
-                .buttonStyle(.bordered)
-                .disabled(controller.inboundDataRecords.isEmpty)
-            }
-
-            HStack(spacing: 12) {
-                TextField(AppLocalization.localizedString("data_search_placeholder"), text: $searchText)
-                    .textFieldStyle(.roundedBorder)
-
-                Toggle(AppLocalization.localizedString("data_group_by_session"), isOn: $groupBySession)
-                    .toggleStyle(.checkbox)
-            }
-
-            HStack(spacing: 12) {
-                summaryBadge(title: AppLocalization.localizedString("data_summary_total"), value: "\(filteredRecords.count)", color: .secondary)
-                summaryBadge(title: AppLocalization.localizedString("data_summary_voice"), value: "\(filteredVoiceCount)", color: .accentColor)
-                summaryBadge(title: AppLocalization.localizedString("data_summary_pairing"), value: "\(filteredPairingCount)", color: .blue)
-                summaryBadge(title: AppLocalization.localizedString("data_summary_failure"), value: "\(filteredFailureCount)", color: .red)
             }
 
             if filteredRecords.isEmpty {
@@ -1730,7 +2078,7 @@ struct DataRecordsTab: View {
                     systemImage: "tray",
                     description: Text(emptyStateDescription)
                 )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -1865,49 +2213,56 @@ struct DataRecordsTab: View {
                 .textSelection(.enabled)
                 .foregroundColor(failure ? MainWindowColors.title : MainWindowColors.primaryText)
         }
-        .padding(12)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(recordBackgroundColor(isFailure: failure))
         .overlay {
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(failure ? Color.red.opacity(0.45) : Color.clear, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(failure ? Color.red.opacity(0.45) : MainWindowColors.cardBorder, lineWidth: 1)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     @ViewBuilder
     private func sectionHeader(_ title: String, count: Int) -> some View {
         HStack {
             Text(title)
-                .font(.headline)
+                .font(.headline.weight(.semibold))
             Spacer()
             Text(String(format: AppLocalization.localizedString("data_section_count_format"), count))
-                .font(.caption)
+                .font(.caption.weight(.semibold))
                 .foregroundColor(MainWindowColors.secondaryText)
-        }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 6)
-        .background(MainWindowColors.softSurface.opacity(0.95))
-    }
-
-    @ViewBuilder
-    private func summaryBadge(title: String, value: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.caption)
-                .foregroundColor(MainWindowColors.secondaryText)
-            Text(value)
-                .font(.headline)
-                .foregroundColor(color)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
+        .background(MainWindowColors.softSurface.opacity(0.98))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func summaryBadge(title: String, value: String, color: Color, systemImage: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(color)
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(MainWindowColors.secondaryText)
+            }
+
+            Text(value)
+                .font(.title3.weight(.semibold))
+                .foregroundColor(color)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
         .background(MainWindowColors.softSurface)
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(MainWindowColors.cardBorder, lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func isFailureRecord(_ record: InboundDataRecord) -> Bool {
@@ -2000,6 +2355,9 @@ enum NotesTextSelectionPolicy {
 // MARK: - About Tab
 
 struct AboutTab: View {
+    @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var updateManager = MacAppUpdateManager.shared
+
     var showsInlineHeader = true
     let onOpenGuide: () -> Void
     let onRevealDebug: () -> Void
@@ -2008,6 +2366,7 @@ struct AboutTab: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 aboutHero
+                aboutUpdateCard
                 aboutHighlights
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -2017,81 +2376,176 @@ struct AboutTab: View {
     }
 
     private var aboutHero: some View {
-        HStack(alignment: .top, spacing: 22) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.orange.opacity(0.95),
-                                Color.yellow.opacity(0.78),
-                                Color.green.opacity(0.72)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 108, height: 108)
+        MainWindowSurface(emphasized: true) {
+            HStack(alignment: .top, spacing: 22) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .fill(MainWindowColors.softSurface)
+                        .frame(width: 108, height: 108)
 
-                Image(systemName: "waveform")
-                    .font(.system(size: 42, weight: .bold))
-                    .foregroundColor(.white.opacity(0.96))
-            }
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(MainWindowColors.cardSurface)
+                        .frame(width: 74, height: 74)
 
-            VStack(alignment: .leading, spacing: 12) {
-                if showsInlineHeader {
-                    Text(AppLocalization.localizedString("app_title"))
-                        .font(.system(size: 34, weight: .bold))
+                    Image(systemName: "waveform")
+                        .font(.system(size: 34, weight: .semibold))
                         .foregroundColor(MainWindowColors.title)
                 }
 
-                Text(AppLocalization.localizedString("about_title"))
-                    .font(.system(size: 28, weight: .bold))
+                VStack(alignment: .leading, spacing: 12) {
+                    if showsInlineHeader {
+                        Text(AppLocalization.localizedString("app_title"))
+                            .font(.system(size: 34, weight: .semibold))
+                            .foregroundColor(MainWindowColors.title)
+                    }
+
+                    Text(AppLocalization.localizedString("about_title"))
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundColor(MainWindowColors.title)
+
+                    Text(AppLocalization.localizedString("about_description"))
+                        .font(.body)
+                        .foregroundColor(MainWindowColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(spacing: 10) {
+                        MainWindowStatusChip(
+                            title: "\(AppLocalization.localizedString("about_version")) \(updateManager.currentVersionDisplay)",
+                            systemImage: "number.circle",
+                            tint: MainWindowColors.secondaryText
+                        )
+                        .onTapGesture(count: 2, perform: onRevealDebug)
+                    }
+
+                    HStack(spacing: 12) {
+                        Button(AppLocalization.localizedString("about_open_guide")) {
+                            onOpenGuide()
+                        }
+                        .buttonStyle(.borderedProminent)
+
+                        Button(AppLocalization.localizedString("about_website")) {
+                            if let url = URL(string: "https://voicemind.top-list.top") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button(AppLocalization.localizedString("about_privacy_policy")) {
+                            if let url = URL(string: "https://voicemind.top-list.top/privacy.html") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private var aboutUpdateCard: some View {
+        MainWindowSurface {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(alignment: .top, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(AppLocalization.localizedString("about_update_section_title"))
+                            .font(.headline.weight(.semibold))
+                            .foregroundColor(MainWindowColors.title)
+
+                        Text(
+                            String(
+                                format: AppLocalization.localizedString("about_update_current_version_format"),
+                                updateManager.currentVersionDisplay
+                            )
+                        )
+                        .font(.subheadline)
+                        .foregroundColor(MainWindowColors.secondaryText)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle(
+                        AppLocalization.localizedString("about_update_auto_toggle"),
+                        isOn: $settings.automaticallyChecksForUpdates
+                    )
+                    .toggleStyle(.switch)
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(MainWindowColors.title)
 
-                Text(AppLocalization.localizedString("about_description"))
-                    .font(.body)
-                    .foregroundColor(MainWindowColors.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text(updateManager.statusMessage)
+                        .font(.subheadline)
+                        .foregroundColor(MainWindowColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if let latestVersionSummary = updateManager.latestVersionSummary {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(
+                            String(
+                                format: AppLocalization.localizedString("about_update_latest_version_format"),
+                                latestVersionSummary
+                            )
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(MainWindowColors.title)
+
+                        if let latestPublishedDateDescription = updateManager.latestPublishedDateDescription {
+                            Text(
+                                String(
+                                    format: AppLocalization.localizedString("about_update_published_at_format"),
+                                    latestPublishedDateDescription
+                                )
+                            )
+                            .font(.footnote)
+                            .foregroundColor(MainWindowColors.secondaryText)
+                        }
+
+                        if let releaseNotesSummary = updateManager.latestReleaseNotesSummary {
+                            Text(releaseNotesSummary)
+                                .font(.footnote)
+                                .foregroundColor(MainWindowColors.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(MainWindowColors.softSurface)
+                    )
+                }
 
                 HStack(spacing: 12) {
-                    Label(AppLocalization.localizedString("about_version"), systemImage: "number.circle")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(MainWindowColors.secondaryText)
-                        .onTapGesture(count: 2, perform: onRevealDebug)
-
-                    Button(AppLocalization.localizedString("about_open_guide")) {
-                        onOpenGuide()
+                    Button(
+                        updateManager.isCheckingForUpdates
+                            ? AppLocalization.localizedString("about_update_checking_button")
+                            : AppLocalization.localizedString("about_update_check_button")
+                    ) {
+                        Task {
+                            await updateManager.checkForUpdates()
+                        }
                     }
                     .buttonStyle(.borderedProminent)
+                    .disabled(updateManager.isCheckingForUpdates || updateManager.isDownloadingUpdate)
 
-                    Button(AppLocalization.localizedString("about_website")) {
-                        if let url = URL(string: "https://voicemind.top-list.top") {
-                            NSWorkspace.shared.open(url)
+                    if updateManager.selectedAsset != nil {
+                        Button(
+                            updateManager.isDownloadingUpdate
+                                ? AppLocalization.localizedString("about_update_downloading_button")
+                                : AppLocalization.localizedString("about_update_install_button")
+                        ) {
+                            Task {
+                                await updateManager.downloadAndInstallLatestRelease()
+                            }
                         }
+                        .buttonStyle(.bordered)
+                        .disabled(updateManager.isCheckingForUpdates || updateManager.isDownloadingUpdate)
                     }
-                    .buttonStyle(.bordered)
-
-                    Button(AppLocalization.localizedString("about_privacy_policy")) {
-                        if let url = URL(string: "https://voicemind.top-list.top/privacy.html") {
-                            NSWorkspace.shared.open(url)
-                        }
-                    }
-                    .buttonStyle(.bordered)
                 }
             }
-
-            Spacer(minLength: 0)
         }
-        .padding(28)
-        .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(MainWindowColors.cardSurface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
-        )
     }
 
     private var aboutHighlights: some View {
@@ -2111,10 +2565,16 @@ struct AboutTab: View {
     }
 
     private func aboutHighlightCard(systemImage: String, title: String, description: String) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Image(systemName: systemImage)
-                .font(.system(size: 24, weight: .semibold))
-                .foregroundColor(.accentColor)
+            VStack(alignment: .leading, spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(Color.accentColor.opacity(0.12))
+                    .frame(width: 42, height: 42)
+
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.accentColor)
+            }
 
             Text(title)
                 .font(.headline.weight(.semibold))
@@ -2146,61 +2606,104 @@ struct NotesTab: View {
     @ObservedObject var controller: MenuBarController
     var showsInlineHeader = true
 
+    private var controlsPolicy: CollaborationControlsPolicy {
+        CollaborationControlsPolicy(
+            pairingState: controller.pairingState,
+            isServiceRunning: controller.isServiceRunning
+        )
+    }
+
     var body: some View {
-        VStack(spacing: 20) {
-            if showsInlineHeader {
-                Text(AppLocalization.localizedString("note_title"))
-                    .font(.title)
-                    .padding(.top)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                noteWorkspaceCard
             }
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
 
-            // Note text display - expands to fill available space
-            Group {
-                if NotesTextSelectionPolicy.allowsSelection(for: controller.noteText) {
-                    Text(controller.noteText)
-                        .textSelection(.enabled)
-                } else {
-                    Text(AppLocalization.localizedString("note_placeholder"))
-                        .textSelection(.disabled)
-                }
-            }
-            .font(.body)
-            .foregroundColor(controller.noteText.isEmpty ? MainWindowColors.secondaryText : MainWindowColors.title)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding()
-            .background(MainWindowColors.cardSurface)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(MainWindowColors.cardBorder, lineWidth: 1)
-            )
-            .cornerRadius(12)
+    private var heroSection: some View {
+        MainWindowSurface(emphasized: true) {
+            HStack(alignment: .top, spacing: 24) {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(AppLocalization.localizedString("main_home_welcome"))
+                        .font(.system(size: 42, weight: .semibold))
+                        .foregroundColor(MainWindowColors.title)
 
-            // Recording button - centered below text box
-            HStack(spacing: 20) {
-                Spacer()
+                    Text(AppLocalization.localizedString("main_home_subtitle"))
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundColor(MainWindowColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                RecordButton(
-                    isRecording: controller.isLocalRecording,
-                    onStartRecording: {
-                        controller.startLocalRecording()
-                    },
-                    onStopRecording: {
-                        controller.stopLocalRecording()
+                    HStack(spacing: 10) {
+                        MainWindowStatusChip(
+                            title: connectionSummary,
+                            systemImage: "antenna.radiowaves.left.and.right",
+                            tint: connectionTint
+                        )
+
+                        MainWindowStatusChip(
+                            title: controller.isServiceRunning
+                                ? AppLocalization.localizedString("status_service_running")
+                                : AppLocalization.localizedString("status_service_stopped"),
+                            systemImage: "server.rack",
+                            tint: controller.isServiceRunning ? .green : .orange
+                        )
                     }
-                )
+                }
 
-                Spacer()
+                Spacer(minLength: 12)
+
+                VStack(alignment: .trailing, spacing: 12) {
+                    spotlightHomeButton(
+                        title: controller.isServiceRunning
+                            ? AppLocalization.localizedString("status_action_stop_service")
+                            : AppLocalization.localizedString("status_action_start_service"),
+                        role: controller.isServiceRunning ? .secondary : .primary
+                    ) {
+                        if controller.isServiceRunning {
+                            controller.stopNetworkServices()
+                        } else {
+                            controller.startNetworkServices()
+                        }
+                    }
+
+                    if controlsPolicy.showsStartPairing {
+                        spotlightHomeButton(
+                            title: AppLocalization.localizedString("status_action_start_pairing"),
+                            role: .secondary
+                        ) {
+                            controller.showPairingWindowFromUI()
+                        }
+                    } else if controlsPolicy.showsUnpair {
+                        spotlightHomeButton(
+                            title: AppLocalization.localizedString("status_action_unpair"),
+                            role: .secondary
+                        ) {
+                            controller.unpairDeviceFromUI()
+                        }
+                    }
+                }
+                .frame(width: 220)
             }
-            .padding(.bottom, 10)
+        }
+    }
 
-            // Status and clear button
-            HStack(spacing: 20) {
-                Spacer()
+    private var noteWorkspaceCard: some View {
+        MainWindowSurface {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(AppLocalization.localizedString("note_title"))
+                            .font(.title3.weight(.semibold))
+                            .foregroundColor(MainWindowColors.title)
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(controller.isLocalRecording ? AppLocalization.localizedString("note_recording") : AppLocalization.localizedString("note_placeholder"))
-                        .font(.caption)
-                        .foregroundColor(controller.isLocalRecording ? .red : MainWindowColors.secondaryText)
+                        Text(AppLocalization.localizedString("main_notes_subtitle"))
+                            .font(.subheadline)
+                            .foregroundColor(MainWindowColors.secondaryText)
+                    }
+
+                    Spacer()
 
                     Button(action: {
                         controller.clearNote()
@@ -2211,11 +2714,211 @@ struct NotesTab: View {
                     .disabled(controller.noteText.isEmpty)
                 }
 
-                Spacer()
+                Group {
+                    if NotesTextSelectionPolicy.allowsSelection(for: controller.noteText) {
+                        Text(controller.noteText)
+                            .textSelection(.enabled)
+                    } else {
+                        Text(AppLocalization.localizedString("note_placeholder"))
+                            .textSelection(.disabled)
+                    }
+                }
+                .font(.body)
+                .foregroundColor(controller.noteText.isEmpty ? MainWindowColors.secondaryText : MainWindowColors.title)
+                .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
+                .padding(18)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(MainWindowColors.softSurface)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+                )
+
+                HStack(spacing: 18) {
+                    RecordButton(
+                        isRecording: controller.isLocalRecording,
+                        onStartRecording: {
+                            controller.startLocalRecording()
+                        },
+                        onStopRecording: {
+                            controller.stopLocalRecording()
+                        }
+                    )
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(controller.isLocalRecording ? AppLocalization.localizedString("note_recording") : AppLocalization.localizedString("note_placeholder"))
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(controller.isLocalRecording ? .red : MainWindowColors.secondaryText)
+
+                        Text(pairingDetail)
+                            .font(.caption)
+                            .foregroundColor(MainWindowColors.secondaryText)
+                    }
+
+                    Spacer()
+                }
             }
-            .padding(.bottom, 20)
         }
-        .padding()
+    }
+
+    private var recentActivityCard: some View {
+        MainWindowSurface {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(AppLocalization.localizedString("main_home_recent_activity"))
+                    .font(.title3.weight(.semibold))
+                    .foregroundColor(MainWindowColors.title)
+
+                if recentRecords.isEmpty {
+                    Text(AppLocalization.localizedString("data_empty_title"))
+                        .font(.subheadline)
+                        .foregroundColor(MainWindowColors.secondaryText)
+                } else {
+                    VStack(spacing: 12) {
+                        ForEach(recentRecords) { record in
+                            recentRecordRow(record)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func recentRecordRow(_ record: InboundDataRecord) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: recentRecordIcon(for: record))
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(recentRecordTint(for: record))
+                .frame(width: 30, height: 30)
+                .background(recentRecordTint(for: record).opacity(0.12))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(record.timestamp.formatted(date: .omitted, time: .shortened))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(MainWindowColors.title)
+
+                Text(activityCategoryTitle(for: record))
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(MainWindowColors.secondaryText)
+            }
+            .frame(width: 120, alignment: .leading)
+
+            Text(record.detail)
+                .font(.subheadline)
+                .foregroundColor(MainWindowColors.primaryText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(MainWindowColors.softSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(MainWindowColors.cardBorder, lineWidth: 1)
+        )
+    }
+
+    private func activityCategoryTitle(for record: InboundDataRecord) -> String {
+        switch record.category {
+        case .voice:
+            return AppLocalization.localizedString("data_category_voice")
+        case .pairing:
+            return AppLocalization.localizedString("data_category_pairing")
+        case .connection:
+            return AppLocalization.localizedString("data_category_connection")
+        }
+    }
+
+    private func recentRecordIcon(for record: InboundDataRecord) -> String {
+        switch record.category {
+        case .voice:
+            return "waveform.circle.fill"
+        case .pairing:
+            return "link.circle.fill"
+        case .connection:
+            return "antenna.radiowaves.left.and.right"
+        }
+    }
+
+    private func recentRecordTint(for record: InboundDataRecord) -> Color {
+        switch record.category {
+        case .voice:
+            return .accentColor
+        case .pairing:
+            return .blue
+        case .connection:
+            return MainWindowColors.secondaryText
+        }
+    }
+
+    private func spotlightHomeButton(title: String, role: SpotlightButtonRole, action: @escaping () -> Void) -> some View {
+        let style = SpotlightActionStylePolicy.style(for: role)
+
+        return Button(action: action) {
+            Text(title)
+                .font(.system(size: 14, weight: .medium))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+        .focusEffectDisabled()
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(style.fillColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(style.borderColor, lineWidth: style.borderColor == .clear ? 0 : 1)
+        )
+        .foregroundColor(style.foregroundColor)
+    }
+
+    private var recentRecords: [InboundDataRecord] {
+        Array(controller.inboundDataRecords.prefix(3))
+    }
+
+    private var connectionSummary: String {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
+        case .connected:
+            return AppLocalization.localizedString("status_connection_connected")
+        case .connecting:
+            return AppLocalization.localizedString("status_connection_connecting")
+        case .disconnected:
+            return AppLocalization.localizedString("status_connection_disconnected")
+        case .error:
+            return AppLocalization.localizedString("status_connection_error")
+        }
+    }
+
+    private var connectionTint: Color {
+        switch MacConnectionPresentationPolicy.displayState(
+            pairingState: controller.pairingState,
+            connectionState: controller.connectionState
+        ) {
+        case .connected:
+            return .green
+        case .connecting:
+            return .orange
+        case .disconnected:
+            return MainWindowColors.secondaryText
+        case .error:
+            return .red
+        }
+    }
+
+    private var pairingDetail: String {
+        if case .paired(_, let deviceName) = controller.pairingState {
+            return String(format: AppLocalization.localizedString("main_home_paired_summary_format"), deviceName)
+        }
+
+        return AppLocalization.localizedString("main_home_unpaired_summary")
     }
 }
 

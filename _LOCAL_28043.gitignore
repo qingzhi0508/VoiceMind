@@ -1,0 +1,23 @@
+/build
+/VoiceMindiOS/build/
+/SharedCore/build/
+/VoiceMindMac/VoiceMind.dmg
+/VoiceMindMac.xcworkspace/
+/SharedCore/VoiceMindMac.xcworkspace/
+/VoiceRelay.xcworkspace/
+/Frameworks/llama.cpp/
+/.claude/settings.local.json
+.DS_Store
+
+# Xcode user state
+*.xcuserstate
+xcuserdata/
+/VoiceMindWindows/node_modules
+/VoiceMindWindows/src-tauri/target/
+VoiceMindWindows/src-tauri/logs/
+VoiceMindWindows/dist/
+VoiceMindWindows/src-tauri/history.json
+VoiceMindWindows/src-tauri/settings.json
+VoiceMindWindows/.claude/
+/logs/
+.idea/.gitignore
