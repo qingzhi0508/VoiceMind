@@ -28,9 +28,12 @@ pub struct BonjourSettings {
 pub struct AsrSettings {
     pub provider: String,
     pub app_id: String,
-    pub access_key_id: String,
-    pub access_key_secret: String,
-    pub cluster: String,
+    #[serde(alias = "access_key_id")]
+    pub access_key: String,
+    #[serde(default)]
+    pub access_key_secret: String, // kept for backward compat, not used by new API
+    #[serde(alias = "cluster")]
+    pub resource_id: String,
     pub asr_language: String,
 }
 
@@ -48,9 +51,9 @@ impl Default for Settings {
             asr: AsrSettings {
                 provider: "".to_string(),
                 app_id: "".to_string(),
-                access_key_id: "".to_string(),
+                access_key: "".to_string(),
                 access_key_secret: "".to_string(),
-                cluster: "".to_string(),
+                resource_id: "volc.bigasr.sauc.duration".to_string(),
                 asr_language: "zh-CN".to_string(),
             },
         }

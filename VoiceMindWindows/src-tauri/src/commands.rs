@@ -400,9 +400,12 @@ fn build_pairing_qr_payload(ip: Option<&str>, port: u16, code: &str) -> Result<S
 pub struct AsrConfig {
     pub provider: String,
     pub app_id: String,
-    pub access_key_id: String,
+    #[serde(alias = "access_key_id")]
+    pub access_key: String,
+    #[serde(default)]
     pub access_key_secret: String,
-    pub cluster: String,
+    #[serde(alias = "cluster")]
+    pub resource_id: String,
     pub asr_language: String,
 }
 
@@ -602,7 +605,9 @@ pub async fn start_service(state: State<'_, AppState>) -> Result<serde_json::Val
 
     let pairing_mgr = state.pairing_manager.clone();
     let history_store = state.history_store.clone();
-    conn_mgr.start_server(port, pairing_mgr, history_store).await?;
+    let asr_provider = state.asr_provider.clone();
+    let settings_store = state.settings_store.clone();
+    conn_mgr.start_server(port, pairing_mgr, history_store, asr_provider, settings_store).await?;
     tracing::info!("Service started on port {}", port);
     Ok(serde_json::json!({ "success": true, "port": port }))
 }
@@ -721,16 +726,16 @@ pub async fn get_asr_config(state: State<'_, AppState>) -> Result<Option<AsrConf
     let settings = state.settings_store.lock().await;
     let s = settings.get();
 
-    if s.asr.access_key_id.is_empty() {
+    if s.asr.access_key.is_empty() {
         return Ok(None);
     }
 
     Ok(Some(AsrConfig {
         provider: s.asr.provider.clone(),
         app_id: s.asr.app_id.clone(),
-        access_key_id: s.asr.access_key_id.clone(),
+        access_key: s.asr.access_key.clone(),
         access_key_secret: s.asr.access_key_secret.clone(),
-        cluster: s.asr.cluster.clone(),
+        resource_id: s.asr.resource_id.clone(),
         asr_language: s.asr.asr_language.clone(),
     }))
 }
@@ -742,16 +747,15 @@ pub async fn save_asr_config(state: State<'_, AppState>, config: AsrConfig) -> R
 
     // Clone values before moving into s.asr
     let app_id = config.app_id.clone();
-    let access_key_id = config.access_key_id.clone();
-    let access_key_secret = config.access_key_secret.clone();
-    let cluster = config.cluster.clone();
+    let access_key = config.access_key.clone();
+    let resource_id = config.resource_id.clone();
     let asr_language = config.asr_language.clone();
 
     s.asr.provider = config.provider;
     s.asr.app_id = app_id.clone();
-    s.asr.access_key_id = access_key_id.clone();
-    s.asr.access_key_secret = access_key_secret.clone();
-    s.asr.cluster = cluster.clone();
+    s.asr.access_key = access_key.clone();
+    s.asr.access_key_secret = config.access_key_secret;
+    s.asr.resource_id = resource_id.clone();
     s.asr.asr_language = asr_language.clone();
 
     settings.update(s)?;
@@ -760,11 +764,10 @@ pub async fn save_asr_config(state: State<'_, AppState>, config: AsrConfig) -> R
     // Update runtime ASR provider
     drop(settings);
     let mut asr_provider = state.asr_provider.lock().await;
-    *asr_provider = Some(asr::VeAnchorProvider::new(asr::VeAnchorConfig {
+    *asr_provider = Some(asr::VolcengineProvider::new(asr::VolcengineConfig {
         app_id,
-        access_key_id,
-        access_key_secret,
-        cluster,
+        access_key,
+        resource_id,
         language: asr_language,
     }));
 

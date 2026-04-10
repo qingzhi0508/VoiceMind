@@ -234,6 +234,8 @@ pub struct ConnectionManager {
     shutdown_tx: Option<tokio::sync::mpsc::Sender<()>>,
     pairing_manager: Option<Arc<Mutex<PairingManager>>>,
     history_store: Option<Arc<Mutex<crate::speech::HistoryStore>>>,
+    asr_provider: Option<Arc<Mutex<Option<crate::asr::VolcengineProvider>>>>,
+    settings_store: Option<Arc<Mutex<crate::settings::SettingsStore>>>,
 }
 
 impl ConnectionManager {
@@ -246,6 +248,8 @@ impl ConnectionManager {
             shutdown_tx: None,
             pairing_manager: None,
             history_store: None,
+            asr_provider: None,
+            settings_store: None,
         }
     }
 
@@ -265,11 +269,15 @@ impl ConnectionManager {
         port: u16,
         pairing_manager: Arc<Mutex<PairingManager>>,
         history_store: Arc<Mutex<crate::speech::HistoryStore>>,
+        asr_provider: Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
+        settings_store: Arc<Mutex<crate::settings::SettingsStore>>,
     ) -> Result<(), String> {
         if self.running { return Ok(()); }
         self.server_port = port;
         self.pairing_manager = Some(pairing_manager.clone());
         self.history_store = Some(history_store.clone());
+        self.asr_provider = Some(asr_provider.clone());
+        self.settings_store = Some(settings_store.clone());
         let addr = format!("0.0.0.0:{port}");
         let listener = TcpListener::bind(&addr)
             .await
@@ -294,6 +302,8 @@ impl ConnectionManager {
                                 let pairing_manager = pairing_manager.clone();
                                 let emitter = emitter.clone();
                                 let history_store = history_store.clone();
+                                let asr_provider = asr_provider.clone();
+                                let settings_store = settings_store.clone();
                                 tokio::spawn(async move {
                                     if let Err(err) = handle_connection(
                                         conn_id,
@@ -302,6 +312,8 @@ impl ConnectionManager {
                                         pairing_manager,
                                         emitter,
                                         history_store,
+                                        asr_provider,
+                                        settings_store,
                                     )
                                     .await
                                     {
@@ -471,6 +483,8 @@ async fn handle_connection(
     pairing_manager: Arc<Mutex<PairingManager>>,
     event_emitter: Arc<Mutex<EventEmitter>>,
     history_store: Arc<Mutex<crate::speech::HistoryStore>>,
+    asr_provider: Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
+    settings_store: Arc<Mutex<crate::settings::SettingsStore>>,
 ) -> Result<(), String> {
     info!("handle_connection START: conn_id={}", conn_id);
     let (reader, writer) = stream.into_split();
@@ -510,6 +524,8 @@ async fn handle_connection(
         &pairing_manager,
         &event_emitter,
         &history_store,
+        &asr_provider,
+        &settings_store,
     )
     .await;
 
@@ -539,6 +555,8 @@ async fn read_loop(
     pairing_manager: &Arc<Mutex<PairingManager>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
     history_store: &Arc<Mutex<crate::speech::HistoryStore>>,
+    asr_provider: &Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
+    settings_store: &Arc<Mutex<crate::settings::SettingsStore>>,
 ) -> Result<(), String> {
     loop {
         let mut length_buf = [0_u8; 4];
@@ -574,6 +592,8 @@ async fn read_loop(
             pairing_manager,
             event_emitter,
             history_store,
+            asr_provider,
+            settings_store,
         )
         .await?;
     }
@@ -586,6 +606,8 @@ async fn process_message(
     pairing_manager: &Arc<Mutex<PairingManager>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
     history_store: &Arc<Mutex<crate::speech::HistoryStore>>,
+    asr_provider: &Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
+    settings_store: &Arc<Mutex<crate::settings::SettingsStore>>,
 ) -> Result<(), String> {
     let message_type = MessageType::from_str(&envelope.type_)
         .ok_or_else(|| format!("Unknown message type: {}", envelope.type_))?;
@@ -626,7 +648,7 @@ async fn process_message(
         MessageType::PartialResult => handle_partial_result(conn_id, envelope, event_emitter).await,
         MessageType::AudioStart => handle_audio_start(conn_id, envelope, connections, event_emitter).await,
         MessageType::AudioData => handle_audio_data(conn_id, envelope, connections).await,
-        MessageType::AudioEnd => handle_audio_end(conn_id, envelope, connections, event_emitter, history_store).await,
+        MessageType::AudioEnd => handle_audio_end(conn_id, envelope, connections, event_emitter, history_store, asr_provider, settings_store).await,
         MessageType::Error => handle_error(envelope).await,
         MessageType::PairSuccess => {
             info!("Received PairSuccess from conn_id={} - pairing completed on iOS side", conn_id);
@@ -1094,6 +1116,8 @@ async fn handle_audio_end(
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
     history_store: &Arc<Mutex<crate::speech::HistoryStore>>,
+    asr_provider: &Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
+    settings_store: &Arc<Mutex<crate::settings::SettingsStore>>,
 ) -> Result<(), String> {
     let payload: AudioEndPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid audioEnd payload: {}", e))?;
@@ -1117,36 +1141,77 @@ async fn handle_audio_end(
     emitter.emit_listening_stopped(session_id.clone());
     drop(emitter);
 
-    // Process buffered audio with local SAPI recognition
-    if !audio_data.is_empty() {
-        info!("Local ASR: processing {} bytes of audio ({}Hz, {}ch)", audio_data.len(), sample_rate, channels);
+    if audio_data.is_empty() {
+        return Ok(());
+    }
 
-        // Write WAV file
-        let wav_path = std::env::temp_dir().join("voicemind_local_asr.wav");
-        if let Err(e) = write_wav_file(&wav_path, &audio_data, sample_rate, channels) {
-            warn!("Failed to write WAV file: {}", e);
-            return Ok(());
-        }
+    // Determine which ASR engine to use
+    let asr_engine = {
+        let settings = settings_store.lock().await;
+        settings.get().asr_engine.clone()
+    };
 
-        // Recognize using PowerShell + SAPI
-        let text = recognize_with_sapi(&wav_path);
-        let _ = std::fs::remove_file(&wav_path);
-
-        match text {
-            Ok(ref t) if !t.trim().is_empty() => {
-                info!("Local ASR result: {}", t);
-                crate::injection::inject_text_with_fallback(t).ok();
-                let mut store = history_store.lock().await;
-                store.add(t.clone(), device_name.clone().unwrap_or_else(|| "iOS".to_string()), Some(session_id.clone()));
-                let emitter = event_emitter.lock().await;
-                emitter.emit_recognition_result(t.clone(), "zh-CN".to_string(), session_id, device_name);
+    let text_result = if asr_engine == "cloud" {
+        // Cloud ASR via Volcengine
+        let provider_guard = asr_provider.lock().await;
+        match provider_guard.as_ref() {
+            Some(provider) => {
+                info!(
+                    "Cloud ASR: sending {} bytes ({}Hz, {}ch) to Volcengine",
+                    audio_data.len(), sample_rate, channels
+                );
+                provider.recognize(&audio_data, sample_rate, channels).await
             }
-            Ok(_) => { info!("Local ASR: empty result"); }
-            Err(e) => { warn!("Local ASR failed: {}", e); }
+            None => {
+                warn!("Cloud ASR selected but provider not configured, falling back to local");
+                recognize_local(&audio_data, sample_rate, channels)
+            }
+        }
+    } else {
+        // Local ASR via SAPI
+        recognize_local(&audio_data, sample_rate, channels)
+    };
+
+    match text_result {
+        Ok(ref t) if !t.trim().is_empty() => {
+            info!("ASR result: {}", t);
+            crate::injection::inject_text_with_fallback(t).ok();
+            let mut store = history_store.lock().await;
+            store.add(
+                t.clone(),
+                device_name.clone().unwrap_or_else(|| "iOS".to_string()),
+                Some(session_id.clone()),
+            );
+            let emitter = event_emitter.lock().await;
+            emitter.emit_recognition_result(
+                t.clone(),
+                "zh-CN".to_string(),
+                session_id,
+                device_name,
+            );
+        }
+        Ok(_) => {
+            info!("ASR: empty result");
+        }
+        Err(e) => {
+            warn!("ASR failed: {}", e);
         }
     }
 
     Ok(())
+}
+
+fn recognize_local(audio_data: &[u8], sample_rate: u32, channels: u32) -> Result<String, String> {
+    info!(
+        "Local ASR: processing {} bytes ({}Hz, {}ch)",
+        audio_data.len(), sample_rate, channels
+    );
+
+    let wav_path = std::env::temp_dir().join("voicemind_local_asr.wav");
+    write_wav_file(&wav_path, audio_data, sample_rate, channels)?;
+    let text = recognize_with_sapi(&wav_path);
+    let _ = std::fs::remove_file(&wav_path);
+    text
 }
 
 fn write_wav_file(path: &std::path::Path, pcm_data: &[u8], sample_rate: u32, channels: u32) -> Result<(), String> {
