@@ -45,6 +45,11 @@ enum LocalNetworkAccessPolicy {
 
         let address = String(describing: host)
 
+        // Allow localhost (loopback)
+        if address == "127.0.0.1" || address == "::1" {
+            return true
+        }
+
         // Allow IPv4 private LAN (10.x, 172.16-31.x, 192.168.x)
         if isPrivateLANIPv4(address) {
             return true
@@ -217,24 +222,34 @@ class WebSocketServer {
     private func handleListenerState(_ newState: NWListener.State) {
         switch newState {
         case .ready:
+            print("✅ NWListener 已就绪，正在监听端口 \(port ?? 0)")
             state = .connecting
+        case .setup:
+            print("🔄 NWListener 正在初始化...")
+        case .waiting(let error):
+            print("⏳ NWListener 等待中: \(error)")
         case .failed(let error):
+            print("❌ NWListener 失败: \(error)")
             state = .error(error)
         case .cancelled:
+            print("🔌 NWListener 已取消")
             state = .disconnected
-        default:
+        @unknown default:
+            print("❓ NWListener 未知状态: \(newState)")
             break
         }
     }
 
     private func handleNewConnection(_ newConnection: NWConnection) {
-        print("🔗 收到新连接请求")
+        print("🔗 收到新连接请求: \(newConnection.endpoint)")
 
         guard LocalNetworkAccessPolicy.isAllowedPeerEndpoint(newConnection.endpoint) else {
             print("🚫 已拒绝非局域网连接: \(newConnection.endpoint)")
             newConnection.cancel()
             return
         }
+
+        print("✅ 连接来自允许的地址，正在接受...")
 
         // If already connected, close old connection and accept new one
         if let oldConnection = connection {

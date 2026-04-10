@@ -134,6 +134,21 @@ struct QRCodePairingView: View {
                 }
 
                 MainWindowSurface {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: "wifi.exclamationmark")
+                                .foregroundColor(MainWindowColors.secondaryText)
+                                .font(.title3)
+
+                            Text(AppLocalization.localizedString("qr_wifi_tip"))
+                                .font(.caption)
+                                .foregroundColor(MainWindowColors.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+
+                MainWindowSurface {
                     HStack(alignment: .top, spacing: 12) {
                         Image(systemName: progressIconName)
                             .foregroundColor(progressColor)
@@ -158,7 +173,7 @@ struct QRCodePairingView: View {
             }
             .padding(24)
         }
-        .frame(width: 560, height: 540)
+        .frame(width: 560, height: 600)
         .onAppear {
             generateQRCode()
             pairingTimer.onTimeout = { [onCancel] in

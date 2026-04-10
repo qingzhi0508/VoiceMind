@@ -45,6 +45,7 @@ class WebSocketClient {
 
     private func connect(to host: String, port: UInt16, resetReconnectState: Bool) {
         print("🔗 开始连接到 \(host):\(port)")
+        print("🔍 连接详情 - 主机: \(host), 端口: \(port), 重置重连: \(resetReconnectState)")
         self.host = host
         self.port = port
 
@@ -56,6 +57,13 @@ class WebSocketClient {
         connectionTimeoutTimer?.invalidate()
         connection?.cancel()
         connection = nil
+
+        // Validate host string
+        guard !host.isEmpty else {
+            print("❌ 连接失败: 主机地址为空")
+            state = .error(NSError(domain: "WebSocketClient", code: -1, userInfo: [NSLocalizedDescriptionKey: "主机地址为空"]))
+            return
+        }
 
         let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host(host), port: NWEndpoint.Port(integerLiteral: port))
 
@@ -139,6 +147,10 @@ class WebSocketClient {
             print("✅ WebSocket 已连接")
             receiveMessage(on: sourceConnection)
 
+        case .preparing:
+            print("🔄 TCP 正在准备连接到 \(host ?? "unknown"):\(port ?? 0)...")
+            state = .connecting
+
         case .waiting(let error):
             print("⏳ WebSocket 等待中: \(error)")
             state = .connecting
@@ -149,6 +161,11 @@ class WebSocketClient {
             connectionTimeoutTimer = nil
             state = .error(error)
             print("❌ WebSocket 连接失败: \(error)")
+            print("🔍 连接失败详情 - 主机: \(self.host ?? "nil"), 端口: \(self.port ?? 0)")
+            print("🔍 错误域: \(error.localizedDescription)")
+            if let urlError = error as? URLError {
+                print("🔍 URLError code: \(urlError.code.rawValue) - \(urlError.localizedDescription)")
+            }
             connection = nil
             attemptReconnect()
 

@@ -111,6 +111,7 @@
 "qr_port_label_format" = "端口: %@";
 "qr_progress_title" = "配对进度";
 "qr_progress_waiting" = "等待手机发起配对。";
+"qr_wifi_tip" = "提示：请确保手机和电脑在同一 WiFi 下，且网络未开启 AP 隔离（客户端隔离），否则设备间无法通信。";
 "qr_time_remaining_format" = "剩余时间: %@秒";
 
 
@@ -259,10 +260,20 @@
 "about_permissions_app_path_title" = "应用路径";
 "about_permissions_copy_path" = "复制路径";
 "about_permissions_path_hint" = "请在系统设置 > 隐私与安全性 > 辅助功能 中确认此路径的应用已开启权限。如果路径与列表中不一致，请删除旧条目并重新添加。";
+"about_permissions_firewall_title" = "macOS 防火墙";
+"about_permissions_firewall_enabled" = "已开启 — 可能阻止 iPhone 连接到此 Mac";
+"about_permissions_firewall_disabled" = "已关闭 — 不影响连接";
+"about_permissions_firewall_settings" = "打开防火墙设置";
+"about_permissions_port_test_title" = "端口连接自测";
+"about_permissions_port_test_desc" = "测试本机监听端口是否可正常接受连接";
+"about_permissions_port_test_button" = "开始测试";
+"about_permissions_port_test_testing" = "正在测试...";
+"about_permissions_port_test_ok" = "端口正常 — 可以接受外部连接";
+"about_permissions_port_test_fail" = "端口不通 — iPhone 将无法连接到此 Mac";
 "window_title_usage_guide" = "操作指引";
 "usage_guide_title" = "VoiceMind 操作指引";
 "usage_guide_subtitle" = "首次使用时，你可以先按下面步骤完成配对和开始语音输入。后续也可以在“关于”页再次查看这份指引。";
-"usage_guide_step1" = "确认电脑和手机连接在同一个局域网下。";
+"usage_guide_step1" = "确认电脑和手机连接在同一个局域网下，且该网络未开启 AP 隔离（客户端隔离）。";
 "usage_guide_step3" = "在电脑中点击“开始配对”，然后用 手机 扫描二维码或输入配对码。";
 "usage_guide_step4" = "如果系统提示权限，请先完成授权，再返回继续使用。";
 "usage_guide_footer" = "默认仅支持局域网内配对与连接，这样更安全，也更符合日常使用场景。";

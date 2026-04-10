@@ -124,8 +124,8 @@
 "qr_progress_qr_parse_failed" = "二维码解析失败，请重新扫描。";
 "qr_progress_qr_parsed_format" = "二维码解析成功，已识别设备：%@";
 "qr_progress_qr_connecting_format" = "正在连接 %@:%@...";
-"qr_error_timeout" = "连接超时，请重新扫描二维码或稍后重试";
-"qr_progress_timeout" = "连接超时，请重新扫描二维码。";
+"qr_error_timeout" = "连接超时，请确认手机和电脑在同一 WiFi 网络下，且该网络未开启 AP 隔离（客户端隔离）。部分路由器（如访客网络）会阻止设备间通信。";
+"qr_progress_timeout" = "连接超时，请检查 WiFi 网络是否支持设备间通信（未开启 AP 隔离）。";
 "qr_progress_sent_code" = "已提交 6 位配对码。";
 "qr_progress_waiting_validate" = "正在等待 桌面端 校验配对码并返回结果...";
 "qr_error_pairing_timeout" = "配对超时，请确认 桌面端 仍处于配对状态";

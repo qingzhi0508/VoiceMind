@@ -134,28 +134,22 @@ class QRCodeScannerController: NSObject, ObservableObject, AVCaptureMetadataOutp
 
         captureSession.commitConfiguration()
 
-        let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        previewLayer.videoGravity = .resizeAspectFill
-
         DispatchQueue.main.async {
             guard !self.pendingStop else {
                 self.publishStoppedState()
                 return
             }
 
+            let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+            previewLayer.videoGravity = .resizeAspectFill
+
             self.captureSession = captureSession
             self.previewLayer = previewLayer
+
+            // startRunning() 必须在主线程执行，避免后台线程触发布局引擎崩溃
+            captureSession.startRunning()
+
             self.isPreviewReady = true
-        }
-
-        captureSession.startRunning()
-
-        DispatchQueue.main.async {
-            guard !self.pendingStop else {
-                self.stopScanning()
-                return
-            }
-
             self.isStarting = false
             self.isScanning = captureSession.isRunning
         }

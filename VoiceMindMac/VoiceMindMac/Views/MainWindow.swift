@@ -2360,6 +2360,9 @@ struct AboutTab: View {
     @ObservedObject private var updateManager = MacAppUpdateManager.shared
     @State private var accessibilityGranted = false
     @State private var showAppPath = false
+    @State private var firewallEnabled = false
+    @State private var portTestResult: Bool?
+    @State private var isTestingPort = false
 
     private let permissionRefreshTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
@@ -2385,6 +2388,21 @@ struct AboutTab: View {
 
     private func refreshPermissionStatus() {
         accessibilityGranted = PermissionsManager.checkAccessibility() == .granted
+        firewallEnabled = PermissionsManager.isFirewallEnabled
+    }
+
+    private func runPortTest() {
+        guard !isTestingPort else { return }
+        isTestingPort = true
+        portTestResult = nil
+        let port = AppSettings.shared.serverPort
+        DispatchQueue.global(qos: .userInitiated).async {
+            let result = PermissionsManager.testLocalPort(port: port)
+            DispatchQueue.main.async {
+                self.portTestResult = result
+                self.isTestingPort = false
+            }
+        }
     }
 
     private var aboutHero: some View {
@@ -2540,6 +2558,82 @@ struct AboutTab: View {
                             .foregroundColor(MainWindowColors.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(MainWindowColors.softSurface)
+                )
+
+                // Firewall status
+                HStack(spacing: 12) {
+                    Image(systemName: firewallEnabled ? "flame.fill" : "flame")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(firewallEnabled ? .orange : .green)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(AppLocalization.localizedString("about_permissions_firewall_title"))
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(MainWindowColors.title)
+
+                        Text(firewallEnabled
+                             ? AppLocalization.localizedString("about_permissions_firewall_enabled")
+                             : AppLocalization.localizedString("about_permissions_firewall_disabled"))
+                            .font(.caption)
+                            .foregroundColor(firewallEnabled ? .orange : .green)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    if firewallEnabled {
+                        Button(AppLocalization.localizedString("about_permissions_firewall_settings")) {
+                            PermissionsManager.openSystemPreferences(for: .accessibility)
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Firewall") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(firewallEnabled ? Color.orange.opacity(0.06) : Color.green.opacity(0.06))
+                )
+
+                // Port connectivity test
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(AppLocalization.localizedString("about_permissions_port_test_title"))
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(MainWindowColors.title)
+
+                        if let result = portTestResult {
+                            Text(result
+                                 ? AppLocalization.localizedString("about_permissions_port_test_ok")
+                                 : AppLocalization.localizedString("about_permissions_port_test_fail"))
+                                .font(.caption)
+                                .foregroundColor(result ? .green : .red)
+                        } else if isTestingPort {
+                            Text(AppLocalization.localizedString("about_permissions_port_test_testing"))
+                                .font(.caption)
+                                .foregroundColor(MainWindowColors.secondaryText)
+                        } else {
+                            Text(AppLocalization.localizedString("about_permissions_port_test_desc"))
+                                .font(.caption)
+                                .foregroundColor(MainWindowColors.secondaryText)
+                        }
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Button(AppLocalization.localizedString("about_permissions_port_test_button")) {
+                        runPortTest()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(isTestingPort)
                 }
                 .padding(12)
                 .background(

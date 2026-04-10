@@ -126,8 +126,8 @@
 "qr_progress_qr_parse_failed" = "QR parse failed. Please scan again.";
 "qr_progress_qr_parsed_format" = "QR parsed. Device: %@";
 "qr_progress_qr_connecting_format" = "Connecting to %@:%@...";
-"qr_error_timeout" = "Connection timed out. Please rescan or try again.";
-"qr_progress_timeout" = "Connection timed out. Please rescan the QR code.";
+"qr_error_timeout" = "Connection timed out. Make sure both devices are on the same WiFi, and the network has AP isolation (client isolation) disabled. Some routers (e.g. guest networks) block device-to-device communication.";
+"qr_progress_timeout" = "Connection timed out. Check if your WiFi allows device-to-device communication (AP isolation disabled).";
 "qr_progress_sent_code" = "6-digit pairing code submitted.";
 "qr_progress_waiting_validate" = "Waiting for the Desktop to validate the pairing code...";
 "qr_error_pairing_timeout" = "Pairing timed out. Confirm the Desktop is still in pairing mode.";

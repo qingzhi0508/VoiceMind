@@ -4,10 +4,32 @@ import Foundation
 final class RemoteMicrophoneMonitorPlayer: RemoteMicrophoneMonitorPlaying {
     private let audioEngine = AVAudioEngine()
     private let playerNode = AVAudioPlayerNode()
+    private let eq = AVAudioUnitEQ(numberOfBands: 2)
     private var audioFormat: AVAudioFormat?
+
+    /// 软件增益倍数，用于放大麦克风采集的低音量 PCM 数据
+    private let gain: Float = 2.5
 
     init() {
         audioEngine.attach(playerNode)
+        audioEngine.attach(eq)
+        configureEQ()
+    }
+
+    private func configureEQ() {
+        // Band 0: 高通滤波器 — 切除 150Hz 以下低频，减少低频回音和闷响
+        let highPass = eq.bands[0]
+        highPass.filterType = .highPass
+        highPass.frequency = 150
+        highPass.bypass = false
+
+        // Band 1: 人声增强 — 提升 2-4kHz 使说话更清晰
+        let presence = eq.bands[1]
+        presence.filterType = .parametric
+        presence.frequency = 3000
+        presence.bandwidth = 1.5
+        presence.gain = 3
+        presence.bypass = false
     }
 
     func start(sampleRate: Double, channels: AVAudioChannelCount, format: String) throws {
@@ -27,7 +49,9 @@ final class RemoteMicrophoneMonitorPlayer: RemoteMicrophoneMonitorPlaying {
         }
 
         self.audioFormat = audioFormat
-        audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: audioFormat)
+        playerNode.volume = 1.0
+        audioEngine.connect(playerNode, to: eq, format: audioFormat)
+        audioEngine.connect(eq, to: audioEngine.mainMixerNode, format: audioFormat)
         audioEngine.prepare()
 
         do {
@@ -74,19 +98,28 @@ final class RemoteMicrophoneMonitorPlayer: RemoteMicrophoneMonitorPlaying {
             }
 
             if channelCount == 1 {
-                channelData[0].update(from: samples, count: frameCount)
+                applyGain(samples: samples, output: channelData[0], count: frameCount)
                 return
             }
 
+            // De-interleave with gain
             for frameIndex in 0..<frameCount {
                 for channelIndex in 0..<channelCount {
                     let sampleIndex = frameIndex * channelCount + channelIndex
-                    channelData[channelIndex][frameIndex] = samples[sampleIndex]
+                    let boosted = Float(samples[sampleIndex]) * gain
+                    channelData[channelIndex][frameIndex] = Int16(clamping: Int32(boosted))
                 }
             }
         }
 
         playerNode.scheduleBuffer(buffer)
+    }
+
+    private func applyGain(samples: UnsafePointer<Int16>, output: UnsafeMutablePointer<Int16>, count: Int) {
+        for i in 0..<count {
+            let boosted = Float(samples[i]) * gain
+            output[i] = Int16(clamping: Int32(boosted))
+        }
     }
 
     func stop() {

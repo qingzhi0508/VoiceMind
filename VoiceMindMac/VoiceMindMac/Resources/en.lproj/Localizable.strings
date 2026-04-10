@@ -110,6 +110,7 @@
 "qr_port_label_format" = "Port: %@";
 "qr_progress_title" = "Pairing Progress";
 "qr_progress_waiting" = "Waiting for phone to start pairing.";
+"qr_wifi_tip" = "Tip: Make sure both devices are on the same WiFi with AP isolation (client isolation) disabled, or device-to-device communication will be blocked.";
 "qr_time_remaining_format" = "Time remaining: %@s";
 
 
@@ -258,10 +259,20 @@
 "about_permissions_app_path_title" = "App Path";
 "about_permissions_copy_path" = "Copy path";
 "about_permissions_path_hint" = "Make sure the app at this path is enabled in System Settings > Privacy & Security > Accessibility. If the path doesn't match, remove the old entry and re-add it.";
+"about_permissions_firewall_title" = "macOS Firewall";
+"about_permissions_firewall_enabled" = "Enabled — may block incoming connections from iPhone";
+"about_permissions_firewall_disabled" = "Disabled — connections should work";
+"about_permissions_firewall_settings" = "Open Firewall Settings";
+"about_permissions_port_test_title" = "Port Connectivity Test";
+"about_permissions_port_test_desc" = "Test if the listening port can accept connections";
+"about_permissions_port_test_button" = "Run Test";
+"about_permissions_port_test_testing" = "Testing...";
+"about_permissions_port_test_ok" = "Port OK — can accept external connections";
+"about_permissions_port_test_fail" = "Port unreachable — iPhone won't be able to connect";
 "window_title_usage_guide" = "Usage Guide";
 "usage_guide_title" = "How to Use VoiceMind";
 "usage_guide_subtitle" = "On your first launch, follow the steps below to pair your devices and start voice input. You can reopen this guide later from the About tab.";
-"usage_guide_step1" = "Make sure your desktop and phone are connected to the same local network.";
+"usage_guide_step1" = "Make sure your desktop and phone are connected to the same local network with AP isolation (client isolation) disabled.";
 "usage_guide_step3" = "Click \"Start Pairing\" on the Mac, then scan the QR code or enter the pairing code on your iPhone.";
 "usage_guide_step4" = "If macOS asks for permissions, complete them first and then return to continue.";
 "usage_guide_footer" = "Pairing and connection are limited to the local network by default for a safer and simpler setup.";
