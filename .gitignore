@@ -20,3 +20,4 @@ VoiceMindWindows/src-tauri/history.json
 VoiceMindWindows/src-tauri/settings.json
 VoiceMindWindows/.claude/
 /logs/
+.idea/.gitignore
