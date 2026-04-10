@@ -162,6 +162,8 @@
 "settings_send_to_mac_header" = "双端协同";
 "settings_send_to_mac_title" = "将转写结果同步到 桌面端";
 "settings_send_to_mac_footer" = "默认只在本机录音转文字。打开后，如果已连接到 桌面端，会额外把转写结果同步过去。";
+"settings_send_to_mac_microphone_title" = "话筒";
+"settings_send_to_mac_microphone_footer" = "在 Mac 模式按住说话时，同时从电脑喇叭播放手机麦克风声音。";
 "settings_paired_device" = "已配对设备";
 "settings_connection_status" = "连接状态";
 "settings_reconnect" = "重新连接";

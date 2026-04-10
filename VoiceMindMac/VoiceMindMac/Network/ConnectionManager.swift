@@ -56,6 +56,7 @@ class ConnectionManager: NSObject {
 
     // 语音识别管理器
     private let speechManager = SpeechRecognitionManager.shared
+    private let remoteMicrophoneMonitorController = RemoteMicrophoneMonitorController()
 
     // 当前会话 ID（用于匹配识别结果）
     private var currentSessionId: String?
@@ -89,6 +90,7 @@ class ConnectionManager: NSObject {
     }
 
     func stop() {
+        remoteMicrophoneMonitorController.stopSession(sessionId: nil)
         server.stop()
         print("🛑 Connection manager stopped")
     }
@@ -411,6 +413,11 @@ extension ConnectionManager: WebSocketServerDelegate {
 
     func server(_ server: WebSocketServer, didChangeState state: ConnectionState) {
         connectionState = state
+        if case .connected = state {
+            // Keep any active relay until the stream itself ends.
+        } else {
+            remoteMicrophoneMonitorController.stopSession(sessionId: nil)
+        }
         delegate?.connectionManager(self, didChangeConnectionState: state)
     }
 
@@ -467,11 +474,24 @@ extension ConnectionManager: WebSocketServerDelegate {
         print("   采样率: \(payload.sampleRate) Hz")
         print("   通道数: \(payload.channels)")
         print("   格式: \(payload.format)")
+        print("   播放到 Mac 喇叭: \(payload.playThroughMacSpeaker)")
         recordInboundEvent(
             title: "语音流开始",
-            detail: "Session: \(payload.sessionId)\n语言: \(payload.language)\n采样率: \(payload.sampleRate) Hz\n通道数: \(payload.channels)\n格式: \(payload.format)",
+            detail: "Session: \(payload.sessionId)\n语言: \(payload.language)\n采样率: \(payload.sampleRate) Hz\n通道数: \(payload.channels)\n格式: \(payload.format)\n喇叭播放: \(payload.playThroughMacSpeaker ? "开启" : "关闭")",
             category: .voice
         )
+
+        do {
+            try remoteMicrophoneMonitorController.startSession(
+                sessionId: payload.sessionId,
+                sampleRate: payload.sampleRate,
+                channels: payload.channels,
+                format: payload.format,
+                playThroughMacSpeaker: payload.playThroughMacSpeaker
+            )
+        } catch {
+            print("⚠️ 启动远端麦克风播放失败，已降级为仅识别: \(error)")
+        }
 
         do {
             try speechManager.startRecognition(
@@ -481,6 +501,7 @@ extension ConnectionManager: WebSocketServerDelegate {
             currentSessionId = payload.sessionId
             print("✅ 语音识别已启动")
         } catch {
+            remoteMicrophoneMonitorController.stopSession(sessionId: payload.sessionId)
             print("❌ 启动语音识别失败: \(error.localizedDescription)")
             sendError(code: "recognition_start_failed", message: error.localizedDescription)
         }
@@ -505,6 +526,11 @@ extension ConnectionManager: WebSocketServerDelegate {
             print("❌ 处理音频数据失败: \(error.localizedDescription)")
             sendError(code: "audio_processing_failed", message: error.localizedDescription)
         }
+
+        try? remoteMicrophoneMonitorController.appendAudio(
+            payload.audioData,
+            sessionId: payload.sessionId
+        )
     }
 
     private func handleAudioEnd(_ message: MessageEnvelope) {
@@ -520,6 +546,8 @@ extension ConnectionManager: WebSocketServerDelegate {
             detail: "Session: \(payload.sessionId)",
             category: .voice
         )
+
+        remoteMicrophoneMonitorController.stopSession(sessionId: payload.sessionId)
 
         do {
             try speechManager.stopRecognition()

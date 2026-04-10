@@ -164,6 +164,8 @@
 "settings_send_to_mac_header" = "Two-Device Sync";
 "settings_send_to_mac_title" = "Send transcription results to Desktop";
 "settings_send_to_mac_footer" = "By default, recording stays on this device for local speech-to-text. Turn this on to also sync results when a Desktop is connected.";
+"settings_send_to_mac_microphone_title" = "Microphone";
+"settings_send_to_mac_microphone_footer" = "In Mac mode, hold to talk and also play the iPhone microphone through your Mac speakers.";
 "settings_paired_device" = "Paired Device";
 "settings_connection_status" = "Connection Status";
 "settings_reconnect" = "Reconnect";

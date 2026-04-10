@@ -118,13 +118,41 @@ public struct AudioStartPayload: Codable {
     public let sampleRate: Int
     public let channels: Int
     public let format: String  // "pcm16"
+    public let playThroughMacSpeaker: Bool
 
-    public init(sessionId: String, language: String, sampleRate: Int, channels: Int, format: String = "pcm16") {
+    public init(
+        sessionId: String,
+        language: String,
+        sampleRate: Int,
+        channels: Int,
+        format: String = "pcm16",
+        playThroughMacSpeaker: Bool = false
+    ) {
         self.sessionId = sessionId
         self.language = language
         self.sampleRate = sampleRate
         self.channels = channels
         self.format = format
+        self.playThroughMacSpeaker = playThroughMacSpeaker
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sessionId
+        case language
+        case sampleRate
+        case channels
+        case format
+        case playThroughMacSpeaker
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        sessionId = try container.decode(String.self, forKey: .sessionId)
+        language = try container.decode(String.self, forKey: .language)
+        sampleRate = try container.decode(Int.self, forKey: .sampleRate)
+        channels = try container.decode(Int.self, forKey: .channels)
+        format = try container.decode(String.self, forKey: .format)
+        playThroughMacSpeaker = try container.decodeIfPresent(Bool.self, forKey: .playThroughMacSpeaker) ?? false
     }
 }
 

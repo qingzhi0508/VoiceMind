@@ -42,7 +42,7 @@ class AudioStreamController: NSObject {
     }
 
     /// 开始音频流传输
-    func startStreaming(sessionId: String) throws {
+    func startStreaming(sessionId: String, playThroughMacSpeaker: Bool = false) throws {
         guard checkPermissions() else {
             throw AudioStreamError.permissionDenied
         }
@@ -91,7 +91,8 @@ class AudioStreamController: NSObject {
                 language: selectedLanguage,
                 sampleRate: Int(sampleRate),
                 channels: Int(channels),
-                format: "pcm16"
+                format: "pcm16",
+                playThroughMacSpeaker: playThroughMacSpeaker
             ))
 
             // 安装音频 tap

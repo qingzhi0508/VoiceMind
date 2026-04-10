@@ -25,6 +25,11 @@ class ContentViewModel: ObservableObject {
         remaining: TwoDeviceSyncPolicy.defaultFreeSessionLimit,
         used: 0
     )
+    @Published var playMicrophoneThroughMacSpeakerEnabled: Bool {
+        didSet {
+            MacMicrophoneMonitorSettings.store(playMicrophoneThroughMacSpeakerEnabled)
+        }
+    }
     @Published var preferredHomeTranscriptionMode: HomeTranscriptionMode {
         didSet {
             UserDefaults.standard.set(
@@ -73,7 +78,7 @@ class ContentViewModel: ObservableObject {
 
     private let connectionManager = ConnectionManager()
     private let speechController = SpeechController()
-    private let audioStreamController = AudioStreamController()
+    private let audioStreamController: AudioStreamController
     private let bonjourBrowser = BonjourBrowser()
     private let purchaseStore = TwoDeviceSyncPurchaseStore.shared
     private let usageLimiter = TwoDeviceSyncUsageLimiter()
@@ -97,7 +102,9 @@ class ContentViewModel: ObservableObject {
         return String(format: String(localized: .init(key)), arguments: args)
     }
 
-    init() {
+    init(audioStreamController: AudioStreamController = AudioStreamController()) {
+        self.audioStreamController = audioStreamController
+        self.playMicrophoneThroughMacSpeakerEnabled = MacMicrophoneMonitorSettings.load()
         self.sendResultsToMacEnabled = UserDefaults.standard.bool(forKey: sendResultsToMacEnabledKey)
         self.localTranscriptHistory = Self.loadLocalTranscriptHistory(forKey: localTranscriptHistoryKey)
         self.preferredHomeTranscriptionMode = HomeTranscriptionMode(
@@ -235,6 +242,14 @@ class ContentViewModel: ObservableObject {
         }
     }
 
+    private var shouldPlayThroughMacSpeakerOnMac: Bool {
+        MacMicrophoneMonitorPolicy.shouldPlayThroughMacSpeaker(
+            sendToMacEnabled: sendResultsToMacEnabled,
+            preferredMode: effectiveHomeTranscriptionMode,
+            microphoneMonitorEnabled: playMicrophoneThroughMacSpeakerEnabled
+        )
+    }
+
     func startPushToTalk() {
         guard canStartPushToTalk else { return }
         let clearedTranscriptText = LocalTranscriptHistory.beginningNewRecognitionSession(
@@ -254,7 +269,10 @@ class ContentViewModel: ObservableObject {
                 let sessionId = UUID().uuidString
                 manualSessionId = sessionId
                 activeInputMode = .streamingToMac
-                try audioStreamController.startStreaming(sessionId: sessionId)
+                try audioStreamController.startStreaming(
+                    sessionId: sessionId,
+                    playThroughMacSpeaker: shouldPlayThroughMacSpeakerOnMac
+                )
                 recognitionState = .listening
                 pushToTalkStatusMessage = localized("ptt_warming_up")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
@@ -918,7 +936,10 @@ extension ContentViewModel: ConnectionManagerDelegate {
 
         // 使用音频流模式（发送到 Mac 端识别）
         do {
-            try audioStreamController.startStreaming(sessionId: payload.sessionId)
+            try audioStreamController.startStreaming(
+                sessionId: payload.sessionId,
+                playThroughMacSpeaker: false
+            )
         } catch {
             print("❌ 启动音频流失败: \(error.localizedDescription)")
         }

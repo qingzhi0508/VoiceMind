@@ -55,4 +55,32 @@ final class MessagePayloadsTests: XCTestCase {
         XCTAssertEqual(decoded.text, "Paste this")
         XCTAssertEqual(decoded.language, "zh-CN")
     }
+
+    func testAudioStartPayloadRoundTripsSpeakerPlaybackFlag() throws {
+        let payload = AudioStartPayload(
+            sessionId: "session-audio-start",
+            language: "zh-CN",
+            sampleRate: 16_000,
+            channels: 1,
+            format: "pcm16",
+            playThroughMacSpeaker: true
+        )
+
+        let encoded = try JSONEncoder().encode(payload)
+        let decoded = try JSONDecoder().decode(AudioStartPayload.self, from: encoded)
+
+        XCTAssertEqual(decoded.sessionId, "session-audio-start")
+        XCTAssertTrue(decoded.playThroughMacSpeaker)
+    }
+
+    func testAudioStartPayloadDefaultsSpeakerPlaybackFlagToFalseWhenMissing() throws {
+        let json = """
+        {"sessionId":"session-audio-start","language":"zh-CN","sampleRate":16000,"channels":1,"format":"pcm16"}
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(AudioStartPayload.self, from: json)
+
+        XCTAssertEqual(decoded.sessionId, "session-audio-start")
+        XCTAssertFalse(decoded.playThroughMacSpeaker)
+    }
 }
