@@ -6,11 +6,19 @@ final class AccessibilityTextInjector: TextInjecting {
     private let chunkDelay: TimeInterval = 0.05
 
     func inject(_ text: String) throws {
-        guard PermissionsManager.checkAccessibility() == .granted else {
+        let hasPermission = PermissionsManager.checkAccessibility() == .granted
+        print("🔍 文本注入检查 - 辅助功能权限: \(hasPermission ? "已授权" : "未授权")")
+        print("🔍 应用路径: \(PermissionsManager.appExecutablePath)")
+
+        guard hasPermission else {
             throw TextInjectionError.accessibilityPermissionDenied
         }
 
-        guard let focusedElement = FocusedInputDetector.currentWritableFocusedElement() else {
+        let focusedElement = FocusedInputDetector.currentWritableFocusedElement()
+        print("🔍 可写入焦点元素: \(focusedElement != nil ? "已找到" : "未找到")")
+
+        guard let focusedElement else {
+            print("🔍 未找到可写入元素，回退到 CGEvent 键盘模拟")
             try fallbackToCGEvent(text)
             return
         }

@@ -252,6 +252,13 @@
 "about_update_error_repo_unavailable" = "配置的 GitHub Releases 仓库不可访问，或暂时没有公开的 latest Release。";
 "about_update_error_open_installer" = "安装包已下载，但 macOS 无法自动打开它。";
 "about_update_error_prepare_install" = "更新包已下载，但 VoiceMind 无法准备自动安装，已回退为手动打开安装包。";
+"about_permissions_section_title" = "权限与运行信息";
+"about_permissions_accessibility_title" = "辅助功能（用于自动输入文字到光标位置）";
+"about_permissions_status_granted" = "已授权";
+"about_permissions_status_denied" = "未授权 — 文字将无法自动输入到光标位置";
+"about_permissions_app_path_title" = "应用路径";
+"about_permissions_copy_path" = "复制路径";
+"about_permissions_path_hint" = "请在系统设置 > 隐私与安全性 > 辅助功能 中确认此路径的应用已开启权限。如果路径与列表中不一致，请删除旧条目并重新添加。";
 "window_title_usage_guide" = "操作指引";
 "usage_guide_title" = "VoiceMind 操作指引";
 "usage_guide_subtitle" = "首次使用时，你可以先按下面步骤完成配对和开始语音输入。后续也可以在“关于”页再次查看这份指引。";

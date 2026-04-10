@@ -388,7 +388,7 @@ struct ManualConnectionView: View {
             isPairing = false
             errorMessage = nil
             print("✅ 配对成功")
-            dismiss()
+            // 不在这里调用 dismiss()，由 ContentViewModel.showPairingView = false 统一关闭
         case .unpaired, .pairing:
             break
         }

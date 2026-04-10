@@ -32,4 +32,12 @@ enum PermissionsManager {
             NSWorkspace.shared.open(url)
         }
     }
+
+    static var appExecutablePath: String {
+        Bundle.main.executableURL?.path ?? Bundle.main.bundlePath
+    }
+
+    static var appBundlePath: String {
+        Bundle.main.bundlePath
+    }
 }

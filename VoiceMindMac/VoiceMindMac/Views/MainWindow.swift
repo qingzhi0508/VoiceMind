@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SharedCore
 import StoreKit
 import SwiftUI
@@ -2357,6 +2358,10 @@ enum NotesTextSelectionPolicy {
 struct AboutTab: View {
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var updateManager = MacAppUpdateManager.shared
+    @State private var accessibilityGranted = false
+    @State private var showAppPath = false
+
+    private let permissionRefreshTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     var showsInlineHeader = true
     let onOpenGuide: () -> Void
@@ -2366,6 +2371,7 @@ struct AboutTab: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 aboutHero
+                aboutPermissionsCard
                 aboutUpdateCard
                 aboutHighlights
             }
@@ -2373,6 +2379,12 @@ struct AboutTab: View {
             .padding(8)
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
+        .onAppear { refreshPermissionStatus() }
+        .onReceive(permissionRefreshTimer) { _ in refreshPermissionStatus() }
+    }
+
+    private func refreshPermissionStatus() {
+        accessibilityGranted = PermissionsManager.checkAccessibility() == .granted
     }
 
     private var aboutHero: some View {
@@ -2440,6 +2452,100 @@ struct AboutTab: View {
                 }
 
                 Spacer(minLength: 0)
+            }
+        }
+    }
+
+    private var aboutPermissionsCard: some View {
+        MainWindowSurface {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(AppLocalization.localizedString("about_permissions_section_title"))
+                    .font(.headline.weight(.semibold))
+                    .foregroundColor(MainWindowColors.title)
+
+                // Accessibility permission row
+                HStack(spacing: 12) {
+                    Image(systemName: accessibilityGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(accessibilityGranted ? .green : .red)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(AppLocalization.localizedString("about_permissions_accessibility_title"))
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(MainWindowColors.title)
+
+                        Text(accessibilityGranted
+                             ? AppLocalization.localizedString("about_permissions_status_granted")
+                             : AppLocalization.localizedString("about_permissions_status_denied"))
+                            .font(.caption)
+                            .foregroundColor(accessibilityGranted ? .green : .red)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    if !accessibilityGranted {
+                        Button(AppLocalization.localizedString("open_system_settings_button")) {
+                            PermissionsManager.requestAccessibility()
+                            PermissionsManager.openSystemPreferences(for: .accessibility)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                    }
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(accessibilityGranted ? Color.green.opacity(0.06) : Color.red.opacity(0.06))
+                )
+
+                // App path section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(AppLocalization.localizedString("about_permissions_app_path_title"))
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(MainWindowColors.title)
+
+                    HStack(spacing: 8) {
+                        Text(PermissionsManager.appExecutablePath)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundColor(MainWindowColors.secondaryText)
+                            .textSelection(.enabled)
+                            .lineLimit(showAppPath ? nil : 1)
+                            .truncationMode(.middle)
+
+                        Spacer(minLength: 0)
+
+                        Button {
+                            let pasteboard = NSPasteboard.general
+                            pasteboard.clearContents()
+                            pasteboard.setString(PermissionsManager.appExecutablePath, forType: .string)
+                        } label: {
+                            Image(systemName: "doc.on.doc")
+                        }
+                        .buttonStyle(.borderless)
+                        .controlSize(.small)
+                        .help(AppLocalization.localizedString("about_permissions_copy_path"))
+
+                        Button {
+                            showAppPath.toggle()
+                        } label: {
+                            Image(systemName: showAppPath ? "chevron.up" : "chevron.down")
+                        }
+                        .buttonStyle(.borderless)
+                        .controlSize(.small)
+                    }
+
+                    if !accessibilityGranted {
+                        Text(AppLocalization.localizedString("about_permissions_path_hint"))
+                            .font(.caption)
+                            .foregroundColor(MainWindowColors.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(MainWindowColors.softSurface)
+                )
             }
         }
     }

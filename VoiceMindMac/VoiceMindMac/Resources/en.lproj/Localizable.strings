@@ -251,6 +251,13 @@
 "about_update_error_repo_unavailable" = "The configured GitHub Releases repository is unavailable or has no public latest release.";
 "about_update_error_open_installer" = "The installer was downloaded, but macOS could not open it automatically.";
 "about_update_error_prepare_install" = "The update package was downloaded, but VoiceMind could not prepare the automatic install. The package has been opened instead.";
+"about_permissions_section_title" = "Permissions & App Info";
+"about_permissions_accessibility_title" = "Accessibility (required to auto-insert text at cursor)";
+"about_permissions_status_granted" = "Granted";
+"about_permissions_status_denied" = "Not granted — text cannot be auto-inserted at cursor";
+"about_permissions_app_path_title" = "App Path";
+"about_permissions_copy_path" = "Copy path";
+"about_permissions_path_hint" = "Make sure the app at this path is enabled in System Settings > Privacy & Security > Accessibility. If the path doesn't match, remove the old entry and re-add it.";
 "window_title_usage_guide" = "Usage Guide";
 "usage_guide_title" = "How to Use VoiceMind";
 "usage_guide_subtitle" = "On your first launch, follow the steps below to pair your devices and start voice input. You can reopen this guide later from the About tab.";

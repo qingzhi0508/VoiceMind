@@ -475,7 +475,7 @@ struct QRCodeScannerView: View {
             isPairing = false
             appendProgress(String(localized: "qr_progress_pairing_success"))
             print("✅ 配对成功")
-            dismiss()
+            // 不在这里调用 dismiss()，由 ContentViewModel.showPairingView = false 统一关闭
         case .unpaired, .pairing:
             break
         }

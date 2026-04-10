@@ -146,6 +146,7 @@ class MenuBarController: NSObject, ObservableObject {
         guard let pid = pendingInjectionTargetAppPID,
               let app = NSRunningApplication(processIdentifier: pid) else {
             pendingInjectionTargetAppPID = nil
+            print("📍 无捕获的目标应用，当前前台应用: \(NSWorkspace.shared.frontmostApplication?.localizedName ?? "nil")")
             completion()
             return
         }
@@ -154,9 +155,12 @@ class MenuBarController: NSObject, ObservableObject {
         pendingInjectionTargetAppPID = nil
 
         guard !isAlreadyFrontmost else {
+            print("📍 目标应用已是前台: \(app.localizedName ?? "nil")")
             completion()
             return
         }
+
+        print("📍 恢复目标应用到前台: \(app.localizedName ?? "nil")")
 
         if #available(macOS 14.0, *) {
             app.activate()
@@ -483,8 +487,10 @@ class MenuBarController: NSObject, ObservableObject {
         missingTargetTitle: String,
         remainingRetries: Int
     ) {
+        print("📝 尝试文本注入: \"\(text.prefix(50))\" (重试剩余: \(remainingRetries))")
         switch textInjectionCoordinator.deliver(text: text) {
         case .injected:
+            print("✅ 文本注入成功")
             appendInboundDataRecord(
                 title: AppLocalization.localizedString("text_injection_success_title"),
                 detail: String(
@@ -494,6 +500,7 @@ class MenuBarController: NSObject, ObservableObject {
                 category: .voice
             )
         case .permissionRequired:
+            print("❌ 文本注入失败: 辅助功能权限未授权")
             appendInboundDataRecord(
                 title: AppLocalization.localizedString("text_injection_permission_title"),
                 detail: AppLocalization.localizedString("text_injection_permission_message"),
@@ -502,6 +509,7 @@ class MenuBarController: NSObject, ObservableObject {
             )
             showTextInjectionPermissionError(with: text)
         case .fallbackToCopy(let reason):
+            print("⚠️ 文本注入回退: \(reason)")
             if reason == "No focused input target", remainingRetries > 0 {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
                     self?.handleAutoInjectedText(

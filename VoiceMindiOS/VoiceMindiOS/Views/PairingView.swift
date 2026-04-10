@@ -405,7 +405,7 @@ struct PairingView: View {
                 pairingTimeoutTask?.cancel()
                 appendProgress(String(localized: "pairing_progress_pairing_success"))
                 isPairing = false
-                dismiss()
+                // 不在这里调用 dismiss()，由 ContentViewModel.showPairingView = false 统一关闭
             }
         case .unpaired, .pairing:
             break

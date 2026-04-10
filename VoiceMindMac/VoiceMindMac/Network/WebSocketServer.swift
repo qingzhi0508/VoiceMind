@@ -26,12 +26,41 @@ enum LocalNetworkAccessPolicy {
         }
     }
 
+    static func isLinkLocalIPv4(_ address: String) -> Bool {
+        let octets = address.split(separator: ".").compactMap { Int($0) }
+        guard octets.count == 4 else { return false }
+        return octets[0] == 169 && octets[1] == 254
+    }
+
+    static func isLinkLocalIPv6(_ address: String) -> Bool {
+        // Strip interface suffix (e.g. "fe80::1%en0" → "fe80::1")
+        let cleaned = address.split(separator: "%").first.map(String.init) ?? address
+        return cleaned.hasPrefix("fe80:")
+    }
+
     static func isAllowedPeerEndpoint(_ endpoint: NWEndpoint) -> Bool {
         guard case .hostPort(let host, _) = endpoint else {
             return false
         }
 
-        return isPrivateLANIPv4(String(describing: host))
+        let address = String(describing: host)
+
+        // Allow IPv4 private LAN (10.x, 172.16-31.x, 192.168.x)
+        if isPrivateLANIPv4(address) {
+            return true
+        }
+
+        // Allow IPv4 link-local (169.254.x.x) — common with Bonjour/mDNS
+        if isLinkLocalIPv4(address) {
+            return true
+        }
+
+        // Allow IPv6 link-local (fe80::) — common on local networks
+        if isLinkLocalIPv6(address) {
+            return true
+        }
+
+        return false
     }
 
     static func preferredLocalIPv4() -> String? {
