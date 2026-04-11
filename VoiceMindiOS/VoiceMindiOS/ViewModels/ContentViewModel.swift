@@ -922,8 +922,12 @@ extension ContentViewModel: ConnectionManagerDelegate {
             handleStartListen(envelope)
         case .stopListen:
             handleStopListen(envelope)
+        case .result:
+            handleMacRecognitionResult(envelope)
+        case .partialResult:
+            handleMacPartialResult(envelope)
         case .error:
-            handlePairingError(envelope)
+            handleRemoteError(envelope)
         default:
             break
         }
@@ -997,6 +1001,89 @@ extension ContentViewModel: ConnectionManagerDelegate {
                 severity: .error
             )
         }
+    }
+
+    private func handleMacRecognitionResult(_ envelope: MessageEnvelope) {
+        guard let payload = try? JSONDecoder().decode(ResultPayload.self, from: envelope.payload) else {
+            print("❌ 无法解码远端识别结果")
+            return
+        }
+
+        print("📝 收到远端识别结果: \(payload.text)")
+
+        DispatchQueue.main.async {
+            // 提交文本到转写区域（跟本地识别一样的逻辑）
+            let committedText = LocalTranscriptHistory.appendingLatestTranscript(
+                payload.text,
+                to: self.committedTranscriptText
+            )
+            self.committedTranscriptText = committedText
+            self.liveTranscriptText = ""
+            self.localTranscriptText = committedText
+            self.transcriptAutoScrollVersion += 1
+            self.appendLocalTranscriptRecord(text: payload.text, language: payload.language)
+            self.recordSuccessfulTwoDeviceSyncSession()
+
+            self.recognitionState = .idle
+            self.currentSessionId = nil
+            self.manualSessionId = nil
+            self.activeInputMode = nil
+            self.pushToTalkStatusMessage = self.localized("ptt_mac_result_received")
+            self.appendInboundDataRecord(
+                title: self.localized("log_mac_result_title"),
+                detail: self.localized("log_mac_result_detail_format", payload.sessionId, payload.language, payload.text),
+                category: .voice
+            )
+        }
+    }
+
+    private func handleMacPartialResult(_ envelope: MessageEnvelope) {
+        guard let payload = try? JSONDecoder().decode(PartialResultPayload.self, from: envelope.payload) else {
+            return
+        }
+        print("📝 收到远端部分结果: \(payload.text)")
+        DispatchQueue.main.async {
+            self.liveTranscriptText = payload.text
+            self.localTranscriptText = LocalTranscriptHistory.renderingActiveTranscript(
+                committedText: self.committedTranscriptText,
+                liveTranscriptText: self.liveTranscriptText
+            )
+            self.transcriptAutoScrollVersion += 1
+        }
+    }
+
+    private func handleRemoteError(_ envelope: MessageEnvelope) {
+        guard let payload = try? JSONDecoder().decode(ErrorPayload.self, from: envelope.payload) else {
+            return
+        }
+
+        let recognitionErrors = [
+            "recognition_error",
+            "recognition_start_failed",
+            "recognition_stop_failed",
+            "audio_processing_failed"
+        ]
+
+        if recognitionErrors.contains(payload.code) {
+            print("❌ 远端识别错误: \(payload.message)")
+            DispatchQueue.main.async {
+                self.recognitionState = .idle
+                self.currentSessionId = nil
+                self.manualSessionId = nil
+                self.activeInputMode = nil
+                self.pushToTalkStatusMessage = self.localized("ptt_mac_error")
+                self.appendInboundDataRecord(
+                    title: self.localized("log_mac_error_title"),
+                    detail: payload.message,
+                    category: .voice,
+                    severity: .error
+                )
+            }
+            return
+        }
+
+        // 非识别错误走原有配对错误处理
+        handlePairingError(envelope)
     }
 }
 

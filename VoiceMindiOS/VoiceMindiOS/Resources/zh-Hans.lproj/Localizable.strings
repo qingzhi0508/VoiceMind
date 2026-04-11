@@ -267,6 +267,11 @@
 "ptt_mic_session_ended" = "话筒监听已结束。";
 "voice_isolation_tip_title" = "开启语音突显可获得更好的降噪效果";
 "voice_isolation_tip_body" = "下拉控制中心 → 麦克风模式 → 选择「语音突显」，可利用 Apple AI 过滤环境噪声，只保留你的声音。";
+"ptt_mac_result_received" = "远端识别完成，结果已发送到桌面端。";
+"ptt_mac_error" = "远端识别失败，请重试。";
+"log_mac_result_title" = "远端识别结果";
+"log_mac_result_detail_format" = "Session: %@\n语言: %@\n内容: %@";
+"log_mac_error_title" = "远端识别失败";
 "mode_local" = "本地识别";
 "mode_mac" = "远端识别";
 "mode_microphone" = "话筒";
