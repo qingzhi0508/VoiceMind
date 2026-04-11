@@ -67,9 +67,10 @@ class AudioStreamController: NSObject {
             // 配置音频会话。不要强制设置输入通道数，部分设备在首次激活时会直接失败。
             let audioSession = AVAudioSession.sharedInstance()
             if playThroughMacSpeaker {
-                // 话筒播放模式：measurement 模式保留完整采集音量，不经过系统 AGC 衰减
-                // 回声抑制由 Mac 端 AcousticFeedbackDetector 处理
-                try audioSession.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
+                // 话筒播放模式：voiceChat 启用硬件波束成形 + 噪声抑制，聚焦近场人声
+                // 系统会自动利用多麦克风做 beamforming，过滤远处环境噪声
+                // 音量衰减由 Mac 端高增益 AGC (maxGain=12, targetRms=0.6) 补偿
+                try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
             } else {
                 // 普通识别模式：仅录音，measurement 模式减少系统信号处理
                 try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
