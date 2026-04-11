@@ -648,14 +648,9 @@ extension ConnectionManager: SpeechRecognitionEngineDelegate {
 
         // 优先发回 iOS，保证手机端尽快收到
         server.send(envelope)
-        print("📤 识别结果已发送到 iOS")
 
-        // 异步通知 MenuBarController 进行文字注入（不阻塞）
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            self.delegate?.connectionManager(self, didReceiveMessage: envelope)
-            print("✅ Mac 端文字注入完成")
-        }
+        // 通知 MenuBarController 进行文字注入
+        delegate?.connectionManager(self, didReceiveMessage: envelope)
     }
 
     func engine(

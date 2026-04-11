@@ -110,6 +110,23 @@ public struct ErrorPayload: Codable {
     }
 }
 
+// MARK: - 指令 Payloads
+
+public enum KeywordAction: String, Codable {
+    case confirm    // 模拟回车键
+    case undo       // 清空已注入文字
+}
+
+public struct KeywordPayload: Codable {
+    public let action: KeywordAction
+    public let sessionId: String
+
+    public init(action: KeywordAction, sessionId: String) {
+        self.action = action
+        self.sessionId = sessionId
+    }
+}
+
 // MARK: - 音频流 Payloads
 
 public struct AudioStartPayload: Codable {

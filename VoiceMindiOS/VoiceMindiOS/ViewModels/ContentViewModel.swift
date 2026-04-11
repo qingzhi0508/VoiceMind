@@ -21,6 +21,7 @@ class ContentViewModel: ObservableObject {
     @Published var localTranscriptText: String = ""
     @Published var localTranscriptHistory: [LocalTranscriptRecord] = []
     @Published var transcriptAutoScrollVersion: Int = 0
+    @Published var showsTranscriptActions: Bool = false
     @Published private(set) var twoDeviceSyncAccessState: TwoDeviceSyncAccessState = .limited(
         remaining: TwoDeviceSyncPolicy.defaultFreeSessionLimit,
         used: 0
@@ -81,6 +82,7 @@ class ContentViewModel: ObservableObject {
 
     private var currentSessionId: String?
     private var manualSessionId: String?
+    private var lastKeywordSessionId: String?
     private var activeInputMode: ActiveInputMode?
     private var committedTranscriptText: String = ""
     private var liveTranscriptText: String = ""
@@ -244,6 +246,7 @@ class ContentViewModel: ObservableObject {
 
     func startPushToTalk() {
         guard canStartPushToTalk else { return }
+        showsTranscriptActions = false
         let clearedTranscriptText = LocalTranscriptHistory.beginningNewRecognitionSession(
             from: localTranscriptText
         )
@@ -817,6 +820,69 @@ class ContentViewModel: ObservableObject {
             pushToTalkStatusMessage = error.localizedDescription
         }
     }
+
+    // MARK: - Transcript Actions (确认/撤销)
+
+    func confirmTranscriptAction() {
+        sendKeywordAction(.confirm)
+        clearTranscriptActions()
+    }
+
+    func undoTranscriptAction() {
+        sendKeywordAction(.undo)
+        clearTranscriptActions()
+    }
+
+    private func sendKeywordAction(_ action: KeywordAction) {
+        let sessionId = lastKeywordSessionId ?? UUID().uuidString
+        let payload = KeywordPayload(action: action, sessionId: sessionId)
+        guard let payloadData = try? JSONEncoder().encode(payload) else { return }
+
+        let timestamp = Date()
+        let hmac = connectionManager.hmacValidator?.generateHMACForEnvelope(
+            type: .keyword,
+            payload: payloadData,
+            timestamp: timestamp,
+            deviceId: connectionManager.deviceId
+        )
+
+        let envelope = MessageEnvelope(
+            type: .keyword,
+            payload: payloadData,
+            timestamp: timestamp,
+            deviceId: connectionManager.deviceId,
+            hmac: hmac
+        )
+
+        connectionManager.send(envelope)
+    }
+
+    private func clearTranscriptActions() {
+        showsTranscriptActions = false
+        committedTranscriptText = ""
+        liveTranscriptText = ""
+        localTranscriptText = ""
+        lastKeywordSessionId = nil
+        refreshIdleStatusMessage()
+    }
+
+    // MARK: - Test Helpers
+
+    func simulateMacResult(_ payload: ResultPayload) {
+        let trimmed = payload.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return
+        }
+        committedTranscriptText = trimmed
+        liveTranscriptText = ""
+        localTranscriptText = trimmed
+        showsTranscriptActions = true
+        lastKeywordSessionId = payload.sessionId
+    }
+
+    func resetTranscriptActionsForNewRecording() {
+        showsTranscriptActions = false
+    }
 }
 
 extension ContentViewModel: ConnectionManagerDelegate {
@@ -1027,7 +1093,9 @@ extension ContentViewModel: ConnectionManagerDelegate {
             self.currentSessionId = nil
             self.manualSessionId = nil
             self.activeInputMode = nil
+            self.showsTranscriptActions = !payload.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             self.pushToTalkStatusMessage = self.localized("ptt_mac_result_received")
+            self.lastKeywordSessionId = payload.sessionId
             self.appendInboundDataRecord(
                 title: self.localized("log_mac_result_title"),
                 detail: self.localized("log_mac_result_detail_format", payload.sessionId, payload.language, payload.text),

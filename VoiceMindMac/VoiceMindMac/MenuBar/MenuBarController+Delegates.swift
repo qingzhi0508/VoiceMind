@@ -9,10 +9,28 @@ enum VoiceInboundLogPolicy {
             return false
         case .textMessage:
             return true
+        case .keyword:
+            return false
         default:
             return false
         }
     }
+}
+
+enum KeywordActionRoutingPolicy {
+    static func route(_ action: KeywordAction) -> KeywordActionResult {
+        switch action {
+        case .confirm:
+            return .simulateReturn
+        case .undo:
+            return .selectAndDelete
+        }
+    }
+}
+
+enum KeywordActionResult: Equatable {
+    case simulateReturn
+    case selectAndDelete
 }
 
 // MARK: - ConnectionManagerDelegate
@@ -62,6 +80,8 @@ extension MenuBarController: ConnectionManagerDelegate {
             handleResultMessage(envelope)
         case .textMessage:
             handleTextMessage(envelope)
+        case .keyword:
+            handleKeywordMessage(envelope)
         case .ping:
             handlePingMessage(envelope)
         default:
@@ -145,6 +165,53 @@ extension MenuBarController: ConnectionManagerDelegate {
                 self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
             }
         }
+    }
+
+    private func handleKeywordMessage(_ envelope: MessageEnvelope) {
+        guard let payload = try? JSONDecoder().decode(KeywordPayload.self, from: envelope.payload) else {
+            print("❌ 无法解码 KeywordPayload")
+            return
+        }
+
+        print("🔑 收到指令: \(payload.action.rawValue)")
+        switch KeywordActionRoutingPolicy.route(payload.action) {
+        case .simulateReturn:
+            simulateReturnKey()
+        case .selectAndDelete:
+            undoLastInjection()
+        }
+    }
+
+    private func simulateReturnKey() {
+        let source = CGEventSource(stateID: .hidSystemState)
+        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x24, keyDown: true)
+        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x24, keyDown: false)
+        keyDown?.post(tap: .cghidEventTap)
+        keyUp?.post(tap: .cghidEventTap)
+        print("✅ 已模拟回车键")
+    }
+
+    private func undoLastInjection() {
+        // Select all (Cmd+A) then delete
+        let source = CGEventSource(stateID: .hidSystemState)
+        let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: true)
+        let aDown = CGEvent(keyboardEventSource: source, virtualKey: 0x00, keyDown: true)
+        let aUp = CGEvent(keyboardEventSource: source, virtualKey: 0x00, keyDown: false)
+        let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: false)
+
+        aDown?.flags = .maskCommand
+        aUp?.flags = .maskCommand
+
+        let deleteDown = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: true)
+        let deleteUp = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: false)
+
+        cmdDown?.post(tap: .cghidEventTap)
+        aDown?.post(tap: .cghidEventTap)
+        aUp?.post(tap: .cghidEventTap)
+        cmdUp?.post(tap: .cghidEventTap)
+        deleteDown?.post(tap: .cghidEventTap)
+        deleteUp?.post(tap: .cghidEventTap)
+        print("✅ 已撤销（全选+删除）")
     }
 
     private func handlePingMessage(_ envelope: MessageEnvelope) {

@@ -13,6 +13,9 @@ public enum MessageType: String, Codable {
     case pong
     case error
 
+    // 指令消息类型
+    case keyword        // iOS -> Mac: 确认/撤销指令
+
     // 音频流消息类型
     case audioStart     // iOS -> Mac: 开始音频流
     case audioData      // iOS -> Mac: 音频数据

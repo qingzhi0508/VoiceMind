@@ -275,6 +275,8 @@
 "mode_local" = "本地识别";
 "mode_mac" = "远端识别";
 "mode_microphone" = "话筒";
+"transcript_action_confirm" = "确认";
+"transcript_action_undo" = "撤销";
 "home_mode_switch_to_mac" = "切换到 桌面端 转录";
 "home_mode_switch_to_local" = "切换到本地转录";
 "bottom_mode_toggle_mac" = "桌面端 转录";
