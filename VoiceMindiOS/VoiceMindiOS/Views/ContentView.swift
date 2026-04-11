@@ -1319,6 +1319,22 @@ struct PrimaryRecognitionPage: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+        .overlay(alignment: .bottom) {
+            if TranscriptActionBarPlacementPolicy.shouldShowBar(
+                showsTranscriptActions: viewModel.showsTranscriptActions
+            ) {
+                GeometryReader { geo in
+                    TranscriptActionBar(
+                        onConfirm: { viewModel.confirmTranscriptAction() },
+                        onUndo: { viewModel.undoTranscriptAction() }
+                    )
+                    .position(x: geo.size.width / 2, y: geo.size.height * 0.72)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.42, dampingFraction: 0.88), value: viewModel.showsTranscriptActions)
+            }
+        }
+
         .background(
             AppCanvasBackgroundLayer(
                 appTheme: appTheme,
@@ -1340,16 +1356,6 @@ struct PrimaryRecognitionPage: View {
             Button(String(localized: "cancel_button"), role: .cancel) {}
         } message: {
             Text(String(localized: "home_mac_action_alert_message"))
-        }
-
-        if TranscriptActionBarPlacementPolicy.shouldShowBar(
-            showsTranscriptActions: viewModel.showsTranscriptActions
-        ) {
-            TranscriptActionBar(
-                onConfirm: { viewModel.confirmTranscriptAction() },
-                onUndo: { viewModel.undoTranscriptAction() }
-            )
-            .transition(.move(edge: .bottom).combined(with: .opacity))
         }
 
         if showsVoiceIsolationTip {

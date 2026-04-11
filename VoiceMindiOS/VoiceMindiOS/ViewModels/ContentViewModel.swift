@@ -22,6 +22,8 @@ class ContentViewModel: ObservableObject {
     @Published var localTranscriptHistory: [LocalTranscriptRecord] = []
     @Published var transcriptAutoScrollVersion: Int = 0
     @Published var showsTranscriptActions: Bool = false
+    var isLastRecognitionLocal: Bool = false
+    var preRecognitionCommittedText: String = ""
     @Published private(set) var twoDeviceSyncAccessState: TwoDeviceSyncAccessState = .limited(
         remaining: TwoDeviceSyncPolicy.defaultFreeSessionLimit,
         used: 0
@@ -824,13 +826,33 @@ class ContentViewModel: ObservableObject {
     // MARK: - Transcript Actions (确认/撤销)
 
     func confirmTranscriptAction() {
-        sendKeywordAction(.confirm)
-        clearTranscriptActions()
+        if isLastRecognitionLocal {
+            // 本地识别：确认后保留文字，只隐藏按钮
+            showsTranscriptActions = false
+            isLastRecognitionLocal = false
+            refreshIdleStatusMessage()
+        } else {
+            // 远端识别：发送确认到 Mac 并清除文字
+            sendKeywordAction(.confirm)
+            clearTranscriptActions()
+        }
     }
 
     func undoTranscriptAction() {
-        sendKeywordAction(.undo)
-        clearTranscriptActions()
+        if isLastRecognitionLocal {
+            // 本地识别：撤销后恢复到识别前的文字
+            showsTranscriptActions = false
+            isLastRecognitionLocal = false
+            committedTranscriptText = preRecognitionCommittedText
+            liveTranscriptText = ""
+            localTranscriptText = preRecognitionCommittedText
+            preRecognitionCommittedText = ""
+            refreshIdleStatusMessage()
+        } else {
+            // 远端识别：发送撤销到 Mac 并清除文字
+            sendKeywordAction(.undo)
+            clearTranscriptActions()
+        }
     }
 
     private func sendKeywordAction(_ action: KeywordAction) {
@@ -877,7 +899,23 @@ class ContentViewModel: ObservableObject {
         liveTranscriptText = ""
         localTranscriptText = trimmed
         showsTranscriptActions = true
+        isLastRecognitionLocal = false
         lastKeywordSessionId = payload.sessionId
+    }
+
+    func simulateLocalResult(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return
+        }
+        preRecognitionCommittedText = committedTranscriptText
+        committedTranscriptText = LocalTranscriptHistory.appendingLatestTranscript(
+            trimmed, to: committedTranscriptText
+        )
+        liveTranscriptText = ""
+        localTranscriptText = committedTranscriptText
+        showsTranscriptActions = true
+        isLastRecognitionLocal = true
     }
 
     func resetTranscriptActionsForNewRecording() {
@@ -1187,6 +1225,8 @@ extension ContentViewModel: SpeechControllerDelegate {
 
     func speechController(_ controller: SpeechController, didRecognizeText text: String, language: String) {
         DispatchQueue.main.async {
+            // 保存识别前的文字，用于撤销恢复
+            self.preRecognitionCommittedText = self.committedTranscriptText
             let committedText = LocalTranscriptHistory.appendingLatestTranscript(
                 text,
                 to: self.committedTranscriptText
@@ -1196,6 +1236,13 @@ extension ContentViewModel: SpeechControllerDelegate {
             self.localTranscriptText = committedText
             self.transcriptAutoScrollVersion += 1
             self.appendLocalTranscriptRecord(text: text, language: language)
+
+            // 本地识别完成后显示确认/撤销按钮
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                self.showsTranscriptActions = true
+                self.isLastRecognitionLocal = true
+            }
 
             let shouldForward = self.shouldForwardResultToMac
             let sessionId = self.currentSessionId ?? self.manualSessionId
