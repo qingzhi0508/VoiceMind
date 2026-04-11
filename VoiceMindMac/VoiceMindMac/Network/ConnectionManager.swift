@@ -65,6 +65,7 @@ class ConnectionManager: NSObject {
 
     /// 记录以 playThrough 模式启动的 session，即使播放结束仍保留，用于结果到达时判断是否跳过注入
     private var playThroughSessions: Set<String> = []
+    private var audioPacketCount: Int = 0
 
     /// 判断指定 session 是否为麦克风播放模式
     func isPlayThroughSession(_ sessionId: String) -> Bool {
@@ -537,12 +538,10 @@ extension ConnectionManager: WebSocketServerDelegate {
             return
         }
 
-        print("📥 收到音频数据: \(payload.audioData.count) 字节 (seq: \(payload.sequenceNumber))")
-        recordInboundEvent(
-            title: "语音数据包",
-            detail: "Session: \(payload.sessionId)\n序号: \(payload.sequenceNumber)\n字节数: \(payload.audioData.count)",
-            category: .voice
-        )
+        audioPacketCount += 1
+        if audioPacketCount % 100 == 0 {
+            print("📥 已处理 \(audioPacketCount) 个音频包")
+        }
 
         // 话筒模式仅播放音频，不送识别引擎
         if !isPlayThroughSession(payload.sessionId) {
@@ -561,7 +560,8 @@ extension ConnectionManager: WebSocketServerDelegate {
     }
 
     private func handleAudioEnd(_ message: MessageEnvelope) {
-        print("🛑 收到音频流结束消息")
+        print("🛑 收到音频流结束消息 (共 \(audioPacketCount) 个音频包)")
+        audioPacketCount = 0
         guard let payload = try? JSONDecoder().decode(AudioEndPayload.self, from: message.payload) else {
             print("❌ 无法解析 AudioEnd 消息")
             return

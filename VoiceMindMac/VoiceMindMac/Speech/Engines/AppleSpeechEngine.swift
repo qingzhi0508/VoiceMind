@@ -169,8 +169,6 @@ class AppleSpeechEngine: NSObject, SpeechRecognitionEngine {
             throw SpeechError.recognitionFailed("音频数据转换失败")
         }
 
-        print("🎵 处理音频数据: \(data.count) 字节 -> \(buffer.frameLength) 帧")
-
         // 追加到识别请求
         recognitionRequest.append(buffer)
     }
