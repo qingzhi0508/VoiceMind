@@ -7,31 +7,9 @@ final class RemoteMicrophoneMonitorPlayer: RemoteMicrophoneMonitorPlaying {
     private let eq = AVAudioUnitEQ(numberOfBands: 3)
     private var audioFormat: AVAudioFormat?
 
-    // MARK: - AGC State
-    /// 当前 AGC 增益值
-    private var agcGain: Float = 2.0
-    /// 平滑后的 RMS 值，用于 AGC 计算
-    private var agcRmsSmoothed: Float = 0
-    /// 目标 RMS 电平
-    private let targetRms: Float = 0.15
-    /// RMS 平滑系数（越大越平滑）
-    private let rmsSmoothing: Float = 0.92
-    /// AGC 调整速度
-    private let agcSpeed: Float = 0.08
-    /// 最大增益
-    private let maxGain: Float = 8.0
-    /// 最小增益
-    private let minGain: Float = 0.5
-
-    // MARK: - Noise Gate State
-    /// 噪声门当前电平（1.0=完全打开，0.0=完全关闭）
-    private var gateLevel: Float = 1.0
-    /// 噪声门阈值（-40dB ≈ 0.01 线性幅度）
-    private let gateThreshold: Float = 0.01
-    /// 门打开速度（快速响应有效信号）
-    private let gateAttackRate: Float = 0.1
-    /// 门关闭速度（缓慢关闭避免突然截断）
-    private let gateReleaseRate: Float = 0.02
+    // MARK: - Signal Processing
+    private var signalProcessor = AudioSignalProcessor()
+    private var feedbackDetector = AcousticFeedbackDetector()
 
     init() {
         audioEngine.attach(playerNode)
@@ -119,7 +97,7 @@ final class RemoteMicrophoneMonitorPlayer: RemoteMicrophoneMonitorPlaying {
 
         buffer.frameLength = AVAudioFrameCount(frameCount)
 
-        // Convert PCM16 → Float32 with AGC + noise gate
+        // Convert PCM16 → Float32 with AGC + noise gate + feedback suppression
         data.withUnsafeBytes { rawBuffer in
             guard let srcSamples = rawBuffer.bindMemory(to: Int16.self).baseAddress else {
                 return
@@ -129,7 +107,7 @@ final class RemoteMicrophoneMonitorPlayer: RemoteMicrophoneMonitorPlaying {
 
             let totalSamples = frameCount * channelCount
 
-            // Pass 1: 计算 RMS
+            // Compute RMS
             var sumSquares: Float = 0
             for i in 0..<totalSamples {
                 let sample = Float(srcSamples[i]) / Float(Int16.max)
@@ -137,24 +115,18 @@ final class RemoteMicrophoneMonitorPlayer: RemoteMicrophoneMonitorPlaying {
             }
             let rms = sqrt(sumSquares / Float(totalSamples))
 
-            // AGC: 平滑 RMS 并调整增益
-            agcRmsSmoothed = rmsSmoothing * agcRmsSmoothed + (1 - rmsSmoothing) * rms
-            let targetGain = targetRms / max(agcRmsSmoothed, 0.001)
-            let clampedTarget = max(min(targetGain, maxGain), minGain)
-            agcGain += agcSpeed * (clampedTarget - agcGain)
+            // Feedback detection
+            let feedbackSeverity = feedbackDetector.process(rms: rms)
 
-            // Noise gate: 平滑开关，避免咔嗒声
-            let targetGate: Float = rms > gateThreshold ? 1.0 : 0.0
-            let gateRate = targetGate > gateLevel ? gateAttackRate : gateReleaseRate
-            gateLevel += gateRate * (targetGate - gateLevel)
+            // Signal processing (AGC + noise gate + feedback suppression)
+            let result = signalProcessor.process(rms: rms, feedbackSeverity: feedbackSeverity)
 
-            // Pass 2: 转换 + 应用 AGC + 噪声门
-            let effectiveGain = agcGain * gateLevel
+            // Apply gain
             for frameIndex in 0..<frameCount {
                 for ch in 0..<channelCount {
                     let srcIndex = frameIndex * channelCount + ch
                     let sample = Float(srcSamples[srcIndex]) / Float(Int16.max)
-                    floatData[ch][frameIndex] = sample * effectiveGain
+                    floatData[ch][frameIndex] = sample * result.effectiveGain
                 }
             }
         }
@@ -174,9 +146,7 @@ final class RemoteMicrophoneMonitorPlayer: RemoteMicrophoneMonitorPlaying {
         audioEngine.reset()
         audioFormat = nil
 
-        // 重置 AGC / 噪声门状态
-        agcGain = 2.0
-        agcRmsSmoothed = 0
-        gateLevel = 1.0
+        signalProcessor = AudioSignalProcessor()
+        feedbackDetector.reset()
     }
 }

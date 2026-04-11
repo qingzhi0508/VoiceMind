@@ -89,9 +89,13 @@ final class MainWindowFullscreenLayoutTests: XCTestCase {
         let recordButtonRange = try XCTUnwrap(source.range(of: "// MARK: - Record Button"))
         let notesTabSource = String(source[notesTabRange.lowerBound..<recordButtonRange.lowerBound])
 
+        // Only check for VStack-level Spacer() that pushes content to the bottom.
+        // HStack-level Spacer() used for horizontal alignment (e.g., pushing a clear button
+        // to the trailing edge) are legitimate and should not trigger this check.
+        let verticalSpacerPattern = "\n                Spacer()\n"
         XCTAssertFalse(
-            notesTabSource.contains("Spacer()"),
-            "NotesTab should not use a Spacer that forces the recording controls to stick to the window bottom."
+            notesTabSource.contains(verticalSpacerPattern),
+            "NotesTab should not use a vertical Spacer that forces content to stick to the window bottom."
         )
     }
 

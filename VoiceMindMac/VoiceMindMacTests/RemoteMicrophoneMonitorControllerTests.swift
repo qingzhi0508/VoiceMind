@@ -1,8 +1,9 @@
+import AVFoundation
 import Foundation
 import XCTest
 @testable import VoiceMind
 
-final class RemoteMicrophoneMonitorControllerTests: XCTestCase {
+final class MicMonitorControllerTests: XCTestCase {
     func testStartRelayBootsPlayerOnlyWhenFlagIsEnabled() throws {
         let player = MockRemoteMicrophoneMonitorPlayer()
         let controller = RemoteMicrophoneMonitorController(player: player)
@@ -57,12 +58,33 @@ final class RemoteMicrophoneMonitorControllerTests: XCTestCase {
         XCTAssertFalse(controller.isRelayActive)
         XCTAssertEqual(player.stopCallCount, 1)
     }
+
+    func testStopSessionResetsState() throws {
+        let player = MockRemoteMicrophoneMonitorPlayer()
+        let controller = RemoteMicrophoneMonitorController(player: player)
+
+        try controller.startSession(
+            sessionId: "session-1",
+            sampleRate: 48_000,
+            channels: 1,
+            format: "pcm16",
+            playThroughMacSpeaker: true
+        )
+
+        XCTAssertTrue(controller.isRelayActive)
+
+        controller.stopSession(sessionId: "session-1")
+
+        XCTAssertFalse(controller.isRelayActive)
+        XCTAssertNil(controller.currentSessionId)
+        XCTAssertEqual(player.stopCallCount, 1)
+    }
 }
 
 private final class MockRemoteMicrophoneMonitorPlayer: RemoteMicrophoneMonitorPlaying {
     struct StartCall: Equatable {
         let sampleRate: Double
-        let channels: UInt32
+        let channels: AVAudioChannelCount
         let format: String
     }
 
@@ -71,7 +93,7 @@ private final class MockRemoteMicrophoneMonitorPlayer: RemoteMicrophoneMonitorPl
     var stopCallCount = 0
     var errorOnAppend: Error?
 
-    func start(sampleRate: Double, channels: UInt32, format: String) throws {
+    func start(sampleRate: Double, channels: AVAudioChannelCount, format: String) throws {
         startCalls.append(.init(sampleRate: sampleRate, channels: channels, format: format))
     }
 

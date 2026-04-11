@@ -59,8 +59,8 @@ final class MenuBarWindowSizingTests: XCTestCase {
         let source = try menuBarControllerSource()
 
         XCTAssertTrue(
-            source.contains("static let defaultWidth: CGFloat = 800"),
-            "Main window default width should use 800."
+            source.contains("static let defaultWidth: CGFloat = 850"),
+            "Main window default width should use 850."
         )
 
         XCTAssertTrue(

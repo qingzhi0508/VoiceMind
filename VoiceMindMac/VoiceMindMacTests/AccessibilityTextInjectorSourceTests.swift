@@ -24,8 +24,13 @@ final class AccessibilityTextInjectorSourceTests: XCTestCase {
         let methodBody = try XCTUnwrap(methodBody(named: "func inject(_ text: String) throws", in: source))
 
         XCTAssertTrue(
-            methodBody.contains("guard let focusedElement = FocusedInputDetector.currentWritableFocusedElement() else"),
+            methodBody.contains("FocusedInputDetector.currentWritableFocusedElement()"),
             "AccessibilityTextInjector should still begin by resolving a writable focused element."
+        )
+
+        XCTAssertTrue(
+            methodBody.contains("guard let focusedElement else"),
+            "AccessibilityTextInjector should guard on the focused element availability before proceeding."
         )
         XCTAssertTrue(
             methodBody.contains("try fallbackToCGEvent(text)\n            return"),

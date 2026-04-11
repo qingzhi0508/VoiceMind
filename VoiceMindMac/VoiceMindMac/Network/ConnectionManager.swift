@@ -56,7 +56,7 @@ class ConnectionManager: NSObject {
 
     // 语音识别管理器
     private let speechManager = SpeechRecognitionManager.shared
-    private let remoteMicrophoneMonitorController = RemoteMicrophoneMonitorController()
+    private lazy var remoteMicrophoneMonitorController = RemoteMicrophoneMonitorController(player: RemoteMicrophoneMonitorPlayer())
 
     /// 当前是否正在通过 Mac 喇叭播放手机麦克风音频
     var isMicMonitorActive: Bool {

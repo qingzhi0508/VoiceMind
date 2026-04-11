@@ -20,7 +20,7 @@ final class RemoteMicrophoneMonitorController {
     private(set) var currentSessionId: String?
     private(set) var isRelayActive = false
 
-    init(player: RemoteMicrophoneMonitorPlaying = RemoteMicrophoneMonitorPlayer()) {
+    init(player: RemoteMicrophoneMonitorPlaying) {
         self.player = player
     }
 
