@@ -180,19 +180,24 @@ class AppleSpeechEngine: NSObject, SpeechRecognitionEngine {
             return
         }
 
+        let stoppingSessionId = currentSessionId
         print("🛑 Apple Speech 停止识别")
 
         // 结束识别请求（会触发最终结果回调）
         recognitionRequest?.endAudio()
         recognitionRequest = nil
 
-        // 缩短延迟清理时间（从2秒减少到0.5秒），因为有部分结果实时反馈
+        // 延迟清理：只有当前会话 ID 未变（没有新会话启动）时才清理
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.recognitionTask?.cancel()
-            self?.recognitionTask = nil
-            self?.currentSessionId = nil
-            self?.currentLanguage = nil
-            self?.audioFormat = nil
+            guard let self, self.currentSessionId == stoppingSessionId else {
+                print("🧹 Apple Speech 跳过清理（已有新会话）")
+                return
+            }
+            self.recognitionTask?.cancel()
+            self.recognitionTask = nil
+            self.currentSessionId = nil
+            self.currentLanguage = nil
+            self.audioFormat = nil
             print("🧹 Apple Speech 状态已清理")
         }
     }

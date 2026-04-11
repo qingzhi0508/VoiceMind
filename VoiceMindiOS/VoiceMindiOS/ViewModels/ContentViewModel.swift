@@ -256,6 +256,9 @@ class ContentViewModel: ObservableObject {
                 pushToTalkStatusMessage = localized("ptt_connect_to_talk")
                 return
             }
+            guard authorizeTwoDeviceSyncSessionIfNeeded() else {
+                return
+            }
 
             do {
                 let sessionId = UUID().uuidString
@@ -1180,16 +1183,6 @@ extension ContentViewModel: BonjourBrowserDelegate {
 extension ContentViewModel: AudioStreamControllerDelegate {
     func audioStreamController(_ controller: AudioStreamController, didStartStream payload: AudioStartPayload) {
         print("📤 发送 audioStart 消息")
-        guard authorizeTwoDeviceSyncSessionIfNeeded() else {
-            DispatchQueue.main.async {
-                self.manualSessionId = nil
-                self.recognitionState = .idle
-                self.activeInputMode = nil
-                self.audioLevel = 0
-            }
-            controller.stopStreaming()
-            return
-        }
         DispatchQueue.main.async {
             self.recognitionState = .listening
             self.pushToTalkStatusMessage = self.localized("ptt_capturing")
