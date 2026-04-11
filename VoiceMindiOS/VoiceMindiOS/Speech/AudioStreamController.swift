@@ -105,6 +105,17 @@ class AudioStreamController: NSObject {
 
             // 安装音频 tap
             let inputNode = audioEngine.inputNode
+
+            // 话筒模式启用语音处理（回声消除 + 噪声抑制 + 语音增强）
+            if playThroughMacSpeaker {
+                do {
+                    try inputNode.setVoiceProcessingEnabled(true)
+                    print("🎙️ 已启用语音处理 (Voice Processing)")
+                } catch {
+                    print("⚠️ 语音处理开启失败: \(error)")
+                }
+            }
+
             let inputFormat = inputNode.outputFormat(forBus: 0)
 
             guard let converter = AVAudioConverter(from: inputFormat, to: format) else {
@@ -163,6 +174,7 @@ class AudioStreamController: NSObject {
         if audioEngine.isRunning {
             audioEngine.stop()
         }
+        try? audioEngine.inputNode.setVoiceProcessingEnabled(false)
         audioEngine.inputNode.removeTap(onBus: 0)
         audioConverter = nil
         outputFormat = nil

@@ -267,6 +267,8 @@
 "ptt_mic_mode_ready" = "Hold to start mic monitoring.";
 "ptt_connect_for_mic_mode" = "Connect to Desktop to use mic mode.";
 "ptt_mic_session_ended" = "Mic monitoring ended.";
+"voice_isolation_tip_title" = "Enable Voice Isolation for better noise reduction";
+"voice_isolation_tip_body" = "Open Control Center → Mic Mode → select \"Voice Isolation\" to use Apple AI to filter background noise and keep only your voice.";
 "mode_local" = "Local";
 "mode_mac" = "Desktop";
 "mode_microphone" = "Mic";

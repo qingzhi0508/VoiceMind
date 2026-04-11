@@ -265,6 +265,8 @@
 "ptt_mic_mode_ready" = "按住开始话筒监听。";
 "ptt_connect_for_mic_mode" = "连接 桌面端 后可使用话筒模式。";
 "ptt_mic_session_ended" = "话筒监听已结束。";
+"voice_isolation_tip_title" = "开启语音突显可获得更好的降噪效果";
+"voice_isolation_tip_body" = "下拉控制中心 → 麦克风模式 → 选择「语音突显」，可利用 Apple AI 过滤环境噪声，只保留你的声音。";
 "mode_local" = "本地识别";
 "mode_mac" = "远端识别";
 "mode_microphone" = "话筒";

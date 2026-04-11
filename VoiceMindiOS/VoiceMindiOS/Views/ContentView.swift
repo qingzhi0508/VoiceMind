@@ -1143,13 +1143,64 @@ struct TranscriptCard: View {
     }
 }
 
+struct VoiceIsolationTipBanner: View {
+    @Binding var isDismissed: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "mic.badge.xmark")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(.orange)
+                .padding(.top, 2)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(String(localized: "voice_isolation_tip_title"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.primary)
+                Text(String(localized: "voice_isolation_tip_body"))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+
+            Button {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    isDismissed = true
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.tertiary)
+                    .padding(4)
+            }
+            .contentShape(Rectangle())
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
 struct PrimaryRecognitionPage: View {
     @ObservedObject var viewModel: ContentViewModel
     @Binding var isTranscriptFocused: Bool
     let onDismissKeyboard: () -> Void
     @AppStorage("app_theme") private var appTheme: String = "system"
     @AppStorage(AppLightBackgroundTintPolicy.storageKey) private var lightThemeBackgroundHex: String = AppLightBackgroundTintPolicy.defaultHex
+    @AppStorage("voicemind.voiceIsolationTipDismissed") private var voiceIsolationTipDismissed: Bool = false
     @State private var showsMacActionAlert = false
+
+    private var showsVoiceIsolationTip: Bool {
+        !voiceIsolationTipDismissed
+        && viewModel.effectiveHomeTranscriptionMode == .microphone
+        && viewModel.recognitionState == .idle
+        && viewModel.connectionState == .connected
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -1230,6 +1281,7 @@ struct PrimaryRecognitionPage: View {
 
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+
         .background(
             AppCanvasBackgroundLayer(
                 appTheme: appTheme,
@@ -1251,6 +1303,13 @@ struct PrimaryRecognitionPage: View {
             Button(String(localized: "cancel_button"), role: .cancel) {}
         } message: {
             Text(String(localized: "home_mac_action_alert_message"))
+        }
+
+        if showsVoiceIsolationTip {
+            VoiceIsolationTipBanner(isDismissed: $voiceIsolationTipDismissed)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
         }
         }
     }
