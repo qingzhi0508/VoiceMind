@@ -421,6 +421,7 @@ extension ConnectionManager: WebSocketServerDelegate {
         }
 
         // Forward validated message to delegate
+        print("📨 [MacRouter] Forwarding message type: \(message.type) to delegate")
         delegate?.connectionManager(self, didReceiveMessage: message)
     }
 
@@ -510,6 +511,12 @@ extension ConnectionManager: WebSocketServerDelegate {
             print("⚠️ 启动远端麦克风播放失败，已降级为仅识别: \(error)")
         }
 
+        // 话筒模式仅播放音频，不启动语音识别
+        guard !payload.playThroughMacSpeaker else {
+            print("🎙️ 话筒模式：跳过语音识别")
+            return
+        }
+
         do {
             try speechManager.startRecognition(
                 sessionId: payload.sessionId,
@@ -537,11 +544,14 @@ extension ConnectionManager: WebSocketServerDelegate {
             category: .voice
         )
 
-        do {
-            try speechManager.processAudioData(payload.audioData)
-        } catch {
-            print("❌ 处理音频数据失败: \(error.localizedDescription)")
-            sendError(code: "audio_processing_failed", message: error.localizedDescription)
+        // 话筒模式仅播放音频，不送识别引擎
+        if !isPlayThroughSession(payload.sessionId) {
+            do {
+                try speechManager.processAudioData(payload.audioData)
+            } catch {
+                print("❌ 处理音频数据失败: \(error.localizedDescription)")
+                sendError(code: "audio_processing_failed", message: error.localizedDescription)
+            }
         }
 
         try? remoteMicrophoneMonitorController.appendAudio(
@@ -565,6 +575,12 @@ extension ConnectionManager: WebSocketServerDelegate {
         )
 
         remoteMicrophoneMonitorController.stopSession(sessionId: payload.sessionId)
+
+        // 话筒模式无需停止识别（未启动过）
+        guard !isPlayThroughSession(payload.sessionId) else {
+            print("🎙️ 话筒模式：跳过停止语音识别")
+            return
+        }
 
         do {
             try speechManager.stopRecognition()

@@ -262,6 +262,12 @@
 "ptt_local_saved_and_sent" = "转写结果已显示在上方，并同步到 桌面端。";
 "ptt_manual_send_success" = "已将当前文字内容发送到 桌面端。";
 "ptt_manual_send_requires_mac" = "需要先打开 桌面端 协同并连接到 桌面端，才能发送当前文字。";
+"ptt_mic_mode_ready" = "按住开始话筒监听。";
+"ptt_connect_for_mic_mode" = "连接 桌面端 后可使用话筒模式。";
+"ptt_mic_session_ended" = "话筒监听已结束。";
+"mode_local" = "本地识别";
+"mode_mac" = "远端识别";
+"mode_microphone" = "话筒";
 "home_mode_switch_to_mac" = "切换到 桌面端 转录";
 "home_mode_switch_to_local" = "切换到本地转录";
 "bottom_mode_toggle_mac" = "桌面端 转录";

@@ -60,13 +60,19 @@ class AudioStreamController: NSObject {
         sequenceNumber = 0
         isStreaming = true
         do {
-            // 配置音频格式：16kHz, 单声道, PCM16
-            let sampleRate: Double = 16000
+            // 话筒播放模式使用 48kHz 提升音质；识别模式使用 16kHz 匹配模型
+            let sampleRate: Double = playThroughMacSpeaker ? 48000 : 16000
             let channels: AVAudioChannelCount = 1
 
             // 配置音频会话。不要强制设置输入通道数，部分设备在首次激活时会直接失败。
             let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+            if playThroughMacSpeaker {
+                // 话筒播放模式：playAndRecord 启用系统 AEC/AGC，提升采集质量
+                try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
+            } else {
+                // 普通识别模式：仅录音，measurement 模式减少系统信号处理
+                try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+            }
             try audioSession.setPreferredSampleRate(sampleRate)
             try audioSession.setPreferredIOBufferDuration(0.02)
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)

@@ -195,23 +195,6 @@ private struct SettingsPairingConnectionSection: View {
                 )
             )
 
-            if MacMicrophoneMonitorPolicy.shouldShowToggle(
-                sendToMacEnabled: viewModel.sendResultsToMacEnabled
-            ) {
-                Toggle(
-                    String(localized: "settings_send_to_mac_microphone_title"),
-                    isOn: Binding(
-                        get: { viewModel.playMicrophoneThroughMacSpeakerEnabled },
-                        set: { viewModel.playMicrophoneThroughMacSpeakerEnabled = $0 }
-                    )
-                )
-
-                Text(String(localized: "settings_send_to_mac_microphone_footer"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-            }
-
             Text(String(localized: "settings_send_to_mac_footer"))
                 .font(.caption)
                 .foregroundStyle(.secondary)

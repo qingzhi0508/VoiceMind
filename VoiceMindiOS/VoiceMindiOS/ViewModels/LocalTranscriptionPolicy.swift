@@ -3,6 +3,7 @@ import Foundation
 enum HomeTranscriptionMode: String {
     case local
     case mac
+    case microphone
 }
 
 enum LocalTranscriptionPolicy {
@@ -46,7 +47,7 @@ enum LocalTranscriptionPolicy {
             sendToMacEnabled: sendToMacEnabled,
             preferredMode: preferredMode
         )
-        return (mode == .mac || mode == .local) &&
+        return mode != .local &&
         !isReadyForMacCollaboration(
             pairingState: pairingState,
             connectionState: connectionState
@@ -88,7 +89,7 @@ enum LocalTranscriptionPolicy {
                 recognitionState: recognitionState,
                 hasPermissions: hasPermissions
             )
-        case .mac:
+        case .mac, .microphone:
             return hasPermissions &&
             isIdle(recognitionState) &&
             isReadyForMacCollaboration(
@@ -179,6 +180,8 @@ enum LocalTranscriptionPolicy {
             : "ptt_local_ready"
         case .mac:
             return hasReadyMacConnection ? "ptt_hold_to_talk" : "ptt_connect_to_talk"
+        case .microphone:
+            return hasReadyMacConnection ? "ptt_mic_mode_ready" : "ptt_connect_for_mic_mode"
         }
     }
 
