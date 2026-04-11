@@ -14,8 +14,9 @@ struct LocalTranscriptionPolicyTests {
 
     @Test
     func primaryCaptureRequiresConnectionWhenMacCollaborationIsEnabled() {
+        // Local mode can always start regardless of Mac connection
         #expect(
-            !LocalTranscriptionPolicy.canStartPrimaryCapture(
+            LocalTranscriptionPolicy.canStartPrimaryCapture(
                 recognitionState: .idle,
                 hasPermissions: true,
                 sendToMacEnabled: true,
@@ -189,6 +190,86 @@ struct LocalTranscriptionPolicyTests {
     }
 
     @Test
+    func microphoneModeRequiresConnectionToStart() {
+        #expect(
+            LocalTranscriptionPolicy.canStartPrimaryCapture(
+                recognitionState: .idle,
+                hasPermissions: true,
+                sendToMacEnabled: true,
+                preferredMode: .microphone,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
+                connectionState: .connected
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.canStartPrimaryCapture(
+                recognitionState: .idle,
+                hasPermissions: true,
+                sendToMacEnabled: true,
+                preferredMode: .microphone,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
+                connectionState: .disconnected
+            )
+        )
+    }
+
+    @Test
+    func microphoneModePromptsForConnectionWhenMacIsNotReady() {
+        #expect(
+            LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
+                sendToMacEnabled: true,
+                preferredMode: .microphone,
+                pairingState: .unpaired,
+                connectionState: .disconnected
+            )
+        )
+
+        #expect(
+            !LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
+                sendToMacEnabled: true,
+                preferredMode: .microphone,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
+                connectionState: .connected
+            )
+        )
+    }
+
+    @Test
+    func microphoneModeIdleStatusMessage() {
+        #expect(
+            LocalTranscriptionPolicy.idleStatusMessageKey(
+                hasPermissions: true,
+                sendToMacEnabled: true,
+                preferredMode: .microphone,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
+                connectionState: .connected
+            ) == "ptt_mic_mode_ready"
+        )
+
+        #expect(
+            LocalTranscriptionPolicy.idleStatusMessageKey(
+                hasPermissions: true,
+                sendToMacEnabled: true,
+                preferredMode: .microphone,
+                pairingState: .unpaired,
+                connectionState: .disconnected
+            ) == "ptt_connect_for_mic_mode"
+        )
+    }
+
+    @Test
+    func microphoneModeDoesNotShowTranscriptPreview() {
+        #expect(
+            !LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
+                mode: .microphone,
+                recognitionState: .listening,
+                transcriptText: ""
+            )
+        )
+    }
+
+    @Test
     func macModeRequiresActionPromptWhenMacIsNotConnected() {
         #expect(
             LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
@@ -209,7 +290,7 @@ struct LocalTranscriptionPolicyTests {
         )
 
         #expect(
-            LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
+            !LocalTranscriptionPolicy.shouldPromptForHomeMacAction(
                 sendToMacEnabled: true,
                 preferredMode: .local,
                 pairingState: .unpaired,

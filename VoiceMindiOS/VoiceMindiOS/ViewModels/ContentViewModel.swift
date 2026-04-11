@@ -25,11 +25,6 @@ class ContentViewModel: ObservableObject {
         remaining: TwoDeviceSyncPolicy.defaultFreeSessionLimit,
         used: 0
     )
-    @Published var playMicrophoneThroughMacSpeakerEnabled: Bool {
-        didSet {
-            MacMicrophoneMonitorSettings.store(playMicrophoneThroughMacSpeakerEnabled)
-        }
-    }
     @Published var preferredHomeTranscriptionMode: HomeTranscriptionMode {
         didSet {
             UserDefaults.standard.set(
@@ -104,7 +99,6 @@ class ContentViewModel: ObservableObject {
 
     init(audioStreamController: AudioStreamController = AudioStreamController()) {
         self.audioStreamController = audioStreamController
-        self.playMicrophoneThroughMacSpeakerEnabled = MacMicrophoneMonitorSettings.load()
         self.sendResultsToMacEnabled = UserDefaults.standard.bool(forKey: sendResultsToMacEnabledKey)
         self.localTranscriptHistory = Self.loadLocalTranscriptHistory(forKey: localTranscriptHistoryKey)
         self.preferredHomeTranscriptionMode = HomeTranscriptionMode(
@@ -244,9 +238,7 @@ class ContentViewModel: ObservableObject {
 
     private var shouldPlayThroughMacSpeakerOnMac: Bool {
         MacMicrophoneMonitorPolicy.shouldPlayThroughMacSpeaker(
-            sendToMacEnabled: sendResultsToMacEnabled,
-            preferredMode: effectiveHomeTranscriptionMode,
-            microphoneMonitorEnabled: playMicrophoneThroughMacSpeakerEnabled
+            preferredMode: effectiveHomeTranscriptionMode
         )
     }
 
@@ -259,7 +251,7 @@ class ContentViewModel: ObservableObject {
         liveTranscriptText = ""
         localTranscriptText = clearedTranscriptText
 
-        if effectiveHomeTranscriptionMode == .mac {
+        if effectiveHomeTranscriptionMode == .mac || effectiveHomeTranscriptionMode == .microphone {
             guard shouldForwardResultToMac else {
                 pushToTalkStatusMessage = localized("ptt_connect_to_talk")
                 return
@@ -445,7 +437,15 @@ class ContentViewModel: ObservableObject {
             return
         }
 
-        preferredHomeTranscriptionMode = preferredHomeTranscriptionMode == .local ? .mac : .local
+        switch preferredHomeTranscriptionMode {
+        case .local: preferredHomeTranscriptionMode = .mac
+        case .mac: preferredHomeTranscriptionMode = .microphone
+        case .microphone: preferredHomeTranscriptionMode = .local
+        }
+    }
+
+    func setHomeTranscriptionMode(_ mode: HomeTranscriptionMode) {
+        preferredHomeTranscriptionMode = mode
     }
 
     func sendCurrentTranscriptToMac() {
@@ -1043,6 +1043,8 @@ extension ContentViewModel: SpeechControllerDelegate {
             let shouldForward = self.shouldForwardResultToMac
             let sessionId = self.currentSessionId ?? self.manualSessionId
 
+            print("📋 [ForwardDebug] shouldForward=\(shouldForward), sessionId=\(sessionId ?? "nil"), sendToMacEnabled=\(self.sendResultsToMacEnabled), pairingState=\(self.pairingState), connectionState=\(self.connectionState)")
+
             if shouldForward, let sessionId, self.authorizeTwoDeviceSyncSessionIfNeeded() {
                 let payload = TextMessagePayload(
                     sessionId: sessionId,
@@ -1252,7 +1254,9 @@ extension ContentViewModel: AudioStreamControllerDelegate {
         DispatchQueue.main.async {
             self.manualSessionId = nil
             self.recognitionState = .idle
-            self.pushToTalkStatusMessage = self.localized("ptt_sent_mac_processing")
+            self.pushToTalkStatusMessage = self.effectiveHomeTranscriptionMode == .microphone
+                ? self.localized("ptt_mic_session_ended")
+                : self.localized("ptt_sent_mac_processing")
             self.audioLevel = 0
             self.activeInputMode = nil
         }

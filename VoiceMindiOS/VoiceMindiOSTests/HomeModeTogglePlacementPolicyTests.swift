@@ -3,19 +3,8 @@ import Testing
 
 struct HomeModeTogglePlacementPolicyTests {
     @Test
-    func bottomToggleIsOnlyVisibleWhenMacCollaborationIsEnabled() {
-        #expect(!HomeModeTogglePlacementPolicy.shouldShowBottomToggle(sendToMacEnabled: false))
-        #expect(HomeModeTogglePlacementPolicy.shouldShowBottomToggle(sendToMacEnabled: true))
-    }
-
-    @Test
-    func bottomToggleUsesOnlyModeIcons() {
-        #expect(HomeModeTogglePlacementPolicy.systemImage(for: .local) == "iphone")
-        #expect(HomeModeTogglePlacementPolicy.systemImage(for: .mac) == "desktopcomputer")
-    }
-
-    @Test
-    func bottomToggleUsesRainbowAccentStyle() {
-        #expect(HomeModeTogglePlacementPolicy.usesRainbowAccent)
+    func modeSelectorIsOnlyVisibleWhenMacCollaborationIsEnabled() {
+        #expect(!HomeModeTogglePlacementPolicy.shouldShowModeSelector(sendToMacEnabled: false))
+        #expect(HomeModeTogglePlacementPolicy.shouldShowModeSelector(sendToMacEnabled: true))
     }
 }

@@ -78,6 +78,12 @@ extension MenuBarController: ConnectionManagerDelegate {
 
         print("📝 解码成功 - 文本: \(payload.text), sessionId: \(payload.sessionId)")
 
+        // 话筒模式的结果不注入文字
+        if connectionManager.isPlayThroughSession(payload.sessionId) {
+            print("🎙️ 话筒模式：跳过文字注入")
+            return
+        }
+
         if VoiceInboundLogPolicy.shouldAppendInboundRecord(for: .result) {
             appendInboundDataRecord(
                 title: "收到识别文本",
@@ -105,12 +111,6 @@ extension MenuBarController: ConnectionManagerDelegate {
             self.noteText = payload.text
             self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
 
-            // 麦克风播放模式的 session 不自动注入到光标位置
-            if self.connectionManager.isPlayThroughSession(payload.sessionId) {
-                print("🔊 麦克风播放模式 (session: \(payload.sessionId))，跳过文本注入")
-                return
-            }
-
             self.restoreInjectionTargetApplicationIfNeeded {
                 self.handleAutoInjectedText(
                     payload.text,
@@ -121,7 +121,7 @@ extension MenuBarController: ConnectionManagerDelegate {
     }
 
     private func handleTextMessage(_ envelope: MessageEnvelope) {
-        print("🔔 handleTextMessage 被调用")
+        print("🔔 handleTextMessage 被调用, payload size: \(envelope.payload.count) bytes")
         guard let payload = try? JSONDecoder().decode(TextMessagePayload.self, from: envelope.payload) else {
             print("❌ 无法解码 TextMessagePayload")
             return

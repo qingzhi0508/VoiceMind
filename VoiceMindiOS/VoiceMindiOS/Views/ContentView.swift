@@ -471,19 +471,24 @@ enum PrimaryRecognitionLayoutPolicy {
 }
 
 enum HomeModeTogglePlacementPolicy {
-    static let usesRainbowAccent = true
-
-    static func shouldShowBottomToggle(sendToMacEnabled: Bool) -> Bool {
+    static func shouldShowModeSelector(sendToMacEnabled: Bool) -> Bool {
         sendToMacEnabled
     }
+}
 
-    static func systemImage(for mode: HomeTranscriptionMode) -> String {
-        switch mode {
-        case .local:
-            return "iphone"
-        case .mac:
-            return "desktopcomputer"
+struct HomeModeSelector: View {
+    @Binding var selectedMode: HomeTranscriptionMode
+    let isConnected: Bool
+
+    var body: some View {
+        Picker(selection: $selectedMode) {
+            Text(String(localized: "mode_local")).tag(HomeTranscriptionMode.local)
+            Text(String(localized: "mode_mac")).tag(HomeTranscriptionMode.mac)
+            Text(String(localized: "mode_microphone")).tag(HomeTranscriptionMode.microphone)
+        } label: {
+            EmptyView()
         }
+        .pickerStyle(.segmented)
     }
 }
 
@@ -862,62 +867,6 @@ struct ContentView: View {
                 .tag(ContentTab.settings)
             }
             .modifier(AppTabBarChrome())
-            .overlay(alignment: .bottomTrailing) {
-                if HomeModeTogglePlacementPolicy.shouldShowBottomToggle(
-                    sendToMacEnabled: viewModel.sendResultsToMacEnabled
-                ) {
-                    Button {
-                        dismissKeyboard()
-                        viewModel.toggleHomeTranscriptionMode()
-                    } label: {
-                        Image(systemName: HomeModeTogglePlacementPolicy.systemImage(for: viewModel.effectiveHomeTranscriptionMode))
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 32, height: 32)
-                            .background(
-                                Circle()
-                                    .fill(
-                                        AngularGradient(
-                                            colors: [
-                                                Color(red: 1.00, green: 0.36, blue: 0.37),
-                                                Color(red: 1.00, green: 0.67, blue: 0.20),
-                                                Color(red: 0.98, green: 0.92, blue: 0.23),
-                                                Color(red: 0.26, green: 0.84, blue: 0.48),
-                                                Color(red: 0.24, green: 0.69, blue: 1.00),
-                                                Color(red: 0.47, green: 0.46, blue: 1.00),
-                                                Color(red: 0.86, green: 0.35, blue: 0.95),
-                                                Color(red: 1.00, green: 0.36, blue: 0.37)
-                                            ],
-                                            center: .center
-                                        )
-                                    )
-                            )
-                        .overlay(
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(0.42),
-                                            Color.white.opacity(0.04)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .padding(1.2)
-                                .blendMode(.screen)
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(Color.white.opacity(0.42), lineWidth: 0.9)
-                        )
-                        .shadow(color: Color(red: 0.71, green: 0.39, blue: 1.00).opacity(0.24), radius: 10, x: 0, y: 4)
-                        .shadow(color: Color(red: 0.22, green: 0.71, blue: 1.00).opacity(0.18), radius: 6, x: 0, y: 2)
-                    }
-                    .padding(.trailing, 18)
-                    .padding(.bottom, 12)
-                }
-            }
             .sheet(isPresented: $viewModel.showPairingView) {
                 PairingView(viewModel: viewModel)
             }
@@ -1180,6 +1129,22 @@ struct PrimaryRecognitionPage: View {
     @State private var showsMacActionAlert = false
 
     var body: some View {
+        VStack(spacing: 0) {
+            if HomeModeTogglePlacementPolicy.shouldShowModeSelector(
+                sendToMacEnabled: viewModel.sendResultsToMacEnabled
+            ) {
+                HomeModeSelector(
+                    selectedMode: Binding(
+                        get: { viewModel.preferredHomeTranscriptionMode },
+                        set: { viewModel.setHomeTranscriptionMode($0) }
+                    ),
+                    isConnected: viewModel.connectionState == .connected
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+            }
+
         ZStack(
             alignment: PrimaryRecognitionLayoutPolicy.recognitionControlAlignment(
                 showingTranscriptPreview: viewModel.shouldShowTranscriptPreviewOnHome
@@ -1262,6 +1227,7 @@ struct PrimaryRecognitionPage: View {
             Button(String(localized: "cancel_button"), role: .cancel) {}
         } message: {
             Text(String(localized: "home_mac_action_alert_message"))
+        }
         }
     }
 }

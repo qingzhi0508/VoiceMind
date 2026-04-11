@@ -6,15 +6,14 @@ import Testing
 @MainActor
 struct ContentViewModelMacMicrophoneMonitorTests {
     @Test
-    func pushToTalkInMacModePassesThroughSpeakerPlaybackFlag() {
+    func pushToTalkInMicrophoneModePassesThroughSpeakerPlaybackFlag() {
         let audioStreamController = RecordingAudioStreamController()
         let viewModel = TestContentViewModel(audioStreamController: audioStreamController)
 
         viewModel.sendResultsToMacEnabled = true
-        viewModel.preferredHomeTranscriptionMode = .mac
+        viewModel.preferredHomeTranscriptionMode = .microphone
         viewModel.pairingState = .paired(deviceId: "mac-1", deviceName: "Office Mac")
         viewModel.connectionState = .connected
-        viewModel.playMicrophoneThroughMacSpeakerEnabled = true
 
         viewModel.startPushToTalk()
 
@@ -23,10 +22,25 @@ struct ContentViewModelMacMicrophoneMonitorTests {
     }
 
     @Test
+    func pushToTalkInMacModeDoesNotPassThroughSpeakerPlaybackFlag() {
+        let audioStreamController = RecordingAudioStreamController()
+        let viewModel = TestContentViewModel(audioStreamController: audioStreamController)
+
+        viewModel.sendResultsToMacEnabled = true
+        viewModel.preferredHomeTranscriptionMode = .mac
+        viewModel.pairingState = .paired(deviceId: "mac-1", deviceName: "Office Mac")
+        viewModel.connectionState = .connected
+
+        viewModel.startPushToTalk()
+
+        #expect(audioStreamController.startRequests.count == 1)
+        #expect(audioStreamController.startRequests.first?.playThroughMacSpeaker == false)
+    }
+
+    @Test
     func startListenMessagesAlwaysDisableSpeakerPlayback() throws {
         let audioStreamController = RecordingAudioStreamController()
         let viewModel = TestContentViewModel(audioStreamController: audioStreamController)
-        viewModel.playMicrophoneThroughMacSpeakerEnabled = true
 
         let payload = try JSONEncoder().encode(StartListenPayload(sessionId: "session-from-mac"))
         let envelope = MessageEnvelope(
