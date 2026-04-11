@@ -1022,7 +1022,6 @@ extension ContentViewModel: ConnectionManagerDelegate {
             self.localTranscriptText = committedText
             self.transcriptAutoScrollVersion += 1
             self.appendLocalTranscriptRecord(text: payload.text, language: payload.language)
-            self.recordSuccessfulTwoDeviceSyncSession()
 
             self.recognitionState = .idle
             self.currentSessionId = nil

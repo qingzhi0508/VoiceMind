@@ -624,7 +624,6 @@ extension ConnectionManager: SpeechRecognitionEngineDelegate {
             category: .voice
         )
 
-        // 将识别结果发送给 delegate（MenuBarController）进行应用内展示和记录
         let payload = ResultPayload(sessionId: sessionId, text: text, language: language)
         guard let payloadData = try? JSONEncoder().encode(payload) else {
             print("❌ 无法编码识别结果")
@@ -647,10 +646,16 @@ extension ConnectionManager: SpeechRecognitionEngineDelegate {
             hmac: hmac
         )
 
-        print("📤 调用 delegate.connectionManager(didReceiveMessage:)")
-        // 通过 delegate 传递给 MenuBarController 进行应用内更新
-        delegate?.connectionManager(self, didReceiveMessage: envelope)
-        print("✅ delegate 调用完成")
+        // 优先发回 iOS，保证手机端尽快收到
+        server.send(envelope)
+        print("📤 识别结果已发送到 iOS")
+
+        // 异步通知 MenuBarController 进行文字注入（不阻塞）
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.delegate?.connectionManager(self, didReceiveMessage: envelope)
+            print("✅ Mac 端文字注入完成")
+        }
     }
 
     func engine(
