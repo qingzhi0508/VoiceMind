@@ -267,6 +267,13 @@
 "ptt_mic_mode_ready" = "Hold to start mic monitoring.";
 "ptt_connect_for_mic_mode" = "Connect to Desktop to use mic mode.";
 "ptt_mic_session_ended" = "Mic monitoring ended.";
+"voice_isolation_tip_title" = "Enable Voice Isolation for better noise reduction";
+"voice_isolation_tip_body" = "Open Control Center → Mic Mode → select \"Voice Isolation\" to use Apple AI to filter background noise and keep only your voice.";
+"ptt_mac_result_received" = "Remote recognition complete. Result sent to Desktop.";
+"ptt_mac_error" = "Remote recognition failed. Please try again.";
+"log_mac_result_title" = "Remote Recognition Result";
+"log_mac_result_detail_format" = "Session: %@\nLanguage: %@\nContent: %@";
+"log_mac_error_title" = "Remote Recognition Failed";
 "mode_local" = "Local";
 "mode_mac" = "Desktop";
 "mode_microphone" = "Mic";

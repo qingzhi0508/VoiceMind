@@ -180,11 +180,20 @@ struct LocalTranscriptionPolicyTests {
             )
         )
 
+        // .mac mode also shows transcript preview during recognition and when text exists
         #expect(
-            !LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
+            LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
                 mode: .mac,
                 recognitionState: .listening,
                 transcriptText: ""
+            )
+        )
+
+        #expect(
+            LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
+                mode: .mac,
+                recognitionState: .idle,
+                transcriptText: "hello"
             )
         )
     }

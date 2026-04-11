@@ -27,12 +27,16 @@ enum LocalTranscriptionPolicy {
         recognitionState: RecognitionState,
         transcriptText: String
     ) -> Bool {
-        guard mode == .local else { return false }
-        switch recognitionState {
-        case .listening, .processing, .sending:
-            return true
-        case .idle:
-            return !transcriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        switch mode {
+        case .local, .mac:
+            switch recognitionState {
+            case .listening, .processing, .sending:
+                return true
+            case .idle:
+                return !transcriptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+        case .microphone:
+            return false
         }
     }
 

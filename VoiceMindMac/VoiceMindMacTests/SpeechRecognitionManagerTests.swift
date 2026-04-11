@@ -17,16 +17,11 @@ final class SpeechRecognitionManagerTests: XCTestCase {
     }
 
     func testEngineRegistration() {
-        // Given
-        let initialCount = manager.availableEngines().count
-
         // When
         manager.registerEngine(mockEngine)
 
-        // Then
-        let newCount = manager.availableEngines().count
-        XCTAssertEqual(newCount, initialCount + 1, "Engine should be registered")
-
+        // Then — verify the engine is retrievable rather than relying on exact count,
+        // because the shared singleton may have engines registered by app initialization.
         let registered = manager.getEngine(identifier: mockEngine.identifier)
         XCTAssertNotNil(registered, "Registered engine should be retrievable")
         XCTAssertEqual(registered?.identifier, mockEngine.identifier)
