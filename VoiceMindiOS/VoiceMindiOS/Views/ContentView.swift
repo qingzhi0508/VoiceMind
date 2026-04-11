@@ -480,15 +480,38 @@ struct HomeModeSelector: View {
     @Binding var selectedMode: HomeTranscriptionMode
     let isConnected: Bool
 
-    var body: some View {
-        Picker(selection: $selectedMode) {
-            Text(String(localized: "mode_local")).tag(HomeTranscriptionMode.local)
-            Text(String(localized: "mode_mac")).tag(HomeTranscriptionMode.mac)
-            Text(String(localized: "mode_microphone")).tag(HomeTranscriptionMode.microphone)
-        } label: {
-            EmptyView()
+    private var label: String {
+        switch selectedMode {
+        case .local: return String(localized: "mode_local")
+        case .mac: return String(localized: "mode_mac")
+        case .microphone: return String(localized: "mode_microphone")
         }
-        .pickerStyle(.segmented)
+    }
+
+    var body: some View {
+        Menu {
+            Button { selectedMode = .local } label: {
+                Label(String(localized: "mode_local"), systemImage: selectedMode == .local ? "checkmark" : "")
+            }
+            Button { selectedMode = .mac } label: {
+                Label(String(localized: "mode_mac"), systemImage: selectedMode == .mac ? "checkmark" : "")
+            }
+            Button { selectedMode = .microphone } label: {
+                Label(String(localized: "mode_microphone"), systemImage: selectedMode == .microphone ? "checkmark" : "")
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(label)
+                    .font(.system(size: 14, weight: .medium))
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+                    .imageScale(.small)
+            }
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.ultraThinMaterial, in: Capsule())
+        }
     }
 }
 
@@ -1140,7 +1163,7 @@ struct PrimaryRecognitionPage: View {
                     ),
                     isConnected: viewModel.connectionState == .connected
                 )
-                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity)
                 .padding(.top, 8)
                 .padding(.bottom, 4)
             }
@@ -1201,6 +1224,7 @@ struct PrimaryRecognitionPage: View {
                 }
 
                 Spacer(minLength: 0)
+                    .allowsHitTesting(false)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
