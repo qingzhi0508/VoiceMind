@@ -1344,12 +1344,14 @@ struct PrimaryRecognitionPage: View {
                     TranscriptCard(
                         transcriptText: Binding(
                             get: {
-                                if viewModel.showsTranscriptActions {
-                                    return viewModel.localTranscriptText
-                                }
-                                return LocalTranscriptionPolicy.shouldShowTextInputArea(
+                                let isTextInput = LocalTranscriptionPolicy.shouldShowTextInputArea(
                                     mode: viewModel.effectiveHomeTranscriptionMode
-                                ) ? viewModel.textInputDraft : viewModel.localTranscriptText
+                                )
+                                if viewModel.showsTranscriptActions {
+                                    // Text input mode: show cleared draft after send
+                                    return isTextInput ? viewModel.textInputDraft : viewModel.localTranscriptText
+                                }
+                                return isTextInput ? viewModel.textInputDraft : viewModel.localTranscriptText
                             },
                             set: { newValue in
                                 if viewModel.showsTranscriptActions { return }

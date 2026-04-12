@@ -133,6 +133,42 @@ class ContentViewModel: ObservableObject {
         Task { [weak self] in
             await self?.refreshTwoDeviceSyncBillingState()
         }
+
+        NotificationCenter.default.addObserver(
+            forName: .voiceMindStartLocalRecognition,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleActionButtonTrigger(mode: .local)
+        }
+        NotificationCenter.default.addObserver(
+            forName: .voiceMindStartRemoteRecognition,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleActionButtonTrigger(mode: .remote)
+        }
+    }
+
+    func handleActionButtonTrigger(mode: ActionButtonIntentPolicy.RecognitionMode) {
+        guard ActionButtonIntentPolicy.shouldAutoStartRecognition(
+            recognitionState: recognitionState,
+            hasPermissions: checkPermissions()
+        ) else { return }
+
+        let isPaired: Bool
+        if case .paired = pairingState { isPaired = true } else { isPaired = false }
+
+        if ActionButtonIntentPolicy.shouldForceRemoteMode(
+            mode: mode,
+            isPaired: isPaired,
+            isConnected: connectionState == .connected
+        ) {
+            preferredHomeTranscriptionMode = .mac
+        } else {
+            preferredHomeTranscriptionMode = ActionButtonIntentPolicy.forcedMode(for: mode)
+        }
+        startPushToTalk()
     }
 
     func preparePrimaryExperience() {
@@ -469,6 +505,7 @@ class ContentViewModel: ObservableObject {
         localTranscriptText = committedTranscriptText
         textInputDraft = ""
 
+        showsTranscriptActions = true
         isLastRecognitionLocal = false
         lastKeywordSessionId = sessionId
         transcriptAutoScrollVersion += 1
@@ -1011,6 +1048,7 @@ class ContentViewModel: ObservableObject {
         liveTranscriptText = ""
         localTranscriptText = committedTranscriptText
         textInputDraft = ""
+        showsTranscriptActions = true
         isLastRecognitionLocal = false
         lastKeywordSessionId = sessionId
     }

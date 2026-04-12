@@ -187,14 +187,40 @@ struct TranscriptActionPolicyTests {
     // MARK: - Text Input Mode
 
     @Test
-    func sendTextInputDoesNotShowTranscriptActions() {
+    func sendTextInputShowsActionsAndClearsDraft() {
         let viewModel = ContentViewModel()
         viewModel.simulateTextInputSent("手动输入", sessionId: "ti-1")
 
-        // 文字输入模式发送后直接清空，不显示确认/撤销
-        #expect(!viewModel.showsTranscriptActions)
+        // 发送后显示确认/撤销按钮，文本框已清空
+        #expect(viewModel.showsTranscriptActions)
         #expect(viewModel.isLastRecognitionLocal == false)
         #expect(viewModel.localTranscriptText.contains("手动输入"))
+        #expect(viewModel.textInputDraft.isEmpty)
+    }
+
+    @Test
+    func textInputConfirmHidesActionsAndKeepsDraftEmpty() {
+        let viewModel = ContentViewModel()
+        viewModel.simulateTextInputSent("确认测试", sessionId: "ti-2")
+
+        viewModel.confirmTranscriptAction()
+
+        #expect(viewModel._testLastSentKeywordAction == .confirm)
+        #expect(!viewModel.showsTranscriptActions)
+        #expect(viewModel.textInputDraft.isEmpty)
+    }
+
+    @Test
+    func textInputUndoHidesActionsAndKeepsDraftEmpty() {
+        let viewModel = ContentViewModel()
+        let previousText = viewModel.localTranscriptText
+        viewModel.simulateTextInputSent("撤销测试", sessionId: "ti-3")
+
+        viewModel.undoTranscriptAction()
+
+        #expect(viewModel._testLastSentKeywordAction == .undo)
+        #expect(!viewModel.showsTranscriptActions)
+        #expect(viewModel.localTranscriptText == previousText)
         #expect(viewModel.textInputDraft.isEmpty)
     }
 
