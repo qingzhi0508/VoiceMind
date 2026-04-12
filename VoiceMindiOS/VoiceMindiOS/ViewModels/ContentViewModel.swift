@@ -469,7 +469,6 @@ class ContentViewModel: ObservableObject {
         localTranscriptText = committedTranscriptText
         textInputDraft = ""
 
-        showsTranscriptActions = true
         isLastRecognitionLocal = false
         lastKeywordSessionId = sessionId
         transcriptAutoScrollVersion += 1
@@ -1012,7 +1011,6 @@ class ContentViewModel: ObservableObject {
         liveTranscriptText = ""
         localTranscriptText = committedTranscriptText
         textInputDraft = ""
-        showsTranscriptActions = true
         isLastRecognitionLocal = false
         lastKeywordSessionId = sessionId
     }

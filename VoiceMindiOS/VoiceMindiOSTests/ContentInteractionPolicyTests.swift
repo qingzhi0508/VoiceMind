@@ -12,9 +12,9 @@ struct ContentInteractionPolicyTests {
     }
 
     @Test
-    func backgroundTapDoesNothingWhenTranscriptEditorIsNotFocused() {
+    func backgroundTapDismissesKeyboardEvenWhenTranscriptEditorIsNotFocused() {
         #expect(
-            !ContentInteractionPolicy.shouldDismissKeyboardOnBackgroundTap(
+            ContentInteractionPolicy.shouldDismissKeyboardOnBackgroundTap(
                 isTranscriptEditorFocused: false
             )
         )

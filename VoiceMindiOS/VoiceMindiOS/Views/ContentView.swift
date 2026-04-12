@@ -681,7 +681,7 @@ enum AppBackgroundStylePolicy {
 
 enum ContentInteractionPolicy {
     static func shouldDismissKeyboardOnBackgroundTap(isTranscriptEditorFocused: Bool) -> Bool {
-        isTranscriptEditorFocused
+        true
     }
 }
 
@@ -697,6 +697,27 @@ enum TranscriptTextViewSyncPolicy {
             return false
         }
         return true
+    }
+}
+
+enum TranscriptTextViewFocusPolicy {
+    static func shouldBecomeFirstResponder(
+        isEditable: Bool,
+        isFocused: Bool,
+        isFirstResponder: Bool
+    ) -> Bool {
+        isEditable && isFocused && !isFirstResponder
+    }
+
+    static func shouldResignFirstResponder(
+        isEditable: Bool,
+        isFocused: Bool,
+        isFirstResponder: Bool,
+        hasMarkedText: Bool
+    ) -> Bool {
+        isFirstResponder && !hasMarkedText && (
+            (!isEditable) || (!isFocused)
+        )
     }
 }
 
@@ -1017,6 +1038,7 @@ struct ContentView: View {
 
     private func dismissKeyboard() {
         focusedField = nil
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 
     private func syncIdleTimerState() {
@@ -1288,12 +1310,14 @@ struct PrimaryRecognitionPage: View {
                 isEnabled: recognitionButtonEnabled,
                 showsPairingAction: false,
                 showsReconnectAction: viewModel.shouldPromptForHomeMacAction,
+                isTextInputMode: isTextInputMode,
                 audioLevel: viewModel.audioLevel,
                 onPressChanged: { isPressing in
                     if isPressing {
                         if LocalTranscriptionPolicy.shouldShowTextInputArea(
                             mode: viewModel.effectiveHomeTranscriptionMode
                         ) {
+                            onDismissKeyboard()
                             viewModel.sendTextInputToMac()
                         } else {
                             onDismissKeyboard()
@@ -1311,17 +1335,22 @@ struct PrimaryRecognitionPage: View {
                 }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .ignoresSafeArea(.keyboard)
 
             VStack(spacing: 0) {
                 if viewModel.shouldShowTranscriptPreviewOnHome {
                     TranscriptCard(
                         transcriptText: Binding(
                             get: {
-                                LocalTranscriptionPolicy.shouldShowTextInputArea(
+                                if viewModel.showsTranscriptActions {
+                                    return viewModel.localTranscriptText
+                                }
+                                return LocalTranscriptionPolicy.shouldShowTextInputArea(
                                     mode: viewModel.effectiveHomeTranscriptionMode
                                 ) ? viewModel.textInputDraft : viewModel.localTranscriptText
                             },
                             set: { newValue in
+                                if viewModel.showsTranscriptActions { return }
                                 if LocalTranscriptionPolicy.shouldShowTextInputArea(
                                     mode: viewModel.effectiveHomeTranscriptionMode
                                 ) {
@@ -1386,6 +1415,10 @@ struct PrimaryRecognitionPage: View {
                 lightBackgroundHex: lightThemeBackgroundHex
             )
             .ignoresSafeArea()
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onDismissKeyboard()
+            }
         )
         .animation(.spring(response: 0.42, dampingFraction: 0.88), value: viewModel.shouldShowTranscriptPreviewOnHome)
         .alert(
@@ -1931,6 +1964,7 @@ struct RecognitionStatusView: View {
     let isEnabled: Bool
     let showsPairingAction: Bool
     let showsReconnectAction: Bool
+    let isTextInputMode: Bool
     let audioLevel: CGFloat
     let onPressChanged: (Bool) -> Void
     let onReconnectAction: () -> Void
@@ -1962,7 +1996,13 @@ struct RecognitionStatusView: View {
                         guard isInteractionEnabled else { return }
                         if !isPressing {
                             isPressing = true
-                            startPendingPressAction()
+                            if isTextInputMode {
+                                onPressChanged(true)
+                                onPressChanged(false)
+                                isPressing = false
+                            } else {
+                                startPendingPressAction()
+                            }
                         }
                     }
                     .onEnded { _ in
@@ -2042,6 +2082,9 @@ struct RecognitionStatusView: View {
         if showsReconnectAction {
             return "antenna.radiowaves.left.and.right"
         }
+        if isTextInputMode {
+            return "arrow.up.circle.fill"
+        }
         switch state {
         case .idle:
             return "mic.fill"
@@ -2060,6 +2103,9 @@ struct RecognitionStatusView: View {
         }
         if showsReconnectAction {
             return .orange
+        }
+        if isTextInputMode {
+            return isEnabled ? .blue : .gray
         }
         switch state {
         case .idle:
@@ -2080,6 +2126,9 @@ struct RecognitionStatusView: View {
         if showsReconnectAction {
             return String(localized: "recognition_mac_unavailable")
         }
+        if isTextInputMode {
+            return isEnabled ? String(localized: "send_button") : String(localized: "recognition_ready")
+        }
         switch state {
         case .idle:
             return isEnabled ? String(localized: "recognition_hold_to_talk") : String(localized: "recognition_ready")
@@ -2099,6 +2148,9 @@ struct RecognitionStatusView: View {
         if showsReconnectAction {
             return Color.orange.opacity(0.18)
         }
+        if isTextInputMode {
+            return isEnabled ? Color.blue.opacity(0.15) : Color.gray.opacity(0.12)
+        }
         switch state {
         case .idle:
             return isEnabled ? Color.blue.opacity(0.15) : Color.gray.opacity(0.12)
@@ -2117,6 +2169,9 @@ struct RecognitionStatusView: View {
         }
         if showsReconnectAction {
             return .orange.opacity(0.6)
+        }
+        if isTextInputMode {
+            return isEnabled ? .blue.opacity(0.5) : .gray.opacity(0.4)
         }
         switch state {
         case .idle:
@@ -2224,11 +2279,20 @@ struct TranscriptTextView: UIViewRepresentable {
             uiView.text = text
         }
 
-        if isEditable && isFocused {
-            if !uiView.isFirstResponder {
-                uiView.becomeFirstResponder()
-            }
-        } else if uiView.isFirstResponder && uiView.markedTextRange == nil {
+        if TranscriptTextViewFocusPolicy.shouldBecomeFirstResponder(
+            isEditable: isEditable,
+            isFocused: isFocused,
+            isFirstResponder: uiView.isFirstResponder
+        ) {
+            uiView.becomeFirstResponder()
+        }
+
+        if TranscriptTextViewFocusPolicy.shouldResignFirstResponder(
+            isEditable: isEditable,
+            isFocused: isFocused,
+            isFirstResponder: uiView.isFirstResponder,
+            hasMarkedText: uiView.markedTextRange != nil
+        ) {
             uiView.resignFirstResponder()
         }
 
