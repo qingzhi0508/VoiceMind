@@ -1243,6 +1243,23 @@ struct PrimaryRecognitionPage: View {
         && viewModel.connectionState == .connected
     }
 
+    private var isTextInputMode: Bool {
+        LocalTranscriptionPolicy.shouldShowTextInputArea(
+            mode: viewModel.effectiveHomeTranscriptionMode
+        )
+    }
+
+    private var recognitionButtonState: RecognitionState {
+        isTextInputMode ? .idle : viewModel.recognitionState
+    }
+
+    private var recognitionButtonEnabled: Bool {
+        if isTextInputMode {
+            return viewModel.canSendTextInput
+        }
+        return viewModel.canStartPushToTalk || viewModel.recognitionState != .idle
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             if HomeModeTogglePlacementPolicy.shouldShowModeSelector(
@@ -1265,51 +1282,35 @@ struct PrimaryRecognitionPage: View {
                 showingTranscriptPreview: viewModel.shouldShowTranscriptPreviewOnHome
             )
         ) {
-            if LocalTranscriptionPolicy.shouldShowRecordingControl(
-                mode: viewModel.effectiveHomeTranscriptionMode
-            ) {
-                RecognitionStatusView(
-                    state: viewModel.recognitionState,
-                    statusMessage: viewModel.pushToTalkStatusMessage,
-                    isEnabled: viewModel.canStartPushToTalk || viewModel.recognitionState != .idle,
-                    showsPairingAction: false,
-                    showsReconnectAction: viewModel.shouldPromptForHomeMacAction,
-                    audioLevel: viewModel.audioLevel,
-                    onPressChanged: { isPressing in
-                        if isPressing {
+            RecognitionStatusView(
+                state: recognitionButtonState,
+                statusMessage: viewModel.pushToTalkStatusMessage,
+                isEnabled: recognitionButtonEnabled,
+                showsPairingAction: false,
+                showsReconnectAction: viewModel.shouldPromptForHomeMacAction,
+                audioLevel: viewModel.audioLevel,
+                onPressChanged: { isPressing in
+                    if isPressing {
+                        if LocalTranscriptionPolicy.shouldShowTextInputArea(
+                            mode: viewModel.effectiveHomeTranscriptionMode
+                        ) {
+                            viewModel.sendTextInputToMac()
+                        } else {
                             onDismissKeyboard()
                         }
-                        viewModel.handlePrimaryButtonPressChanged(isPressing)
-                    },
-                    onReconnectAction: {
-                        onDismissKeyboard()
-                        showsMacActionAlert = true
                     }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            } else {
-                // Text input mode: send button replaces recording button
-                VStack(spacing: 20) {
-                    RecognitionStatusView(
-                        state: .idle,
-                        statusMessage: viewModel.pushToTalkStatusMessage,
-                        isEnabled: viewModel.canSendTextInput,
-                        showsPairingAction: false,
-                        showsReconnectAction: viewModel.shouldPromptForHomeMacAction,
-                        audioLevel: 0,
-                        onPressChanged: { isPressing in
-                            if isPressing {
-                                viewModel.sendTextInputToMac()
-                            }
-                        },
-                        onReconnectAction: {
-                            onDismissKeyboard()
-                            showsMacActionAlert = true
-                        }
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    if !LocalTranscriptionPolicy.shouldShowTextInputArea(
+                        mode: viewModel.effectiveHomeTranscriptionMode
+                    ) {
+                        viewModel.handlePrimaryButtonPressChanged(isPressing)
+                    }
+                },
+                onReconnectAction: {
+                    onDismissKeyboard()
+                    showsMacActionAlert = true
                 }
-            }
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
             VStack(spacing: 0) {
                 if viewModel.shouldShowTranscriptPreviewOnHome {
