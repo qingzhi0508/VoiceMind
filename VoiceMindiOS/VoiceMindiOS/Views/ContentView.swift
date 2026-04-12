@@ -715,9 +715,11 @@ enum TranscriptTextViewFocusPolicy {
         isFirstResponder: Bool,
         hasMarkedText: Bool
     ) -> Bool {
-        isFirstResponder && !hasMarkedText && (
-            (!isEditable) || (!isFocused)
-        )
+        // Only actively resign when becoming non-editable.
+        // In editable mode, keyboard dismissal is handled by
+        // UIApplication.sendAction(resignFirstResponder) in dismissKeyboard(),
+        // NOT here — otherwise IME interactions break focus.
+        !isEditable && isFirstResponder && !hasMarkedText
     }
 }
 

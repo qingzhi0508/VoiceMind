@@ -16,17 +16,6 @@ struct TranscriptTextViewFocusPolicyTests {
     }
 
     @Test
-    func doesNotBecomeFirstResponderWhenNotEditable() {
-        #expect(
-            !TranscriptTextViewFocusPolicy.shouldBecomeFirstResponder(
-                isEditable: true,
-                isFocused: true,
-                isFirstResponder: true
-            )
-        )
-    }
-
-    @Test
     func doesNotBecomeFirstResponderWhenAlreadyActive() {
         #expect(
             !TranscriptTextViewFocusPolicy.shouldBecomeFirstResponder(
@@ -48,12 +37,14 @@ struct TranscriptTextViewFocusPolicyTests {
         )
     }
 
-    // MARK: - shouldResignFirstResponder (editable mode)
+    // MARK: - shouldResignFirstResponder (editable mode — never actively resign)
 
     @Test
-    func resignsWhenEditableNotFocusedAndActive() {
+    func doesNotResignInEditableModeEvenWhenNotFocused() {
+        // IME interaction may cause textViewDidEndEditing → isFocused=false
+        // We must NOT actively resign, otherwise IME input is interrupted
         #expect(
-            TranscriptTextViewFocusPolicy.shouldResignFirstResponder(
+            !TranscriptTextViewFocusPolicy.shouldResignFirstResponder(
                 isEditable: true,
                 isFocused: false,
                 isFirstResponder: true,
@@ -63,31 +54,7 @@ struct TranscriptTextViewFocusPolicyTests {
     }
 
     @Test
-    func doesNotResignWhenEditableNotFocusedButHasMarkedText() {
-        #expect(
-            !TranscriptTextViewFocusPolicy.shouldResignFirstResponder(
-                isEditable: true,
-                isFocused: false,
-                isFirstResponder: true,
-                hasMarkedText: true
-            )
-        )
-    }
-
-    @Test
-    func doesNotResignWhenEditableNotFocusedButNotActive() {
-        #expect(
-            !TranscriptTextViewFocusPolicy.shouldResignFirstResponder(
-                isEditable: true,
-                isFocused: false,
-                isFirstResponder: false,
-                hasMarkedText: false
-            )
-        )
-    }
-
-    @Test
-    func doesNotResignWhenEditableAndStillFocused() {
+    func doesNotResignInEditableModeWhenFocused() {
         #expect(
             !TranscriptTextViewFocusPolicy.shouldResignFirstResponder(
                 isEditable: true,
@@ -120,6 +87,18 @@ struct TranscriptTextViewFocusPolicyTests {
                 isFocused: false,
                 isFirstResponder: true,
                 hasMarkedText: true
+            )
+        )
+    }
+
+    @Test
+    func doesNotResignWhenNotEditableAndNotActive() {
+        #expect(
+            !TranscriptTextViewFocusPolicy.shouldResignFirstResponder(
+                isEditable: false,
+                isFocused: false,
+                isFirstResponder: false,
+                hasMarkedText: false
             )
         )
     }
