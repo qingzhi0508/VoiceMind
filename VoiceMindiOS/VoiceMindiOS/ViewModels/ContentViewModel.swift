@@ -528,6 +528,12 @@ class ContentViewModel: ObservableObject {
     }
 
     func setHomeTranscriptionMode(_ mode: HomeTranscriptionMode) {
+        guard mode != preferredHomeTranscriptionMode else { return }
+        clearTranscriptActions()
+        textInputDraft = ""
+        committedTranscriptText = ""
+        liveTranscriptText = ""
+        localTranscriptText = ""
         preferredHomeTranscriptionMode = mode
     }
 

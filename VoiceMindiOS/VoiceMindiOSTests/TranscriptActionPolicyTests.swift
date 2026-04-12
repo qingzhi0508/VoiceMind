@@ -246,4 +246,73 @@ struct TranscriptActionPolicyTests {
         viewModel.toggleHomeTranscriptionMode()
         #expect(viewModel.preferredHomeTranscriptionMode == .local)
     }
+
+    // MARK: - Mode switching resets state
+
+    @Test
+    func switchingModeClearsTranscriptActions() {
+        let viewModel = ContentViewModel()
+        viewModel.sendResultsToMacEnabled = true
+        viewModel.preferredHomeTranscriptionMode = .mac
+        viewModel.simulateMacResult(
+            ResultPayload(sessionId: "s1", text: "你好", language: "zh-CN")
+        )
+        #expect(viewModel.showsTranscriptActions)
+
+        viewModel.setHomeTranscriptionMode(.local)
+        #expect(!viewModel.showsTranscriptActions)
+    }
+
+    @Test
+    func switchingModeClearsTextInputDraft() {
+        let viewModel = ContentViewModel()
+        viewModel.sendResultsToMacEnabled = true
+        viewModel.preferredHomeTranscriptionMode = .mac
+        viewModel.textInputDraft = "未发送的文字"
+
+        viewModel.setHomeTranscriptionMode(.local)
+        #expect(viewModel.textInputDraft.isEmpty)
+    }
+
+    @Test
+    func switchingModeClearsLocalTranscriptText() {
+        let viewModel = ContentViewModel()
+        viewModel.sendResultsToMacEnabled = true
+        viewModel.preferredHomeTranscriptionMode = .mac
+        viewModel.simulateMacResult(
+            ResultPayload(sessionId: "s1", text: "一段文字", language: "zh-CN")
+        )
+        #expect(!viewModel.localTranscriptText.isEmpty)
+
+        viewModel.setHomeTranscriptionMode(.local)
+        #expect(viewModel.localTranscriptText.isEmpty)
+    }
+
+    @Test
+    func switchingModeWhileLocalResultShowingClearsState() {
+        let viewModel = ContentViewModel()
+        viewModel.sendResultsToMacEnabled = true
+        viewModel.preferredHomeTranscriptionMode = .mac
+        viewModel.simulateLocalResult("本地识别结果")
+        #expect(viewModel.showsTranscriptActions)
+        #expect(viewModel.isLastRecognitionLocal)
+
+        viewModel.setHomeTranscriptionMode(.local)
+        #expect(!viewModel.showsTranscriptActions)
+        #expect(viewModel.localTranscriptText.isEmpty)
+    }
+
+    @Test
+    func switchingModeResetsRecognitionState() {
+        let viewModel = ContentViewModel()
+        viewModel.sendResultsToMacEnabled = true
+        viewModel.preferredHomeTranscriptionMode = .mac
+        // Simulate having sent text input
+        viewModel.simulateTextInputSent("发送的文字", sessionId: "ti-1")
+        #expect(viewModel.showsTranscriptActions)
+
+        viewModel.setHomeTranscriptionMode(.textInput)
+        #expect(!viewModel.showsTranscriptActions)
+        #expect(viewModel.localTranscriptText.isEmpty)
+    }
 }
