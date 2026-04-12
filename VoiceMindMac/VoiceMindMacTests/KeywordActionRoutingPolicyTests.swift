@@ -10,9 +10,9 @@ final class KeywordActionRoutingPolicyTests: XCTestCase {
         XCTAssertEqual(result, .simulateReturn)
     }
 
-    func testUndoRoutesToSelectAndDelete() {
+    func testUndoRoutesToSimulateUndo() {
         let result = KeywordActionRoutingPolicy.route(.undo)
-        XCTAssertEqual(result, .selectAndDelete)
+        XCTAssertEqual(result, .simulateUndo)
     }
 
     // MARK: - VoiceInboundLogPolicy for keyword

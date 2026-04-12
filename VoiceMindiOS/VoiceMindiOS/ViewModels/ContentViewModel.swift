@@ -417,7 +417,8 @@ class ContentViewModel: ObservableObject {
     }
 
     private var shouldForwardResultToMac: Bool {
-        LocalTranscriptionPolicy.shouldForwardResultToMac(
+        if _testShouldForwardResultToMac { return true }
+        return LocalTranscriptionPolicy.shouldForwardResultToMac(
             sendToMacEnabled: sendResultsToMacEnabled,
             preferredMode: preferredHomeTranscriptionMode,
             pairingState: pairingState,
@@ -827,19 +828,30 @@ class ContentViewModel: ObservableObject {
 
     func confirmTranscriptAction() {
         if isLastRecognitionLocal {
+            // 本地识别 + 已转发到 Mac：发送确认到 Mac
+            if shouldForwardResultToMac && lastKeywordSessionId != nil {
+                sendKeywordAction(.confirm)
+            }
             // 本地识别：确认后保留文字，只隐藏按钮
             showsTranscriptActions = false
             isLastRecognitionLocal = false
+            lastKeywordSessionId = nil
             refreshIdleStatusMessage()
         } else {
-            // 远端识别：发送确认到 Mac 并清除文字
+            // 远端识别：发送确认到 Mac，保留文字
             sendKeywordAction(.confirm)
-            clearTranscriptActions()
+            showsTranscriptActions = false
+            lastKeywordSessionId = nil
+            refreshIdleStatusMessage()
         }
     }
 
     func undoTranscriptAction() {
         if isLastRecognitionLocal {
+            // 本地识别 + 已转发到 Mac：发送撤销到 Mac
+            if shouldForwardResultToMac && lastKeywordSessionId != nil {
+                sendKeywordAction(.undo)
+            }
             // 本地识别：撤销后恢复到识别前的文字
             showsTranscriptActions = false
             isLastRecognitionLocal = false
@@ -847,15 +859,23 @@ class ContentViewModel: ObservableObject {
             liveTranscriptText = ""
             localTranscriptText = preRecognitionCommittedText
             preRecognitionCommittedText = ""
+            lastKeywordSessionId = nil
             refreshIdleStatusMessage()
         } else {
-            // 远端识别：发送撤销到 Mac 并清除文字
+            // 远端识别：发送撤销到 Mac，恢复到识别前的文字
             sendKeywordAction(.undo)
-            clearTranscriptActions()
+            showsTranscriptActions = false
+            committedTranscriptText = preRecognitionCommittedText
+            liveTranscriptText = ""
+            localTranscriptText = preRecognitionCommittedText
+            preRecognitionCommittedText = ""
+            lastKeywordSessionId = nil
+            refreshIdleStatusMessage()
         }
     }
 
     private func sendKeywordAction(_ action: KeywordAction) {
+        _testLastSentKeywordAction = action
         let sessionId = lastKeywordSessionId ?? UUID().uuidString
         let payload = KeywordPayload(action: action, sessionId: sessionId)
         guard let payloadData = try? JSONEncoder().encode(payload) else { return }
@@ -895,9 +915,12 @@ class ContentViewModel: ObservableObject {
         guard !trimmed.isEmpty else {
             return
         }
-        committedTranscriptText = trimmed
+        preRecognitionCommittedText = committedTranscriptText
+        committedTranscriptText = LocalTranscriptHistory.appendingLatestTranscript(
+            trimmed, to: committedTranscriptText
+        )
         liveTranscriptText = ""
-        localTranscriptText = trimmed
+        localTranscriptText = committedTranscriptText
         showsTranscriptActions = true
         isLastRecognitionLocal = false
         lastKeywordSessionId = payload.sessionId
@@ -921,6 +944,28 @@ class ContentViewModel: ObservableObject {
     func resetTranscriptActionsForNewRecording() {
         showsTranscriptActions = false
     }
+
+    /// 测试用：模拟本地识别结果并转发到 Mac（设置 sessionId + forward 标记）
+    func simulateLocalResultWithForward(_ text: String, sessionId: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        preRecognitionCommittedText = committedTranscriptText
+        committedTranscriptText = LocalTranscriptHistory.appendingLatestTranscript(
+            trimmed, to: committedTranscriptText
+        )
+        liveTranscriptText = ""
+        localTranscriptText = committedTranscriptText
+        showsTranscriptActions = true
+        isLastRecognitionLocal = true
+        lastKeywordSessionId = sessionId
+        _testShouldForwardResultToMac = true
+    }
+
+    /// 测试用：记录最近发送的 keyword action
+    private(set) var _testLastSentKeywordAction: KeywordAction?
+
+    /// 测试用：强制控制 shouldForwardResultToMac 的返回值
+    private var _testShouldForwardResultToMac: Bool = false
 }
 
 extension ContentViewModel: ConnectionManagerDelegate {
@@ -1116,6 +1161,8 @@ extension ContentViewModel: ConnectionManagerDelegate {
         print("📝 收到远端识别结果: \(payload.text)")
 
         DispatchQueue.main.async {
+            // 保存识别前的文字，用于撤销恢复
+            self.preRecognitionCommittedText = self.committedTranscriptText
             // 提交文本到转写区域（跟本地识别一样的逻辑）
             let committedText = LocalTranscriptHistory.appendingLatestTranscript(
                 payload.text,
@@ -1246,6 +1293,11 @@ extension ContentViewModel: SpeechControllerDelegate {
 
             let shouldForward = self.shouldForwardResultToMac
             let sessionId = self.currentSessionId ?? self.manualSessionId
+
+            // 保存 sessionId，用于确认/撤销时发送 keyword action 到 Mac
+            if !trimmed.isEmpty, let sessionId {
+                self.lastKeywordSessionId = sessionId
+            }
 
             print("📋 [ForwardDebug] shouldForward=\(shouldForward), sessionId=\(sessionId ?? "nil"), sendToMacEnabled=\(self.sendResultsToMacEnabled), pairingState=\(self.pairingState), connectionState=\(self.connectionState)")
 

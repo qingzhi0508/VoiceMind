@@ -23,14 +23,14 @@ enum KeywordActionRoutingPolicy {
         case .confirm:
             return .simulateReturn
         case .undo:
-            return .selectAndDelete
+            return .simulateUndo
         }
     }
 }
 
 enum KeywordActionResult: Equatable {
     case simulateReturn
-    case selectAndDelete
+    case simulateUndo
 }
 
 // MARK: - ConnectionManagerDelegate
@@ -130,13 +130,7 @@ extension MenuBarController: ConnectionManagerDelegate {
         DispatchQueue.main.async {
             self.noteText = payload.text
             self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
-
-            self.restoreInjectionTargetApplicationIfNeeded {
-                self.handleAutoInjectedText(
-                    payload.text,
-                    missingTargetTitle: AppLocalization.localizedString("text_injection_missing_target_title")
-                )
-            }
+            self.textInjectionService.injectRecognizedText(payload.text)
         }
     }
 
@@ -156,14 +150,9 @@ extension MenuBarController: ConnectionManagerDelegate {
         }
 
         DispatchQueue.main.async {
-            self.restoreInjectionTargetApplicationIfNeeded {
-                self.handleAutoInjectedText(
-                    payload.text,
-                    missingTargetTitle: AppLocalization.localizedString("text_injection_missing_target_title")
-                )
-                self.noteText = payload.text
-                self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
-            }
+            self.textInjectionService.injectRecognizedText(payload.text)
+            self.noteText = payload.text
+            self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
         }
     }
 
@@ -177,8 +166,8 @@ extension MenuBarController: ConnectionManagerDelegate {
         switch KeywordActionRoutingPolicy.route(payload.action) {
         case .simulateReturn:
             simulateReturnKey()
-        case .selectAndDelete:
-            undoLastInjection()
+        case .simulateUndo:
+            simulateUndoKey()
         }
     }
 
@@ -191,27 +180,22 @@ extension MenuBarController: ConnectionManagerDelegate {
         print("✅ 已模拟回车键")
     }
 
-    private func undoLastInjection() {
-        // Select all (Cmd+A) then delete
+    private func simulateUndoKey() {
+        // Cmd+Z: undo the last text injection
         let source = CGEventSource(stateID: .hidSystemState)
         let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: true)
-        let aDown = CGEvent(keyboardEventSource: source, virtualKey: 0x00, keyDown: true)
-        let aUp = CGEvent(keyboardEventSource: source, virtualKey: 0x00, keyDown: false)
+        let zDown = CGEvent(keyboardEventSource: source, virtualKey: 0x06, keyDown: true)
+        let zUp = CGEvent(keyboardEventSource: source, virtualKey: 0x06, keyDown: false)
         let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: false)
 
-        aDown?.flags = .maskCommand
-        aUp?.flags = .maskCommand
-
-        let deleteDown = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: true)
-        let deleteUp = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: false)
+        zDown?.flags = .maskCommand
+        zUp?.flags = .maskCommand
 
         cmdDown?.post(tap: .cghidEventTap)
-        aDown?.post(tap: .cghidEventTap)
-        aUp?.post(tap: .cghidEventTap)
+        zDown?.post(tap: .cghidEventTap)
+        zUp?.post(tap: .cghidEventTap)
         cmdUp?.post(tap: .cghidEventTap)
-        deleteDown?.post(tap: .cghidEventTap)
-        deleteUp?.post(tap: .cghidEventTap)
-        print("✅ 已撤销（全选+删除）")
+        print("✅ 已撤销（Cmd+Z）")
     }
 
     private func handlePingMessage(_ envelope: MessageEnvelope) {

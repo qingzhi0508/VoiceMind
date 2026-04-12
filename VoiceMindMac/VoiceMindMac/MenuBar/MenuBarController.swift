@@ -34,7 +34,7 @@ class MenuBarController: NSObject, ObservableObject {
     var statusItem: NSStatusItem!
     let connectionManager = ConnectionManager()
     let settings = AppSettings.shared
-    private let textInjectionCoordinator: TextInjectionCoordinator
+    let textInjectionService: TextInjectionService
 
     private let speechRecognitionManager: SpeechRecognitionManager
     private let localAudioRecorder = LocalAudioStreamingRecorder()
@@ -52,7 +52,6 @@ class MenuBarController: NSObject, ObservableObject {
 
     var currentSessionId: String?
     var sessionTimer: Timer?
-    var pendingInjectionTargetAppPID: pid_t?
 
     var pairingWindow: NSWindow?
     var statusWindow: NSWindow?
@@ -73,9 +72,25 @@ class MenuBarController: NSObject, ObservableObject {
         self.inboundDataRecords = []
         self.voiceRecognitionRecords = []
         self.voiceRecognitionHistoryStore = voiceRecognitionHistoryStore
-        self.textInjectionCoordinator = TextInjectionCoordinator(injector: textInjector)
         self.speechRecognitionManager = speechRecognitionManager
+
+        let appCtx = AppActivationContext(
+            captureFrontmost: { NSWorkspace.shared.frontmostApplication?.processIdentifier },
+            activateApp: { pid in
+                guard let app = NSRunningApplication(processIdentifier: pid) else { return }
+                if #available(macOS 14.0, *) { app.activate() }
+                else { app.activate(options: [.activateIgnoringOtherApps]) }
+            },
+            isFrontmost: { pid in NSWorkspace.shared.frontmostApplication?.processIdentifier == pid },
+            isOwnBundle: { pid in
+                guard let app = NSRunningApplication(processIdentifier: pid) else { return false }
+                return app.bundleIdentifier == Bundle.main.bundleIdentifier
+            }
+        )
+        self.textInjectionService = TextInjectionService(injector: textInjector, appCtx: appCtx)
         super.init()
+
+        textInjectionService.delegate = self
 
         settings.$serverPort
             .dropFirst()
@@ -128,50 +143,6 @@ class MenuBarController: NSObject, ObservableObject {
         connectionManager.delegate = self
     }
 
-    func captureInjectionTargetApplication() {
-        guard let app = NSWorkspace.shared.frontmostApplication else {
-            pendingInjectionTargetAppPID = nil
-            return
-        }
-
-        if app.bundleIdentifier == Bundle.main.bundleIdentifier {
-            pendingInjectionTargetAppPID = nil
-            return
-        }
-
-        pendingInjectionTargetAppPID = app.processIdentifier
-    }
-
-    func restoreInjectionTargetApplicationIfNeeded(completion: @escaping () -> Void) {
-        guard let pid = pendingInjectionTargetAppPID,
-              let app = NSRunningApplication(processIdentifier: pid) else {
-            pendingInjectionTargetAppPID = nil
-            print("📍 无捕获的目标应用，当前前台应用: \(NSWorkspace.shared.frontmostApplication?.localizedName ?? "nil")")
-            completion()
-            return
-        }
-
-        let isAlreadyFrontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier == pid
-        pendingInjectionTargetAppPID = nil
-
-        guard !isAlreadyFrontmost else {
-            print("📍 目标应用已是前台: \(app.localizedName ?? "nil")")
-            completion()
-            return
-        }
-
-        print("📍 恢复目标应用到前台: \(app.localizedName ?? "nil")")
-
-        if #available(macOS 14.0, *) {
-            app.activate()
-        } else {
-            app.activate(options: [.activateIgnoringOtherApps])
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            completion()
-        }
-    }
-
     func startServices() {
         guard !isServiceRunning else { return }
 
@@ -203,7 +174,7 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     @objc private func showStatus() {
-        captureInjectionTargetApplication()
+        textInjectionService.captureTargetApplication()
 
         if let existingWindow = existingMainAppWindow() {
             if existingWindow.isMiniaturized {
@@ -290,7 +261,7 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func showOnboarding() {
-        captureInjectionTargetApplication()
+        textInjectionService.captureTargetApplication()
 
         if onboardingWindow == nil {
             let contentView = OnboardingFlowView(controller: self)
@@ -314,7 +285,7 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func showUsageGuide() {
-        captureInjectionTargetApplication()
+        textInjectionService.captureTargetApplication()
 
         if usageGuideWindow == nil {
             let contentView = UsageGuideView(
@@ -374,7 +345,6 @@ class MenuBarController: NSObject, ObservableObject {
     func prepareForQuit() {
         sessionTimer?.invalidate()
         sessionTimer = nil
-        pendingInjectionTargetAppPID = nil
 
         stopNetworkServices()
 
@@ -390,7 +360,7 @@ class MenuBarController: NSObject, ObservableObject {
     }
 
     func showPairingWindow(code: String) {
-        captureInjectionTargetApplication()
+        textInjectionService.captureTargetApplication()
 
         // Close existing pairing window if any
         if let existingWindow = pairingWindow {
@@ -476,83 +446,6 @@ class MenuBarController: NSObject, ObservableObject {
         alert.informativeText = message
         alert.alertStyle = .critical
         alert.runModal()
-    }
-
-    func handleAutoInjectedText(_ text: String, missingTargetTitle: String) {
-        handleAutoInjectedText(text, missingTargetTitle: missingTargetTitle, remainingRetries: 4)
-    }
-
-    private func handleAutoInjectedText(
-        _ text: String,
-        missingTargetTitle: String,
-        remainingRetries: Int
-    ) {
-        print("📝 尝试文本注入: \"\(text.prefix(50))\" (重试剩余: \(remainingRetries))")
-        switch textInjectionCoordinator.deliver(text: text) {
-        case .injected:
-            print("✅ 文本注入成功")
-            appendInboundDataRecord(
-                title: AppLocalization.localizedString("text_injection_success_title"),
-                detail: String(
-                    format: AppLocalization.localizedString("text_injection_success_message_format"),
-                    text
-                ),
-                category: .voice
-            )
-        case .permissionRequired:
-            print("❌ 文本注入失败: 辅助功能权限未授权")
-            appendInboundDataRecord(
-                title: AppLocalization.localizedString("text_injection_permission_title"),
-                detail: AppLocalization.localizedString("text_injection_permission_message"),
-                category: .connection,
-                severity: .warning
-            )
-            showTextInjectionPermissionError(with: text)
-        case .fallbackToCopy(let reason):
-            print("⚠️ 文本注入回退: \(reason)")
-            if reason == "No focused input target", remainingRetries > 0 {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
-                    self?.handleAutoInjectedText(
-                        text,
-                        missingTargetTitle: missingTargetTitle,
-                        remainingRetries: remainingRetries - 1
-                    )
-                }
-                return
-            }
-
-            let titleKey = reason == "No focused input target"
-                ? missingTargetTitle
-                : AppLocalization.localizedString("text_copy_alert_title")
-            let detail = reason == "No focused input target"
-                ? textInjectionFailureDetail(for: reason)
-                : String(
-                    format: AppLocalization.localizedString("text_copy_alert_message_format"),
-                    reason
-                )
-            appendInboundDataRecord(
-                title: titleKey,
-                detail: detail,
-                category: .connection,
-                severity: .warning
-            )
-            showTextCopyAlert(text, error: reason)
-        }
-    }
-
-    private func textInjectionFailureDetail(for reason: String) -> String {
-        let baseDetail = String(
-            format: AppLocalization.localizedString("text_copy_alert_message_format"),
-            reason
-        )
-        let focusedElementSummary = FocusedInputDetector.currentFocusedElementSummary()
-
-        return """
-        \(baseDetail)
-
-        Debug Context
-        \(focusedElementSummary)
-        """
     }
 
     func showTextCopyAlert(_ text: String, error: String) {
@@ -728,6 +621,8 @@ extension MenuBarController {
     }
 
     private func beginLocalRecording() {
+        textInjectionService.captureTargetApplication()
+
         do {
             let sessionId = UUID().uuidString
             let language = AutoSpeechRecognitionLanguagePolicy.resolvedLanguage(
@@ -774,6 +669,7 @@ extension MenuBarController: SpeechRecognitionEngineDelegate {
         DispatchQueue.main.async {
             self.noteText = text
             self.appendVoiceRecognitionRecord(text, source: .localMac)
+            self.textInjectionService.injectRecognizedText(text)
         }
     }
 
@@ -798,6 +694,44 @@ extension MenuBarController: SpeechRecognitionEngineDelegate {
     ) {
         DispatchQueue.main.async {
             self.noteText = text
+        }
+    }
+}
+
+// MARK: - TextInjectionServiceDelegate
+
+extension MenuBarController: TextInjectionServiceDelegate {
+    func textInjectionService(
+        _ service: TextInjectionService,
+        didFinishWithOutcome outcome: TextInjectionServiceOutcome
+    ) {
+        switch outcome {
+        case .injected:
+            appendInboundDataRecord(
+                title: AppLocalization.localizedString("text_injection_success_title"),
+                detail: AppLocalization.localizedString("text_injection_success_message_format"),
+                category: .voice
+            )
+        case .permissionRequired(let text):
+            appendInboundDataRecord(
+                title: AppLocalization.localizedString("text_injection_permission_title"),
+                detail: AppLocalization.localizedString("text_injection_permission_message"),
+                category: .connection,
+                severity: .warning
+            )
+            showTextInjectionPermissionError(with: text)
+        case .fallbackToCopy(let text, let reason):
+            let detail = String(
+                format: AppLocalization.localizedString("text_copy_alert_message_format"),
+                reason
+            )
+            appendInboundDataRecord(
+                title: AppLocalization.localizedString("text_copy_alert_title"),
+                detail: detail,
+                category: .connection,
+                severity: .warning
+            )
+            showTextCopyAlert(text, error: reason)
         }
     }
 }

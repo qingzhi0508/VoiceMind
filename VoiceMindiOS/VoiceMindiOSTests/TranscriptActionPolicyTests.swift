@@ -27,7 +27,7 @@ struct TranscriptActionPolicyTests {
     }
 
     @Test
-    func confirmActionHidesActionsAndClearsText() {
+    func remoteConfirmSendsKeywordAndKeepsText() {
         let viewModel = ContentViewModel()
         viewModel.simulateMacResult(
             ResultPayload(sessionId: "s1", text: "你好", language: "zh-CN")
@@ -36,20 +36,32 @@ struct TranscriptActionPolicyTests {
 
         viewModel.confirmTranscriptAction()
         #expect(!viewModel.showsTranscriptActions)
-        #expect(viewModel.localTranscriptText.isEmpty)
+        // 远端确认后文字保留（跟本地确认一样）
+        #expect(viewModel.localTranscriptText.contains("你好"))
+        #expect(viewModel._testLastSentKeywordAction == .confirm)
     }
 
     @Test
-    func undoActionHidesActionsAndClearsText() {
+    func remoteUndoSendsKeywordAndRestoresPreviousText() {
         let viewModel = ContentViewModel()
+        // 先有一段已有文字
         viewModel.simulateMacResult(
-            ResultPayload(sessionId: "s1", text: "你好", language: "zh-CN")
+            ResultPayload(sessionId: "s1", text: "第一段", language: "zh-CN")
+        )
+        viewModel.confirmTranscriptAction()
+
+        // 再来一段远端识别
+        viewModel.simulateMacResult(
+            ResultPayload(sessionId: "s2", text: "第二段", language: "zh-CN")
         )
         #expect(viewModel.showsTranscriptActions)
 
+        // 撤销 - 应只撤销最后一步，恢复到 "第一段"
         viewModel.undoTranscriptAction()
         #expect(!viewModel.showsTranscriptActions)
-        #expect(viewModel.localTranscriptText.isEmpty)
+        #expect(viewModel._testLastSentKeywordAction == .undo)
+        #expect(!viewModel.localTranscriptText.contains("第二段"))
+        #expect(viewModel.localTranscriptText.contains("第一段"))
     }
 
     @Test
@@ -119,5 +131,56 @@ struct TranscriptActionPolicyTests {
         #expect(!viewModel.showsTranscriptActions)
         #expect(!viewModel.localTranscriptText.contains("第二段"))
         #expect(viewModel.localTranscriptText.contains("第一段"))
+    }
+
+    // MARK: - 本地识别转发到 Mac 的确认/撤销
+
+    @Test
+    func localForwardedConfirmSendsKeywordActionToMac() {
+        let viewModel = ContentViewModel()
+        viewModel.simulateLocalResultWithForward("你好世界", sessionId: "local-s1")
+
+        // 确认后应发送 .confirm keyword action 到 Mac
+        viewModel.confirmTranscriptAction()
+        #expect(viewModel._testLastSentKeywordAction == .confirm)
+        // 本地确认行为：隐藏按钮，保留文字
+        #expect(!viewModel.showsTranscriptActions)
+        #expect(viewModel.localTranscriptText.contains("你好世界"))
+    }
+
+    @Test
+    func localForwardedUndoSendsKeywordActionToMac() {
+        let viewModel = ContentViewModel()
+        viewModel.simulateLocalResultWithForward("你好世界", sessionId: "local-s2")
+
+        // 撤销后应发送 .undo keyword action 到 Mac
+        viewModel.undoTranscriptAction()
+        #expect(viewModel._testLastSentKeywordAction == .undo)
+        // 本地撤销行为：隐藏按钮，恢复之前的文字
+        #expect(!viewModel.showsTranscriptActions)
+        #expect(viewModel.localTranscriptText.isEmpty)
+    }
+
+    @Test
+    func localNotForwardedConfirmDoesNotSendKeywordAction() {
+        let viewModel = ContentViewModel()
+        viewModel.simulateLocalResult("不转发")
+
+        viewModel.confirmTranscriptAction()
+        // 未转发时不应发送 keyword action
+        #expect(viewModel._testLastSentKeywordAction == nil)
+        #expect(!viewModel.showsTranscriptActions)
+        #expect(viewModel.localTranscriptText.contains("不转发"))
+    }
+
+    @Test
+    func localNotForwardedUndoDoesNotSendKeywordAction() {
+        let viewModel = ContentViewModel()
+        viewModel.simulateLocalResult("不转发")
+
+        viewModel.undoTranscriptAction()
+        // 未转发时不应发送 keyword action
+        #expect(viewModel._testLastSentKeywordAction == nil)
+        #expect(!viewModel.showsTranscriptActions)
     }
 }
