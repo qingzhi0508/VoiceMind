@@ -22,6 +22,7 @@ class ContentViewModel: ObservableObject {
     @Published var localTranscriptHistory: [LocalTranscriptRecord] = []
     @Published var transcriptAutoScrollVersion: Int = 0
     @Published var showsTranscriptActions: Bool = false
+    @Published var textInputDraft: String = ""
     var isLastRecognitionLocal: Bool = false
     var preRecognitionCommittedText: String = ""
     @Published private(set) var twoDeviceSyncAccessState: TwoDeviceSyncAccessState = .limited(
@@ -440,6 +441,42 @@ class ContentViewModel: ObservableObject {
         )
     }
 
+    var canSendTextInput: Bool {
+        LocalTranscriptionPolicy.canSendTextInput(
+            sendToMacEnabled: sendResultsToMacEnabled,
+            pairingState: pairingState,
+            connectionState: connectionState,
+            transcriptText: textInputDraft
+        )
+    }
+
+    func sendTextInputToMac() {
+        let trimmedText = textInputDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedText.isEmpty else { return }
+        guard canSendTextInput else {
+            pushToTalkStatusMessage = localized("ptt_text_input_requires_mac")
+            return
+        }
+
+        preRecognitionCommittedText = committedTranscriptText
+
+        let sessionId = sendTranscriptTextToMac(trimmedText, language: selectedLanguage)
+
+        committedTranscriptText = LocalTranscriptHistory.appendingLatestTranscript(
+            trimmedText, to: committedTranscriptText
+        )
+        liveTranscriptText = ""
+        localTranscriptText = committedTranscriptText
+        textInputDraft = ""
+
+        showsTranscriptActions = true
+        isLastRecognitionLocal = false
+        lastKeywordSessionId = sessionId
+        transcriptAutoScrollVersion += 1
+        appendLocalTranscriptRecord(text: trimmedText, language: selectedLanguage)
+        pushToTalkStatusMessage = localized("ptt_text_input_sent")
+    }
+
     func toggleHomeTranscriptionMode() {
         guard sendResultsToMacEnabled else {
             preferredHomeTranscriptionMode = .local
@@ -449,7 +486,8 @@ class ContentViewModel: ObservableObject {
         switch preferredHomeTranscriptionMode {
         case .local: preferredHomeTranscriptionMode = .mac
         case .mac: preferredHomeTranscriptionMode = .microphone
-        case .microphone: preferredHomeTranscriptionMode = .local
+        case .microphone: preferredHomeTranscriptionMode = .textInput
+        case .textInput: preferredHomeTranscriptionMode = .local
         }
     }
 
@@ -492,13 +530,14 @@ class ContentViewModel: ObservableObject {
         )
     }
 
+    @discardableResult
     private func sendTranscriptTextToMac(
         _ text: String,
         language: String
-    ) {
+    ) -> String {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedText.isEmpty else { return }
-        guard authorizeTwoDeviceSyncSessionIfNeeded() else { return }
+        guard !trimmedText.isEmpty else { return "" }
+        guard authorizeTwoDeviceSyncSessionIfNeeded() else { return "" }
 
         let sessionId = UUID().uuidString
         let payload = TextMessagePayload(
@@ -507,7 +546,7 @@ class ContentViewModel: ObservableObject {
             language: language
         )
 
-        guard let payloadData = try? JSONEncoder().encode(payload) else { return }
+        guard let payloadData = try? JSONEncoder().encode(payload) else { return sessionId }
 
         let timestamp = Date()
         let hmac = connectionManager.hmacValidator?.generateHMACForEnvelope(
@@ -533,6 +572,7 @@ class ContentViewModel: ObservableObject {
             detail: localized("log_manual_send_detail_format", sessionId, language, trimmedText),
             category: .voice
         )
+        return sessionId
     }
 
     private func reconnectToPairedDevice() {
@@ -959,6 +999,22 @@ class ContentViewModel: ObservableObject {
         isLastRecognitionLocal = true
         lastKeywordSessionId = sessionId
         _testShouldForwardResultToMac = true
+    }
+
+    /// 测试用：模拟文字输入发送
+    func simulateTextInputSent(_ text: String, sessionId: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        preRecognitionCommittedText = committedTranscriptText
+        committedTranscriptText = LocalTranscriptHistory.appendingLatestTranscript(
+            trimmed, to: committedTranscriptText
+        )
+        liveTranscriptText = ""
+        localTranscriptText = committedTranscriptText
+        textInputDraft = ""
+        showsTranscriptActions = true
+        isLastRecognitionLocal = false
+        lastKeywordSessionId = sessionId
     }
 
     /// 测试用：记录最近发送的 keyword action

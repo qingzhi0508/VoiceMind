@@ -50,7 +50,8 @@ struct TranscriptActionBarPlacementPolicyTests {
                 showsTranscriptActions: viewModel.showsTranscriptActions
             )
         )
-        #expect(viewModel.localTranscriptText.isEmpty)
+        // 确认后文字保留（不删除）
+        #expect(viewModel.localTranscriptText.contains("你好"))
     }
 
     @Test

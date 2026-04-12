@@ -183,4 +183,64 @@ struct TranscriptActionPolicyTests {
         #expect(viewModel._testLastSentKeywordAction == nil)
         #expect(!viewModel.showsTranscriptActions)
     }
+
+    // MARK: - Text Input Mode
+
+    @Test
+    func sendTextInputShowsTranscriptActions() {
+        let viewModel = ContentViewModel()
+        viewModel.simulateTextInputSent("手动输入", sessionId: "ti-1")
+
+        #expect(viewModel.showsTranscriptActions)
+        #expect(viewModel.isLastRecognitionLocal == false)
+        #expect(viewModel.localTranscriptText.contains("手动输入"))
+    }
+
+    @Test
+    func textInputConfirmSendsKeywordAction() {
+        let viewModel = ContentViewModel()
+        viewModel.simulateTextInputSent("确认测试", sessionId: "ti-2")
+
+        viewModel.confirmTranscriptAction()
+
+        #expect(viewModel._testLastSentKeywordAction == .confirm)
+        #expect(!viewModel.showsTranscriptActions)
+        #expect(viewModel.localTranscriptText.contains("确认测试"))
+    }
+
+    @Test
+    func textInputUndoSendsKeywordActionAndRestoresText() {
+        let viewModel = ContentViewModel()
+        let previousText = viewModel.localTranscriptText
+        viewModel.simulateTextInputSent("撤销测试", sessionId: "ti-3")
+
+        viewModel.undoTranscriptAction()
+
+        #expect(viewModel._testLastSentKeywordAction == .undo)
+        #expect(!viewModel.showsTranscriptActions)
+        #expect(viewModel.localTranscriptText == previousText)
+    }
+
+    @Test
+    func canSendTextInputIsFalseWhenDraftEmpty() {
+        let viewModel = ContentViewModel()
+        viewModel.sendResultsToMacEnabled = true
+        viewModel.textInputDraft = "   "
+
+        // Not connected so canSendTextInput will be false
+        #expect(!viewModel.canSendTextInput)
+    }
+
+    @Test
+    func toggleModeCyclesThroughTextInput() {
+        let viewModel = ContentViewModel()
+        viewModel.sendResultsToMacEnabled = true
+        viewModel.preferredHomeTranscriptionMode = .microphone
+
+        viewModel.toggleHomeTranscriptionMode()
+        #expect(viewModel.preferredHomeTranscriptionMode == .textInput)
+
+        viewModel.toggleHomeTranscriptionMode()
+        #expect(viewModel.preferredHomeTranscriptionMode == .local)
+    }
 }

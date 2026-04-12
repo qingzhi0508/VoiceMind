@@ -448,4 +448,137 @@ struct LocalTranscriptionPolicyTests {
         #expect(!PairingErrorRecoveryPolicy.requiresRePairing(for: "invalid_code"))
         #expect(PairingErrorRecoveryPolicy.messageKey(for: "invalid_code") == nil)
     }
+
+    // MARK: - Text Input Mode
+
+    @Test
+    func textInputModeCannotStartPrimaryCapture() {
+        #expect(
+            !LocalTranscriptionPolicy.canStartPrimaryCapture(
+                recognitionState: .idle,
+                hasPermissions: true,
+                sendToMacEnabled: true,
+                preferredMode: .textInput,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
+                connectionState: .connected
+            )
+        )
+    }
+
+    @Test
+    func textInputModeShowsTranscriptPreviewAlways() {
+        #expect(
+            LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
+                mode: .textInput,
+                recognitionState: .idle,
+                transcriptText: ""
+            )
+        )
+        #expect(
+            LocalTranscriptionPolicy.shouldShowTranscriptPreviewOnHome(
+                mode: .textInput,
+                recognitionState: .idle,
+                transcriptText: "hello"
+            )
+        )
+    }
+
+    @Test
+    func textInputModeIdleStatusMessage() {
+        #expect(
+            LocalTranscriptionPolicy.idleStatusMessageKey(
+                hasPermissions: true,
+                sendToMacEnabled: true,
+                preferredMode: .textInput,
+                pairingState: .paired(deviceId: "ios-1", deviceName: "cayden"),
+                connectionState: .connected
+            ) == "ptt_text_input_ready"
+        )
+        #expect(
+            LocalTranscriptionPolicy.idleStatusMessageKey(
+                hasPermissions: true,
+                sendToMacEnabled: true,
+                preferredMode: .textInput,
+                pairingState: .unpaired,
+                connectionState: .disconnected
+            ) == "ptt_text_input_connect"
+        )
+    }
+
+    @Test
+    func canSendTextInputRequiresConnectionAndText() {
+        let paired = PairingState.paired(deviceId: "ios-1", deviceName: "cayden")
+        // Connected + non-empty text → true
+        #expect(
+            LocalTranscriptionPolicy.canSendTextInput(
+                sendToMacEnabled: true,
+                pairingState: paired,
+                connectionState: .connected,
+                transcriptText: "hello"
+            )
+        )
+        // Disconnected → false
+        #expect(
+            !LocalTranscriptionPolicy.canSendTextInput(
+                sendToMacEnabled: true,
+                pairingState: paired,
+                connectionState: .disconnected,
+                transcriptText: "hello"
+            )
+        )
+        // Empty text → false
+        #expect(
+            !LocalTranscriptionPolicy.canSendTextInput(
+                sendToMacEnabled: true,
+                pairingState: paired,
+                connectionState: .connected,
+                transcriptText: "   "
+            )
+        )
+        // Sync disabled → false
+        #expect(
+            !LocalTranscriptionPolicy.canSendTextInput(
+                sendToMacEnabled: false,
+                pairingState: paired,
+                connectionState: .connected,
+                transcriptText: "hello"
+            )
+        )
+    }
+
+    @Test
+    func shouldShowTextInputAreaOnlyForTextInputMode() {
+        #expect(LocalTranscriptionPolicy.shouldShowTextInputArea(mode: .textInput))
+        #expect(!LocalTranscriptionPolicy.shouldShowTextInputArea(mode: .local))
+        #expect(!LocalTranscriptionPolicy.shouldShowTextInputArea(mode: .mac))
+        #expect(!LocalTranscriptionPolicy.shouldShowTextInputArea(mode: .microphone))
+    }
+
+    @Test
+    func shouldHideRecordingControlForTextInputMode() {
+        #expect(!LocalTranscriptionPolicy.shouldShowRecordingControl(mode: .textInput))
+        #expect(LocalTranscriptionPolicy.shouldShowRecordingControl(mode: .local))
+        #expect(LocalTranscriptionPolicy.shouldShowRecordingControl(mode: .mac))
+        #expect(LocalTranscriptionPolicy.shouldShowRecordingControl(mode: .microphone))
+    }
+
+    @Test
+    func effectiveModeReturnsTextInputWhenEnabled() {
+        #expect(
+            LocalTranscriptionPolicy.effectiveHomeTranscriptionMode(
+                sendToMacEnabled: true,
+                preferredMode: .textInput
+            ) == .textInput
+        )
+    }
+
+    @Test
+    func effectiveModeFallsBackToLocalForTextInputWhenSyncDisabled() {
+        #expect(
+            LocalTranscriptionPolicy.effectiveHomeTranscriptionMode(
+                sendToMacEnabled: false,
+                preferredMode: .textInput
+            ) == .local
+        )
+    }
 }

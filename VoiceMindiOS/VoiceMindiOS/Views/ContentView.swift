@@ -485,6 +485,7 @@ struct HomeModeSelector: View {
         case .local: return String(localized: "mode_local")
         case .mac: return String(localized: "mode_mac")
         case .microphone: return String(localized: "mode_microphone")
+        case .textInput: return String(localized: "mode_text_input")
         }
     }
 
@@ -498,6 +499,9 @@ struct HomeModeSelector: View {
             }
             Button { selectedMode = .microphone } label: {
                 Label(String(localized: "mode_microphone"), systemImage: selectedMode == .microphone ? "checkmark" : "")
+            }
+            Button { selectedMode = .textInput } label: {
+                Label(String(localized: "mode_text_input"), systemImage: selectedMode == .textInput ? "checkmark" : "")
             }
         } label: {
             HStack(spacing: 4) {
@@ -1261,36 +1265,76 @@ struct PrimaryRecognitionPage: View {
                 showingTranscriptPreview: viewModel.shouldShowTranscriptPreviewOnHome
             )
         ) {
-            RecognitionStatusView(
-                state: viewModel.recognitionState,
-                statusMessage: viewModel.pushToTalkStatusMessage,
-                isEnabled: viewModel.canStartPushToTalk || viewModel.recognitionState != .idle,
-                showsPairingAction: false,
-                showsReconnectAction: viewModel.shouldPromptForHomeMacAction,
-                audioLevel: viewModel.audioLevel,
-                onPressChanged: { isPressing in
-                    if isPressing {
+            if LocalTranscriptionPolicy.shouldShowRecordingControl(
+                mode: viewModel.effectiveHomeTranscriptionMode
+            ) {
+                RecognitionStatusView(
+                    state: viewModel.recognitionState,
+                    statusMessage: viewModel.pushToTalkStatusMessage,
+                    isEnabled: viewModel.canStartPushToTalk || viewModel.recognitionState != .idle,
+                    showsPairingAction: false,
+                    showsReconnectAction: viewModel.shouldPromptForHomeMacAction,
+                    audioLevel: viewModel.audioLevel,
+                    onPressChanged: { isPressing in
+                        if isPressing {
+                            onDismissKeyboard()
+                        }
+                        viewModel.handlePrimaryButtonPressChanged(isPressing)
+                    },
+                    onReconnectAction: {
                         onDismissKeyboard()
+                        showsMacActionAlert = true
                     }
-                    viewModel.handlePrimaryButtonPressChanged(isPressing)
-                },
-                onReconnectAction: {
-                    onDismissKeyboard()
-                    showsMacActionAlert = true
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            } else {
+                // Text input mode: send button replaces recording button
+                VStack(spacing: 20) {
+                    RecognitionStatusView(
+                        state: .idle,
+                        statusMessage: viewModel.pushToTalkStatusMessage,
+                        isEnabled: viewModel.canSendTextInput,
+                        showsPairingAction: false,
+                        showsReconnectAction: viewModel.shouldPromptForHomeMacAction,
+                        audioLevel: 0,
+                        onPressChanged: { isPressing in
+                            if isPressing {
+                                viewModel.sendTextInputToMac()
+                            }
+                        },
+                        onReconnectAction: {
+                            onDismissKeyboard()
+                            showsMacActionAlert = true
+                        }
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            }
 
             VStack(spacing: 0) {
                 if viewModel.shouldShowTranscriptPreviewOnHome {
                     TranscriptCard(
                         transcriptText: Binding(
-                            get: { viewModel.localTranscriptText },
-                            set: { viewModel.updateLocalTranscriptText($0) }
+                            get: {
+                                LocalTranscriptionPolicy.shouldShowTextInputArea(
+                                    mode: viewModel.effectiveHomeTranscriptionMode
+                                ) ? viewModel.textInputDraft : viewModel.localTranscriptText
+                            },
+                            set: { newValue in
+                                if LocalTranscriptionPolicy.shouldShowTextInputArea(
+                                    mode: viewModel.effectiveHomeTranscriptionMode
+                                ) {
+                                    viewModel.textInputDraft = newValue
+                                } else {
+                                    viewModel.updateLocalTranscriptText(newValue)
+                                }
+                            }
                         ),
                         isFocused: $isTranscriptFocused,
                         autoScrollVersion: viewModel.transcriptAutoScrollVersion,
-                        isEditable: false,
+                        isEditable: LocalTranscriptionPolicy.shouldShowTextInputArea(
+                            mode: viewModel.effectiveHomeTranscriptionMode
+                        ) && !viewModel.showsTranscriptActions,
                         recognitionState: viewModel.recognitionState,
                         liveStatusMessage: viewModel.pushToTalkStatusMessage
                     )

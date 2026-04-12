@@ -4,6 +4,7 @@ enum HomeTranscriptionMode: String {
     case local
     case mac
     case microphone
+    case textInput
 }
 
 enum LocalTranscriptionPolicy {
@@ -37,6 +38,8 @@ enum LocalTranscriptionPolicy {
             }
         case .microphone:
             return false
+        case .textInput:
+            return true
         }
     }
 
@@ -100,6 +103,8 @@ enum LocalTranscriptionPolicy {
                 pairingState: pairingState,
                 connectionState: connectionState
             )
+        case .textInput:
+            return false
         }
     }
 
@@ -186,7 +191,31 @@ enum LocalTranscriptionPolicy {
             return hasReadyMacConnection ? "ptt_hold_to_talk" : "ptt_connect_to_talk"
         case .microphone:
             return hasReadyMacConnection ? "ptt_mic_mode_ready" : "ptt_connect_for_mic_mode"
+        case .textInput:
+            return hasReadyMacConnection ? "ptt_text_input_ready" : "ptt_text_input_connect"
         }
+    }
+
+    static func canSendTextInput(
+        sendToMacEnabled: Bool,
+        pairingState: PairingState,
+        connectionState: ConnectionState,
+        transcriptText: String
+    ) -> Bool {
+        canManuallyForwardTextToMac(
+            sendToMacEnabled: sendToMacEnabled,
+            pairingState: pairingState,
+            connectionState: connectionState,
+            transcriptText: transcriptText
+        )
+    }
+
+    static func shouldShowTextInputArea(mode: HomeTranscriptionMode) -> Bool {
+        mode == .textInput
+    }
+
+    static func shouldShowRecordingControl(mode: HomeTranscriptionMode) -> Bool {
+        mode != .textInput
     }
 
     private static func isIdle(_ state: RecognitionState) -> Bool {

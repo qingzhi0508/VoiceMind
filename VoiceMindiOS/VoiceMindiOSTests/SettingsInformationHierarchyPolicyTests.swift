@@ -5,7 +5,7 @@ import Testing
 struct SettingsInformationHierarchyPolicyTests {
     @Test
     func rootSectionsUseTheExpectedOrder() {
-        #expect(SettingsInformationHierarchyPolicy.rootSections == [.status, .pairing, .appearance, .support])
+        #expect(SettingsInformationHierarchyPolicy.rootSections == [.status, .pairing, .appearance, .support, .about])
     }
 
     @Test
@@ -24,6 +24,8 @@ struct SettingsInformationHierarchyPolicyTests {
                 .permissions,
                 .help,
                 .supportEmail,
+                .termsOfUse,
+                .privacyPolicy,
                 .logs,
                 .version
             ]
