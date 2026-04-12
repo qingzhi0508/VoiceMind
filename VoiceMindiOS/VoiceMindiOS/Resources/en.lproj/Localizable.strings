@@ -277,6 +277,8 @@
 "mode_local" = "Local";
 "mode_mac" = "Desktop";
 "mode_microphone" = "Mic";
+"transcript_action_confirm" = "Confirm";
+"transcript_action_undo" = "Undo";
 "home_mode_switch_to_mac" = "Switch to Desktop Transcription";
 "home_mode_switch_to_local" = "Switch to Local Transcription";
 "bottom_mode_toggle_mac" = "Desktop Mode";

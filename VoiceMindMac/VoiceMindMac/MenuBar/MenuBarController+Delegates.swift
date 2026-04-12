@@ -9,10 +9,28 @@ enum VoiceInboundLogPolicy {
             return false
         case .textMessage:
             return true
+        case .keyword:
+            return false
         default:
             return false
         }
     }
+}
+
+enum KeywordActionRoutingPolicy {
+    static func route(_ action: KeywordAction) -> KeywordActionResult {
+        switch action {
+        case .confirm:
+            return .simulateReturn
+        case .undo:
+            return .simulateUndo
+        }
+    }
+}
+
+enum KeywordActionResult: Equatable {
+    case simulateReturn
+    case simulateUndo
 }
 
 // MARK: - ConnectionManagerDelegate
@@ -62,6 +80,8 @@ extension MenuBarController: ConnectionManagerDelegate {
             handleResultMessage(envelope)
         case .textMessage:
             handleTextMessage(envelope)
+        case .keyword:
+            handleKeywordMessage(envelope)
         case .ping:
             handlePingMessage(envelope)
         default:
@@ -110,13 +130,7 @@ extension MenuBarController: ConnectionManagerDelegate {
         DispatchQueue.main.async {
             self.noteText = payload.text
             self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
-
-            self.restoreInjectionTargetApplicationIfNeeded {
-                self.handleAutoInjectedText(
-                    payload.text,
-                    missingTargetTitle: AppLocalization.localizedString("text_injection_missing_target_title")
-                )
-            }
+            self.textInjectionService.injectRecognizedText(payload.text)
         }
     }
 
@@ -136,15 +150,52 @@ extension MenuBarController: ConnectionManagerDelegate {
         }
 
         DispatchQueue.main.async {
-            self.restoreInjectionTargetApplicationIfNeeded {
-                self.handleAutoInjectedText(
-                    payload.text,
-                    missingTargetTitle: AppLocalization.localizedString("text_injection_missing_target_title")
-                )
-                self.noteText = payload.text
-                self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
-            }
+            self.textInjectionService.injectRecognizedText(payload.text)
+            self.noteText = payload.text
+            self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
         }
+    }
+
+    private func handleKeywordMessage(_ envelope: MessageEnvelope) {
+        guard let payload = try? JSONDecoder().decode(KeywordPayload.self, from: envelope.payload) else {
+            print("❌ 无法解码 KeywordPayload")
+            return
+        }
+
+        print("🔑 收到指令: \(payload.action.rawValue)")
+        switch KeywordActionRoutingPolicy.route(payload.action) {
+        case .simulateReturn:
+            simulateReturnKey()
+        case .simulateUndo:
+            simulateUndoKey()
+        }
+    }
+
+    private func simulateReturnKey() {
+        let source = CGEventSource(stateID: .hidSystemState)
+        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x24, keyDown: true)
+        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x24, keyDown: false)
+        keyDown?.post(tap: .cghidEventTap)
+        keyUp?.post(tap: .cghidEventTap)
+        print("✅ 已模拟回车键")
+    }
+
+    private func simulateUndoKey() {
+        // Cmd+Z: undo the last text injection
+        let source = CGEventSource(stateID: .hidSystemState)
+        let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: true)
+        let zDown = CGEvent(keyboardEventSource: source, virtualKey: 0x06, keyDown: true)
+        let zUp = CGEvent(keyboardEventSource: source, virtualKey: 0x06, keyDown: false)
+        let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: false)
+
+        zDown?.flags = .maskCommand
+        zUp?.flags = .maskCommand
+
+        cmdDown?.post(tap: .cghidEventTap)
+        zDown?.post(tap: .cghidEventTap)
+        zUp?.post(tap: .cghidEventTap)
+        cmdUp?.post(tap: .cghidEventTap)
+        print("✅ 已撤销（Cmd+Z）")
     }
 
     private func handlePingMessage(_ envelope: MessageEnvelope) {

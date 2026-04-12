@@ -5,7 +5,7 @@ final class InjectionTargetCaptureSourceTests: XCTestCase {
         let source = try menuBarControllerSource()
         let methodBody = try XCTUnwrap(methodBody(named: "func showPairingWindow(code: String)", in: source))
 
-        let captureIndex = try XCTUnwrap(methodBody.range(of: "captureInjectionTargetApplication()")?.lowerBound)
+        let captureIndex = try XCTUnwrap(methodBody.range(of: "textInjectionService.captureTargetApplication()")?.lowerBound)
         let makeKeyIndex = try XCTUnwrap(methodBody.range(of: "window.makeKeyAndOrderFront(nil)")?.lowerBound)
 
         XCTAssertLessThan(
@@ -20,7 +20,7 @@ final class InjectionTargetCaptureSourceTests: XCTestCase {
         let methodBody = try XCTUnwrap(methodBody(named: "func windowDidBecomeKey(_ notification: Notification)", in: source))
 
         XCTAssertFalse(
-            methodBody.contains("captureInjectionTargetApplication()"),
+            methodBody.contains("captureTargetApplication()"),
             "windowDidBecomeKey should not overwrite the previously captured target after VoiceMind becomes key."
         )
     }

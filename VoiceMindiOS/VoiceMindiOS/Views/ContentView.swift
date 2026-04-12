@@ -1186,6 +1186,43 @@ struct VoiceIsolationTipBanner: View {
     }
 }
 
+struct TranscriptActionBar: View {
+    let onConfirm: () -> Void
+    let onUndo: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button(action: onConfirm) {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text(String(localized: "transcript_action_confirm"))
+                        .font(.system(size: 15, weight: .medium))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .foregroundStyle(.white)
+                .background(Color.accentColor, in: Capsule())
+            }
+
+            Button(action: onUndo) {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.uturn.backward")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text(String(localized: "transcript_action_undo"))
+                        .font(.system(size: 15, weight: .medium))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .foregroundStyle(.secondary)
+                .background(.ultraThinMaterial, in: Capsule())
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 8)
+    }
+}
+
 struct PrimaryRecognitionPage: View {
     @ObservedObject var viewModel: ContentViewModel
     @Binding var isTranscriptFocused: Bool
@@ -1281,6 +1318,22 @@ struct PrimaryRecognitionPage: View {
 
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+        .overlay(alignment: .bottom) {
+            if TranscriptActionBarPlacementPolicy.shouldShowBar(
+                showsTranscriptActions: viewModel.showsTranscriptActions
+            ) {
+                GeometryReader { geo in
+                    TranscriptActionBar(
+                        onConfirm: { viewModel.confirmTranscriptAction() },
+                        onUndo: { viewModel.undoTranscriptAction() }
+                    )
+                    .position(x: geo.size.width / 2, y: geo.size.height * 0.72)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.42, dampingFraction: 0.88), value: viewModel.showsTranscriptActions)
+            }
+        }
 
         .background(
             AppCanvasBackgroundLayer(
