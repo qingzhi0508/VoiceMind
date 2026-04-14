@@ -24,7 +24,7 @@ const speechEngineHint = document.getElementById("speech-engine-hint");
 const cloudEngineStatus = document.getElementById("engine-status-cloud");
 const speechAsrModal = document.getElementById("speech-asr-modal");
 const speechConfigCancel = document.getElementById("speech-config-cancel");
-const speechConfigClose = document.getElementById("speech-config-close");
+const speechConfigClose = null;
 const recordsBatchToolbar = document.getElementById("records-batch-toolbar");
 const recordsBatchCount = document.getElementById("records-batch-count");
 const updateResult = document.getElementById("update-result");
@@ -142,7 +142,6 @@ function getPreferredEngine() {
 function setAsrConfigExpanded(expanded) {
   state.asrConfigExpanded = expanded;
   if (speechAsrModal) speechAsrModal.hidden = !expanded;
-  document.body.classList.toggle("modal-open", expanded);
 }
 
 function updateEngineHint(message) {
@@ -463,7 +462,16 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         if (s.asr) {
           document.getElementById("setting-asr-appid").value = s.asr.app_id || "";
           document.getElementById("setting-asr-accesskey").value = s.asr.access_key || "";
-          document.getElementById("setting-asr-resourceid").value = s.asr.resource_id || "";
+          const resourceIdEl = document.getElementById("setting-asr-resourceid");
+          // Set value; if not in options, add a custom option
+          const rid = s.asr.resource_id || "";
+          if (rid && !resourceIdEl.querySelector(`option[value="${rid}"]`)) {
+            const opt = document.createElement("option");
+            opt.value = rid;
+            opt.textContent = rid;
+            resourceIdEl.prepend(opt);
+          }
+          resourceIdEl.value = rid;
           document.getElementById("setting-asr-language").value = s.asr.asr_language || "zh-CN";
         }
         const rd = s.history_retention_days || 30;
@@ -783,20 +791,6 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       speechConfigCancel.addEventListener("click", () => {
         setAsrConfigExpanded(false);
         updateSpeechEngineActions();
-      });
-    }
-    if (speechConfigClose) {
-      speechConfigClose.addEventListener("click", () => {
-        setAsrConfigExpanded(false);
-        updateSpeechEngineActions();
-      });
-    }
-    if (speechAsrModal) {
-      speechAsrModal.addEventListener("click", event => {
-        if (event.target === speechAsrModal) {
-          setAsrConfigExpanded(false);
-          updateSpeechEngineActions();
-        }
       });
     }
     document.addEventListener("keydown", event => {
