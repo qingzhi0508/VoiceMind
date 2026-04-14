@@ -6,6 +6,7 @@ mod commands;
 mod events;
 mod injection;
 mod network;
+mod overlay;
 mod pairing;
 mod settings;
 mod speech;
@@ -15,7 +16,7 @@ use tokio::sync::Mutex;
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Emitter, Manager, WindowEvent,
+    Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
 use tracing::{error, info};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
@@ -98,6 +99,25 @@ fn main() {
 
             // Manage state first before accessing it
             app.manage(state);
+
+            let overlay_window = WebviewWindowBuilder::new(
+                app,
+                "overlay",
+                WebviewUrl::App("overlay.html".into()),
+            )
+            .title("VoiceMind Overlay")
+            .visible(false)
+            .decorations(false)
+            .resizable(false)
+            .skip_taskbar(true)
+            .always_on_top(true)
+            .transparent(true)
+            .shadow(false)
+            .focused(false)
+            .inner_size(560.0, 104.0)
+            .build()?;
+            let _ = overlay_window.set_ignore_cursor_events(true);
+            overlay::apply_native_overlay_style(&overlay_window);
 
             // Set app handle for connection manager and start WebSocket server
             let conn_mgr = app.state::<AppState>().connection_manager.clone();
@@ -298,6 +318,9 @@ fn main() {
             commands::check_local_asr,
             commands::test_asr_connection,
             commands::get_version,
+            commands::show_overlay_window,
+            commands::hide_overlay_window,
+            commands::sync_overlay_window,
         ])
         .run(tauri::generate_context!());
 

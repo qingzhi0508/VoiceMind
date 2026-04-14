@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceMind Overlay</title>
+  <link rel="stylesheet" href="./styles/overlay.css">
+</head>
+<body>
+  <div id="overlay-shell" class="overlay-shell state-listening">
+    <div class="recognition-bar">
+      <div class="recognition-wave"></div>
+      <div class="recognition-content">
+        <span class="recognition-spinner"></span>
+        <div id="overlay-text" class="recognition-text"></div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="./app/overlay.js"></script>
+</body>
+</html>

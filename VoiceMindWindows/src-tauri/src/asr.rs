@@ -322,40 +322,42 @@ impl AsrSession {
                     raw_payload.to_vec()
                 };
 
-                let json: serde_json::Value = match serde_json::from_slice(&json_bytes) {
-                    Ok(v) => v,
+                let values = match parse_response_json_values(&json_bytes) {
+                    Ok(values) => values,
                     Err(e) => {
                         error!("Parse response JSON: {}", e);
                         return;
                     }
                 };
 
-                let is_final = 
+                let is_final =
                     flags == FLAG_NEGATIVE_SEQUENCE || flags == FLAG_LAST_NO_SEQUENCE;
 
-                // The server may return "result_code" at top level for errors
-                if let Some(code) = json.get("result_code").and_then(|c| c.as_i64()) {
-                    if code != 0 {
-                        let msg = json
-                            .get("message")
-                            .and_then(|m| m.as_str())
-                            .unwrap_or("unknown");
-                        error!("Volcengine ASR error code {}: {}", code, msg);
-                        return;
+                for json in values {
+                    // The server may return "result_code" at top level for errors
+                    if let Some(code) = json.get("result_code").and_then(|c| c.as_i64()) {
+                        if code != 0 {
+                            let msg = json
+                                .get("message")
+                                .and_then(|m| m.as_str())
+                                .unwrap_or("unknown");
+                            error!("Volcengine ASR error code {}: {}", code, msg);
+                            continue;
+                        }
                     }
-                }
 
-                if let Some(result) = json.get("result") {
-                    if let Some(text) = result.get("text").and_then(|t| t.as_str()) {
-                        if !text.is_empty() {
-                            callback(AsrResult {
-                                text: text.to_string(),
-                                is_final,
-                                timestamp: SystemTime::now()
-                                    .duration_since(SystemTime::UNIX_EPOCH)
-                                    .unwrap()
-                                    .as_millis() as i64,
-                            });
+                    if let Some(result) = json.get("result") {
+                        if let Some(text) = result.get("text").and_then(|t| t.as_str()) {
+                            if !text.is_empty() {
+                                callback(AsrResult {
+                                    text: text.to_string(),
+                                    is_final,
+                                    timestamp: SystemTime::now()
+                                        .duration_since(SystemTime::UNIX_EPOCH)
+                                        .unwrap()
+                                        .as_millis() as i64,
+                                });
+                            }
                         }
                     }
                 }
@@ -380,6 +382,24 @@ impl AsrSession {
             }
         }
     }
+}
+
+fn parse_response_json_values(json_bytes: &[u8]) -> Result<Vec<serde_json::Value>, String> {
+    let mut values = Vec::new();
+    let stream = serde_json::Deserializer::from_slice(json_bytes).into_iter::<serde_json::Value>();
+
+    for value in stream {
+        match value {
+            Ok(v) => values.push(v),
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+
+    if values.is_empty() {
+        return Err("empty JSON payload".to_string());
+    }
+
+    Ok(values)
 }
 
 // --- VeAnchor Session (new official Volcengine API) ---
@@ -626,6 +646,10 @@ impl VolcengineProvider {
 
     pub fn create_session(&self, callback: AsrResultCallback) -> AsrSession {
         AsrSession::new(callback)
+    }
+
+    pub async fn connect_session(&self, session: &mut AsrSession) -> Result<(), String> {
+        session.connect(&self.config).await
     }
 
     /// Test connection to Volcengine ASR by performing a WebSocket handshake.

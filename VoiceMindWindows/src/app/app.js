@@ -872,6 +872,11 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         state.listening = false;
         renderStatus();
         addActivity("监听已停止", `会话 ${(event.payload || {}).session_id || "-"}`, "voice");
+        // Hide recognition bar if no result arrives within 3s (ASR may fail)
+        const bar = document.getElementById("recognition-bar");
+        if (bar && !bar.hidden) {
+          setTimeout(() => { if (bar) bar.hidden = true; }, 3000);
+        }
       }));
       unlisteners.push(await listen("recognition-result", async event => {
         const p = event.payload || {};
@@ -899,6 +904,11 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         console.error("Backend error:", p);
         addActivity("\u274c \u9519\u8bef", p.message || "\u672a\u77e5\u9519\u8bef", "connection");
         toast(p.message || "\u53d1\u751f\u9519\u8bef");
+        // Hide recognition bar on error
+        state.listening = false;
+        renderStatus();
+        const bar = document.getElementById("recognition-bar");
+        if (bar) bar.hidden = true;
       }));
     }
 

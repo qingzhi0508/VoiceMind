@@ -18,12 +18,19 @@ use uuid::Uuid;
 
 const HEARTBEAT_INTERVAL_SECS: u64 = 30;
 const CONNECTION_TIMEOUT_SECS: u64 = 60;
+const AUDIO_STREAM_IDLE_TIMEOUT_SECS: u64 = 3;
 
 /// Offset in seconds between Unix epoch (1970-01-01) and Apple reference date (2001-01-01).
 /// iOS/macOS JSONEncoder encodes Date as timeIntervalSinceReferenceDate by default,
 /// but HMAC is computed with timeIntervalSince1970. We add this offset when verifying
 /// incoming messages and subtract when serializing outgoing messages.
 const APPLE_EPOCH_OFFSET: f64 = 978307200.0;
+
+struct StreamingCloudAsrState {
+    session: Arc<Mutex<crate::asr::AsrSession>>,
+    final_rx: tokio::sync::oneshot::Receiver<String>,
+    latest_text: Arc<std::sync::Mutex<String>>,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConnectionState {
@@ -239,6 +246,8 @@ pub struct Connection {
     pub last_pong: Instant,
     pub secret_key: Option<String>,
     pub current_session_id: Option<String>,
+    pub last_audio_activity: Option<Instant>,
+    streaming_cloud_asr: Option<StreamingCloudAsrState>,
     pub audio_buffer: Vec<u8>,
     pub audio_sample_rate: u32,
     pub audio_channels: u32,
@@ -438,6 +447,8 @@ impl ConnectionManager {
         if let Some(conn) = connections.get_mut(&conn_id) {
             conn.state = ConnectionState::Listening;
             conn.current_session_id = Some(session_id.clone());
+            conn.last_audio_activity = Some(Instant::now());
+            conn.streaming_cloud_asr = None;
         }
 
         Ok(session_id)
@@ -482,6 +493,8 @@ impl ConnectionManager {
         if let Some(conn) = connections.get_mut(&conn_id) {
             conn.state = ConnectionState::Paired;
             conn.current_session_id = None;
+            conn.last_audio_activity = None;
+            conn.streaming_cloud_asr = None;
         }
 
         Ok(session_id)
@@ -521,6 +534,8 @@ async fn handle_connection(
                 last_pong: Instant::now(),
                 secret_key: None,
                 current_session_id: None,
+                last_audio_activity: None,
+                streaming_cloud_asr: None,
                 audio_buffer: Vec::new(),
                 audio_sample_rate: 16000,
                 audio_channels: 1,
@@ -533,6 +548,18 @@ async fn handle_connection(
     let heartbeat_emitter = event_emitter.clone();
     tokio::spawn(async move {
         heartbeat_loop(heartbeat_conn_id, heartbeat_connections, heartbeat_emitter).await;
+    });
+
+    let stream_watchdog_connections = connections.clone();
+    let stream_watchdog_conn_id = conn_id.clone();
+    let stream_watchdog_emitter = event_emitter.clone();
+    tokio::spawn(async move {
+        audio_stream_watchdog_loop(
+            stream_watchdog_conn_id,
+            stream_watchdog_connections,
+            stream_watchdog_emitter,
+        )
+        .await;
     });
 
     let result = read_loop(
@@ -554,6 +581,13 @@ async fn handle_connection(
 
     if let Some(conn) = disconnected {
         info!("Connection {} closed", conn.id);
+        if matches!(conn.state, ConnectionState::Listening) {
+            if let Some(session_id) = conn.current_session_id.clone() {
+                let emitter = event_emitter.lock().await;
+                emitter.emit_listening_stopped(session_id);
+                drop(emitter);
+            }
+        }
         if matches!(
             conn.state,
             ConnectionState::Paired | ConnectionState::Listening
@@ -643,6 +677,8 @@ async fn process_message(
             connections,
             pairing_manager,
             event_emitter,
+            asr_provider,
+            settings_store,
         )
         .await?;
     }
@@ -655,6 +691,8 @@ async fn process_message(
                 connections,
                 pairing_manager,
                 event_emitter,
+                asr_provider,
+                settings_store,
             )
             .await
         }
@@ -665,7 +703,7 @@ async fn process_message(
             handle_text_message(conn_id, envelope, connections, event_emitter, history_store).await
         }
         MessageType::PartialResult => handle_partial_result(conn_id, envelope, event_emitter).await,
-        MessageType::AudioStart => handle_audio_start(conn_id, envelope, connections, event_emitter).await,
+        MessageType::AudioStart => handle_audio_start(conn_id, envelope, connections, event_emitter, asr_provider, settings_store).await,
         MessageType::AudioData => handle_audio_data(conn_id, envelope, connections).await,
         MessageType::AudioEnd => handle_audio_end(conn_id, envelope, connections, event_emitter, history_store, asr_provider, settings_store).await,
         MessageType::Keyword => handle_keyword(envelope).await,
@@ -681,12 +719,48 @@ async fn process_message(
     }
 }
 
+async fn prewarm_cloud_asr_if_needed(
+    asr_provider: &Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
+    settings_store: &Arc<Mutex<crate::settings::SettingsStore>>,
+    reason: &str,
+) {
+    let asr_engine = {
+        let settings = settings_store.lock().await;
+        settings.get().asr_engine.clone()
+    };
+
+    if asr_engine != "cloud" {
+        return;
+    }
+
+    let provider_guard = asr_provider.lock().await;
+    let Some(provider) = provider_guard.as_ref() else {
+        warn!("Skipping cloud ASR prewarm ({}): provider not configured", reason);
+        return;
+    };
+
+    info!("Prewarming cloud ASR session ({})", reason);
+    let callback: crate::asr::AsrResultCallback = Arc::new(|_| {});
+    let mut session = provider.create_session(callback);
+
+    match tokio::time::timeout(Duration::from_secs(8), provider.connect_session(&mut session)).await {
+        Ok(Ok(())) => {
+            let _ = tokio::time::timeout(Duration::from_secs(3), session.finish()).await;
+            info!("Cloud ASR prewarm completed ({})", reason);
+        }
+        Ok(Err(e)) => warn!("Cloud ASR prewarm failed ({}): {}", reason, e),
+        Err(_) => warn!("Cloud ASR prewarm timed out ({})", reason),
+    }
+}
+
 async fn hydrate_existing_paired_connection(
     conn_id: &str,
     envelope: &Envelope,
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
     pairing_manager: &Arc<Mutex<PairingManager>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
+    asr_provider: &Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
+    settings_store: &Arc<Mutex<crate::settings::SettingsStore>>,
 ) -> Result<(), String> {
     let device_id = envelope.device_id.clone();
     info!("hydrate_existing_paired_connection: conn_id={}, device_id={}, type={}",
@@ -736,6 +810,12 @@ async fn hydrate_existing_paired_connection(
         if just_promoted {
             let emitter = event_emitter.lock().await;
             emitter.emit_connection_changed(true, device_name, Some(device_id));
+            drop(emitter);
+            let asr_provider = asr_provider.clone();
+            let settings_store = settings_store.clone();
+            tokio::spawn(async move {
+                prewarm_cloud_asr_if_needed(&asr_provider, &settings_store, "rehydrate-existing").await;
+            });
         }
 
         return Ok(());
@@ -823,6 +903,12 @@ async fn hydrate_existing_paired_connection(
     if just_promoted {
         let emitter = event_emitter.lock().await;
         emitter.emit_connection_changed(true, device_name, Some(device_id));
+        drop(emitter);
+        let asr_provider = asr_provider.clone();
+        let settings_store = settings_store.clone();
+        tokio::spawn(async move {
+            prewarm_cloud_asr_if_needed(&asr_provider, &settings_store, "rehydrate-paired").await;
+        });
     }
 
     Ok(())
@@ -865,6 +951,7 @@ async fn promote_authenticated_connection(
         if !matches!(conn.state, ConnectionState::Listening) {
             conn.state = ConnectionState::Paired;
         }
+        conn.last_audio_activity = None;
         just_promoted = !was_connected;
     }
 
@@ -877,6 +964,8 @@ async fn handle_pair_confirm(
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
     pairing_manager: &Arc<Mutex<PairingManager>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
+    asr_provider: &Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
+    settings_store: &Arc<Mutex<crate::settings::SettingsStore>>,
 ) -> Result<(), String> {
     info!("Handling pairConfirm message from connection {}", conn_id);
     let payload: PairConfirmPayload = serde_json::from_slice(&envelope.payload)
@@ -960,6 +1049,12 @@ async fn handle_pair_confirm(
     info!("PairSuccess sent successfully, emitting connection-changed event");
     let emitter = event_emitter.lock().await;
     emitter.emit_connection_changed(true, Some(payload.ios_name.clone()), Some(payload.ios_id));
+    drop(emitter);
+    let asr_provider = asr_provider.clone();
+    let settings_store = settings_store.clone();
+    tokio::spawn(async move {
+        prewarm_cloud_asr_if_needed(&asr_provider, &settings_store, "pair-confirm").await;
+    });
     info!("Pairing flow completed for device {}", payload.ios_name);
     Ok(())
 }
@@ -1105,6 +1200,8 @@ async fn handle_audio_start(
     envelope: Envelope,
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
     event_emitter: &Arc<Mutex<EventEmitter>>,
+    asr_provider: &Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
+    settings_store: &Arc<Mutex<crate::settings::SettingsStore>>,
 ) -> Result<(), String> {
     let payload: AudioStartPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid audioStart payload: {}", e))?;
@@ -1114,10 +1211,67 @@ async fn handle_audio_start(
         conns.get(conn_id).and_then(|conn| conn.device_name.clone())
     };
 
+    let asr_engine = {
+        let settings = settings_store.lock().await;
+        settings.get().asr_engine.clone()
+    };
+
+    let streaming_cloud_asr = if asr_engine == "cloud" {
+        let provider_guard = asr_provider.lock().await;
+        if let Some(provider) = provider_guard.as_ref() {
+            let (tx, rx) = tokio::sync::oneshot::channel();
+            let final_tx = Arc::new(std::sync::Mutex::new(Some(tx)));
+            let latest_text = Arc::new(std::sync::Mutex::new(String::new()));
+            let latest_text_clone = latest_text.clone();
+            let session_id = payload.session_id.clone();
+            let emitter_arc = event_emitter.clone();
+
+            let callback: crate::asr::AsrResultCallback = Arc::new(move |result| {
+                if result.text.trim().is_empty() {
+                    return;
+                }
+
+                if let Ok(mut latest) = latest_text_clone.lock() {
+                    *latest = result.text.clone();
+                }
+
+                if let Ok(emitter) = emitter_arc.try_lock() {
+                    emitter.emit_partial_result(
+                        result.text.clone(),
+                        "zh-CN".to_string(),
+                        session_id.clone(),
+                    );
+                }
+
+                if result.is_final {
+                    if let Ok(mut sender) = final_tx.lock() {
+                        if let Some(tx) = sender.take() {
+                            let _ = tx.send(result.text.clone());
+                        }
+                    }
+                }
+            });
+
+            let mut session = provider.create_session(callback);
+            provider.connect_session(&mut session).await?;
+            Some(StreamingCloudAsrState {
+                session: Arc::new(Mutex::new(session)),
+                final_rx: rx,
+                latest_text,
+            })
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
     let mut conns = connections.write().await;
     if let Some(conn) = conns.get_mut(conn_id) {
         conn.state = ConnectionState::Listening;
         conn.current_session_id = Some(payload.session_id.clone());
+        conn.last_audio_activity = Some(Instant::now());
+        conn.streaming_cloud_asr = streaming_cloud_asr;
         conn.audio_buffer.clear();
         conn.audio_sample_rate = payload.sample_rate;
         conn.audio_channels = payload.channels;
@@ -1134,10 +1288,24 @@ async fn handle_audio_data(conn_id: &str, envelope: Envelope, connections: &Arc<
     let payload: AudioDataPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid audioData payload: {}", e))?;
 
-    let mut conns = connections.write().await;
-    if let Some(conn) = conns.get_mut(conn_id) {
-        conn.audio_buffer.extend_from_slice(&payload.audio_data);
+    let streaming_session = {
+        let mut conns = connections.write().await;
+        if let Some(conn) = conns.get_mut(conn_id) {
+            conn.audio_buffer.extend_from_slice(&payload.audio_data);
+            conn.last_audio_activity = Some(Instant::now());
+            conn.streaming_cloud_asr
+                .as_ref()
+                .map(|state| state.session.clone())
+        } else {
+            None
+        }
+    };
+
+    if let Some(session) = streaming_session {
+        let mut guard = session.lock().await;
+        guard.send_audio(&payload.audio_data).await?;
     }
+
     Ok(())
 }
 
@@ -1154,19 +1322,21 @@ async fn handle_audio_end(
         .map_err(|e| format!("Invalid audioEnd payload: {}", e))?;
 
     // Extract audio buffer and device info
-    let (audio_data, sample_rate, channels, device_name, session_id, secret_key, ios_device_id) = {
+    let (audio_data, sample_rate, channels, device_name, session_id, secret_key, ios_device_id, streaming_cloud_asr) = {
         let mut conns = connections.write().await;
         let conn = conns.get_mut(conn_id).ok_or("Connection not found")?;
         conn.state = ConnectionState::Paired;
         let sid = conn.current_session_id.clone().unwrap_or(payload.session_id.clone());
         conn.current_session_id = None;
+        conn.last_audio_activity = None;
+        let streaming = conn.streaming_cloud_asr.take();
         let buf = std::mem::take(&mut conn.audio_buffer);
         let sr = conn.audio_sample_rate;
         let ch = conn.audio_channels;
         let dn = conn.device_name.clone();
         let sk = conn.secret_key.clone();
         let did = conn.device_id.clone();
-        (buf, sr, ch, dn, sid, sk, did)
+        (buf, sr, ch, dn, sid, sk, did, streaming)
     };
 
     // Emit listening-stopped event
@@ -1184,7 +1354,28 @@ async fn handle_audio_end(
         settings.get().asr_engine.clone()
     };
 
-    let text_result = if asr_engine == "cloud" {
+    let text_result = if let Some(mut streaming_state) = streaming_cloud_asr {
+        {
+            let mut session = streaming_state.session.lock().await;
+            session.finish().await?;
+        }
+
+        match tokio::time::timeout(Duration::from_secs(10), &mut streaming_state.final_rx).await {
+            Ok(Ok(text)) if !text.trim().is_empty() => Ok(text),
+            Ok(Ok(_)) | Ok(Err(_)) | Err(_) => {
+                let latest = streaming_state
+                    .latest_text
+                    .lock()
+                    .map(|value| value.clone())
+                    .unwrap_or_default();
+                if latest.trim().is_empty() {
+                    Err("Cloud ASR streaming finished without final result".to_string())
+                } else {
+                    Ok(latest)
+                }
+            }
+        }
+    } else if asr_engine == "cloud" {
         // Cloud ASR via Volcengine
         let provider_guard = asr_provider.lock().await;
         match provider_guard.as_ref() {
@@ -1393,8 +1584,16 @@ async fn heartbeat_loop(
         if last_pong.elapsed() > Duration::from_secs(CONNECTION_TIMEOUT_SECS) {
             warn!("Connection {} heartbeat timed out", conn_id);
             let mut conns = connections.write().await;
-            conns.remove(&conn_id);
+            let disconnected = conns.remove(&conn_id);
+            drop(conns);
             let emitter = event_emitter.lock().await;
+            if let Some(conn) = disconnected.as_ref() {
+                if matches!(conn.state, ConnectionState::Listening) {
+                    if let Some(session_id) = conn.current_session_id.clone() {
+                        emitter.emit_listening_stopped(session_id);
+                    }
+                }
+            }
             emitter.emit_connection_changed(false, device_name, device_id);
             return;
         }
@@ -1417,6 +1616,50 @@ async fn heartbeat_loop(
         .await
         {
             warn!("Heartbeat ping failed for {}: {}", conn_id, err);
+        }
+    }
+}
+
+async fn audio_stream_watchdog_loop(
+    conn_id: String,
+    connections: Arc<RwLock<HashMap<String, Connection>>>,
+    event_emitter: Arc<Mutex<EventEmitter>>,
+) {
+    loop {
+        tokio::time::sleep(Duration::from_secs(1)).await;
+
+        let stale_session_id = {
+            let mut conns = connections.write().await;
+            let Some(conn) = conns.get_mut(&conn_id) else {
+                return;
+            };
+
+            if !matches!(conn.state, ConnectionState::Listening) {
+                continue;
+            }
+
+            let Some(last_audio_activity) = conn.last_audio_activity else {
+                continue;
+            };
+
+            if last_audio_activity.elapsed() <= Duration::from_secs(AUDIO_STREAM_IDLE_TIMEOUT_SECS) {
+                continue;
+            }
+
+            warn!(
+                "Connection {} audio stream idle timeout; ending session {:?}",
+                conn_id,
+                conn.current_session_id
+            );
+            conn.state = ConnectionState::Paired;
+            conn.last_audio_activity = None;
+            conn.audio_buffer.clear();
+            conn.current_session_id.take()
+        };
+
+        if let Some(session_id) = stale_session_id {
+            let emitter = event_emitter.lock().await;
+            emitter.emit_listening_stopped(session_id);
         }
     }
 }
