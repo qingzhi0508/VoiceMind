@@ -14,6 +14,11 @@ use windows::{
 
 use tracing::{info, warn, error};
 
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+/// Tracks the character count of the last injected text, used by simulate_undo.
+static LAST_INJECTED_CHAR_COUNT: AtomicUsize = AtomicUsize::new(0);
+
 const CHUNK_SIZE: usize = 500;
 const CHUNK_DELAY_MS: u64 = 10;
 const MAX_RETRIES: u32 = 3;
@@ -146,15 +151,23 @@ impl TextInjector {
         if let Some((ref title, _pid)) = window_info {
             let title_lower = title.to_lowercase();
             
-            if title_lower.contains("chrome") 
-                || title_lower.contains("edge") 
+            if title_lower.contains("chrome")
+                || title_lower.contains("edge")
                 || title_lower.contains("firefox")
                 || title_lower.contains("browser")
                 || title_lower.contains("notepad++")
                 || title_lower.contains("vscode")
                 || title_lower.contains("code")
+                // Terminals: KEYEVENTF_UNICODE often garbles CJK text
+                || title_lower.contains("terminal")
+                || title_lower.contains("cmd")
+                || title_lower.contains("powershell")
+                || title_lower.contains("windowsterminal")
+                || title_lower.contains("git bash")
+                || title_lower.contains("mingw")
+                || title_lower.contains("console")
             {
-                info!("Detected browser or text editor, using clipboard method");
+                info!("Detected browser, editor or terminal, using clipboard method");
                 return InjectionMethod::Clipboard;
             }
         }
@@ -368,17 +381,18 @@ fn get_clipboard_text() -> Option<String> {
         use windows::Win32::Foundation::HGLOBAL;
         use windows::Win32::System::DataExchange::{OpenClipboard, GetClipboardData, CloseClipboard};
         use windows::Win32::System::Memory::{GlobalLock, GlobalUnlock};
-        
+
         unsafe {
             if OpenClipboard(None).is_ok() {
-                if let Ok(handle) = GetClipboardData(1) {
+                // 13 = CF_UNICODETEXT
+                if let Ok(handle) = GetClipboardData(13) {
                     if !handle.is_invalid() {
                         let hglobal = HGLOBAL(handle.0 as *mut _);
                         let ptr = GlobalLock(hglobal);
                         if !ptr.is_null() {
-                            let text = std::ffi::CStr::from_ptr(ptr as *const i8)
-                                .to_string_lossy()
-                                .into_owned();
+                            let u16_ptr = ptr as *const u16;
+                            let len = (0..).take_while(|&i| *u16_ptr.add(i) != 0).count();
+                            let text = String::from_utf16_lossy(std::slice::from_raw_parts(u16_ptr, len));
                             let _ = GlobalUnlock(hglobal);
                             CloseClipboard().ok();
                             return Some(text);
@@ -390,7 +404,7 @@ fn get_clipboard_text() -> Option<String> {
         }
         None
     }
-    
+
     #[cfg(not(windows))]
     {
         None
@@ -430,7 +444,8 @@ fn set_clipboard_text(text: &str) -> Result<(), String> {
             let _ = GlobalUnlock(hglobal);
             
             let handle_as_hwnd = HANDLE(handle.0);
-            let _ = SetClipboardData(1, Some(handle_as_hwnd));
+            // 13 = CF_UNICODETEXT (UTF-16), matching the UTF-16 encoded data above
+            let _ = SetClipboardData(13, Some(handle_as_hwnd));
             
             CloseClipboard().ok();
         }
@@ -446,14 +461,140 @@ fn set_clipboard_text(text: &str) -> Result<(), String> {
 
 pub fn inject_text_with_fallback(text: &str) -> Result<(), String> {
     let injector = TextInjector::new(InjectionMethod::Auto);
-    
-    match injector.inject(text) {
+
+    let result = match injector.inject(text) {
         Ok(_) => Ok(()),
         Err(e) => {
             error!("Primary injection failed: {}", e);
-            
+
             let clipboard_injector = TextInjector::new(InjectionMethod::Clipboard);
             clipboard_injector.inject(text)
         }
+    };
+
+    if result.is_ok() {
+        LAST_INJECTED_CHAR_COUNT.store(text.chars().count(), Ordering::Relaxed);
     }
+
+    result
+}
+
+/// Simulate a Return key press (used for confirm action from iPhone).
+#[cfg(windows)]
+pub fn simulate_return_key() {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT,
+        KEYEVENTF_KEYUP, VK_RETURN,
+    };
+
+    let inputs = [
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VK_RETURN,
+                    wScan: 0,
+                    dwFlags: windows::Win32::UI::Input::KeyboardAndMouse::KEYBD_EVENT_FLAGS(0),
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VK_RETURN,
+                    wScan: 0,
+                    dwFlags: KEYEVENTF_KEYUP,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+    ];
+
+    unsafe {
+        let result = SendInput(&inputs, std::mem::size_of::<INPUT>() as i32);
+        if result as u32 != inputs.len() as u32 {
+            warn!("simulate_return_key: SendInput returned {}, expected {}", result, inputs.len());
+        }
+    }
+    info!("Simulated Return key press");
+}
+
+#[cfg(not(windows))]
+pub fn simulate_return_key() {
+    warn!("simulate_return_key not supported on this platform");
+}
+
+/// Simulate undo: send backspace keystrokes to delete the last injected text.
+/// Works universally (terminals, text editors, browsers) unlike Ctrl+Z which
+/// sends SIGTSTP in terminals.
+#[cfg(windows)]
+pub fn simulate_undo() {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT,
+        KEYEVENTF_KEYUP, VK_BACK,
+    };
+
+    let char_count = LAST_INJECTED_CHAR_COUNT.swap(0, Ordering::Relaxed);
+    if char_count == 0 {
+        info!("simulate_undo: no previous injection to undo");
+        return;
+    }
+
+    // Send backspace keystrokes in chunks to delete the injected characters
+    let chunk_size = 200usize;
+    for chunk_start in (0..char_count).step_by(chunk_size) {
+        let chunk_end = (chunk_start + chunk_size).min(char_count);
+        let chunk_len = chunk_end - chunk_start;
+
+        let mut inputs: Vec<INPUT> = Vec::with_capacity(chunk_len * 2);
+        for _ in 0..chunk_len {
+            inputs.push(INPUT {
+                r#type: INPUT_KEYBOARD,
+                Anonymous: INPUT_0 {
+                    ki: KEYBDINPUT {
+                        wVk: VK_BACK,
+                        wScan: 0,
+                        dwFlags: windows::Win32::UI::Input::KeyboardAndMouse::KEYBD_EVENT_FLAGS(0),
+                        time: 0,
+                        dwExtraInfo: 0,
+                    },
+                },
+            });
+            inputs.push(INPUT {
+                r#type: INPUT_KEYBOARD,
+                Anonymous: INPUT_0 {
+                    ki: KEYBDINPUT {
+                        wVk: VK_BACK,
+                        wScan: 0,
+                        dwFlags: KEYEVENTF_KEYUP,
+                        time: 0,
+                        dwExtraInfo: 0,
+                    },
+                },
+            });
+        }
+
+        unsafe {
+            let result = SendInput(&inputs, std::mem::size_of::<INPUT>() as i32);
+            if result as u32 != inputs.len() as u32 {
+                warn!("simulate_undo: SendInput returned {}, expected {}", result, inputs.len());
+            }
+        }
+
+        if chunk_end < char_count {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+    }
+
+    info!("Simulated undo: {} backspace keystrokes", char_count);
+}
+
+#[cfg(not(windows))]
+pub fn simulate_undo() {
+    let char_count = LAST_INJECTED_CHAR_COUNT.swap(0, Ordering::Relaxed);
+    warn!("simulate_undo not supported on this platform ({} chars)", char_count);
 }

@@ -1,8 +1,15 @@
 use crate::{asr, AppState, speech::HistoryItem};
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{Manager, PhysicalPosition, Position, State};
 use std::net::UdpSocket;
 use tracing::info;
+
+#[cfg(windows)]
+use windows::Win32::{
+    Foundation::POINT,
+    Graphics::Gdi::ClientToScreen,
+    UI::WindowsAndMessaging::{GetCursorPos, GetGUIThreadInfo, GUITHREADINFO},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InboundDataRecord {
@@ -12,6 +19,13 @@ pub struct InboundDataRecord {
     pub detail: String,
     pub category: String,  // "voice" | "pairing"
     pub severity: String,  // "info" | "warning" | "error"
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct OverlayAnchor {
+    pub x: i32,
+    pub y: i32,
+    pub source: String,
 }
 
 fn is_valid_local_ip(ip: &str) -> bool {
@@ -827,4 +841,95 @@ pub async fn clear_inbound_data_records(state: State<'_, AppState>) -> Result<()
 #[tauri::command]
 pub fn get_version(app: tauri::AppHandle) -> String {
     app.config().version.clone().unwrap_or_else(|| "0.0.0".to_string())
+}
+
+#[tauri::command]
+pub async fn test_asr_connection(state: State<'_, AppState>) -> Result<String, String> {
+    let provider_guard = state.asr_provider.lock().await;
+    match provider_guard.as_ref() {
+        Some(provider) => provider.test_connection().await,
+        None => Err("ASR provider not configured. Please set App ID, Access Key and Resource ID first.".to_string()),
+    }
+}
+
+#[tauri::command]
+pub fn show_overlay_window(app: tauri::AppHandle) -> Result<(), String> {
+    let _ = sync_overlay_window(app.clone());
+    let window = app
+        .get_webview_window("overlay")
+        .ok_or_else(|| "Overlay window not found".to_string())?;
+    crate::overlay::show_native_overlay(&window);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn hide_overlay_window(app: tauri::AppHandle) -> Result<(), String> {
+    let window = app
+        .get_webview_window("overlay")
+        .ok_or_else(|| "Overlay window not found".to_string())?;
+    crate::overlay::hide_native_overlay(&window);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn sync_overlay_window(app: tauri::AppHandle) -> Result<OverlayAnchor, String> {
+    let anchor = get_overlay_anchor();
+    let window = app
+        .get_webview_window("overlay")
+        .ok_or_else(|| "Overlay window not found".to_string())?;
+    window
+        .set_position(Position::Physical(PhysicalPosition::new(anchor.x, anchor.y)))
+        .map_err(|e| e.to_string())?;
+    Ok(anchor)
+}
+
+#[cfg(windows)]
+fn get_overlay_anchor() -> OverlayAnchor {
+    const OVERLAY_WIDTH: i32 = 560;
+    const HORIZONTAL_OFFSET: i32 = 28;
+    const VERTICAL_OFFSET: i32 = 16;
+
+    unsafe {
+        let mut gui_info = GUITHREADINFO {
+            cbSize: std::mem::size_of::<GUITHREADINFO>() as u32,
+            ..Default::default()
+        };
+        if GetGUIThreadInfo(0, &mut gui_info).is_ok() && !gui_info.hwndCaret.0.is_null() {
+            let mut caret_origin = POINT {
+                x: gui_info.rcCaret.left,
+                y: gui_info.rcCaret.bottom,
+            };
+            if ClientToScreen(gui_info.hwndCaret, &mut caret_origin as *mut POINT).as_bool() {
+                return OverlayAnchor {
+                    x: caret_origin.x - HORIZONTAL_OFFSET,
+                    y: caret_origin.y + VERTICAL_OFFSET,
+                    source: "caret".to_string(),
+                };
+            }
+        }
+
+        let mut cursor = POINT::default();
+        if GetCursorPos(&mut cursor).is_ok() {
+            return OverlayAnchor {
+                x: cursor.x - (OVERLAY_WIDTH / 2),
+                y: cursor.y + VERTICAL_OFFSET,
+                source: "cursor".to_string(),
+            };
+        }
+    }
+
+    OverlayAnchor {
+        x: 120,
+        y: 120,
+        source: "fallback".to_string(),
+    }
+}
+
+#[cfg(not(windows))]
+fn get_overlay_anchor() -> OverlayAnchor {
+    OverlayAnchor {
+        x: 120,
+        y: 120,
+        source: "fallback".to_string(),
+    }
 }

@@ -81,6 +81,7 @@
           <div class="head"><div><h2>&#x8bb0;&#x5f55;</h2><p>&#x8bed;&#x97f3;&#x8bc6;&#x522b;&#x5386;&#x53f2;&#x8bb0;&#x5f55;</p></div></div>
           <div class="search-row">
             <input id="records-search" type="text" class="search-input" placeholder="&#x641c;&#x7d22;&#x8bb0;&#x5f55;...">
+            <span id="records-total-count" class="summary-badge" style="font-size:13px;color:var(--text-secondary);white-space:nowrap">&#x5171; 0 &#x6761;</span>
             <button id="toggle-records-batch" class="btn secondary" type="button">&#x6279;&#x91cf;&#x9009;&#x62e9;</button>
             <button id="refresh-history" class="btn secondary" type="button">&#x5237;&#x65b0;</button>
             <button id="clear-history" class="btn danger" type="button">&#x6e05;&#x7a7a;</button>
@@ -148,6 +149,33 @@
               </div>
             </div>
             <div id="speech-engine-hint" class="engine-hint">&#x70b9;&#x51fb;&#x5f15;&#x64ce;&#x67e5;&#x770b;&#x53ef;&#x7528;&#x72b6;&#x6001;&#x548c;&#x914d;&#x7f6e;&#x5165;&#x53e3;&#x3002;</div>
+          </div>
+          <div id="speech-asr-modal" class="card" hidden style="border-color:var(--accent)">
+            <h3>ASR 配置</h3>
+            <p style="margin:0 0 12px;color:var(--secondaryText);font-size:13px;line-height:1.5">配置 Volcengine ASR 凭据后，才可切换到云端识别。<a href="https://www.volcengine.com/docs/6561/1354871?lang=zh" target="_blank" rel="noopener" style="color:var(--accent)">开通配置指引</a></p>
+            <div class="form">
+              <label>App ID<input id="setting-asr-appid" type="text"></label>
+              <label>Access Token<input id="setting-asr-accesskey" type="text"></label>
+              <label>Resource ID (X-Api-Resource-Id)
+                <select id="setting-asr-resourceid">
+                  <option value="volc.bigasr.sauc.duration">BigModel 1.0 (volc.bigasr.sauc.duration)</option>
+                  <option value="volc.seedasr.sauc.duration">SeedASR 2.0 - 小时版 (volc.seedasr.sauc.duration)</option>
+                  <option value="volc.seedasr.sauc.concurrent">SeedASR 2.0 - 并发版 (volc.seedasr.sauc.concurrent)</option>
+                </select>
+              </label>
+              <label>&#x8bc6;&#x522b;&#x8bed;&#x8a00;
+                <select id="setting-asr-language">
+                  <option value="zh-CN">&#x4e2d;&#x6587;</option>
+                  <option value="en-US">English</option>
+                </select>
+              </label>
+            </div>
+            <div class="toolbar">
+              <button id="save-asr" class="btn primary" type="button">&#x4fdd;&#x5b58; ASR &#x914d;&#x7f6e;</button>
+              <button id="test-asr-connection" class="btn secondary" type="button">&#x6d4b;&#x8bd5;&#x8fde;&#x63a5;</button>
+              <button id="reload-settings" class="btn secondary" type="button">&#x91cd;&#x65b0;&#x52a0;&#x8f7d;</button>
+              <button id="speech-config-cancel" class="btn secondary" type="button">&#x53d6;&#x6d88;</button>
+            </div>
           </div>
         </section>
 
@@ -218,34 +246,6 @@
 
       </div>
     </main>
-  </div>
-
-  <div id="speech-asr-modal" class="modal-backdrop" hidden>
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="speech-asr-modal-title">
-      <div class="modal-header">
-        <div>
-          <h3 id="speech-asr-modal-title">ASR &#x914d;&#x7f6e;</h3>
-          <p id="speech-asr-config-desc">&#x914d;&#x7f6e; Volcengine ASR &#x51ed;&#x636e;&#x540e;&#xff0c;&#x624d;&#x53ef;&#x5207;&#x6362;&#x5230;&#x4e91;&#x7aef;&#x8bc6;&#x522b;&#x3002;</p>
-        </div>
-        <button id="speech-config-close" class="btn secondary modal-close" type="button">&#x5173;&#x95ed;</button>
-      </div>
-      <div class="form">
-        <label>App ID (X-Api-App-Key)<input id="setting-asr-appid" type="text"></label>
-        <label>Access Key (X-Api-Access-Key)<input id="setting-asr-accesskey" type="text"></label>
-        <label>Resource ID (X-Api-Resource-Id)<input id="setting-asr-resourceid" type="text" placeholder="volc.bigasr.sauc.duration"></label>
-        <label>&#x8bc6;&#x522b;&#x8bed;&#x8a00;
-          <select id="setting-asr-language">
-            <option value="zh-CN">&#x4e2d;&#x6587;</option>
-            <option value="en-US">English</option>
-          </select>
-        </label>
-      </div>
-      <div class="toolbar">
-        <button id="save-asr" class="btn primary" type="button">&#x4fdd;&#x5b58; ASR &#x914d;&#x7f6e;</button>
-        <button id="reload-settings" class="btn secondary" type="button">&#x91cd;&#x65b0;&#x52a0;&#x8f7d;</button>
-        <button id="speech-config-cancel" class="btn secondary" type="button">&#x53d6;&#x6d88;</button>
-      </div>
-    </div>
   </div>
 
     <script type="module" src="./app/app.js"></script>

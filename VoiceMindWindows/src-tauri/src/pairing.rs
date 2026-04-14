@@ -140,19 +140,25 @@ impl PairingManager {
         None
     }
 
-    /// Check if a pairing code is valid
+    /// Check if a pairing code is valid.
+    /// If the code matches but has expired, auto-renew it so the QR code remains usable.
     pub fn is_valid_code(&mut self, code: &str) -> bool {
         if self.is_locked() {
             return false;
         }
-        if let (Some(current), Some(expires)) =
+        if let (Some(current), Some(_expires)) =
             (&self.state.current_code, self.state.pairing_code_expires)
         {
-            let now = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs();
-            current == code && now < expires
+            if current == code {
+                // Auto-renew expiry on match so the displayed QR code stays valid
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs();
+                self.state.pairing_code_expires = Some(now + PAIRING_CODE_VALIDITY_SECS);
+                return true;
+            }
+            false
         } else {
             false
         }
@@ -211,7 +217,8 @@ impl PairingManager {
 
         self.paired_devices.insert(device_id.to_string(), device);
         self.save_paired_devices();
-        self.stop_pairing_mode();
+        // Keep pairing mode active so the QR code remains valid for other devices.
+        // The code will still expire after PAIRING_CODE_VALIDITY_SECS for security.
         self.secret_key = Some(secret_key.clone());
 
         tracing::info!(

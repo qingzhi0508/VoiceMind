@@ -6,6 +6,7 @@ mod commands;
 mod events;
 mod injection;
 mod network;
+mod overlay;
 mod pairing;
 mod settings;
 mod speech;
@@ -15,7 +16,7 @@ use tokio::sync::Mutex;
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Emitter, Manager, WindowEvent,
+    Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
 use tracing::{error, info};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
@@ -98,6 +99,25 @@ fn main() {
 
             // Manage state first before accessing it
             app.manage(state);
+
+            let overlay_window = WebviewWindowBuilder::new(
+                app,
+                "overlay",
+                WebviewUrl::App("overlay.html".into()),
+            )
+            .title("VoiceMind Overlay")
+            .visible(false)
+            .decorations(false)
+            .resizable(false)
+            .skip_taskbar(true)
+            .always_on_top(true)
+            .transparent(true)
+            .shadow(false)
+            .focused(false)
+            .inner_size(560.0, 104.0)
+            .build()?;
+            let _ = overlay_window.set_ignore_cursor_events(true);
+            overlay::apply_native_overlay_style(&overlay_window);
 
             // Set app handle for connection manager and start WebSocket server
             let conn_mgr = app.state::<AppState>().connection_manager.clone();
@@ -216,19 +236,46 @@ fn main() {
 
             info!("VoiceMind setup complete");
 
-            // Try to show main window after setup
-            let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-                if let Some(window) = app_handle.get_webview_window("main") {
-                    info!("Attempting to show main window...");
-                    match window.show() {
-                        Ok(_) => info!("Main window shown successfully"),
-                        Err(e) => error!("Failed to show main window: {}", e),
-                    }
-                    let _ = window.set_focus();
+            // Show main window immediately
+            info!("Attempting to get main window...");
+            if let Some(window) = app.get_webview_window("main") {
+                info!("Main window found, attempting to show...");
+                match window.show() {
+                    Ok(_) => info!("Main window shown successfully"),
+                    Err(e) => error!("Failed to show main window: {}", e),
                 }
-            });
+                info!("Attempting to set focus...");
+                match window.set_focus() {
+                    Ok(_) => info!("Main window focused successfully"),
+                    Err(e) => error!("Failed to set focus: {}", e),
+                }
+                info!("Attempting to set title...");
+                match window.set_title("VoiceMind") {
+                    Ok(_) => info!("Main window title set successfully"),
+                    Err(e) => error!("Failed to set title: {}", e),
+                }
+                info!("Attempting to set size...");
+                match window.set_size(tauri::Size::Logical(tauri::LogicalSize {
+                    width: 1100.0,
+                    height: 750.0,
+                })) {
+                    Ok(_) => info!("Main window size set successfully"),
+                    Err(e) => error!("Failed to set size: {}", e),
+                }
+                info!("Attempting to center window...");
+                match window.center() {
+                    Ok(_) => info!("Main window centered successfully"),
+                    Err(e) => error!("Failed to center window: {}", e),
+                }
+                info!("Main window settings updated");
+            } else {
+                error!("Main window not found");
+            }
+            
+            // Log WebView2 status
+            info!("WebView2 runtime status: Checking...");
+            let webview2_status = std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").unwrap_or_else(|_| "Not set".to_string());
+            info!("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: {}", webview2_status);
 
             Ok(())
         })
@@ -269,7 +316,11 @@ fn main() {
             commands::stop_service,
             commands::get_service_status,
             commands::check_local_asr,
+            commands::test_asr_connection,
             commands::get_version,
+            commands::show_overlay_window,
+            commands::hide_overlay_window,
+            commands::sync_overlay_window,
         ])
         .run(tauri::generate_context!());
 

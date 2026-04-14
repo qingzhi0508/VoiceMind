@@ -22,6 +22,12 @@ export function showPage(id, { onRecordsPage } = {}) {
   state.page = id;
   pages.forEach(page => page.classList.toggle("active", page.id === id));
   navItems.forEach(item => item.classList.toggle("active", item.dataset.page === id));
+  // Close ASR config panel when navigating away
+  const modal = document.getElementById("speech-asr-modal");
+  if (modal && !modal.hidden) {
+    modal.hidden = true;
+    state.asrConfigExpanded = false;
+  }
   if (id === "records" && onRecordsPage) onRecordsPage();
 }
 

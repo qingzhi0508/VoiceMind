@@ -24,7 +24,7 @@ const speechEngineHint = document.getElementById("speech-engine-hint");
 const cloudEngineStatus = document.getElementById("engine-status-cloud");
 const speechAsrModal = document.getElementById("speech-asr-modal");
 const speechConfigCancel = document.getElementById("speech-config-cancel");
-const speechConfigClose = document.getElementById("speech-config-close");
+const speechConfigClose = null;
 const recordsBatchToolbar = document.getElementById("records-batch-toolbar");
 const recordsBatchCount = document.getElementById("records-batch-count");
 const updateResult = document.getElementById("update-result");
@@ -142,7 +142,6 @@ function getPreferredEngine() {
 function setAsrConfigExpanded(expanded) {
   state.asrConfigExpanded = expanded;
   if (speechAsrModal) speechAsrModal.hidden = !expanded;
-  document.body.classList.toggle("modal-open", expanded);
 }
 
 function updateEngineHint(message) {
@@ -245,7 +244,9 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
     }
 
     function renderRecordsCount() {
-      document.getElementById("home-records-count").textContent = `\u8bb0\u5f55: ${state.history.length}`;
+      document.getElementById("home-records-count").textContent = `记录: ${state.history.length}`;
+      const recordsTotal = document.getElementById("records-total-count");
+      if (recordsTotal) recordsTotal.textContent = `共 ${state.history.length} 条`;
     }
 
     function createItem(title, detail, meta, action) {
@@ -396,7 +397,10 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         state.connected = next;
         state.deviceName = nextName;
         state.deviceId = s && s.device_id ? s.device_id : null;
-        if (changed) addActivity(next ? "\u8fde\u63a5\u5df2\u5efa\u7acb" : "\u8bbe\u5907\u5df2\u65ad\u5f00", next ? `${nextName || "iPhone"} \u5df2\u8fde\u63a5` : "\u8bbe\u5907\u65ad\u5f00", "connection");
+        if (changed) {
+          addActivity(next ? "\u8fde\u63a5\u5df2\u5efa\u7acb" : "\u8bbe\u5907\u5df2\u65ad\u5f00", next ? `${nextName || "iPhone"} \u5df2\u8fde\u63a5` : "\u8bbe\u5907\u65ad\u5f00", "connection");
+          if (next) refreshPairing();
+        }
         renderStatus();
       } catch (e) { console.error("refreshConnection error:", e); }
     }
@@ -458,7 +462,16 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         if (s.asr) {
           document.getElementById("setting-asr-appid").value = s.asr.app_id || "";
           document.getElementById("setting-asr-accesskey").value = s.asr.access_key || "";
-          document.getElementById("setting-asr-resourceid").value = s.asr.resource_id || "";
+          const resourceIdEl = document.getElementById("setting-asr-resourceid");
+          // Set value; if not in options, add a custom option
+          const rid = s.asr.resource_id || "";
+          if (rid && !resourceIdEl.querySelector(`option[value="${rid}"]`)) {
+            const opt = document.createElement("option");
+            opt.value = rid;
+            opt.textContent = rid;
+            resourceIdEl.prepend(opt);
+          }
+          resourceIdEl.value = rid;
           document.getElementById("setting-asr-language").value = s.asr.asr_language || "zh-CN";
         }
         const rd = s.history_retention_days || 30;
@@ -755,6 +768,16 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
     const saveSettingsPrimaryButton = document.getElementById("save-settings");
     if (saveSettingsPrimaryButton) saveSettingsPrimaryButton.addEventListener("click", saveSettings);
     document.getElementById("save-asr").addEventListener("click", saveASR);
+    document.getElementById("test-asr-connection").addEventListener("click", async () => {
+      if (!state.isTauri) { toast("仅桌面端可用"); return; }
+      toast("正在测试 ASR 连接...");
+      try {
+        const result = await invoke("test_asr_connection");
+        toast(`ASR 连接测试: ${result}`);
+      } catch (e) {
+        toast(`ASR 连接失败: ${e}`);
+      }
+    });
     document.getElementById("reload-settings").addEventListener("click", loadSettings);
     if (cloudEngineStatus) {
       cloudEngineStatus.addEventListener("click", event => {
@@ -768,20 +791,6 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       speechConfigCancel.addEventListener("click", () => {
         setAsrConfigExpanded(false);
         updateSpeechEngineActions();
-      });
-    }
-    if (speechConfigClose) {
-      speechConfigClose.addEventListener("click", () => {
-        setAsrConfigExpanded(false);
-        updateSpeechEngineActions();
-      });
-    }
-    if (speechAsrModal) {
-      speechAsrModal.addEventListener("click", event => {
-        if (event.target === speechAsrModal) {
-          setAsrConfigExpanded(false);
-          updateSpeechEngineActions();
-        }
       });
     }
     document.addEventListener("keydown", event => {
@@ -853,23 +862,53 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       unlisteners.push(await listen("listening-started", event => {
         state.listening = true;
         renderStatus();
-        addActivity("\u76d1\u542c\u5df2\u5f00\u59cb", `${(event.payload || {}).device_name || state.deviceName || "iPhone"}`, "voice");
+        addActivity("监听已开始", `${(event.payload || {}).device_name || state.deviceName || "iPhone"}`, "voice");
+        // Show recognition bar
+        const bar = document.getElementById("recognition-bar");
+        const text = document.getElementById("recognition-text");
+        if (bar && text) { text.textContent = "正在识别..."; bar.hidden = false; }
       }));
       unlisteners.push(await listen("listening-stopped", event => {
         state.listening = false;
         renderStatus();
-        addActivity("\u76d1\u542c\u5df2\u505c\u6b62", `\u4f1a\u8bdd ${(event.payload || {}).session_id || "-"}`, "voice");
+        addActivity("监听已停止", `会话 ${(event.payload || {}).session_id || "-"}`, "voice");
+        // Hide recognition bar if no result arrives within 3s (ASR may fail)
+        const bar = document.getElementById("recognition-bar");
+        if (bar && !bar.hidden) {
+          setTimeout(() => { if (bar) bar.hidden = true; }, 3000);
+        }
       }));
       unlisteners.push(await listen("recognition-result", async event => {
         const p = event.payload || {};
         state.noteText = p.text || "";
         renderStatus();
-        addActivity("\u8bc6\u522b\u7ed3\u679c", p.text || "(\u7a7a)", "voice");
+        addActivity("识别结果", p.text || "(空)", "voice");
+        // Show final text on bar, then hide after injection
+        const bar = document.getElementById("recognition-bar");
+        const text = document.getElementById("recognition-text");
+        if (bar && text && p.text) { text.textContent = p.text; }
+        setTimeout(() => { if (bar) bar.hidden = true; }, 1500);
         await refreshHistory();
       }));
       unlisteners.push(await listen("partial-result", event => {
         const p = event.payload || {};
-        if (p.text) { state.noteText = p.text; renderStatus(); }
+        if (p.text) {
+          state.noteText = p.text;
+          renderStatus();
+          const text = document.getElementById("recognition-text");
+          if (text) text.textContent = p.text;
+        }
+      }));
+      unlisteners.push(await listen("error", event => {
+        const p = event.payload || {};
+        console.error("Backend error:", p);
+        addActivity("\u274c \u9519\u8bef", p.message || "\u672a\u77e5\u9519\u8bef", "connection");
+        toast(p.message || "\u53d1\u751f\u9519\u8bef");
+        // Hide recognition bar on error
+        state.listening = false;
+        renderStatus();
+        const bar = document.getElementById("recognition-bar");
+        if (bar) bar.hidden = true;
       }));
     }
 

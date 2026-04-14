@@ -1,0 +1,146 @@
+:root {
+  --overlay-radius: 18px;
+  --overlay-shadow: 0 14px 36px rgba(10, 16, 32, 0.28);
+  --overlay-text: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  pointer-events: none;
+}
+
+.overlay-shell {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 90ms ease, transform 90ms ease;
+}
+
+.recognition-bar {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  min-height: 92px;
+  padding: 12px 18px;
+  border-radius: var(--overlay-radius);
+  overflow: hidden;
+  background: linear-gradient(90deg, #ff6b6b, #ffa94d, #ffd43b, #69db7c, #4dabf7, #9775fa, #f06595, #ff6b6b);
+  background-size: 300% 100%;
+  animation: rainbow-slide 3s linear infinite;
+  box-shadow: var(--overlay-shadow);
+  transition: opacity 90ms ease, transform 90ms ease, filter 90ms ease;
+}
+
+.recognition-wave {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.recognition-wave::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: -50%;
+  width: 200%;
+  height: 24px;
+  background: radial-gradient(ellipse 12px 12px at 12px 12px, rgba(255, 255, 255, 0.34) 50%, transparent 50%);
+  background-size: 24px 24px;
+  animation: wave-drift 1.2s linear infinite;
+}
+
+.recognition-wave::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.02) 38%, rgba(0,0,0,0.08));
+}
+
+.recognition-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.recognition-spinner {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.recognition-text {
+  flex: 1;
+  min-width: 0;
+  display: block;
+  color: var(--overlay-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.state-processing .recognition-bar,
+.state-result .recognition-bar {
+  animation-duration: 2.1s;
+}
+
+.state-closing {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.985);
+}
+
+.state-closing .recognition-bar {
+  filter: saturate(0.92);
+}
+
+.state-error .recognition-bar {
+  background: linear-gradient(90deg, #ff6b6b, #f06595, #ff6b6b);
+  background-size: 220% 100%;
+}
+
+@keyframes rainbow-slide {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+@keyframes wave-drift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(24px); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
