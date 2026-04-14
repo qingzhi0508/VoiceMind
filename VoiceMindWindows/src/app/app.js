@@ -245,7 +245,9 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
     }
 
     function renderRecordsCount() {
-      document.getElementById("home-records-count").textContent = `\u8bb0\u5f55: ${state.history.length}`;
+      document.getElementById("home-records-count").textContent = `记录: ${state.history.length}`;
+      const recordsTotal = document.getElementById("records-total-count");
+      if (recordsTotal) recordsTotal.textContent = `共 ${state.history.length} 条`;
     }
 
     function createItem(title, detail, meta, action) {
