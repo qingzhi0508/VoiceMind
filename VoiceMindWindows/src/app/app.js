@@ -396,7 +396,10 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         state.connected = next;
         state.deviceName = nextName;
         state.deviceId = s && s.device_id ? s.device_id : null;
-        if (changed) addActivity(next ? "\u8fde\u63a5\u5df2\u5efa\u7acb" : "\u8bbe\u5907\u5df2\u65ad\u5f00", next ? `${nextName || "iPhone"} \u5df2\u8fde\u63a5` : "\u8bbe\u5907\u65ad\u5f00", "connection");
+        if (changed) {
+          addActivity(next ? "\u8fde\u63a5\u5df2\u5efa\u7acb" : "\u8bbe\u5907\u5df2\u65ad\u5f00", next ? `${nextName || "iPhone"} \u5df2\u8fde\u63a5` : "\u8bbe\u5907\u65ad\u5f00", "connection");
+          if (next) refreshPairing();
+        }
         renderStatus();
       } catch (e) { console.error("refreshConnection error:", e); }
     }
@@ -870,6 +873,12 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       unlisteners.push(await listen("partial-result", event => {
         const p = event.payload || {};
         if (p.text) { state.noteText = p.text; renderStatus(); }
+      }));
+      unlisteners.push(await listen("error", event => {
+        const p = event.payload || {};
+        console.error("Backend error:", p);
+        addActivity("\u274c \u9519\u8bef", p.message || "\u672a\u77e5\u9519\u8bef", "connection");
+        toast(p.message || "\u53d1\u751f\u9519\u8bef");
       }));
     }
 

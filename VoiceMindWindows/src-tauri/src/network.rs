@@ -1160,16 +1160,29 @@ async fn handle_audio_end(
                     "Cloud ASR: sending {} bytes ({}Hz, {}ch) to Volcengine",
                     audio_data.len(), sample_rate, channels
                 );
-                provider.recognize(&audio_data, sample_rate, channels).await
+                let result = provider.recognize(&audio_data, sample_rate, channels).await;
+                if let Err(ref e) = result {
+                    let emitter2 = event_emitter.lock().await;
+                    emitter2.emit_error("asr_cloud_failed".to_string(), format!("火山引擎识别失败: {}", e), true);
+                }
+                result
             }
             None => {
-                warn!("Cloud ASR selected but provider not configured, falling back to local");
-                recognize_local(&audio_data, sample_rate, channels)
+                let msg = "火山引擎 ASR 未配置，请先在「语音」页面填写 App ID、Access Key 和 Resource ID";
+                warn!("{}", msg);
+                let emitter2 = event_emitter.lock().await;
+                emitter2.emit_error("asr_not_configured".to_string(), msg.to_string(), true);
+                Err(msg.to_string())
             }
         }
     } else {
         // Local ASR via SAPI
-        recognize_local(&audio_data, sample_rate, channels)
+        let result = recognize_local(&audio_data, sample_rate, channels);
+        if let Err(ref e) = result {
+            let emitter2 = event_emitter.lock().await;
+            emitter2.emit_error("asr_local_failed".to_string(), format!("本地语音识别失败: {}", e), true);
+        }
+        result
     };
 
     match text_result {

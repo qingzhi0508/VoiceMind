@@ -229,11 +229,6 @@ fn main() {
                     Ok(_) => info!("Main window focused successfully"),
                     Err(e) => error!("Failed to set focus: {}", e),
                 }
-                info!("Attempting to set always on top...");
-                match window.set_always_on_top(true) {
-                    Ok(_) => info!("Main window set to always on top successfully"),
-                    Err(e) => error!("Failed to set always on top: {}", e),
-                }
                 info!("Attempting to set title...");
                 match window.set_title("VoiceMind") {
                     Ok(_) => info!("Main window title set successfully"),

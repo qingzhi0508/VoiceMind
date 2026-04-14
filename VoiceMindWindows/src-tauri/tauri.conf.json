@@ -21,7 +21,6 @@
         "center": true,
         "visible": true,
         "focus": true,
-        "alwaysOnTop": true,
         "decorations": true,
         "dataDirectory": "main"
       }
