@@ -456,14 +456,136 @@ fn set_clipboard_text(text: &str) -> Result<(), String> {
 
 pub fn inject_text_with_fallback(text: &str) -> Result<(), String> {
     let injector = TextInjector::new(InjectionMethod::Auto);
-    
+
     match injector.inject(text) {
         Ok(_) => Ok(()),
         Err(e) => {
             error!("Primary injection failed: {}", e);
-            
+
             let clipboard_injector = TextInjector::new(InjectionMethod::Clipboard);
             clipboard_injector.inject(text)
         }
     }
+}
+
+/// Simulate a Return key press (used for confirm action from iPhone).
+#[cfg(windows)]
+pub fn simulate_return_key() {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT,
+        KEYEVENTF_KEYUP, VK_RETURN,
+    };
+
+    let inputs = [
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VK_RETURN,
+                    wScan: 0,
+                    dwFlags: windows::Win32::UI::Input::KeyboardAndMouse::KEYBD_EVENT_FLAGS(0),
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VK_RETURN,
+                    wScan: 0,
+                    dwFlags: KEYEVENTF_KEYUP,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+    ];
+
+    unsafe {
+        let result = SendInput(&inputs, std::mem::size_of::<INPUT>() as i32);
+        if result as u32 != inputs.len() as u32 {
+            warn!("simulate_return_key: SendInput returned {}, expected {}", result, inputs.len());
+        }
+    }
+    info!("Simulated Return key press");
+}
+
+#[cfg(not(windows))]
+pub fn simulate_return_key() {
+    warn!("simulate_return_key not supported on this platform");
+}
+
+/// Simulate Ctrl+Z (undo the last text injection, used for undo action from iPhone).
+#[cfg(windows)]
+pub fn simulate_undo() {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT,
+        KEYEVENTF_KEYUP, VK_CONTROL, VIRTUAL_KEY, KEYBD_EVENT_FLAGS,
+    };
+
+    let inputs = [
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VK_CONTROL,
+                    wScan: 0,
+                    dwFlags: KEYBD_EVENT_FLAGS(0),
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VIRTUAL_KEY(0x5A), // VK_Z
+                    wScan: 0,
+                    dwFlags: KEYBD_EVENT_FLAGS(0),
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VIRTUAL_KEY(0x5A),
+                    wScan: 0,
+                    dwFlags: KEYEVENTF_KEYUP,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VK_CONTROL,
+                    wScan: 0,
+                    dwFlags: KEYEVENTF_KEYUP,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+    ];
+
+    unsafe {
+        let result = SendInput(&inputs, std::mem::size_of::<INPUT>() as i32);
+        if result as u32 != inputs.len() as u32 {
+            warn!("simulate_undo: SendInput returned {}, expected {}", result, inputs.len());
+        }
+    }
+    info!("Simulated Ctrl+Z (undo)");
+}
+
+#[cfg(not(windows))]
+pub fn simulate_undo() {
+    warn!("simulate_undo not supported on this platform");
 }

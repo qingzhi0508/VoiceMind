@@ -48,6 +48,7 @@ pub enum MessageType {
     AudioStart,
     AudioData,
     AudioEnd,
+    Keyword,
 }
 
 impl MessageType {
@@ -66,6 +67,7 @@ impl MessageType {
             Self::AudioStart => "audioStart",
             Self::AudioData => "audioData",
             Self::AudioEnd => "audioEnd",
+            Self::Keyword => "keyword",
         }
     }
 
@@ -84,6 +86,7 @@ impl MessageType {
             "audioStart" => Some(Self::AudioStart),
             "audioData" => Some(Self::AudioData),
             "audioEnd" => Some(Self::AudioEnd),
+            "keyword" => Some(Self::Keyword),
             _ => None,
         }
     }
@@ -210,6 +213,21 @@ pub struct AudioDataPayload {
 #[serde(rename_all = "camelCase")]
 pub struct AudioEndPayload {
     pub session_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KeywordPayload {
+    pub action: KeywordAction,
+    pub session_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum KeywordAction {
+    #[serde(rename = "confirm")]
+    Confirm,
+    #[serde(rename = "undo")]
+    Undo,
 }
 
 pub struct Connection {
@@ -649,6 +667,7 @@ async fn process_message(
         MessageType::AudioStart => handle_audio_start(conn_id, envelope, connections, event_emitter).await,
         MessageType::AudioData => handle_audio_data(conn_id, envelope, connections).await,
         MessageType::AudioEnd => handle_audio_end(conn_id, envelope, connections, event_emitter, history_store, asr_provider, settings_store).await,
+        MessageType::Keyword => handle_keyword(envelope).await,
         MessageType::Error => handle_error(envelope).await,
         MessageType::PairSuccess => {
             info!("Received PairSuccess from conn_id={} - pairing completed on iOS side", conn_id);
@@ -1123,7 +1142,7 @@ async fn handle_audio_end(
         .map_err(|e| format!("Invalid audioEnd payload: {}", e))?;
 
     // Extract audio buffer and device info
-    let (audio_data, sample_rate, channels, device_name, session_id) = {
+    let (audio_data, sample_rate, channels, device_name, session_id, secret_key, ios_device_id) = {
         let mut conns = connections.write().await;
         let conn = conns.get_mut(conn_id).ok_or("Connection not found")?;
         conn.state = ConnectionState::Paired;
@@ -1133,7 +1152,9 @@ async fn handle_audio_end(
         let sr = conn.audio_sample_rate;
         let ch = conn.audio_channels;
         let dn = conn.device_name.clone();
-        (buf, sr, ch, dn, sid)
+        let sk = conn.secret_key.clone();
+        let did = conn.device_id.clone();
+        (buf, sr, ch, dn, sid, sk, did)
     };
 
     // Emit listening-stopped event
@@ -1199,9 +1220,28 @@ async fn handle_audio_end(
             emitter.emit_recognition_result(
                 t.clone(),
                 "zh-CN".to_string(),
-                session_id,
-                device_name,
+                session_id.clone(),
+                device_name.clone(),
             );
+            drop(emitter);
+
+            // Send result back to iPhone so it shows confirm/undo buttons
+            let result_payload = ResultPayload {
+                session_id: session_id.clone(),
+                text: t.clone(),
+                language: "zh-CN".to_string(),
+            };
+            let sender_device_id = ios_device_id.unwrap_or_else(|| envelope.device_id.clone());
+            if let Err(e) = send_envelope_to_connection(
+                conn_id,
+                MessageType::Result,
+                &result_payload,
+                &sender_device_id,
+                secret_key.as_deref(),
+                connections,
+            ).await {
+                warn!("Failed to send result back to iPhone: {}", e);
+            }
         }
         Ok(_) => {
             info!("ASR: empty result");
@@ -1289,6 +1329,23 @@ async fn handle_error(envelope: Envelope) -> Result<(), String> {
     let payload: ErrorPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid error payload: {}", e))?;
     warn!("iOS error: {} - {}", payload.code, payload.message);
+    Ok(())
+}
+
+async fn handle_keyword(envelope: Envelope) -> Result<(), String> {
+    let payload: KeywordPayload = serde_json::from_slice(&envelope.payload)
+        .map_err(|e| format!("Invalid keyword payload: {}", e))?;
+
+    match payload.action {
+        KeywordAction::Confirm => {
+            info!("Keyword confirm (session={})", payload.session_id);
+            crate::injection::simulate_return_key();
+        }
+        KeywordAction::Undo => {
+            info!("Keyword undo (session={})", payload.session_id);
+            crate::injection::simulate_undo();
+        }
+    }
     Ok(())
 }
 
