@@ -97,7 +97,7 @@ impl AsrSession {
 
     /// Connect to Volcengine bigmodel streaming ASR and send the config frame.
     pub async fn connect(&mut self, config: &VolcengineConfig) -> Result<(), String> {
-        let url = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel";
+        let url = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async";
         let connect_id = Uuid::new_v4().to_string();
 
         info!(
@@ -631,7 +631,7 @@ impl VolcengineProvider {
     /// Test connection to Volcengine ASR by performing a WebSocket handshake.
     /// Returns Ok(()) if successful, or Err with detailed diagnostic message.
     pub async fn test_connection(&self) -> Result<String, String> {
-        let url = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel";
+        let url = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async";
         let connect_id = Uuid::new_v4().to_string();
 
         info!(
