@@ -583,7 +583,6 @@ async fn read_loop(
             return Err(format!("Failed reading frame length: {}", err));
         }
         let length = u32::from_be_bytes(length_buf) as usize;
-        info!("read_loop {}: received frame length={}", conn_id, length);
         if length == 0 || length > 10_000_000 {
             warn!("read_loop {}: Invalid frame length: {}", conn_id, length);
             return Err(format!("Invalid frame length: {}", length));
@@ -602,7 +601,6 @@ async fn read_loop(
                 warn!("read_loop {}: Invalid envelope JSON: {}. Raw payload: {}", conn_id, e, raw_str);
                 format!("Invalid envelope JSON: {}", e)
             })?;
-        info!("read_loop {}: parsed envelope type={}", conn_id, envelope.type_);
         process_message(
             conn_id,
             envelope,
@@ -630,10 +628,13 @@ async fn process_message(
     let message_type = MessageType::from_str(&envelope.type_)
         .ok_or_else(|| format!("Unknown message type: {}", envelope.type_))?;
 
-    info!(
-        "process_message: conn_id={}, type={}, device_id={:?}",
-        conn_id, envelope.type_, envelope.device_id
-    );
+    // Skip INFO logging for high-frequency audio data frames
+    if message_type != MessageType::AudioData {
+        info!(
+            "process_message: conn_id={}, type={}, device_id={:?}",
+            conn_id, envelope.type_, envelope.device_id
+        );
+    }
 
     if message_type != MessageType::PairConfirm {
         hydrate_existing_paired_connection(
@@ -754,11 +755,7 @@ async fn hydrate_existing_paired_connection(
                 &secret,
             );
 
-            info!("HMAC debug: provided_hmac={}", provided_hmac);
-            info!("HMAC debug: expected_hmac={}", expected_hmac);
-            info!("HMAC debug: secret_key={}...", &secret[..secret.len().min(8)]);
-            info!("HMAC debug: message_type={}, device_id={}, timestamp={} (apple_ref={})", message_type.as_str(), envelope.device_id, envelope.timestamp + APPLE_EPOCH_OFFSET, envelope.timestamp);
-            info!("HMAC debug: payload_base64_len={}", STANDARD.encode(&envelope.payload).len());
+            info!("HMAC verified for device_id={}", device_id);
 
             if provided_hmac != expected_hmac {
                 warn!(
@@ -841,6 +838,21 @@ async fn promote_authenticated_connection(
     let mut just_promoted = false;
 
     let mut conns = connections.write().await;
+
+    // Clean up any stale connection from the same device_id
+    let stale_ids: Vec<String> = conns
+        .iter()
+        .filter(|(id, conn)| {
+            *id != conn_id
+                && conn.device_id.as_deref() == Some(device_id.as_str())
+        })
+        .map(|(id, _)| id.clone())
+        .collect();
+    for stale_id in &stale_ids {
+        info!("Removing stale connection {} for reconnected device {}", stale_id, device_id);
+        conns.remove(stale_id);
+    }
+
     if let Some(conn) = conns.get_mut(conn_id) {
         let was_connected = matches!(
             conn.state,
