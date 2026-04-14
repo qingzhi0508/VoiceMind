@@ -1423,15 +1423,8 @@ async fn send_error_to_connection(
 }
 
 fn inject_text(text: &str) {
-    let injector = injection::TextInjector::new(injection::InjectionMethod::Keyboard);
-    if let Err(err) = injector.inject(text) {
-        error!("Keyboard injection failed: {}", err);
-        let clipboard_injector =
-            injection::TextInjector::new(injection::InjectionMethod::Clipboard);
-        if let Err(clipboard_err) = clipboard_injector.inject(text) {
-            error!("Clipboard injection failed: {}", clipboard_err);
-        }
-    }
+    // Use Auto to let the injector detect the best method (clipboard for terminals/browsers)
+    crate::injection::inject_text_with_fallback(text).ok();
 }
 
 fn unix_seconds_now() -> f64 {

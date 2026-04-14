@@ -146,15 +146,23 @@ impl TextInjector {
         if let Some((ref title, _pid)) = window_info {
             let title_lower = title.to_lowercase();
             
-            if title_lower.contains("chrome") 
-                || title_lower.contains("edge") 
+            if title_lower.contains("chrome")
+                || title_lower.contains("edge")
                 || title_lower.contains("firefox")
                 || title_lower.contains("browser")
                 || title_lower.contains("notepad++")
                 || title_lower.contains("vscode")
                 || title_lower.contains("code")
+                // Terminals: KEYEVENTF_UNICODE often garbles CJK text
+                || title_lower.contains("terminal")
+                || title_lower.contains("cmd")
+                || title_lower.contains("powershell")
+                || title_lower.contains("windowsterminal")
+                || title_lower.contains("git bash")
+                || title_lower.contains("mingw")
+                || title_lower.contains("console")
             {
-                info!("Detected browser or text editor, using clipboard method");
+                info!("Detected browser, editor or terminal, using clipboard method");
                 return InjectionMethod::Clipboard;
             }
         }
@@ -368,17 +376,18 @@ fn get_clipboard_text() -> Option<String> {
         use windows::Win32::Foundation::HGLOBAL;
         use windows::Win32::System::DataExchange::{OpenClipboard, GetClipboardData, CloseClipboard};
         use windows::Win32::System::Memory::{GlobalLock, GlobalUnlock};
-        
+
         unsafe {
             if OpenClipboard(None).is_ok() {
-                if let Ok(handle) = GetClipboardData(1) {
+                // 13 = CF_UNICODETEXT
+                if let Ok(handle) = GetClipboardData(13) {
                     if !handle.is_invalid() {
                         let hglobal = HGLOBAL(handle.0 as *mut _);
                         let ptr = GlobalLock(hglobal);
                         if !ptr.is_null() {
-                            let text = std::ffi::CStr::from_ptr(ptr as *const i8)
-                                .to_string_lossy()
-                                .into_owned();
+                            let u16_ptr = ptr as *const u16;
+                            let len = (0..).take_while(|&i| *u16_ptr.add(i) != 0).count();
+                            let text = String::from_utf16_lossy(std::slice::from_raw_parts(u16_ptr, len));
                             let _ = GlobalUnlock(hglobal);
                             CloseClipboard().ok();
                             return Some(text);
@@ -390,7 +399,7 @@ fn get_clipboard_text() -> Option<String> {
         }
         None
     }
-    
+
     #[cfg(not(windows))]
     {
         None
@@ -430,7 +439,8 @@ fn set_clipboard_text(text: &str) -> Result<(), String> {
             let _ = GlobalUnlock(hglobal);
             
             let handle_as_hwnd = HANDLE(handle.0);
-            let _ = SetClipboardData(1, Some(handle_as_hwnd));
+            // 13 = CF_UNICODETEXT (UTF-16), matching the UTF-16 encoded data above
+            let _ = SetClipboardData(13, Some(handle_as_hwnd));
             
             CloseClipboard().ok();
         }
