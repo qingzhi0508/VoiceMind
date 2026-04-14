@@ -862,23 +862,37 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       unlisteners.push(await listen("listening-started", event => {
         state.listening = true;
         renderStatus();
-        addActivity("\u76d1\u542c\u5df2\u5f00\u59cb", `${(event.payload || {}).device_name || state.deviceName || "iPhone"}`, "voice");
+        addActivity("监听已开始", `${(event.payload || {}).device_name || state.deviceName || "iPhone"}`, "voice");
+        // Show recognition bar
+        const bar = document.getElementById("recognition-bar");
+        const text = document.getElementById("recognition-text");
+        if (bar && text) { text.textContent = "正在识别..."; bar.hidden = false; }
       }));
       unlisteners.push(await listen("listening-stopped", event => {
         state.listening = false;
         renderStatus();
-        addActivity("\u76d1\u542c\u5df2\u505c\u6b62", `\u4f1a\u8bdd ${(event.payload || {}).session_id || "-"}`, "voice");
+        addActivity("监听已停止", `会话 ${(event.payload || {}).session_id || "-"}`, "voice");
       }));
       unlisteners.push(await listen("recognition-result", async event => {
         const p = event.payload || {};
         state.noteText = p.text || "";
         renderStatus();
-        addActivity("\u8bc6\u522b\u7ed3\u679c", p.text || "(\u7a7a)", "voice");
+        addActivity("识别结果", p.text || "(空)", "voice");
+        // Show final text on bar, then hide after injection
+        const bar = document.getElementById("recognition-bar");
+        const text = document.getElementById("recognition-text");
+        if (bar && text && p.text) { text.textContent = p.text; }
+        setTimeout(() => { if (bar) bar.hidden = true; }, 1500);
         await refreshHistory();
       }));
       unlisteners.push(await listen("partial-result", event => {
         const p = event.payload || {};
-        if (p.text) { state.noteText = p.text; renderStatus(); }
+        if (p.text) {
+          state.noteText = p.text;
+          renderStatus();
+          const text = document.getElementById("recognition-text");
+          if (text) text.textContent = p.text;
+        }
       }));
       unlisteners.push(await listen("error", event => {
         const p = event.payload || {};

@@ -87,6 +87,44 @@
     .page { display: none; }
     .page.active { display: block; }
 
+    /* Recognition bar */
+    .recognition-bar {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+        display: flex; align-items: center; justify-content: center;
+        min-height: 52px; padding: 10px 24px;
+        background: linear-gradient(90deg, #ff6b6b, #ffa94d, #ffd43b, #69db7c, #4dabf7, #9775fa, #f06595, #ff6b6b);
+        background-size: 300% 100%;
+        animation: rainbow-slide 3s linear infinite;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    }
+    .recognition-bar[hidden] { display: none !important; }
+    @keyframes rainbow-slide { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+    .recognition-wave {
+        position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+    }
+    .recognition-wave::before {
+        content: ''; position: absolute; bottom: 0; left: -50%; width: 200%; height: 24px;
+        background: radial-gradient(ellipse 12px 12px at 12px 12px, rgba(255,255,255,0.35) 50%, transparent 50%);
+        background-size: 24px 24px;
+        animation: wave-drift 1.2s linear infinite;
+    }
+    @keyframes wave-drift { 0% { transform: translateX(0); } 100% { transform: translateX(24px); } }
+    .recognition-content {
+        position: relative; display: flex; align-items: center; gap: 10px;
+        max-width: 720px; width: 100%;
+    }
+    .recognition-spinner {
+        width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.4);
+        border-top-color: #fff; border-radius: 50%;
+        animation: spin 0.7s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .recognition-text {
+        color: #fff; font-size: 15px; font-weight: 500; line-height: 1.4;
+        text-shadow: 0 1px 4px rgba(0,0,0,0.25); overflow: hidden;
+        white-space: nowrap; text-overflow: ellipsis;
+    }
+
     /* Head */
     .head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 24px; }
     .head h2 { margin: 0; font-size: 28px; color: var(--title); font-weight: 700; }
