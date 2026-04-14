@@ -758,6 +758,16 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
     const saveSettingsPrimaryButton = document.getElementById("save-settings");
     if (saveSettingsPrimaryButton) saveSettingsPrimaryButton.addEventListener("click", saveSettings);
     document.getElementById("save-asr").addEventListener("click", saveASR);
+    document.getElementById("test-asr-connection").addEventListener("click", async () => {
+      if (!state.isTauri) { toast("仅桌面端可用"); return; }
+      toast("正在测试 ASR 连接...");
+      try {
+        const result = await invoke("test_asr_connection");
+        toast(`ASR 连接测试: ${result}`);
+      } catch (e) {
+        toast(`ASR 连接失败: ${e}`);
+      }
+    });
     document.getElementById("reload-settings").addEventListener("click", loadSettings);
     if (cloudEngineStatus) {
       cloudEngineStatus.addEventListener("click", event => {

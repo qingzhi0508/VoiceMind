@@ -296,6 +296,7 @@ fn main() {
             commands::stop_service,
             commands::get_service_status,
             commands::check_local_asr,
+            commands::test_asr_connection,
             commands::get_version,
         ])
         .run(tauri::generate_context!());

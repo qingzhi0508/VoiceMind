@@ -828,3 +828,12 @@ pub async fn clear_inbound_data_records(state: State<'_, AppState>) -> Result<()
 pub fn get_version(app: tauri::AppHandle) -> String {
     app.config().version.clone().unwrap_or_else(|| "0.0.0".to_string())
 }
+
+#[tauri::command]
+pub async fn test_asr_connection(state: State<'_, AppState>) -> Result<String, String> {
+    let provider_guard = state.asr_provider.lock().await;
+    match provider_guard.as_ref() {
+        Some(provider) => provider.test_connection().await,
+        None => Err("ASR provider not configured. Please set App ID, Access Key and Resource ID first.".to_string()),
+    }
+}

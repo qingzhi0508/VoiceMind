@@ -7,7 +7,7 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
-use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream};
+use tokio_tungstenite::{connect_async, tungstenite::{self, Message}, MaybeTlsStream};
 use tracing::{error, info, warn};
 use uuid::Uuid;
 
@@ -123,15 +123,13 @@ impl AsrSession {
         info!("Volcengine ASR request headers: {:?}", request.headers());
 
         let result = connect_async(request).await;
-        match &result {
-            Ok((_, resp)) => {
-                info!("Volcengine ASR connected, status={}, headers={:?}", resp.status(), resp.headers());
-            }
-            Err(e) => {
-                error!("Volcengine ASR connect error: {:?}", e);
-            }
-        }
-        let (ws_stream, resp) = result.map_err(|e| format!("Volcengine ASR connect failed: {}", e))?;
+        let (ws_stream, resp) = result.map_err(|e| {
+            let detail = format_ws_error(&e);
+            error!("Volcengine ASR connect failed: {}", detail);
+            format!("Volcengine ASR connect failed: {}", detail)
+        })?;
+
+        info!("Volcengine ASR connected, status={}", resp.status());
 
         if let Some(logid) = resp.headers().get("X-Tt-Logid") {
             info!("Volcengine ASR connected, logid={:?}", logid);
@@ -275,6 +273,8 @@ impl AsrSession {
             .map_err(|e| format!("Send config failed: {}", e))?;
 
         info!("Volcengine ASR config frame sent");
+        // Server auto-assigns sequence 1 to the config frame, so audio must start at 2
+        self.sequence = 1;
         Ok(())
     }
 
@@ -628,6 +628,45 @@ impl VolcengineProvider {
         AsrSession::new(callback)
     }
 
+    /// Test connection to Volcengine ASR by performing a WebSocket handshake.
+    /// Returns Ok(()) if successful, or Err with detailed diagnostic message.
+    pub async fn test_connection(&self) -> Result<String, String> {
+        let url = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel";
+        let connect_id = Uuid::new_v4().to_string();
+
+        info!(
+            "Volcengine ASR test_connection: app_id={}, resource_id={}, connect_id={}",
+            self.config.app_id, self.config.resource_id, connect_id
+        );
+
+        use tokio_tungstenite::tungstenite::client::IntoClientRequest;
+        let mut request = url
+            .into_client_request()
+            .map_err(|e| format!("Failed to create WS request: {}", e))?;
+
+        let h = |v: &str| -> Result<tauri::http::HeaderValue, String> {
+            tauri::http::HeaderValue::from_str(v).map_err(|e| format!("Invalid header value: {}", e))
+        };
+        request.headers_mut().insert("X-Api-App-Key", h(&self.config.app_id)?);
+        request.headers_mut().insert("X-Api-Access-Key", h(&self.config.access_key)?);
+        request.headers_mut().insert("X-Api-Resource-Id", h(&self.config.resource_id)?);
+        request.headers_mut().insert("X-Api-Connect-Id", h(&connect_id)?);
+
+        let result = connect_async(request).await;
+        match result {
+            Ok((_ws, resp)) => {
+                let logid = resp.headers().get("X-Tt-Logid")
+                    .and_then(|v| v.to_str().ok())
+                    .unwrap_or("unknown");
+                Ok(format!("连接成功 (status={}, logid={})", resp.status(), logid))
+            }
+            Err(e) => {
+                let detail = format_ws_error(&e);
+                Err(format!("连接失败: {}", detail))
+            }
+        }
+    }
+
     /// One-shot recognition: connect, stream audio in chunks, finish, return final text.
     pub async fn recognize(
         &self,
@@ -765,4 +804,24 @@ fn gzip_decompress(data: &[u8]) -> Result<Vec<u8>, String> {
         .read_to_end(&mut buf)
         .map_err(|e| format!("Gzip decompress: {}", e))?;
     Ok(buf)
+}
+
+/// Extract detailed error info from a tungstenite WebSocket connect error.
+fn format_ws_error(e: &tungstenite::Error) -> String {
+    match e {
+        tungstenite::Error::Http(resp) => {
+            let status = resp.status();
+            let body = resp.body()
+                .as_ref()
+                .map(|bytes| String::from_utf8_lossy(bytes).to_string())
+                .unwrap_or_else(|| "(empty body)".to_string());
+            let headers: String = resp.headers().iter()
+                .filter(|(k, _)| !k.as_str().starts_with("x-tt-"))
+                .map(|(k, v)| format!("{}={}", k, v.to_str().unwrap_or("?")))
+                .collect::<Vec<_>>()
+                .join("; ");
+            format!("HTTP {} | headers: [{}] | body: {}", status, headers, body)
+        }
+        other => format!("{:?}", other),
+    }
 }
