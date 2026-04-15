@@ -17,11 +17,33 @@ pub struct Settings {
     pub asr_engine: String,
     pub bonjour: BonjourSettings,
     pub asr: AsrSettings,
+    #[serde(default)]
+    pub qwen3_asr: Qwen3AsrSettings,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BonjourSettings {
     pub enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Qwen3AsrSettings {
+    #[serde(default = "default_qwen3_model_size")]
+    pub model_size: String,
+    #[serde(default = "default_qwen3_language")]
+    pub language: String,
+}
+
+fn default_qwen3_model_size() -> String { "0.6b".to_string() }
+fn default_qwen3_language() -> String { "auto".to_string() }
+
+impl Default for Qwen3AsrSettings {
+    fn default() -> Self {
+        Self {
+            model_size: default_qwen3_model_size(),
+            language: default_qwen3_language(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,6 +78,7 @@ impl Default for Settings {
                 resource_id: "volc.bigasr.sauc.duration".to_string(),
                 asr_language: "zh-CN".to_string(),
             },
+            qwen3_asr: Qwen3AsrSettings::default(),
         }
     }
 }

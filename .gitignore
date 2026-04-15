@@ -21,6 +21,7 @@ VoiceMindWindows/dist/
 VoiceMindWindows/src-tauri/history.json
 VoiceMindWindows/src-tauri/settings.json
 VoiceMindWindows/.claude/
+VoiceMindWindows/src-tauri/bin/
 
 # Local macOS app artifacts
 /VoiceMindMac/VoiceMindMac/Resources/Models/

@@ -8,6 +8,7 @@ mod injection;
 mod network;
 mod overlay;
 mod pairing;
+mod qwen_asr;
 mod settings;
 mod speech;
 
@@ -321,6 +322,11 @@ fn main() {
             commands::show_overlay_window,
             commands::hide_overlay_window,
             commands::sync_overlay_window,
+            commands::check_qwen3_asr,
+            commands::get_qwen3_models,
+            commands::download_qwen3_model,
+            commands::delete_qwen3_model,
+            commands::save_qwen3_asr_config,
         ])
         .run(tauri::generate_context!());
 

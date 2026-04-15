@@ -253,6 +253,12 @@ impl EventEmitter {
             let _ = handle.emit("new-inbound-data", record);
         }
     }
+
+    pub fn emit_qwen3_download_progress(&self, progress: crate::qwen_asr::Qwen3DownloadProgress) {
+        if let Some(ref handle) = self.app_handle {
+            let _ = handle.emit("qwen3-download-progress", progress);
+        }
+    }
 }
 
 impl Default for EventEmitter {

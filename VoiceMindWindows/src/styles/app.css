@@ -261,6 +261,28 @@
     .update-result .update-status.error { color: var(--accentRed); }
     .update-result .update-status.up-to-date { color: var(--accentGreen); }
 
+    /* Qwen3 model cards */
+    .qwen3-model-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .qwen3-model-card { padding: 16px; border-radius: 12px; border: 1px solid var(--cardBorder); background: var(--softSurface); transition: border-color 0.2s ease; }
+    .qwen3-model-card.active { border-color: var(--accent); }
+    .qwen3-model-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .qwen3-model-select { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .qwen3-model-select input[type="radio"] { margin: 0; accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+    .qwen3-model-select input[type="radio"]:disabled { opacity: 0.3; cursor: not-allowed; }
+    .qwen3-model-name { font-weight: 600; color: var(--title); font-size: 14px; }
+    .qwen3-model-size { font-size: 12px; color: var(--secondaryText); }
+    .qwen3-model-status { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 10px; display: inline-block; margin-bottom: 10px; background: rgba(224,120,48,0.14); color: var(--accentOrange); }
+    .qwen3-model-status.downloaded { background: rgba(34,197,94,0.12); color: var(--accentGreen); }
+    .qwen3-model-status.downloading { background: var(--accentSoft); color: var(--accent); }
+    .qwen3-action-btn { width: 100%; margin-top: 8px; }
+    .qwen3-progress-bar { height: 6px; border-radius: 3px; background: var(--cardBorder); margin-bottom: 6px; overflow: hidden; }
+    .qwen3-progress-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 3px; transition: width 0.3s ease; }
+    .qwen3-progress-text { font-size: 11px; color: var(--secondaryText); margin-bottom: 4px; }
+
+    @media (max-width: 600px) {
+      .qwen3-model-cards { grid-template-columns: 1fr; }
+    }
+
     /* Responsive */
     @media (max-width: 900px) {
       body { overflow: auto; }

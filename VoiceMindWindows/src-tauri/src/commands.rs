@@ -933,3 +933,59 @@ fn get_overlay_anchor() -> OverlayAnchor {
         source: "fallback".to_string(),
     }
 }
+
+/* ===== Qwen3 ASR Commands ===== */
+
+#[tauri::command]
+pub async fn check_qwen3_asr(_state: State<'_, AppState>) -> Result<crate::qwen_asr::Qwen3CheckResult, String> {
+    let binary_available = crate::qwen_asr::check_binary_available().is_ok();
+    let models = vec![
+        crate::qwen_asr::get_model_info("0.6b"),
+        crate::qwen_asr::get_model_info("1.7b"),
+    ];
+    Ok(crate::qwen_asr::Qwen3CheckResult {
+        binary_available,
+        models,
+    })
+}
+
+#[tauri::command]
+pub async fn get_qwen3_models() -> Result<Vec<crate::qwen_asr::QwenModelInfo>, String> {
+    Ok(vec![
+        crate::qwen_asr::get_model_info("0.6b"),
+        crate::qwen_asr::get_model_info("1.7b"),
+    ])
+}
+
+#[tauri::command]
+pub async fn download_qwen3_model(model_size: String, app: tauri::AppHandle) -> Result<(), String> {
+    if model_size != "0.6b" && model_size != "1.7b" {
+        return Err("Invalid model size. Use '0.6b' or '1.7b'".to_string());
+    }
+    crate::qwen_asr::download_model(&model_size, app).await
+}
+
+#[tauri::command]
+pub async fn delete_qwen3_model(model_size: String) -> Result<(), String> {
+    if model_size != "0.6b" && model_size != "1.7b" {
+        return Err("Invalid model size. Use '0.6b' or '1.7b'".to_string());
+    }
+    crate::qwen_asr::delete_model(&model_size)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Qwen3AsrConfigPayload {
+    pub model_size: String,
+    pub language: String,
+}
+
+#[tauri::command]
+pub async fn save_qwen3_asr_config(state: State<'_, AppState>, config: Qwen3AsrConfigPayload) -> Result<(), String> {
+    let mut store = state.settings_store.lock().await;
+    let mut settings = store.get();
+    settings.qwen3_asr.model_size = config.model_size;
+    settings.qwen3_asr.language = config.language;
+    store.update(settings)?;
+    tracing::info!("Qwen3 ASR config saved");
+    Ok(())
+}

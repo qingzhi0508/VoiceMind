@@ -22,8 +22,11 @@ bindSegmentedPickers({
 const engineRows = [...document.querySelectorAll(".engine-row")];
 const speechEngineHint = document.getElementById("speech-engine-hint");
 const cloudEngineStatus = document.getElementById("engine-status-cloud");
+const qwen3EngineStatus = document.getElementById("engine-status-qwen3");
 const speechAsrModal = document.getElementById("speech-asr-modal");
+const qwen3ConfigModal = document.getElementById("qwen3-config-modal");
 const speechConfigCancel = document.getElementById("speech-config-cancel");
+const qwen3ConfigCancel = document.getElementById("qwen3-config-cancel");
 const speechConfigClose = null;
 const recordsBatchToolbar = document.getElementById("records-batch-toolbar");
 const recordsBatchCount = document.getElementById("records-batch-count");
@@ -127,14 +130,18 @@ function isCloudConfigured(settings = state.settings) {
 function isEngineSelectable(engine) {
   if (engine === "cloud") return state.asrConfigured;
   if (engine === "local") return state.localAsrAvailable !== false;
+  if (engine === "qwen3_local") return state.qwen3BinaryAvailable &&
+    (state.qwen3Models["0.6b"].downloaded || state.qwen3Models["1.7b"].downloaded);
   return false;
 }
 
 function getPreferredEngine() {
   const saved = state.settings && state.settings.asr_engine;
   if (saved === "cloud" && state.asrConfigured) return "cloud";
+  if (saved === "qwen3_local" && isEngineSelectable("qwen3_local")) return "qwen3_local";
   if (saved === "local" && state.localAsrAvailable !== false) return "local";
   if (state.localAsrAvailable !== false) return "local";
+  if (isEngineSelectable("qwen3_local")) return "qwen3_local";
   if (state.asrConfigured) return "cloud";
   return "local";
 }
@@ -142,6 +149,13 @@ function getPreferredEngine() {
 function setAsrConfigExpanded(expanded) {
   state.asrConfigExpanded = expanded;
   if (speechAsrModal) speechAsrModal.hidden = !expanded;
+  if (expanded && qwen3ConfigModal) qwen3ConfigModal.hidden = true;
+}
+
+function setQwen3ConfigExpanded(expanded) {
+  state.qwen3ConfigExpanded = expanded;
+  if (qwen3ConfigModal) qwen3ConfigModal.hidden = !expanded;
+  if (expanded && speechAsrModal) speechAsrModal.hidden = true;
 }
 
 function updateEngineHint(message) {
@@ -166,6 +180,14 @@ function updateSpeechEngineActions() {
     } else {
       hintText = "";
     }
+  } else if (focusEngine === "qwen3_local") {
+    if (!state.qwen3BinaryAvailable) {
+      hintText = "Qwen3-ASR \u4e8c\u8fdb\u5236\u6587\u4ef6\u672a\u627e\u5230\uff0c\u8bf7\u5c06 qwen_asr.exe \u653e\u5165 bin/ \u76ee\u5f55\u3002";
+    } else if (!state.qwen3Models["0.6b"].downloaded && !state.qwen3Models["1.7b"].downloaded) {
+      hintText = "\u5c1a\u672a\u4e0b\u8f7d\u4efb\u4f55\u6a21\u578b\uff0c\u8bf7\u5148\u4e0b\u8f7d\u81f3\u5c11\u4e00\u4e2a\u6a21\u578b\u3002";
+    } else {
+      hintText = "";
+    }
   }
 
   if (cloudEngineStatus) {
@@ -173,6 +195,22 @@ function updateSpeechEngineActions() {
     cloudEngineStatus.className = state.asrConfigured ? "engine-status available" : "engine-status warning";
     cloudEngineStatus.disabled = false;
     cloudEngineStatus.title = state.asrConfigured ? "\u70b9\u51fb\u7f16\u8f91 ASR \u914d\u7f6e" : "\u70b9\u51fb\u53bb\u914d\u7f6e ASR";
+  }
+
+  if (qwen3EngineStatus) {
+    const hasModel = state.qwen3Models["0.6b"].downloaded || state.qwen3Models["1.7b"].downloaded;
+    if (!state.qwen3BinaryAvailable) {
+      qwen3EngineStatus.textContent = "\u672a\u5b89\u88c5";
+      qwen3EngineStatus.className = "engine-status error";
+    } else if (hasModel) {
+      qwen3EngineStatus.textContent = "\u53ef\u7528";
+      qwen3EngineStatus.className = "engine-status available";
+    } else {
+      qwen3EngineStatus.textContent = "\u672a\u4e0b\u8f7d";
+      qwen3EngineStatus.className = "engine-status warning";
+    }
+    qwen3EngineStatus.disabled = false;
+    qwen3EngineStatus.title = "\u70b9\u51fb\u7ba1\u7406 Qwen3 \u6a21\u578b";
   }
   updateEngineHint(hintText);
 }
@@ -185,8 +223,14 @@ function renderEngineSelection() {
     const engine = row.dataset.engine;
     const isSelected = engine === currentEngine;
     row.classList.toggle("selected", isSelected);
-    row.classList.toggle("locked", engine === "cloud" && !state.asrConfigured);
-    row.classList.toggle("unavailable", engine === "local" && state.localAsrAvailable === false);
+    row.classList.toggle("locked",
+      (engine === "cloud" && !state.asrConfigured) ||
+      (engine === "qwen3_local" && !isEngineSelectable("qwen3_local"))
+    );
+    row.classList.toggle("unavailable",
+      (engine === "local" && state.localAsrAvailable === false) ||
+      (engine === "qwen3_local" && !state.qwen3BinaryAvailable)
+    );
   });
 
   updateSpeechEngineActions();
@@ -203,7 +247,12 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
     try {
       await invoke("save_settings", { settings: { ...state.settings, asr_engine: engine } });
       if (!silent) {
-        toast(engine === "local" ? "\u5df2\u5207\u6362\u5230 Windows \u672c\u5730\u8bc6\u522b" : "\u5df2\u5207\u6362\u5230 Volcengine ASR");
+        const labels = {
+          local: "\u5df2\u5207\u6362\u5230 Windows \u672c\u5730\u8bc6\u522b",
+          cloud: "\u5df2\u5207\u6362\u5230 Volcengine ASR",
+          qwen3_local: "\u5df2\u5207\u6362\u5230 Qwen3-ASR \u672c\u5730\u8bc6\u522b",
+        };
+        toast(labels[engine] || "\u5df2\u5207\u6362\u5f15\u64ce");
       }
     } catch (e) {
       toast(`\u5207\u6362\u5931\u8d25: ${e}`);
@@ -493,6 +542,8 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
           await selectAsrEngine(getPreferredEngine(), { silent: true });
         }
         if (s.theme) applyTheme(s.theme);
+        // Load Qwen3 status
+        await loadQwen3Status();
       } catch (e) { console.error("loadSettings", e); }
     }
 
@@ -547,6 +598,140 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       } catch (e) { toast(`ASR \u4fdd\u5b58\u5931\u8d25: ${e}`); }
     }
 
+    /* ===== Qwen3 ASR ===== */
+    async function loadQwen3Status() {
+      if (!state.isTauri) return;
+      try {
+        const result = await invoke("check_qwen3_asr");
+        state.qwen3BinaryAvailable = result.binary_available;
+        if (result.models) {
+          result.models.forEach(m => {
+            state.qwen3Models[m.size] = { downloaded: m.downloaded };
+          });
+        }
+        renderQwen3ModelCards();
+        renderEngineSelection();
+      } catch (e) {
+        console.error("loadQwen3Status error:", e);
+      }
+    }
+
+    function renderQwen3ModelCards() {
+      const activeModel = state.settings && state.settings.qwen3_asr ? state.settings.qwen3_asr.model_size : "0.6b";
+      ["0.6b", "1.7b"].forEach(size => {
+        const model = state.qwen3Models[size];
+        const statusEl = document.getElementById(`qwen3-status-${size}`);
+        const btn = document.getElementById(`qwen3-btn-${size}`);
+        const radio = document.getElementById(`qwen3-radio-${size}`);
+        const card = document.querySelector(`.qwen3-model-card[data-model="${size}"]`);
+        if (!statusEl || !btn) return;
+
+        if (state.qwen3Downloading === size) {
+          statusEl.textContent = "\u4e0b\u8f7d\u4e2d...";
+          statusEl.className = "qwen3-model-status downloading";
+          btn.textContent = "\u4e0b\u8f7d\u4e2d...";
+          btn.disabled = true;
+        } else if (model && model.downloaded) {
+          statusEl.textContent = "\u5df2\u4e0b\u8f7d";
+          statusEl.className = "qwen3-model-status downloaded";
+          btn.textContent = "\u5220\u9664";
+          btn.className = "btn danger qwen3-action-btn";
+          btn.disabled = false;
+        } else {
+          statusEl.textContent = "\u672a\u4e0b\u8f7d";
+          statusEl.className = "qwen3-model-status";
+          btn.textContent = "\u4e0b\u8f7d";
+          btn.className = "btn primary qwen3-action-btn";
+          btn.disabled = false;
+        }
+
+        // Update radio button state
+        if (radio) {
+          radio.checked = (activeModel === size);
+          radio.disabled = !(model && model.downloaded);
+        }
+        if (card) {
+          card.classList.toggle("active", activeModel === size && model && model.downloaded);
+        }
+      });
+
+      // Load language from settings
+      if (state.settings && state.settings.qwen3_asr) {
+        const langEl = document.getElementById("qwen3-language");
+        if (langEl) langEl.value = state.settings.qwen3_asr.language || "auto";
+      }
+    }
+
+    async function downloadQwen3Model(size) {
+      if (!state.isTauri || state.qwen3Downloading) return;
+      state.qwen3Downloading = size;
+      renderQwen3ModelCards();
+
+      try {
+        await invoke("download_qwen3_model", { modelSize: size });
+      } catch (e) {
+        toast(`\u4e0b\u8f7d\u5931\u8d25: ${e}`);
+        state.qwen3Downloading = null;
+        renderQwen3ModelCards();
+      }
+    }
+
+    async function deleteQwen3Model(size) {
+      if (!state.isTauri) return;
+      if (!confirm(`\u786e\u5b9a\u5220\u9664 Qwen3-ASR ${size} \u6a21\u578b\uff1f`)) return;
+
+      try {
+        await invoke("delete_qwen3_model", { modelSize: size });
+        state.qwen3Models[size] = { downloaded: false };
+        toast(`\u5df2\u5220\u9664 Qwen3-ASR ${size} \u6a21\u578b`);
+        renderQwen3ModelCards();
+        renderEngineSelection();
+      } catch (e) {
+        toast(`\u5220\u9664\u5931\u8d25: ${e}`);
+      }
+    }
+
+    async function saveQwen3Config() {
+      if (!state.isTauri) return;
+      // Read active model from radio buttons
+      const activeRadio = document.querySelector('input[name="qwen3-active-model"]:checked');
+      const modelSize = activeRadio ? activeRadio.value : (state.settings && state.settings.qwen3_asr ? state.settings.qwen3_asr.model_size : "0.6b");
+      const config = {
+        model_size: modelSize,
+        language: document.getElementById("qwen3-language").value,
+      };
+      try {
+        await invoke("save_qwen3_asr_config", { config });
+        toast("Qwen3 \u914d\u7f6e\u5df2\u4fdd\u5b58");
+        await loadSettings();
+        await selectAsrEngine("qwen3_local");
+        setQwen3ConfigExpanded(false);
+      } catch (e) {
+        toast(`\u4fdd\u5b58\u5931\u8d25: ${e}`);
+      }
+    }
+
+    // Qwen3 model action buttons
+    ["0.6b", "1.7b"].forEach(size => {
+      const btn = document.getElementById(`qwen3-btn-${size}`);
+      if (btn) {
+        btn.addEventListener("click", event => {
+          event.stopPropagation();
+          const model = state.qwen3Models[size];
+          if (model && model.downloaded) {
+            deleteQwen3Model(size);
+          } else {
+            downloadQwen3Model(size);
+          }
+        });
+      }
+    });
+
+    const saveQwen3ConfigBtn = document.getElementById("save-qwen3-config");
+    if (saveQwen3ConfigBtn) {
+      saveQwen3ConfigBtn.addEventListener("click", saveQwen3Config);
+    }
+
     async function toggleService() {
       if (!state.isTauri) return;
       try {
@@ -573,7 +758,7 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         const engine = row.dataset.engine;
         state.pendingEngine = engine;
         if (engine === "cloud" && !state.asrConfigured) {
-          setAsrConfigExpanded(false);
+          setAsrConfigExpanded(true);
           renderEngineSelection();
           return;
         }
@@ -582,7 +767,24 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
           toast("Windows \u672c\u5730\u8bed\u97f3\u8bc6\u522b\u5f53\u524d\u4e0d\u53ef\u7528");
           return;
         }
+        if (engine === "qwen3_local") {
+          if (!state.qwen3BinaryAvailable) {
+            renderEngineSelection();
+            toast("Qwen3-ASR \u4e8c\u8fdb\u5236\u6587\u4ef6\u672a\u627e\u5230\uff0c\u8bf7\u5c06 qwen_asr.exe \u653e\u5165 bin/ \u76ee\u5f55");
+            return;
+          }
+          if (!isEngineSelectable("qwen3_local")) {
+            setQwen3ConfigExpanded(true);
+            renderEngineSelection();
+            return;
+          }
+          setAsrConfigExpanded(false);
+          setQwen3ConfigExpanded(false);
+          await selectAsrEngine(engine);
+          return;
+        }
         setAsrConfigExpanded(false);
+        setQwen3ConfigExpanded(false);
         await selectAsrEngine(engine);
       });
     });
@@ -787,15 +989,31 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         updateSpeechEngineActions();
       });
     }
+    if (qwen3EngineStatus) {
+      qwen3EngineStatus.addEventListener("click", event => {
+        event.stopPropagation();
+        state.pendingEngine = "qwen3_local";
+        setQwen3ConfigExpanded(true);
+        updateSpeechEngineActions();
+        loadQwen3Status();
+      });
+    }
     if (speechConfigCancel) {
       speechConfigCancel.addEventListener("click", () => {
         setAsrConfigExpanded(false);
         updateSpeechEngineActions();
       });
     }
+    if (qwen3ConfigCancel) {
+      qwen3ConfigCancel.addEventListener("click", () => {
+        setQwen3ConfigExpanded(false);
+        updateSpeechEngineActions();
+      });
+    }
     document.addEventListener("keydown", event => {
-      if (event.key === "Escape" && state.asrConfigExpanded) {
+      if (event.key === "Escape" && (state.asrConfigExpanded || state.qwen3ConfigExpanded)) {
         setAsrConfigExpanded(false);
+        setQwen3ConfigExpanded(false);
         updateSpeechEngineActions();
       }
     });
@@ -909,6 +1127,38 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         renderStatus();
         const bar = document.getElementById("recognition-bar");
         if (bar) bar.hidden = true;
+      }));
+      unlisteners.push(await listen("qwen3-download-progress", event => {
+        const p = event.payload || {};
+        if (!p.model_size) return;
+
+        const progressBar = document.getElementById(`qwen3-progress-${p.model_size}`);
+        const progressText = document.getElementById(`qwen3-progress-text-${p.model_size}`);
+        const progressFill = progressBar ? progressBar.querySelector(".qwen3-progress-fill") : null;
+
+        if (p.status === "downloading") {
+          if (progressBar) progressBar.hidden = false;
+          if (progressText) progressText.hidden = false;
+          if (progressFill) progressFill.style.width = `${Math.round(p.progress * 100)}%`;
+          if (progressText) {
+            const percent = Math.round(p.progress * 100);
+            const currentFile = p.current_file || "";
+            const shortFile = currentFile.length > 30 ? "..." + currentFile.slice(-27) : currentFile;
+            progressText.textContent = `${percent}% - ${shortFile}`;
+          }
+        } else if (p.status === "completed") {
+          if (progressBar) progressBar.hidden = true;
+          if (progressText) progressText.hidden = true;
+          if (progressFill) progressFill.style.width = "100%";
+          state.qwen3Models[p.model_size] = { downloaded: true };
+          state.qwen3Downloading = null;
+          toast(`Qwen3-ASR ${p.model_size} \u6a21\u578b\u4e0b\u8f7d\u5b8c\u6210`);
+          renderQwen3ModelCards();
+          renderEngineSelection();
+        } else if (p.status === "failed") {
+          state.qwen3Downloading = null;
+          renderQwen3ModelCards();
+        }
       }));
     }
 

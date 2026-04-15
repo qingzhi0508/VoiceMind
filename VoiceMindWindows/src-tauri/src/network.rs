@@ -1,6 +1,5 @@
 use crate::commands::ConnectionStatus;
 use crate::events::EventEmitter;
-use crate::injection;
 use crate::pairing::PairingManager;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde::{Deserialize, Serialize};
@@ -30,6 +29,10 @@ struct StreamingCloudAsrState {
     session: Arc<Mutex<crate::asr::AsrSession>>,
     final_rx: tokio::sync::oneshot::Receiver<String>,
     latest_text: Arc<std::sync::Mutex<String>>,
+}
+
+struct Qwen3LiveSessionState {
+    session: Arc<Mutex<crate::qwen_asr::Qwen3LiveSession>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -248,6 +251,7 @@ pub struct Connection {
     pub current_session_id: Option<String>,
     pub last_audio_activity: Option<Instant>,
     streaming_cloud_asr: Option<StreamingCloudAsrState>,
+    qwen3_live_session: Option<Qwen3LiveSessionState>,
     pub audio_buffer: Vec<u8>,
     pub audio_sample_rate: u32,
     pub audio_channels: u32,
@@ -536,6 +540,7 @@ async fn handle_connection(
                 current_session_id: None,
                 last_audio_activity: None,
                 streaming_cloud_asr: None,
+                qwen3_live_session: None,
                 audio_buffer: Vec::new(),
                 audio_sample_rate: 16000,
                 audio_channels: 1,
@@ -704,7 +709,7 @@ async fn process_message(
         }
         MessageType::PartialResult => handle_partial_result(conn_id, envelope, event_emitter).await,
         MessageType::AudioStart => handle_audio_start(conn_id, envelope, connections, event_emitter, asr_provider, settings_store).await,
-        MessageType::AudioData => handle_audio_data(conn_id, envelope, connections).await,
+        MessageType::AudioData => handle_audio_data(conn_id, envelope, connections, event_emitter).await,
         MessageType::AudioEnd => handle_audio_end(conn_id, envelope, connections, event_emitter, history_store, asr_provider, settings_store).await,
         MessageType::Keyword => handle_keyword(envelope).await,
         MessageType::Error => handle_error(envelope).await,
@@ -1266,12 +1271,36 @@ async fn handle_audio_start(
         None
     };
 
+    // Start Qwen3 live session (preload model) when using qwen3_local engine
+    let qwen3_live_session = if asr_engine == "qwen3_local" {
+        let (model_size, language) = {
+            let settings = settings_store.lock().await;
+            let s = settings.get();
+            (s.qwen3_asr.model_size.clone(), s.qwen3_asr.language.clone())
+        };
+        match crate::qwen_asr::Qwen3LiveSession::new(&model_size, &language).await {
+            Ok(session) => {
+                info!("Qwen3 live session preloaded for model {}", model_size);
+                Some(Qwen3LiveSessionState {
+                    session: Arc::new(Mutex::new(session)),
+                })
+            }
+            Err(e) => {
+                warn!("Failed to start Qwen3 live session: {}", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     let mut conns = connections.write().await;
     if let Some(conn) = conns.get_mut(conn_id) {
         conn.state = ConnectionState::Listening;
         conn.current_session_id = Some(payload.session_id.clone());
         conn.last_audio_activity = Some(Instant::now());
         conn.streaming_cloud_asr = streaming_cloud_asr;
+        conn.qwen3_live_session = qwen3_live_session;
         conn.audio_buffer.clear();
         conn.audio_sample_rate = payload.sample_rate;
         conn.audio_channels = payload.channels;
@@ -1284,26 +1313,52 @@ async fn handle_audio_start(
     Ok(())
 }
 
-async fn handle_audio_data(conn_id: &str, envelope: Envelope, connections: &Arc<RwLock<HashMap<String, Connection>>>) -> Result<(), String> {
+async fn handle_audio_data(
+    conn_id: &str,
+    envelope: Envelope,
+    connections: &Arc<RwLock<HashMap<String, Connection>>>,
+    event_emitter: &Arc<Mutex<EventEmitter>>,
+) -> Result<(), String> {
     let payload: AudioDataPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid audioData payload: {}", e))?;
 
-    let streaming_session = {
+    let (streaming_session, qwen3_session, session_id) = {
         let mut conns = connections.write().await;
         if let Some(conn) = conns.get_mut(conn_id) {
             conn.audio_buffer.extend_from_slice(&payload.audio_data);
             conn.last_audio_activity = Some(Instant::now());
-            conn.streaming_cloud_asr
+            let cloud = conn.streaming_cloud_asr
                 .as_ref()
-                .map(|state| state.session.clone())
+                .map(|state| state.session.clone());
+            let qwen3 = conn.qwen3_live_session
+                .as_ref()
+                .map(|state| state.session.clone());
+            let sid = conn.current_session_id.clone().unwrap_or_default();
+            (cloud, qwen3, sid)
         } else {
-            None
+            (None, None, String::new())
         }
     };
 
     if let Some(session) = streaming_session {
         let mut guard = session.lock().await;
         guard.send_audio(&payload.audio_data).await?;
+    }
+
+    if let Some(session) = qwen3_session {
+        let mut guard = session.lock().await;
+        if let Err(e) = guard.feed_audio(&payload.audio_data).await {
+            warn!("Qwen3 feed_audio error: {}", e);
+        }
+        // Read any streaming partial tokens and emit to frontend overlay
+        if let Some(partial) = guard.get_partial_result() {
+            let emitter = event_emitter.lock().await;
+            emitter.emit_partial_result(
+                partial,
+                "zh-CN".to_string(),
+                session_id,
+            );
+        }
     }
 
     Ok(())
@@ -1322,7 +1377,7 @@ async fn handle_audio_end(
         .map_err(|e| format!("Invalid audioEnd payload: {}", e))?;
 
     // Extract audio buffer and device info
-    let (audio_data, sample_rate, channels, device_name, session_id, secret_key, ios_device_id, streaming_cloud_asr) = {
+    let (audio_data, sample_rate, channels, device_name, session_id, secret_key, ios_device_id, streaming_cloud_asr, qwen3_live_session) = {
         let mut conns = connections.write().await;
         let conn = conns.get_mut(conn_id).ok_or("Connection not found")?;
         conn.state = ConnectionState::Paired;
@@ -1330,13 +1385,14 @@ async fn handle_audio_end(
         conn.current_session_id = None;
         conn.last_audio_activity = None;
         let streaming = conn.streaming_cloud_asr.take();
+        let qwen3 = conn.qwen3_live_session.take();
         let buf = std::mem::take(&mut conn.audio_buffer);
         let sr = conn.audio_sample_rate;
         let ch = conn.audio_channels;
         let dn = conn.device_name.clone();
         let sk = conn.secret_key.clone();
         let did = conn.device_id.clone();
-        (buf, sr, ch, dn, sid, sk, did, streaming)
+        (buf, sr, ch, dn, sid, sk, did, streaming, qwen3)
     };
 
     // Emit listening-stopped event
@@ -1398,6 +1454,26 @@ async fn handle_audio_end(
                 emitter2.emit_error("asr_not_configured".to_string(), msg.to_string(), true);
                 Err(msg.to_string())
             }
+        }
+    } else if asr_engine == "qwen3_local" {
+        // Qwen3 local ASR — use preloaded live session if available
+        if let Some(qwen3_state) = qwen3_live_session {
+            let mut session = qwen3_state.session.lock().await;
+            match session.finish().await {
+                Ok(text) => {
+                    info!("Qwen3 live session completed");
+                    Ok(text)
+                }
+                Err(e) => {
+                    warn!("Qwen3 live session failed: {}, falling back to cold start", e);
+                    drop(session);
+                    recognize_qwen3_local(&audio_data, sample_rate, channels, settings_store, event_emitter, &session_id).await
+                }
+            }
+        } else {
+            // Fallback: no preloaded session
+            warn!("Qwen3 live session not available, using cold start");
+            recognize_qwen3_local(&audio_data, sample_rate, channels, settings_store, event_emitter, &session_id).await
         }
     } else {
         // Local ASR via SAPI
@@ -1526,6 +1602,55 @@ if ($result -and $result.Text) {{ Write-Output $result.Text }} else {{ Write-Out
         return Err("No recognition result".to_string());
     }
     Ok(text)
+}
+
+async fn recognize_qwen3_local(
+    audio_data: &[u8],
+    sample_rate: u32,
+    channels: u32,
+    settings_store: &Arc<Mutex<crate::settings::SettingsStore>>,
+    event_emitter: &Arc<Mutex<EventEmitter>>,
+    session_id: &str,
+) -> Result<String, String> {
+    info!(
+        "Qwen3 local ASR: processing {} bytes ({}Hz, {}ch)",
+        audio_data.len(), sample_rate, channels
+    );
+
+    let (model_size, language) = {
+        let settings = settings_store.lock().await;
+        let s = settings.get();
+        (s.qwen3_asr.model_size.clone(), s.qwen3_asr.language.clone())
+    };
+
+    let config = crate::qwen_asr::QwenAsrConfig {
+        model_size: model_size.clone(),
+        model_dir: crate::qwen_asr::get_model_dir(&model_size),
+        language,
+    };
+
+    // Verify binary exists
+    if let Err(e) = crate::qwen_asr::check_binary_available() {
+        let msg = format!("Qwen3-ASR 二进制文件未找到: {}", e);
+        warn!("{}", msg);
+        let emitter2 = event_emitter.lock().await;
+        emitter2.emit_error("qwen3_binary_missing".to_string(), msg.clone(), true);
+        return Err(msg);
+    }
+
+    let emitter = event_emitter.lock().await;
+    let result = crate::qwen_asr::recognize_streaming(
+        audio_data, sample_rate, channels, &config, &emitter, session_id,
+    ).await;
+
+    drop(emitter);
+
+    if let Err(ref e) = result {
+        let emitter2 = event_emitter.lock().await;
+        emitter2.emit_error("asr_qwen3_failed".to_string(), format!("Qwen3 识别失败: {}", e), true);
+    }
+
+    result
 }
 
 async fn handle_error(envelope: Envelope) -> Result<(), String> {

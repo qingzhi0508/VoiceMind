@@ -147,6 +147,14 @@
                 </div>
                 <button class="engine-status available" id="engine-status-cloud" type="button">&#x53ef;&#x7528;</button>
               </div>
+              <div class="engine-row" data-engine="qwen3_local">
+                <div class="engine-radio"></div>
+                <div class="engine-info">
+                  <div class="engine-name">Qwen3-ASR (&#x672c;&#x5730; AI)</div>
+                  <div class="engine-langs">&#x79bb;&#x7ebf;&#x8bc6;&#x522b; &#xb7; &#x9ad8;&#x7cbe;&#x5ea6; &#xb7; &#x652f;&#x6301; 30+ &#x8bed;&#x8a00;</div>
+                </div>
+                <button class="engine-status" id="engine-status-qwen3" type="button">&#x68c0;&#x6d4b;&#x4e2d;</button>
+              </div>
             </div>
             <div id="speech-engine-hint" class="engine-hint">&#x70b9;&#x51fb;&#x5f15;&#x64ce;&#x67e5;&#x770b;&#x53ef;&#x7528;&#x72b6;&#x6001;&#x548c;&#x914d;&#x7f6e;&#x5165;&#x53e3;&#x3002;</div>
           </div>
@@ -175,6 +183,57 @@
               <button id="test-asr-connection" class="btn secondary" type="button">&#x6d4b;&#x8bd5;&#x8fde;&#x63a5;</button>
               <button id="reload-settings" class="btn secondary" type="button">&#x91cd;&#x65b0;&#x52a0;&#x8f7d;</button>
               <button id="speech-config-cancel" class="btn secondary" type="button">&#x53d6;&#x6d88;</button>
+            </div>
+          </div>
+          <div id="qwen3-config-modal" class="card" hidden style="border-color:var(--accent)">
+            <h3>Qwen3-ASR &#x6a21;&#x578b;&#x7ba1;&#x7406;</h3>
+            <p style="margin:0 0 12px;color:var(--secondaryText);font-size:13px;line-height:1.5">&#x4ece; HuggingFace &#x4e0b;&#x8f7d;&#x6a21;&#x578b;&#x5230;&#x672c;&#x5730;&#xff0c;&#x4e0b;&#x8f7d;&#x5b8c;&#x6210;&#x540e;&#x5373;&#x53ef;&#x4f7f;&#x7528;&#x79bb;&#x7ebf;&#x8bc6;&#x522b;&#x3002;</p>
+            <div id="qwen3-model-cards" class="qwen3-model-cards">
+              <div class="qwen3-model-card" data-model="0.6b">
+                <div class="qwen3-model-header">
+                  <label class="qwen3-model-select">
+                    <input type="radio" name="qwen3-active-model" value="0.6b" id="qwen3-radio-0.6b">
+                    <div class="qwen3-model-name">Qwen3-ASR 0.6B</div>
+                  </label>
+                  <span class="qwen3-model-size">&#x7ea6; 1.3 GB</span>
+                </div>
+                <div class="qwen3-model-status" id="qwen3-status-0.6b">&#x672a;&#x4e0b;&#x8f7d;</div>
+                <div class="qwen3-progress-bar" id="qwen3-progress-0.6b" hidden>
+                  <div class="qwen3-progress-fill"></div>
+                </div>
+                <div class="qwen3-progress-text" id="qwen3-progress-text-0.6b" hidden></div>
+                <button class="btn primary qwen3-action-btn" id="qwen3-btn-0.6b" type="button">&#x4e0b;&#x8f7d;</button>
+              </div>
+              <div class="qwen3-model-card" data-model="1.7b">
+                <div class="qwen3-model-header">
+                  <label class="qwen3-model-select">
+                    <input type="radio" name="qwen3-active-model" value="1.7b" id="qwen3-radio-1.7b">
+                    <div class="qwen3-model-name">Qwen3-ASR 1.7B</div>
+                  </label>
+                  <span class="qwen3-model-size">&#x7ea6; 3.5 GB</span>
+                </div>
+                <div class="qwen3-model-status" id="qwen3-status-1.7b">&#x672a;&#x4e0b;&#x8f7d;</div>
+                <div class="qwen3-progress-bar" id="qwen3-progress-1.7b" hidden>
+                  <div class="qwen3-progress-fill"></div>
+                </div>
+                <div class="qwen3-progress-text" id="qwen3-progress-text-1.7b" hidden></div>
+                <button class="btn primary qwen3-action-btn" id="qwen3-btn-1.7b" type="button">&#x4e0b;&#x8f7d;</button>
+              </div>
+            </div>
+            <div class="form" style="margin-top:16px">
+              <label>&#x8bc6;&#x522b;&#x8bed;&#x8a00;
+                <select id="qwen3-language">
+                  <option value="auto">&#x81ea;&#x52a8;&#x68c0;&#x6d4b;</option>
+                  <option value="zh">&#x4e2d;&#x6587;</option>
+                  <option value="en">English</option>
+                  <option value="ja">&#x65e5;&#x8bed;</option>
+                  <option value="ko">&#x97e9;&#x8bed;</option>
+                </select>
+              </label>
+            </div>
+            <div class="toolbar">
+              <button id="save-qwen3-config" class="btn primary" type="button">&#x4fdd;&#x5b58;&#x914d;&#x7f6e;</button>
+              <button id="qwen3-config-cancel" class="btn secondary" type="button">&#x53d6;&#x6d88;</button>
             </div>
           </div>
         </section>
