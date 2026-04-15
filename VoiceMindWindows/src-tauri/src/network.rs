@@ -1379,10 +1379,9 @@ async fn handle_audio_data(
             let qwen3 = conn.qwen3_live_session
                 .as_ref()
                 .map(|state| state.session.clone());
-            let sid = conn.current_session_id.clone().unwrap_or_default();
-            (cloud, qwen3, sid)
+            (cloud, qwen3)
         } else {
-            (None, None, String::new())
+            (None, None)
         }
     };
 
