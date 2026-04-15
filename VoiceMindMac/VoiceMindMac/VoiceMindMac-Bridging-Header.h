@@ -5,3 +5,4 @@
 
 #import <sherpa-onnx/c-api/c-api.h>
 #import "SherpaOnnxSafeBridge.h"
+#import <zlib.h>

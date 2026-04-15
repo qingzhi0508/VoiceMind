@@ -90,13 +90,10 @@ extension MenuBarController: ConnectionManagerDelegate {
     }
 
     private func handleResultMessage(_ envelope: MessageEnvelope) {
-        print("🔔 handleResultMessage 被调用")
         guard let payload = try? JSONDecoder().decode(ResultPayload.self, from: envelope.payload) else {
             print("❌ 无法解码 ResultPayload")
             return
         }
-
-        print("📝 解码成功 - 文本: \(payload.text), sessionId: \(payload.sessionId)")
 
         // 话筒模式的结果不注入文字
         if connectionManager.isPlayThroughSession(payload.sessionId) {
