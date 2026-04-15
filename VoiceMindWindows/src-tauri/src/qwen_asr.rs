@@ -530,6 +530,7 @@ impl Qwen3LiveSession {
         let mut cmd = prepare_command(&binary_path);
         cmd.arg("-d").arg(&model_dir_str)
             .arg("--stdin")
+            .arg("--stream")
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped());

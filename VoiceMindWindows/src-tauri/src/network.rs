@@ -252,6 +252,10 @@ pub struct Connection {
     pub last_audio_activity: Option<Instant>,
     streaming_cloud_asr: Option<StreamingCloudAsrState>,
     qwen3_live_session: Option<Qwen3LiveSessionState>,
+    /// Background task that polls Qwen3 stdout for streaming partial results
+    qwen3_streaming_task: Option<tokio::task::JoinHandle<()>>,
+    /// Latest partial text from Qwen3 streaming (shared with background task)
+    qwen3_latest_partial: Option<Arc<std::sync::Mutex<String>>>,
     pub audio_buffer: Vec<u8>,
     pub audio_sample_rate: u32,
     pub audio_channels: u32,
@@ -541,6 +545,8 @@ async fn handle_connection(
                 last_audio_activity: None,
                 streaming_cloud_asr: None,
                 qwen3_live_session: None,
+                qwen3_streaming_task: None,
+                qwen3_latest_partial: None,
                 audio_buffer: Vec::new(),
                 audio_sample_rate: 16000,
                 audio_channels: 1,
@@ -586,6 +592,10 @@ async fn handle_connection(
 
     if let Some(conn) = disconnected {
         info!("Connection {} closed", conn.id);
+        // Abort Qwen3 streaming background task if running
+        if let Some(handle) = conn.qwen3_streaming_task {
+            handle.abort();
+        }
         if matches!(conn.state, ConnectionState::Listening) {
             if let Some(session_id) = conn.current_session_id.clone() {
                 let emitter = event_emitter.lock().await;
@@ -1272,7 +1282,7 @@ async fn handle_audio_start(
     };
 
     // Start Qwen3 live session (preload model) when using qwen3_local engine
-    let qwen3_live_session = if asr_engine == "qwen3_local" {
+    let (qwen3_live_session, qwen3_streaming_task, qwen3_latest_partial) = if asr_engine == "qwen3_local" {
         let (model_size, language) = {
             let settings = settings_store.lock().await;
             let s = settings.get();
@@ -1281,17 +1291,51 @@ async fn handle_audio_start(
         match crate::qwen_asr::Qwen3LiveSession::new(&model_size, &language).await {
             Ok(session) => {
                 info!("Qwen3 live session preloaded for model {}", model_size);
-                Some(Qwen3LiveSessionState {
+                let session_state = Qwen3LiveSessionState {
                     session: Arc::new(Mutex::new(session)),
-                })
+                };
+
+                // Shared partial result storage
+                let latest_partial = Arc::new(std::sync::Mutex::new(String::new()));
+                let latest_partial_clone = latest_partial.clone();
+
+                // Spawn background task to poll streaming partial results from Qwen3
+                let session_arc = session_state.session.clone();
+                let emitter_arc = event_emitter.clone();
+                let sid = payload.session_id.clone();
+                let streaming_handle = tokio::spawn(async move {
+                    let mut interval = tokio::time::interval(Duration::from_millis(150));
+                    loop {
+                        interval.tick().await;
+                        let mut guard = match session_arc.try_lock() {
+                            Ok(g) => g,
+                            Err(_) => continue, // Session locked by audio_data, skip this tick
+                        };
+                        if let Some(partial) = guard.get_partial_result() {
+                            // Store latest partial for fallback
+                            if let Ok(mut latest) = latest_partial_clone.lock() {
+                                *latest = partial.clone();
+                            }
+                            drop(guard); // Release session lock before acquiring emitter lock
+                            let emitter = emitter_arc.lock().await;
+                            emitter.emit_partial_result(
+                                partial,
+                                "zh-CN".to_string(),
+                                sid.clone(),
+                            );
+                        }
+                    }
+                });
+
+                (Some(session_state), Some(streaming_handle), Some(latest_partial))
             }
             Err(e) => {
                 warn!("Failed to start Qwen3 live session: {}", e);
-                None
+                (None, None, None)
             }
         }
     } else {
-        None
+        (None, None, None)
     };
 
     let mut conns = connections.write().await;
@@ -1301,6 +1345,8 @@ async fn handle_audio_start(
         conn.last_audio_activity = Some(Instant::now());
         conn.streaming_cloud_asr = streaming_cloud_asr;
         conn.qwen3_live_session = qwen3_live_session;
+        conn.qwen3_streaming_task = qwen3_streaming_task;
+        conn.qwen3_latest_partial = qwen3_latest_partial;
         conn.audio_buffer.clear();
         conn.audio_sample_rate = payload.sample_rate;
         conn.audio_channels = payload.channels;
@@ -1317,12 +1363,12 @@ async fn handle_audio_data(
     conn_id: &str,
     envelope: Envelope,
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
-    event_emitter: &Arc<Mutex<EventEmitter>>,
+    _event_emitter: &Arc<Mutex<EventEmitter>>,
 ) -> Result<(), String> {
     let payload: AudioDataPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid audioData payload: {}", e))?;
 
-    let (streaming_session, qwen3_session, session_id) = {
+    let (streaming_session, qwen3_session) = {
         let mut conns = connections.write().await;
         if let Some(conn) = conns.get_mut(conn_id) {
             conn.audio_buffer.extend_from_slice(&payload.audio_data);
@@ -1350,15 +1396,8 @@ async fn handle_audio_data(
         if let Err(e) = guard.feed_audio(&payload.audio_data).await {
             warn!("Qwen3 feed_audio error: {}", e);
         }
-        // Read any streaming partial tokens and emit to frontend overlay
-        if let Some(partial) = guard.get_partial_result() {
-            let emitter = event_emitter.lock().await;
-            emitter.emit_partial_result(
-                partial,
-                "zh-CN".to_string(),
-                session_id,
-            );
-        }
+        // Partial results are now handled by the background streaming task
+        // (qwen3_streaming_task in the Connection struct)
     }
 
     Ok(())
@@ -1377,7 +1416,7 @@ async fn handle_audio_end(
         .map_err(|e| format!("Invalid audioEnd payload: {}", e))?;
 
     // Extract audio buffer and device info
-    let (audio_data, sample_rate, channels, device_name, session_id, secret_key, ios_device_id, streaming_cloud_asr, qwen3_live_session) = {
+    let (audio_data, sample_rate, channels, device_name, session_id, secret_key, ios_device_id, streaming_cloud_asr, qwen3_live_session, qwen3_streaming_task, qwen3_latest_partial) = {
         let mut conns = connections.write().await;
         let conn = conns.get_mut(conn_id).ok_or("Connection not found")?;
         conn.state = ConnectionState::Paired;
@@ -1386,14 +1425,21 @@ async fn handle_audio_end(
         conn.last_audio_activity = None;
         let streaming = conn.streaming_cloud_asr.take();
         let qwen3 = conn.qwen3_live_session.take();
+        let streaming_task = conn.qwen3_streaming_task.take();
+        let latest_partial = conn.qwen3_latest_partial.take();
         let buf = std::mem::take(&mut conn.audio_buffer);
         let sr = conn.audio_sample_rate;
         let ch = conn.audio_channels;
         let dn = conn.device_name.clone();
         let sk = conn.secret_key.clone();
         let did = conn.device_id.clone();
-        (buf, sr, ch, dn, sid, sk, did, streaming, qwen3)
+        (buf, sr, ch, dn, sid, sk, did, streaming, qwen3, streaming_task, latest_partial)
     };
+
+    // Stop the Qwen3 streaming background task
+    if let Some(handle) = qwen3_streaming_task {
+        handle.abort();
+    }
 
     // Emit listening-stopped event
     let emitter = event_emitter.lock().await;
@@ -1459,15 +1505,32 @@ async fn handle_audio_end(
         // Qwen3 local ASR — use preloaded live session if available
         if let Some(qwen3_state) = qwen3_live_session {
             let mut session = qwen3_state.session.lock().await;
-            match session.finish().await {
-                Ok(text) => {
+            let result = session.finish().await;
+            drop(session);
+            match &result {
+                Ok(text) if !text.trim().is_empty() => {
                     info!("Qwen3 live session completed");
-                    Ok(text)
+                    result
                 }
-                Err(e) => {
-                    warn!("Qwen3 live session failed: {}, falling back to cold start", e);
-                    drop(session);
-                    recognize_qwen3_local(&audio_data, sample_rate, channels, settings_store, event_emitter, &session_id).await
+                _ => {
+                    // finish() returned empty or failed — try latest partial from streaming
+                    if let Some(ref partial_arc) = qwen3_latest_partial {
+                        if let Ok(latest) = partial_arc.lock() {
+                            if !latest.trim().is_empty() {
+                                info!("Qwen3 using latest streaming partial as result");
+                                Ok(latest.clone())
+                            } else {
+                                warn!("Qwen3 live session failed, falling back to cold start");
+                                recognize_qwen3_local(&audio_data, sample_rate, channels, settings_store, event_emitter, &session_id).await
+                            }
+                        } else {
+                            warn!("Qwen3 live session failed, falling back to cold start");
+                            recognize_qwen3_local(&audio_data, sample_rate, channels, settings_store, event_emitter, &session_id).await
+                        }
+                    } else {
+                        warn!("Qwen3 live session failed, falling back to cold start");
+                        recognize_qwen3_local(&audio_data, sample_rate, channels, settings_store, event_emitter, &session_id).await
+                    }
                 }
             }
         } else {
@@ -1779,6 +1842,9 @@ async fn audio_stream_watchdog_loop(
             conn.state = ConnectionState::Paired;
             conn.last_audio_activity = None;
             conn.audio_buffer.clear();
+            if let Some(handle) = conn.qwen3_streaming_task.take() {
+                handle.abort();
+            }
             conn.current_session_id.take()
         };
 
