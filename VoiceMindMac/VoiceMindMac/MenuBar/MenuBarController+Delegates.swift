@@ -84,6 +84,8 @@ extension MenuBarController: ConnectionManagerDelegate {
             handleKeywordMessage(envelope)
         case .ping:
             handlePingMessage(envelope)
+        case .partialResult:
+            handlePartialResultMessage(envelope)
         default:
             break
         }
@@ -126,8 +128,22 @@ extension MenuBarController: ConnectionManagerDelegate {
 
         DispatchQueue.main.async {
             self.noteText = payload.text
+            self.overlayViewModel.showResult(payload.text)
             self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
             self.textInjectionService.injectRecognizedText(payload.text)
+        }
+    }
+
+    private func handlePartialResultMessage(_ envelope: MessageEnvelope) {
+        guard let payload = try? JSONDecoder().decode(PartialResultPayload.self, from: envelope.payload) else {
+            return
+        }
+        DispatchQueue.main.async {
+            if payload.text.isEmpty {
+                self.overlayViewModel.showListening()
+            } else {
+                self.overlayViewModel.updatePartialText(payload.text)
+            }
         }
     }
 
@@ -148,6 +164,7 @@ extension MenuBarController: ConnectionManagerDelegate {
 
         DispatchQueue.main.async {
             self.textInjectionService.injectRecognizedText(payload.text)
+            self.overlayViewModel.showResult(payload.text)
             self.noteText = payload.text
             self.appendVoiceRecognitionRecord(payload.text, source: .iosSync)
         }
@@ -178,21 +195,21 @@ extension MenuBarController: ConnectionManagerDelegate {
     }
 
     private func simulateUndoKey() {
-        // Cmd+Z: undo the last text injection
+        let text = noteText
+        guard !text.isEmpty else { return }
+
+        // Delete characters by sending backspace key events
+        // This works universally in terminals, text editors, and all apps
         let source = CGEventSource(stateID: .hidSystemState)
-        let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: true)
-        let zDown = CGEvent(keyboardEventSource: source, virtualKey: 0x06, keyDown: true)
-        let zUp = CGEvent(keyboardEventSource: source, virtualKey: 0x06, keyDown: false)
-        let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: false)
+        let deleteCount = text.count
 
-        zDown?.flags = .maskCommand
-        zUp?.flags = .maskCommand
-
-        cmdDown?.post(tap: .cghidEventTap)
-        zDown?.post(tap: .cghidEventTap)
-        zUp?.post(tap: .cghidEventTap)
-        cmdUp?.post(tap: .cghidEventTap)
-        print("✅ 已撤销（Cmd+Z）")
+        for _ in 0..<deleteCount {
+            let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: true)
+            let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: false)
+            keyDown?.post(tap: .cghidEventTap)
+            keyUp?.post(tap: .cghidEventTap)
+        }
+        print("✅ 已撤销（退格 \(deleteCount) 个字符）")
     }
 
     private func handlePingMessage(_ envelope: MessageEnvelope) {

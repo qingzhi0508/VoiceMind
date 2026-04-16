@@ -28,11 +28,11 @@ class VolcengineEngine: NSObject, SpeechRecognitionEngine {
     private var sequence: Int32 = 0
     private var receiveTask: Task<Void, Never>?
     private var lastPartialText: String = ""
+    private var cleanupTask: Task<Void, Never>?
 
     // MARK: - SpeechRecognitionEngine Methods
 
     func initialize() async throws {
-        // 无需预加载模型，只需要检查配置
         print("✅ 火山引擎 ASR 引擎初始化完成")
     }
 
@@ -43,12 +43,12 @@ class VolcengineEngine: NSObject, SpeechRecognitionEngine {
             throw SpeechError.recognitionFailed("火山引擎未配置，请在设置中填写 App ID 和 Access Key")
         }
 
-        // 停止之前的连接
-        try? stopRecognition()
+        // 清理旧连接（不触发 stopRecognition 的 delegate 回调）
+        forceCleanup()
 
         currentSessionId = sessionId
         currentLanguage = language
-        sequence = 1 // 服务端自动分配 seq=1 给 config 帧，音频从 2 开始
+        sequence = 1
         lastPartialText = ""
 
         // 创建 WebSocket 连接
@@ -112,6 +112,8 @@ class VolcengineEngine: NSObject, SpeechRecognitionEngine {
     func stopRecognition() throws {
         guard let sessionId = currentSessionId else { return }
 
+        let capturedLanguage = currentLanguage
+
         // 发送结束帧
         if let wsTask = webSocketTask {
             let finishFrame = VolcengineBinaryProtocol.buildFinishFrame()
@@ -119,20 +121,21 @@ class VolcengineEngine: NSObject, SpeechRecognitionEngine {
                 if let error {
                     print("⚠️ 火山引擎发送结束帧失败: \(error.localizedDescription)")
                 } else {
-                    print("✅ 火山引擎结束帧已发送 (seq=\(self.sequence))")
+                    print("✅ 火山引擎结束帧已发送")
                 }
             }
         }
 
-        // 注意：不立即关闭 WebSocket，等待最终结果返回后再关闭
-        // 使用延迟关闭策略
-        Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 秒后关闭
-            self?.cleanupConnection()
+        // 延迟关闭连接，等待最终结果返回
+        let sessionIdToMatch = sessionId
+        cleanupTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 秒后关闭
+            guard let self, self.currentSessionId == nil else { return }
+            self.cleanupConnection()
         }
 
         // 如果有最后的 partial result，作为最终结果发送
-        if !lastPartialText.isEmpty, let language = currentLanguage {
+        if !lastPartialText.isEmpty, let language = capturedLanguage {
             delegate?.engine(self, didRecognizeText: lastPartialText, sessionId: sessionId, language: language)
         }
 
@@ -142,9 +145,20 @@ class VolcengineEngine: NSObject, SpeechRecognitionEngine {
 
     // MARK: - Private Methods
 
-    private func receiveLoop() {
-        guard let wsTask = webSocketTask else { return }
+    /// 强制清理旧连接，不触发 delegate 回调
+    private func forceCleanup() {
+        // 取消待执行的延迟清理
+        cleanupTask?.cancel()
+        cleanupTask = nil
 
+        cleanupConnection()
+
+        currentSessionId = nil
+        currentLanguage = nil
+        lastPartialText = ""
+    }
+
+    private func receiveLoop() {
         func receiveNext() {
             guard let wsTask = self.webSocketTask else { return }
 
@@ -161,7 +175,6 @@ class VolcengineEngine: NSObject, SpeechRecognitionEngine {
                     @unknown default:
                         break
                     }
-                    // 继续接收
                     receiveNext()
 
                 case .failure(let error):
@@ -184,7 +197,6 @@ class VolcengineEngine: NSObject, SpeechRecognitionEngine {
                 if let language = currentLanguage {
                     delegate?.engine(self, didRecognizeText: response.text, sessionId: sessionId, language: language)
                 }
-                // 收到最终结果后立即关闭
                 cleanupConnection()
             } else {
                 lastPartialText = response.text
