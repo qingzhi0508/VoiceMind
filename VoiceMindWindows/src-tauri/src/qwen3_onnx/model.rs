@@ -59,7 +59,7 @@ pub async fn download_onnx_model(
 
     for filename in REQUIRED_FILES {
         // tokenizer.json is at repo root, ONNX files are under onnx_models/
-        let url = if filename == "tokenizer.json" {
+        let url = if *filename == "tokenizer.json" {
             format!(
                 "https://huggingface.co/{}/resolve/main/{}",
                 HF_ONNX_REPO, filename
