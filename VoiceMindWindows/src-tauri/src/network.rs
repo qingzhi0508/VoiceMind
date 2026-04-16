@@ -48,6 +48,16 @@ struct Qwen3VadState {
     channels: u32,
 }
 
+/// State for ONNX-based streaming Qwen3 recognition.
+#[allow(dead_code)]
+struct Qwen3OnnxState {
+    engine: Arc<tokio::sync::Mutex<Option<crate::qwen3_onnx::engine::Qwen3AsrEngine>>>,
+    audio_buffer: Arc<tokio::sync::Mutex<Vec<f32>>>,
+    interval_handle: Option<tokio::task::JoinHandle<()>>,
+    last_partial: Arc<std::sync::Mutex<String>>,
+    cancel_token: tokio_util::sync::CancellationToken,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConnectionState {
     Pending,
@@ -268,6 +278,7 @@ pub struct Connection {
     qwen3_vad: Option<Qwen3VadState>,
     /// Background task that polls VAD recognition results for partial display
     qwen3_vad_poll_task: Option<tokio::task::JoinHandle<()>>,
+    qwen3_onnx_state: Option<Qwen3OnnxState>,
     pub audio_buffer: Vec<u8>,
     pub audio_sample_rate: u32,
     pub audio_channels: u32,
@@ -283,6 +294,7 @@ pub struct ConnectionManager {
     history_store: Option<Arc<Mutex<crate::speech::HistoryStore>>>,
     asr_provider: Option<Arc<Mutex<Option<crate::asr::VolcengineProvider>>>>,
     settings_store: Option<Arc<Mutex<crate::settings::SettingsStore>>>,
+    qwen3_onnx_engine: Option<Arc<Mutex<Option<crate::qwen3_onnx::engine::Qwen3AsrEngine>>>>,
 }
 
 impl ConnectionManager {
@@ -297,6 +309,7 @@ impl ConnectionManager {
             history_store: None,
             asr_provider: None,
             settings_store: None,
+            qwen3_onnx_engine: None,
         }
     }
 
@@ -309,6 +322,10 @@ impl ConnectionManager {
                 emitter.lock().await.set_app_handle(handle);
             });
         }
+    }
+
+    pub fn set_onnx_engine(&mut self, engine: Arc<Mutex<Option<crate::qwen3_onnx::engine::Qwen3AsrEngine>>>) {
+        self.qwen3_onnx_engine = Some(engine);
     }
 
     pub async fn start_server(
@@ -325,6 +342,7 @@ impl ConnectionManager {
         self.history_store = Some(history_store.clone());
         self.asr_provider = Some(asr_provider.clone());
         self.settings_store = Some(settings_store.clone());
+        let onnx_engine = self.qwen3_onnx_engine.clone();
         let addr = format!("0.0.0.0:{port}");
         let listener = TcpListener::bind(&addr)
             .await
@@ -351,6 +369,7 @@ impl ConnectionManager {
                                 let history_store = history_store.clone();
                                 let asr_provider = asr_provider.clone();
                                 let settings_store = settings_store.clone();
+                                let onnx_engine_clone = onnx_engine.as_ref().map(|e| e.clone());
                                 tokio::spawn(async move {
                                     if let Err(err) = handle_connection(
                                         conn_id,
@@ -361,6 +380,7 @@ impl ConnectionManager {
                                         history_store,
                                         asr_provider,
                                         settings_store,
+                                        onnx_engine_clone,
                                     )
                                     .await
                                     {
@@ -536,6 +556,7 @@ async fn handle_connection(
     history_store: Arc<Mutex<crate::speech::HistoryStore>>,
     asr_provider: Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
     settings_store: Arc<Mutex<crate::settings::SettingsStore>>,
+    onnx_engine: Option<Arc<Mutex<Option<crate::qwen3_onnx::engine::Qwen3AsrEngine>>>>,
 ) -> Result<(), String> {
     info!("handle_connection START: conn_id={}", conn_id);
     let (reader, writer) = stream.into_split();
@@ -558,6 +579,7 @@ async fn handle_connection(
                 streaming_cloud_asr: None,
                 qwen3_vad: None,
                 qwen3_vad_poll_task: None,
+                qwen3_onnx_state: None,
                 audio_buffer: Vec::new(),
                 audio_sample_rate: 16000,
                 audio_channels: 1,
@@ -593,6 +615,7 @@ async fn handle_connection(
         &history_store,
         &asr_provider,
         &settings_store,
+        onnx_engine.as_ref(),
     )
     .await;
 
@@ -606,6 +629,13 @@ async fn handle_connection(
         // Abort Qwen3 VAD poll task if running
         if let Some(handle) = conn.qwen3_vad_poll_task {
             handle.abort();
+        }
+        // Cancel ONNX streaming interval if running
+        if let Some(onnx_state) = conn.qwen3_onnx_state {
+            onnx_state.cancel_token.cancel();
+            if let Some(h) = onnx_state.interval_handle {
+                h.abort();
+            }
         }
         if matches!(conn.state, ConnectionState::Listening) {
             if let Some(session_id) = conn.current_session_id.clone() {
@@ -635,6 +665,7 @@ async fn read_loop(
     history_store: &Arc<Mutex<crate::speech::HistoryStore>>,
     asr_provider: &Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
     settings_store: &Arc<Mutex<crate::settings::SettingsStore>>,
+    onnx_engine: Option<&Arc<Mutex<Option<crate::qwen3_onnx::engine::Qwen3AsrEngine>>>>,
 ) -> Result<(), String> {
     loop {
         let mut length_buf = [0_u8; 4];
@@ -670,6 +701,7 @@ async fn read_loop(
             history_store,
             asr_provider,
             settings_store,
+            onnx_engine,
         )
         .await?;
     }
@@ -684,6 +716,7 @@ async fn process_message(
     history_store: &Arc<Mutex<crate::speech::HistoryStore>>,
     asr_provider: &Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
     settings_store: &Arc<Mutex<crate::settings::SettingsStore>>,
+    onnx_engine: Option<&Arc<Mutex<Option<crate::qwen3_onnx::engine::Qwen3AsrEngine>>>>,
 ) -> Result<(), String> {
     let message_type = MessageType::from_str(&envelope.type_)
         .ok_or_else(|| format!("Unknown message type: {}", envelope.type_))?;
@@ -729,9 +762,9 @@ async fn process_message(
             handle_text_message(conn_id, envelope, connections, event_emitter, history_store).await
         }
         MessageType::PartialResult => handle_partial_result(conn_id, envelope, event_emitter).await,
-        MessageType::AudioStart => handle_audio_start(conn_id, envelope, connections, event_emitter, asr_provider, settings_store).await,
+        MessageType::AudioStart => handle_audio_start(conn_id, envelope, connections, event_emitter, asr_provider, settings_store, onnx_engine).await,
         MessageType::AudioData => handle_audio_data(conn_id, envelope, connections, event_emitter).await,
-        MessageType::AudioEnd => handle_audio_end(conn_id, envelope, connections, event_emitter, history_store, asr_provider, settings_store).await,
+        MessageType::AudioEnd => handle_audio_end(conn_id, envelope, connections, event_emitter, history_store, asr_provider, settings_store, onnx_engine).await,
         MessageType::Keyword => handle_keyword(envelope).await,
         MessageType::Error => handle_error(envelope).await,
         MessageType::PairSuccess => {
@@ -1228,6 +1261,7 @@ async fn handle_audio_start(
     event_emitter: &Arc<Mutex<EventEmitter>>,
     asr_provider: &Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
     settings_store: &Arc<Mutex<crate::settings::SettingsStore>>,
+    onnx_engine: Option<&Arc<Mutex<Option<crate::qwen3_onnx::engine::Qwen3AsrEngine>>>>,
 ) -> Result<(), String> {
     let payload: AudioStartPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid audioStart payload: {}", e))?;
@@ -1326,6 +1360,85 @@ async fn handle_audio_start(
         (None, None)
     };
 
+    // Start ONNX streaming recognition when using qwen3_onnx engine
+    let qwen3_onnx_state = if asr_engine == "qwen3_onnx" {
+        if let Some(engine_arc) = onnx_engine {
+            let engine_guard = engine_arc.lock().await;
+            if engine_guard.is_none() {
+                drop(engine_guard);
+                let emitter = event_emitter.lock().await;
+                emitter.emit_error("asr_onnx_not_loaded".to_string(), "ONNX engine not loaded. Please load it in settings first.".to_string(), true);
+                None
+            } else {
+                drop(engine_guard);
+                let audio_buffer = Arc::new(tokio::sync::Mutex::new(Vec::new()));
+                let cancel_token = tokio_util::sync::CancellationToken::new();
+                let last_partial = Arc::new(std::sync::Mutex::new(String::new()));
+                let engine_ref = engine_arc.clone();
+                let session_id = payload.session_id.clone();
+
+                let buf = audio_buffer.clone();
+                let last_p = last_partial.clone();
+                let cancel = cancel_token.clone();
+                let emitter_arc = event_emitter.clone();
+
+                let handle = tokio::spawn(async move {
+                    let mut interval = tokio::time::interval(std::time::Duration::from_millis(500));
+                    loop {
+                        tokio::select! {
+                            _ = cancel.cancelled() => break,
+                            _ = interval.tick() => {
+                                let buf_guard = buf.lock().await;
+                                let len = buf_guard.len();
+                                if len < 4800 { continue; }
+                                let pcm = buf_guard.clone();
+                                drop(buf_guard);
+
+                                let engine_guard = engine_ref.lock().await;
+                                if let Some(ref engine) = *engine_guard {
+                                    match engine.transcribe(&pcm, 16000) {
+                                        Ok(text) if !text.is_empty() => {
+                                            let should_emit = {
+                                                let mut last = last_p.lock().unwrap();
+                                                if *last != text {
+                                                    *last = text.clone();
+                                                    true
+                                                } else {
+                                                    false
+                                                }
+                                            };
+                                            if should_emit {
+                                                let emitter = emitter_arc.lock().await;
+                                                emitter.emit_partial_result(text, "auto".to_string(), session_id.clone());
+                                            }
+                                        }
+                                        Ok(_) => {}
+                                        Err(e) => { eprintln!("ONNX inference error: {}", e); }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                info!("Qwen3 ONNX streaming recognition initialized");
+                Some(Qwen3OnnxState {
+                    engine: engine_arc.clone(),
+                    audio_buffer,
+                    interval_handle: Some(handle),
+                    last_partial,
+                    cancel_token,
+                })
+            }
+        } else {
+            let emitter = event_emitter.lock().await;
+            emitter.emit_error("asr_onnx_not_loaded".to_string(), "ONNX engine not loaded. Please load it in settings first.".to_string(), true);
+            None
+        }
+    } else {
+        None
+    };
+
     let mut conns = connections.write().await;
     if let Some(conn) = conns.get_mut(conn_id) {
         conn.state = ConnectionState::Listening;
@@ -1334,6 +1447,7 @@ async fn handle_audio_start(
         conn.streaming_cloud_asr = streaming_cloud_asr;
         conn.qwen3_vad = qwen3_vad;
         conn.qwen3_vad_poll_task = qwen3_vad_poll_task;
+        conn.qwen3_onnx_state = qwen3_onnx_state;
         conn.audio_buffer.clear();
         conn.audio_sample_rate = payload.sample_rate;
         conn.audio_channels = payload.channels;
@@ -1355,7 +1469,7 @@ async fn handle_audio_data(
     let payload: AudioDataPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid audioData payload: {}", e))?;
 
-    let (streaming_session, vad_events) = {
+    let (streaming_session, vad_events, onnx_audio_data) = {
         let mut conns = connections.write().await;
         if let Some(conn) = conns.get_mut(conn_id) {
             conn.audio_buffer.extend_from_slice(&payload.audio_data);
@@ -1374,11 +1488,30 @@ async fn handle_audio_data(
                 Vec::new()
             };
 
-            (cloud, vad_evts)
+            // Feed audio to ONNX streaming buffer
+            let onnx_buf = if let Some(ref onnx_state) = conn.qwen3_onnx_state {
+                Some(onnx_state.audio_buffer.clone())
+            } else {
+                None
+            };
+
+            (cloud, vad_evts, onnx_buf)
         } else {
-            (None, Vec::new())
+            (None, Vec::new(), None)
         }
     };
+
+    // Feed audio data to ONNX buffer
+    if let Some(onnx_buf) = onnx_audio_data {
+        let f32_samples: Vec<f32> = payload.audio_data.chunks(2)
+            .filter_map(|c| if c.len() == 2 {
+                Some(i16::from_le_bytes([c[0], c[1]]) as f32 / 32768.0)
+            } else {
+                None
+            })
+            .collect();
+        onnx_buf.lock().await.extend(f32_samples);
+    }
 
     if let Some(session) = streaming_session {
         let mut guard = session.lock().await;
@@ -1484,12 +1617,13 @@ async fn handle_audio_end(
     history_store: &Arc<Mutex<crate::speech::HistoryStore>>,
     asr_provider: &Arc<Mutex<Option<crate::asr::VolcengineProvider>>>,
     settings_store: &Arc<Mutex<crate::settings::SettingsStore>>,
+    onnx_engine: Option<&Arc<Mutex<Option<crate::qwen3_onnx::engine::Qwen3AsrEngine>>>>,
 ) -> Result<(), String> {
     let payload: AudioEndPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid audioEnd payload: {}", e))?;
 
     // Extract audio buffer and device info
-    let (audio_data, sample_rate, channels, device_name, session_id, secret_key, ios_device_id, streaming_cloud_asr, qwen3_vad_state, qwen3_vad_poll_task) = {
+    let (audio_data, sample_rate, channels, device_name, session_id, secret_key, ios_device_id, streaming_cloud_asr, qwen3_vad_state, qwen3_vad_poll_task, qwen3_onnx_state) = {
         let mut conns = connections.write().await;
         let conn = conns.get_mut(conn_id).ok_or("Connection not found")?;
         conn.state = ConnectionState::Paired;
@@ -1499,13 +1633,14 @@ async fn handle_audio_end(
         let streaming = conn.streaming_cloud_asr.take();
         let vad = conn.qwen3_vad.take();
         let poll_task = conn.qwen3_vad_poll_task.take();
+        let onnx = conn.qwen3_onnx_state.take();
         let buf = std::mem::take(&mut conn.audio_buffer);
         let sr = conn.audio_sample_rate;
         let ch = conn.audio_channels;
         let dn = conn.device_name.clone();
         let sk = conn.secret_key.clone();
         let did = conn.device_id.clone();
-        (buf, sr, ch, dn, sid, sk, did, streaming, vad, poll_task)
+        (buf, sr, ch, dn, sid, sk, did, streaming, vad, poll_task, onnx)
     };
 
     // Stop the VAD poll task if running
@@ -1626,6 +1761,57 @@ async fn handle_audio_end(
             // No VAD state — fallback to cold start
             warn!("Qwen3 VAD state not available, using cold start");
             recognize_qwen3_local(&audio_data, sample_rate, channels, settings_store, event_emitter, &session_id).await
+        }
+    } else if asr_engine == "qwen3_onnx" {
+        // Qwen3 ONNX streaming recognition — finalize
+        let mut onnx_text = String::new();
+        if let Some(onnx_state) = qwen3_onnx_state {
+            onnx_state.cancel_token.cancel();
+            if let Some(h) = onnx_state.interval_handle {
+                let _ = h.await;
+            }
+            let buf = onnx_state.audio_buffer.lock().await;
+            if !buf.is_empty() {
+                let pcm = buf.clone();
+                drop(buf);
+                let engine_guard = onnx_state.engine.lock().await;
+                if let Some(ref engine) = *engine_guard {
+                    match engine.transcribe(&pcm, 16000) {
+                        Ok(text) if !text.is_empty() => {
+                            onnx_text = text;
+                        }
+                        Ok(_) => {}
+                        Err(e) => {
+                            let emitter2 = event_emitter.lock().await;
+                            emitter2.emit_error("asr_onnx_failed".to_string(), format!("ONNX final inference error: {}", e), true);
+                        }
+                    }
+                }
+            }
+        }
+        if !onnx_text.trim().is_empty() {
+            Ok(onnx_text)
+        } else if let Some(engine_arc) = onnx_engine {
+            // Fallback: transcribe raw PCM from audio_buffer
+            let f32_samples: Vec<f32> = audio_data.chunks(2)
+                .filter_map(|c| if c.len() == 2 {
+                    Some(i16::from_le_bytes([c[0], c[1]]) as f32 / 32768.0)
+                } else {
+                    None
+                })
+                .collect();
+            let engine_guard = engine_arc.lock().await;
+            if let Some(ref engine) = *engine_guard {
+                match engine.transcribe(&f32_samples, 16000) {
+                    Ok(text) if !text.trim().is_empty() => Ok(text),
+                    Ok(_) => Err("ONNX recognition returned empty".to_string()),
+                    Err(e) => Err(format!("ONNX recognition failed: {}", e)),
+                }
+            } else {
+                Err("ONNX engine not loaded".to_string())
+            }
+        } else {
+            Err("ONNX engine not available".to_string())
         }
     } else {
         // Local ASR via SAPI

@@ -995,3 +995,69 @@ pub async fn save_qwen3_asr_config(state: State<'_, AppState>, config: Qwen3AsrC
 pub async fn download_qwen3_binary(app: tauri::AppHandle) -> Result<(), String> {
     crate::qwen_asr::download_qwen3_binary(app).await
 }
+
+// === Qwen3 ONNX Engine Commands ===
+
+#[derive(serde::Serialize)]
+pub struct Qwen3OnnxStatus {
+    pub loaded: bool,
+    pub model_size: Option<String>,
+}
+
+#[tauri::command]
+pub async fn check_qwen3_onnx_model(model_size: String) -> Result<bool, String> {
+    Ok(crate::qwen3_onnx::model::is_onnx_model_downloaded(&model_size))
+}
+
+#[tauri::command]
+pub async fn download_qwen3_onnx_model(
+    model_size: String,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+    crate::qwen3_onnx::model::download_onnx_model(&model_size, &app_handle).await
+}
+
+#[tauri::command]
+pub async fn load_qwen3_onnx_engine(
+    model_size: String,
+    state: tauri::State<'_, crate::AppState>,
+) -> Result<(), String> {
+    let model_dir = crate::qwen3_onnx::model::get_onnx_model_dir(&model_size);
+    let engine = tokio::task::spawn_blocking(move || {
+        crate::qwen3_onnx::engine::Qwen3AsrEngine::new(&model_dir)
+    })
+    .await
+    .map_err(|e| format!("Task error: {}", e))??;
+
+    let mut guard = state.qwen3_onnx_engine.lock().await;
+    *guard = Some(engine);
+    tracing::info!("Qwen3 ONNX engine loaded for model size {}", model_size);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn unload_qwen3_onnx_engine(
+    state: tauri::State<'_, crate::AppState>,
+) -> Result<(), String> {
+    let mut guard = state.qwen3_onnx_engine.lock().await;
+    *guard = None;
+    tracing::info!("Qwen3 ONNX engine unloaded");
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_qwen3_onnx_status(
+    state: tauri::State<'_, crate::AppState>,
+) -> Result<Qwen3OnnxStatus, String> {
+    let guard = state.qwen3_onnx_engine.lock().await;
+    match guard.as_ref() {
+        Some(_) => Ok(Qwen3OnnxStatus {
+            loaded: true,
+            model_size: Some("0.6b".into()),
+        }),
+        None => Ok(Qwen3OnnxStatus {
+            loaded: false,
+            model_size: None,
+        }),
+    }
+}

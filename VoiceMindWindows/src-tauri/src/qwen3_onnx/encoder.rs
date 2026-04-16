@@ -9,6 +9,7 @@ pub struct Encoder {
     session_conv: Mutex<Session>,
     session_transformer: Mutex<Session>,
     hidden_dim: usize,
+    #[allow(dead_code)]
     d_model: usize,
     tokens_per_chunk: usize,
 }

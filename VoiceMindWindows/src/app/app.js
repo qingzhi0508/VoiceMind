@@ -133,15 +133,18 @@ function isEngineSelectable(engine) {
   if (engine === "local") return state.localAsrAvailable !== false;
   if (engine === "qwen3_local") return state.qwen3BinaryAvailable &&
     (state.qwen3Models["0.6b"].downloaded || state.qwen3Models["1.7b"].downloaded);
+  if (engine === "qwen3_onnx") return state.qwen3OnnxModelDownloaded === true;
   return false;
 }
 
 function getPreferredEngine() {
   const saved = state.settings && state.settings.asr_engine;
   if (saved === "cloud" && state.asrConfigured) return "cloud";
+  if (saved === "qwen3_onnx" && isEngineSelectable("qwen3_onnx")) return "qwen3_onnx";
   if (saved === "qwen3_local" && isEngineSelectable("qwen3_local")) return "qwen3_local";
   if (saved === "local" && state.localAsrAvailable !== false) return "local";
   if (state.localAsrAvailable !== false) return "local";
+  if (isEngineSelectable("qwen3_onnx")) return "qwen3_onnx";
   if (isEngineSelectable("qwen3_local")) return "qwen3_local";
   if (state.asrConfigured) return "cloud";
   return "local";
@@ -189,6 +192,12 @@ function updateSpeechEngineActions() {
     } else {
       hintText = "";
     }
+  } else if (focusEngine === "qwen3_onnx") {
+    if (!state.qwen3OnnxModelDownloaded) {
+      hintText = "ONNX 模型未下载，请先下载模型。";
+    } else {
+      hintText = "";
+    }
   }
 
   if (cloudEngineStatus) {
@@ -214,6 +223,19 @@ function updateSpeechEngineActions() {
     qwen3EngineStatus.title = "\u70b9\u51fb\u7ba1\u7406 Qwen3 \u6a21\u578b";
   }
   // Show/hide download binary button
+  // Update ONNX engine status
+  const onnxStatusEl = document.getElementById("engine-status-qwen3-onnx");
+  if (onnxStatusEl) {
+    if (state.qwen3OnnxModelDownloaded) {
+      onnxStatusEl.textContent = "\u53ef\u7528";
+      onnxStatusEl.className = "engine-status available";
+    } else {
+      onnxStatusEl.textContent = "\u672a\u4e0b\u8f7d";
+      onnxStatusEl.className = "engine-status warning";
+    }
+    onnxStatusEl.disabled = false;
+    onnxStatusEl.title = "\u70b9\u51fb\u7ba1\u7406 ONNX \u6a21\u578b";
+  }
   if (btnDownloadQwen3Binary) {
     if (!state.qwen3BinaryAvailable && !state.qwen3BinaryDownloading) {
       btnDownloadQwen3Binary.hidden = false;
@@ -559,6 +581,7 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         if (s.theme) applyTheme(s.theme);
         // Load Qwen3 status
         await loadQwen3Status();
+        await loadQwen3OnnxStatus();
       } catch (e) { console.error("loadSettings", e); }
     }
 
@@ -764,6 +787,82 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       saveQwen3ConfigBtn.addEventListener("click", saveQwen3Config);
     }
 
+    // === Qwen3 ONNX functions ===
+    async function loadQwen3OnnxStatus() {
+      if (!state.isTauri) return;
+      try {
+        state.qwen3OnnxModelDownloaded = await invoke("check_qwen3_onnx_model", { modelSize: "0.6b" });
+      } catch (e) {
+        state.qwen3OnnxModelDownloaded = false;
+      }
+      const statusEl = document.getElementById("qwen3-onnx-status-0.6b");
+      const btnEl = document.getElementById("qwen3-onnx-btn-0.6b");
+      if (statusEl && btnEl) {
+        if (state.qwen3OnnxModelDownloaded) {
+          statusEl.textContent = "\u5df2\u4e0b\u8f7d";
+          btnEl.textContent = "\u5220\u9664";
+          btnEl.className = "btn secondary qwen3-action-btn";
+        } else {
+          statusEl.textContent = "\u672a\u4e0b\u8f7d";
+          btnEl.textContent = "\u4e0b\u8f7d";
+          btnEl.className = "btn primary qwen3-action-btn";
+        }
+      }
+    }
+
+    async function downloadQwen3OnnxModel() {
+      if (!state.isTauri) return;
+      state.qwen3OnnxDownloading = true;
+      try {
+        await invoke("download_qwen3_onnx_model", { modelSize: "0.6b" });
+        await loadQwen3OnnxStatus();
+        toast("ONNX \u6a21\u578b\u4e0b\u8f7d\u5b8c\u6210");
+      } catch (e) {
+        toast(`\u4e0b\u8f7d\u5931\u8d25: ${e}`);
+      }
+      state.qwen3OnnxDownloading = false;
+    }
+
+    // ONNX model action button
+    const onnxBtn = document.getElementById("qwen3-onnx-btn-0.6b");
+    if (onnxBtn) {
+      onnxBtn.addEventListener("click", event => {
+        event.stopPropagation();
+        if (state.qwen3OnnxModelDownloaded) {
+          // TODO: delete model
+        } else {
+          downloadQwen3OnnxModel();
+        }
+      });
+    }
+
+    // Save ONNX config
+    const saveOnnxConfigBtn = document.getElementById("save-qwen3-onnx-config");
+    if (saveOnnxConfigBtn) {
+      saveOnnxConfigBtn.addEventListener("click", async () => {
+        if (!state.isTauri) return;
+        try {
+          // Load engine if model is downloaded
+          if (state.qwen3OnnxModelDownloaded) {
+            await invoke("load_qwen3_onnx_engine", { modelSize: "0.6b" });
+          }
+          await selectAsrEngine("qwen3_onnx");
+          document.getElementById("qwen3-onnx-config-modal").hidden = true;
+          toast("ONNX \u914d\u7f6e\u5df2\u4fdd\u5b58");
+        } catch (e) {
+          toast(`\u4fdd\u5b58\u5931\u8d25: ${e}`);
+        }
+      });
+    }
+
+    // Cancel ONNX config
+    const cancelOnnxConfigBtn = document.getElementById("qwen3-onnx-config-cancel");
+    if (cancelOnnxConfigBtn) {
+      cancelOnnxConfigBtn.addEventListener("click", () => {
+        document.getElementById("qwen3-onnx-config-modal").hidden = true;
+      });
+    }
+
     async function toggleService() {
       if (!state.isTauri) return;
       try {
@@ -808,6 +907,18 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
           }
           if (!isEngineSelectable("qwen3_local")) {
             setQwen3ConfigExpanded(true);
+            renderEngineSelection();
+            return;
+          }
+          setAsrConfigExpanded(false);
+          setQwen3ConfigExpanded(false);
+          await selectAsrEngine(engine);
+          return;
+        }
+        if (engine === "qwen3_onnx") {
+          if (!state.qwen3OnnxModelDownloaded) {
+            // Show ONNX config modal
+            document.getElementById("qwen3-onnx-config-modal").hidden = false;
             renderEngineSelection();
             return;
           }
@@ -1210,6 +1321,38 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
           if (btnDownloadQwen3Binary) {
             const pct = Math.round((p.progress || 0) * 100);
             btnDownloadQwen3Binary.textContent = `下载中 ${pct}%`;
+          }
+        }
+      }));
+      // Qwen3 ONNX download progress listener
+      unlisteners.push(await listen("qwen3-onnx-download-progress", async event => {
+        const p = event.payload || {};
+        const progressEl = document.getElementById("qwen3-onnx-progress-0.6b");
+        const progressTextEl = document.getElementById("qwen3-onnx-progress-text-0.6b");
+        const statusEl = document.getElementById("qwen3-onnx-status-0.6b");
+        const btnEl = document.getElementById("qwen3-onnx-btn-0.6b");
+        if (p.status === "completed") {
+          state.qwen3OnnxModelDownloaded = true;
+          state.qwen3OnnxDownloading = false;
+          if (progressEl) progressEl.hidden = true;
+          if (progressTextEl) progressTextEl.hidden = true;
+          if (statusEl) statusEl.textContent = "\u5df2\u4e0b\u8f7d";
+          if (btnEl) { btnEl.textContent = "\u5220\u9664"; btnEl.className = "btn secondary qwen3-action-btn"; }
+          toast("ONNX \u6a21\u578b\u4e0b\u8f7d\u5b8c\u6210");
+          updateSpeechEngineActions();
+          renderEngineSelection();
+        } else if (p.status === "downloading") {
+          state.qwen3OnnxDownloading = true;
+          if (progressEl) {
+            progressEl.hidden = false;
+            const fill = progressEl.querySelector(".qwen3-progress-fill");
+            if (fill) fill.style.width = `${p.progress || 0}%`;
+          }
+          if (progressTextEl) {
+            progressTextEl.hidden = false;
+            const mb = (p.downloaded_bytes / 1048576).toFixed(1);
+            const totalMb = p.total_bytes > 0 ? (p.total_bytes / 1048576).toFixed(1) : "?";
+            progressTextEl.textContent = `${p.current_file} ${mb}/${totalMb} MB`;
           }
         }
       }));

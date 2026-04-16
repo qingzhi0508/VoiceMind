@@ -39,6 +39,7 @@ pub struct AppState {
     pub bonjour_service: Arc<Mutex<Option<bonjour::BonjourService>>>,
     pub asr_provider: Arc<Mutex<Option<asr::VolcengineProvider>>>,
     pub inbound_data_records: Arc<Mutex<std::collections::VecDeque<crate::commands::InboundDataRecord>>>,
+    pub qwen3_onnx_engine: Arc<Mutex<Option<qwen3_onnx::engine::Qwen3AsrEngine>>>,
 }
 
 /// Ensure Windows Firewall has an inbound rule allowing TCP connections to this app.
@@ -182,6 +183,7 @@ fn main() {
                 bonjour_service: Arc::new(Mutex::new(None)),
                 asr_provider: Arc::new(Mutex::new(None)),
                 inbound_data_records: Arc::new(Mutex::new(std::collections::VecDeque::new())),
+                qwen3_onnx_engine: Arc::new(Mutex::new(None)),
             };
 
             // Manage state first before accessing it
@@ -212,6 +214,7 @@ fn main() {
             let history_store = app.state::<AppState>().history_store.clone();
             let asr_provider = app.state::<AppState>().asr_provider.clone();
             let settings_store = app.state::<AppState>().settings_store.clone();
+            let onnx_engine = app.state::<AppState>().qwen3_onnx_engine.clone();
             let app_handle = app.handle().clone();
             let server_port = init_settings.server_port;
             
@@ -221,7 +224,13 @@ fn main() {
                     let conn_guard = conn_mgr.lock().await;
                     conn_guard.set_app_handle(app_handle);
                 }
-                
+
+                // Set ONNX engine reference
+                {
+                    let mut conn_mgr_guard = conn_mgr.lock().await;
+                    conn_mgr_guard.set_onnx_engine(onnx_engine);
+                }
+
                 // Start WebSocket server
                 let mut conn_mgr_guard = conn_mgr.lock().await;
                 match conn_mgr_guard.start_server(server_port, pairing_mgr, history_store.clone(), asr_provider, settings_store).await {
@@ -416,6 +425,11 @@ fn main() {
             commands::delete_qwen3_model,
             commands::save_qwen3_asr_config,
             commands::download_qwen3_binary,
+            commands::check_qwen3_onnx_model,
+            commands::download_qwen3_onnx_model,
+            commands::load_qwen3_onnx_engine,
+            commands::unload_qwen3_onnx_engine,
+            commands::get_qwen3_onnx_status,
         ])
         .run(tauri::generate_context!());
 
