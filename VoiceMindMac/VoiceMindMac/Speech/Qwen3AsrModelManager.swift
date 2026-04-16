@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 /// Qwen3-ASR 模型下载与安装管理器
-/// 复用 SherpaOnnxModelManager 的模式
+/// 从 GitHub Releases 下载 tar.bz2 并解压
 @MainActor
 class Qwen3AsrModelManager: ObservableObject {
     static let shared = Qwen3AsrModelManager()
@@ -19,7 +19,7 @@ class Qwen3AsrModelManager: ObservableObject {
 
     let engine = Qwen3AsrEngine()
 
-    private var downloadTasks: [String: URLSessionDownloadTask] = [:]
+    private var downloadDelegates: [String: DownloadDelegate] = [:]
     private var cancellables = Set<AnyCancellable>()
 
     init() {
@@ -47,45 +47,61 @@ class Qwen3AsrModelManager: ObservableObject {
         if case .downloading = modelStates[model.id] { return }
         modelStates[model.id] = .downloading(progress: 0)
 
-        let modelDir = engine.getModelDirectory(for: model.size)
-        try? FileManager.default.createDirectory(at: modelDir, withIntermediateDirectories: true)
-
         Task {
             do {
-                // 1. 从 HuggingFace API 获取文件列表
-                let files = try await fetchModelFileList(modelId: model.huggingFaceModelId)
-                let relevantFiles = filterRelevantFiles(files)
+                let modelDir = engine.getModelDirectory(for: model.size)
+                try? FileManager.default.createDirectory(at: modelDir, withIntermediateDirectories: true)
 
-                if relevantFiles.isEmpty {
-                    modelStates[model.id] = .failed("HuggingFace 未找到模型文件")
+                // 1. 下载 tar.bz2（带进度回调）
+                guard let url = URL(string: model.downloadURL) else {
+                    modelStates[model.id] = .failed("无效的下载 URL")
                     return
                 }
 
-                let totalFiles = relevantFiles.count
+                let tempURL = try await downloadWithProgress(url: url, modelId: model.id)
 
-                // 2. 逐文件下载
-                for (idx, filename) in relevantFiles.enumerated() {
-                    let destPath = modelDir.appendingPathComponent(filename)
+                modelStates[model.id] = .extracting
 
-                    // 跳过已下载文件
-                    if FileManager.default.fileExists(atPath: destPath.path) {
-                        continue
-                    }
+                // 2. 解压 tar.bz2 到临时目录
+                let extractDir = modelDir.appendingPathComponent("_extract_tmp")
+                try? FileManager.default.removeItem(at: extractDir)
+                try FileManager.default.createDirectory(at: extractDir, withIntermediateDirectories: true)
 
-                    // 创建子目录
-                    if filename.contains("/") {
-                        let subdir = destPath.deletingLastPathComponent()
-                        try? FileManager.default.createDirectory(at: subdir, withIntermediateDirectories: true)
-                    }
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+                process.arguments = ["-xjf", tempURL.path, "-C", extractDir.path]
+                try process.run()
+                process.waitUntilExit()
 
-                    let fileURL = "https://huggingface.co/\(model.huggingFaceModelId)/resolve/main/\(filename)"
-                    let overallProgress = Double(idx) / Double(totalFiles)
-                    modelStates[model.id] = .downloading(progress: overallProgress)
+                // 清理下载的 tar.bz2
+                try? FileManager.default.removeItem(at: tempURL)
 
-                    try await downloadFile(url: fileURL, to: destPath)
+                guard process.terminationStatus == 0 else {
+                    try? FileManager.default.removeItem(at: extractDir)
+                    modelStates[model.id] = .failed("解压失败 (exit code \(process.terminationStatus))")
+                    return
                 }
 
-                // 3. 验证模型完整性
+                // 3. 找到解压后的目录 (sherpa-onnx-qwen3-asr-0.6B-int8-*)
+                let contents = try FileManager.default.contentsOfDirectory(at: extractDir, includingPropertiesForKeys: nil)
+                guard let extractedDir = contents.first(where: { $0.hasDirectoryPath }) else {
+                    try? FileManager.default.removeItem(at: extractDir)
+                    modelStates[model.id] = .failed("解压后未找到模型目录")
+                    return
+                }
+
+                // 4. 将文件从解压目录移到模型目录
+                let extractedContents = try FileManager.default.contentsOfDirectory(at: extractedDir, includingPropertiesForKeys: nil)
+                for item in extractedContents {
+                    let dest = modelDir.appendingPathComponent(item.lastPathComponent)
+                    try? FileManager.default.removeItem(at: dest)
+                    try FileManager.default.moveItem(at: item, to: dest)
+                }
+
+                // 清理临时目录
+                try? FileManager.default.removeItem(at: extractDir)
+
+                // 5. 验证模型完整性
                 if isModelInstalled(model) {
                     modelStates[model.id] = .installed
                     engine.reloadModelConfiguration()
@@ -93,6 +109,8 @@ class Qwen3AsrModelManager: ObservableObject {
                 } else {
                     modelStates[model.id] = .failed("下载完成但模型文件不完整")
                 }
+            } catch is CancellationError {
+                modelStates[model.id] = .notDownloaded
             } catch {
                 modelStates[model.id] = .failed(error.localizedDescription)
             }
@@ -127,12 +145,32 @@ class Qwen3AsrModelManager: ObservableObject {
     }
 
     func cancelDownload(modelId: String) {
-        downloadTasks[modelId]?.cancel()
-        downloadTasks.removeValue(forKey: modelId)
+        downloadDelegates[modelId]?.cancel()
+        downloadDelegates.removeValue(forKey: modelId)
         modelStates[modelId] = .notDownloaded
     }
 
     // MARK: - Private
+
+    private func downloadWithProgress(url: URL, modelId: String) async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            let delegate = DownloadDelegate(modelId: modelId) { [weak self] result in
+                self?.downloadDelegates.removeValue(forKey: modelId)
+                switch result {
+                case .success(let url):
+                    continuation.resume(returning: url)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+
+            downloadDelegates[modelId] = delegate
+
+            let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+            let task = session.downloadTask(with: url)
+            task.resume()
+        }
+    }
 
     private func isModelInstalled(_ model: Qwen3AsrModelDefinition) -> Bool {
         let modelDir = engine.getModelDirectory(for: model.size)
@@ -145,8 +183,8 @@ class Qwen3AsrModelManager: ObservableObject {
             }
         }
 
-        // 检查 tokenizer
-        let tokenizerDir = modelDir.appendingPathComponent("tokenizer")
+        // 检查 tokenizer 目录
+        let tokenizerDir = modelDir.appendingPathComponent(model.tokenizerDir)
         let tokenizerFile = modelDir.appendingPathComponent("tokenizer.json")
         return fm.fileExists(atPath: tokenizerDir.path) || fm.fileExists(atPath: tokenizerFile.path)
     }
@@ -158,57 +196,60 @@ class Qwen3AsrModelManager: ObservableObject {
             }
         }
     }
+}
 
-    private func fetchModelFileList(modelId: String) async throws -> [String] {
-        let apiUrl = "https://huggingface.co/api/models/\(modelId)"
-        guard let url = URL(string: apiUrl) else {
-            throw NSError(domain: "Qwen3AsrModelManager", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid API URL"])
-        }
+// MARK: - Download Delegate
 
-        let (data, _) = try await URLSession.shared.data(from: url)
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let siblings = json["siblings"] as? [[String: Any]] else {
-            throw NSError(domain: "Qwen3AsrModelManager", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to parse HuggingFace API response"])
-        }
+private class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
+    private let modelId: String
+    private let completion: (Result<URL, Error>) -> Void
+    private var isCompleted = false
 
-        return siblings.compactMap { $0["rfilename"] as? String }
+    init(modelId: String, completion: @escaping (Result<URL, Error>) -> Void) {
+        self.modelId = modelId
+        self.completion = completion
     }
 
-    private func filterRelevantFiles(_ files: [String]) -> [String] {
-        files.filter { filename in
-            filename.hasSuffix(".safetensors") ||
-            filename.hasSuffix(".safetensors.index.json") ||
-            filename == "tokenizer.json" ||
-            filename == "tokenizer_config.json" ||
-            filename == "config.json" ||
-            filename == "generation_config.json" ||
-            filename == "special_tokens_map.json" ||
-            filename == "vocab.json" ||
-            filename.hasSuffix(".model") ||
-            filename.hasSuffix(".onnx") ||
-            filename.hasPrefix("tokenizer/")
+    func cancel() {
+        guard !isCompleted else { return }
+        isCompleted = true
+        completion(.failure(CancellationError()))
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        // 将临时文件移到安全位置
+        let tempDir = FileManager.default.temporaryDirectory
+        let destURL = tempDir.appendingPathComponent("qwen3-asr-\(modelId)-\(UUID().uuidString).tar.bz2")
+
+        do {
+            try FileManager.default.moveItem(at: location, to: destURL)
+            finish(with: .success(destURL))
+        } catch {
+            finish(with: .failure(error))
+        }
+        session.invalidateAndCancel()
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        guard totalBytesExpectedToWrite > 0 else { return }
+        let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            Qwen3AsrModelManager.shared.modelStates[self.modelId] = .downloading(progress: progress)
         }
     }
 
-    private func downloadFile(url: String, to destPath: URL) async throws {
-        guard let fileURL = URL(string: url) else { return }
-
-        let (tempURL, response) = try await URLSession.shared.download(from: fileURL)
-
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            try? FileManager.default.removeItem(at: tempURL)
-            throw NSError(domain: "Qwen3AsrModelManager", code: -1,
-                          userInfo: [NSLocalizedDescriptionKey: "下载失败: \(url)"])
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if let error {
+            finish(with: .failure(error))
+            session.invalidateAndCancel()
         }
+    }
 
-        // 创建父目录
-        let parentDir = destPath.deletingLastPathComponent()
-        try FileManager.default.createDirectory(at: parentDir, withIntermediateDirectories: true)
-
-        // 如果目标已存在，先删除
-        try? FileManager.default.removeItem(at: destPath)
-
-        try FileManager.default.moveItem(at: tempURL, to: destPath)
+    private func finish(with result: Result<URL, Error>) {
+        guard !isCompleted else { return }
+        isCompleted = true
+        completion(result)
     }
 }

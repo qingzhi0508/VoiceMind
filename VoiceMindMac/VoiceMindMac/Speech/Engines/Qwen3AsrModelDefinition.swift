@@ -4,10 +4,10 @@ import Foundation
 struct Qwen3AsrModelDefinition: Identifiable {
     let id: String
     let displayName: String
-    let size: String          // "0.6b" or "1.7b"
+    let size: String          // "0.6b"
     let languages: [String]
     let estimatedSize: String
-    let huggingFaceModelId: String // e.g. "Qwen/Qwen3-ASR-0.6b"
+    let downloadURL: String   // GitHub Releases tar.bz2 URL
 
     /// 模型所需文件（相对于模型目录）
     var requiredFiles: [String] {
@@ -23,16 +23,8 @@ struct Qwen3AsrModelDefinition: Identifiable {
             displayName: "Qwen3-ASR 0.6B",
             size: "0.6b",
             languages: ["zh-CN", "en-US", "ja-JP", "ko-KR"],
-            estimatedSize: "~1.3 GB",
-            huggingFaceModelId: "Qwen/Qwen3-ASR-0.6b"
-        ),
-        Qwen3AsrModelDefinition(
-            id: "qwen3-asr-1.7b",
-            displayName: "Qwen3-ASR 1.7B",
-            size: "1.7b",
-            languages: ["zh-CN", "en-US", "ja-JP", "ko-KR"],
-            estimatedSize: "~3.5 GB",
-            huggingFaceModelId: "Qwen/Qwen3-ASR-1.7b"
+            estimatedSize: "~940 MB",
+            downloadURL: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.tar.bz2"
         ),
     ]
 }
