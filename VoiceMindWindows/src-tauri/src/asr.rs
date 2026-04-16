@@ -56,6 +56,7 @@ pub struct VolcengineConfig {
 }
 
 // Volcengine VeAnchor API config (new official)
+#[allow(dead_code)]
 pub struct VeAnchorConfig {
     pub app_id: String,          // AppKey
     pub access_key_id: String,   // AccessKey ID
@@ -404,6 +405,7 @@ fn parse_response_json_values(json_bytes: &[u8]) -> Result<Vec<serde_json::Value
 
 // --- VeAnchor Session (new official Volcengine API) ---
 
+#[allow(dead_code)]
 pub struct VeAnchorSession {
     callback: AsrResultCallback,
     ws_writer: Option<
@@ -415,6 +417,7 @@ pub struct VeAnchorSession {
     task_id: String,
 }
 
+#[allow(dead_code)]
 impl VeAnchorSession {
     pub fn new(callback: AsrResultCallback) -> Self {
         Self {
@@ -745,10 +748,12 @@ impl VolcengineProvider {
 
 // --- VeAnchor Provider (new official) ---
 
+#[allow(dead_code)]
 pub struct VeAnchorProvider {
     config: VeAnchorConfig,
 }
 
+#[allow(dead_code)]
 impl VeAnchorProvider {
     pub fn new(config: VeAnchorConfig) -> Self {
         Self { config }

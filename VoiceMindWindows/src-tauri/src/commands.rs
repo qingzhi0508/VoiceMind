@@ -360,6 +360,7 @@ fn enumerate_adapters() -> Option<String> {
 }
 
 /// Extract IPv4 address from an adapter block of ipconfig output
+#[allow(dead_code)]
 fn extract_ipv4_from_block(block: &str) -> Option<String> {
     for line in block.lines() {
         let trimmed = line.trim();

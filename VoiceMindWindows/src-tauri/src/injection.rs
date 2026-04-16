@@ -64,6 +64,7 @@ impl ForegroundWindowGuard {
         }
     }
 
+    #[allow(dead_code)]
     fn restore(&self) {
         unsafe {
             if !self.hwnd.0.is_null() {
@@ -89,6 +90,7 @@ impl ForegroundWindowGuard {
         }
     }
     
+    #[allow(dead_code)]
     fn get_process_name(&self) -> String {
         format!("Process {}", self.pid)
     }

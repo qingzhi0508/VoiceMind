@@ -242,18 +242,21 @@ impl EventEmitter {
         }
     }
 
+    #[allow(dead_code)]
     pub fn emit_service_state_changed(&self, running: bool) {
         if let Some(ref handle) = self.app_handle {
             let _ = handle.emit("service-state-changed", serde_json::json!({ "running": running }));
         }
     }
 
+    #[allow(dead_code)]
     pub fn emit_new_inbound_data(&self, record: &crate::commands::InboundDataRecord) {
         if let Some(ref handle) = self.app_handle {
             let _ = handle.emit("new-inbound-data", record);
         }
     }
 
+    #[allow(dead_code)]
     pub fn emit_qwen3_download_progress(&self, progress: crate::qwen_asr::Qwen3DownloadProgress) {
         if let Some(ref handle) = self.app_handle {
             let _ = handle.emit("qwen3-download-progress", progress);
