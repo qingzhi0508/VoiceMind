@@ -84,7 +84,7 @@ pub fn check_binary_available() -> Result<PathBuf, String> {
 }
 
 /// Prepare a command with DLL search paths set for Windows
-fn prepare_command(binary_path: &PathBuf) -> tokio::process::Command {
+pub fn prepare_command(binary_path: &PathBuf) -> tokio::process::Command {
     let mut cmd = tokio::process::Command::new(binary_path);
     if let Some(bin_dir) = binary_path.parent() {
         // Set working directory to bin dir (Windows searches DLLs in cwd first)
@@ -97,6 +97,7 @@ fn prepare_command(binary_path: &PathBuf) -> tokio::process::Command {
     }
     #[cfg(windows)]
     {
+        #[allow(unused_imports)]
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
@@ -156,7 +157,7 @@ fn is_model_downloaded(model_dir: &PathBuf, size: &str) -> bool {
 }
 
 /// Write WAV file from raw PCM data
-fn write_wav_file(path: &std::path::Path, pcm_data: &[u8], sample_rate: u32, channels: u32) -> Result<(), String> {
+pub fn write_wav_file(path: &std::path::Path, pcm_data: &[u8], sample_rate: u32, channels: u32) -> Result<(), String> {
     use std::io::Write;
     let data_len = pcm_data.len() as u32;
     let file = std::fs::File::create(path).map_err(|e| e.to_string())?;
@@ -183,6 +184,7 @@ fn write_wav_file(path: &std::path::Path, pcm_data: &[u8], sample_rate: u32, cha
 }
 
 /// Offline recognition using qwen_asr.exe
+#[allow(dead_code)]
 pub async fn recognize_offline(
     audio_data: &[u8],
     sample_rate: u32,
@@ -226,7 +228,6 @@ pub async fn recognize_streaming(
     let wav_path = std::env::temp_dir().join(format!("qwen3_asr_stream_{}.wav", uuid::Uuid::new_v4()));
     write_wav_file(&wav_path, audio_data, sample_rate, channels)?;
 
-    let binary_str = binary_path.to_string_lossy().to_string();
     let model_dir_str = model_dir.to_string_lossy().to_string();
     let wav_str = wav_path.to_string_lossy().to_string();
 
@@ -298,13 +299,13 @@ pub async fn recognize_streaming(
 }
 
 /// Run qwen_asr binary for offline recognition
+#[allow(dead_code)]
 async fn run_qwen_asr_binary(
     binary_path: &PathBuf,
     model_dir: &PathBuf,
     wav_path: &PathBuf,
     stream: bool,
 ) -> Result<String, String> {
-    let binary_str = binary_path.to_string_lossy().to_string();
     let model_dir_str = model_dir.to_string_lossy().to_string();
     let wav_str = wav_path.to_string_lossy().to_string();
 
@@ -507,6 +508,7 @@ pub fn delete_model(size: &str) -> Result<(), String> {
 
 /// Live session for preloaded Qwen3-ASR model.
 /// The model is loaded when the session is created, eliminating the 3-5s cold start delay.
+#[allow(dead_code)]
 pub struct Qwen3LiveSession {
     stdin: Option<tokio::process::ChildStdin>,
     child: Option<tokio::process::Child>,
@@ -514,6 +516,7 @@ pub struct Qwen3LiveSession {
     _model_size: String,
 }
 
+#[allow(dead_code)]
 impl Qwen3LiveSession {
     /// Start a new live session by spawning `qwen_asr.exe --stdin`.
     /// The model loads immediately; audio can then be fed via `feed_audio()`.

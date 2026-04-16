@@ -31,13 +31,27 @@ struct StreamingCloudAsrState {
     latest_text: Arc<std::sync::Mutex<String>>,
 }
 
-struct Qwen3LiveSessionState {
-    session: Arc<Mutex<crate::qwen_asr::Qwen3LiveSession>>,
+/// State for VAD-based segmented Qwen3 recognition.
+struct Qwen3VadState {
+    vad: crate::vad::VadSession,
+    /// Current speech segment audio buffer (accumulated during speech).
+    current_chunk: Vec<u8>,
+    /// Accumulated text from all completed segment recognitions (shared with background tasks).
+    accumulated_text: Arc<std::sync::Mutex<String>>,
+    /// Pending recognition task handles.
+    pending_tasks: Vec<tokio::task::JoinHandle<()>>,
+    /// Model size for qwen_asr.
+    model_size: String,
+    /// Audio sample rate.
+    sample_rate: u32,
+    /// Audio channels.
+    channels: u32,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConnectionState {
     Pending,
+    #[allow(dead_code)]
     Pairing,
     Paired,
     Listening,
@@ -251,11 +265,9 @@ pub struct Connection {
     pub current_session_id: Option<String>,
     pub last_audio_activity: Option<Instant>,
     streaming_cloud_asr: Option<StreamingCloudAsrState>,
-    qwen3_live_session: Option<Qwen3LiveSessionState>,
-    /// Background task that polls Qwen3 stdout for streaming partial results
-    qwen3_streaming_task: Option<tokio::task::JoinHandle<()>>,
-    /// Latest partial text from Qwen3 streaming (shared with background task)
-    qwen3_latest_partial: Option<Arc<std::sync::Mutex<String>>>,
+    qwen3_vad: Option<Qwen3VadState>,
+    /// Background task that polls VAD recognition results for partial display
+    qwen3_vad_poll_task: Option<tokio::task::JoinHandle<()>>,
     pub audio_buffer: Vec<u8>,
     pub audio_sample_rate: u32,
     pub audio_channels: u32,
@@ -544,9 +556,8 @@ async fn handle_connection(
                 current_session_id: None,
                 last_audio_activity: None,
                 streaming_cloud_asr: None,
-                qwen3_live_session: None,
-                qwen3_streaming_task: None,
-                qwen3_latest_partial: None,
+                qwen3_vad: None,
+                qwen3_vad_poll_task: None,
                 audio_buffer: Vec::new(),
                 audio_sample_rate: 16000,
                 audio_channels: 1,
@@ -592,8 +603,8 @@ async fn handle_connection(
 
     if let Some(conn) = disconnected {
         info!("Connection {} closed", conn.id);
-        // Abort Qwen3 streaming background task if running
-        if let Some(handle) = conn.qwen3_streaming_task {
+        // Abort Qwen3 VAD poll task if running
+        if let Some(handle) = conn.qwen3_vad_poll_task {
             handle.abort();
         }
         if matches!(conn.state, ConnectionState::Listening) {
@@ -1281,61 +1292,38 @@ async fn handle_audio_start(
         None
     };
 
-    // Start Qwen3 live session (preload model) when using qwen3_local engine
-    let (qwen3_live_session, qwen3_streaming_task, qwen3_latest_partial) = if asr_engine == "qwen3_local" {
-        let (model_size, language) = {
+    // Start Qwen3 VAD segmented recognition when using qwen3_local engine
+    let (qwen3_vad, qwen3_vad_poll_task) = if asr_engine == "qwen3_local" {
+        let (model_size, _language) = {
             let settings = settings_store.lock().await;
             let s = settings.get();
             (s.qwen3_asr.model_size.clone(), s.qwen3_asr.language.clone())
         };
-        match crate::qwen_asr::Qwen3LiveSession::new(&model_size, &language).await {
-            Ok(session) => {
-                info!("Qwen3 live session preloaded for model {}", model_size);
-                let session_state = Qwen3LiveSessionState {
-                    session: Arc::new(Mutex::new(session)),
-                };
 
-                // Shared partial result storage
-                let latest_partial = Arc::new(std::sync::Mutex::new(String::new()));
-                let latest_partial_clone = latest_partial.clone();
+        // Verify binary exists upfront
+        if let Err(e) = crate::qwen_asr::check_binary_available() {
+            warn!("Qwen3-ASR binary not found: {}", e);
+            (None, None)
+        } else {
+            let vad_config = crate::vad::VadConfig::default();
 
-                // Spawn background task to poll streaming partial results from Qwen3
-                let session_arc = session_state.session.clone();
-                let emitter_arc = event_emitter.clone();
-                let sid = payload.session_id.clone();
-                let streaming_handle = tokio::spawn(async move {
-                    let mut interval = tokio::time::interval(Duration::from_millis(150));
-                    loop {
-                        interval.tick().await;
-                        let mut guard = match session_arc.try_lock() {
-                            Ok(g) => g,
-                            Err(_) => continue, // Session locked by audio_data, skip this tick
-                        };
-                        if let Some(partial) = guard.get_partial_result() {
-                            // Store latest partial for fallback
-                            if let Ok(mut latest) = latest_partial_clone.lock() {
-                                *latest = partial.clone();
-                            }
-                            drop(guard); // Release session lock before acquiring emitter lock
-                            let emitter = emitter_arc.lock().await;
-                            emitter.emit_partial_result(
-                                partial,
-                                "zh-CN".to_string(),
-                                sid.clone(),
-                            );
-                        }
-                    }
-                });
+            let vad_state = Qwen3VadState {
+                vad: crate::vad::VadSession::new(vad_config),
+                current_chunk: Vec::new(),
+                accumulated_text: Arc::new(std::sync::Mutex::new(String::new())),
+                pending_tasks: Vec::new(),
+                model_size: model_size.clone(),
+                sample_rate: payload.sample_rate,
+                channels: payload.channels,
+            };
 
-                (Some(session_state), Some(streaming_handle), Some(latest_partial))
-            }
-            Err(e) => {
-                warn!("Failed to start Qwen3 live session: {}", e);
-                (None, None, None)
-            }
+            // No separate poll task needed — recognition results are emitted
+            // directly from spawned per-segment tasks via event_emitter.
+            info!("Qwen3 VAD segmented recognition initialized for model {}", model_size);
+            (Some(vad_state), None)
         }
     } else {
-        (None, None, None)
+        (None, None)
     };
 
     let mut conns = connections.write().await;
@@ -1344,9 +1332,8 @@ async fn handle_audio_start(
         conn.current_session_id = Some(payload.session_id.clone());
         conn.last_audio_activity = Some(Instant::now());
         conn.streaming_cloud_asr = streaming_cloud_asr;
-        conn.qwen3_live_session = qwen3_live_session;
-        conn.qwen3_streaming_task = qwen3_streaming_task;
-        conn.qwen3_latest_partial = qwen3_latest_partial;
+        conn.qwen3_vad = qwen3_vad;
+        conn.qwen3_vad_poll_task = qwen3_vad_poll_task;
         conn.audio_buffer.clear();
         conn.audio_sample_rate = payload.sample_rate;
         conn.audio_channels = payload.channels;
@@ -1363,12 +1350,12 @@ async fn handle_audio_data(
     conn_id: &str,
     envelope: Envelope,
     connections: &Arc<RwLock<HashMap<String, Connection>>>,
-    _event_emitter: &Arc<Mutex<EventEmitter>>,
+    event_emitter: &Arc<Mutex<EventEmitter>>,
 ) -> Result<(), String> {
     let payload: AudioDataPayload = serde_json::from_slice(&envelope.payload)
         .map_err(|e| format!("Invalid audioData payload: {}", e))?;
 
-    let (streaming_session, qwen3_session) = {
+    let (streaming_session, vad_events) = {
         let mut conns = connections.write().await;
         if let Some(conn) = conns.get_mut(conn_id) {
             conn.audio_buffer.extend_from_slice(&payload.audio_data);
@@ -1376,12 +1363,20 @@ async fn handle_audio_data(
             let cloud = conn.streaming_cloud_asr
                 .as_ref()
                 .map(|state| state.session.clone());
-            let qwen3 = conn.qwen3_live_session
-                .as_ref()
-                .map(|state| state.session.clone());
-            (cloud, qwen3)
+
+            // Run VAD on incoming audio for Qwen3 segmented recognition
+            let vad_evts = if let Some(ref mut vad_state) = conn.qwen3_vad {
+                let events = vad_state.vad.feed(&payload.audio_data);
+                // Always accumulate audio in current_chunk regardless of VAD state
+                vad_state.current_chunk.extend_from_slice(&payload.audio_data);
+                events
+            } else {
+                Vec::new()
+            };
+
+            (cloud, vad_evts)
         } else {
-            (None, None)
+            (None, Vec::new())
         }
     };
 
@@ -1390,13 +1385,92 @@ async fn handle_audio_data(
         guard.send_audio(&payload.audio_data).await?;
     }
 
-    if let Some(session) = qwen3_session {
-        let mut guard = session.lock().await;
-        if let Err(e) = guard.feed_audio(&payload.audio_data).await {
-            warn!("Qwen3 feed_audio error: {}", e);
+    // Process VAD events: on SpeechEnd, spawn recognition for the completed segment
+    for event in vad_events {
+        match event {
+            crate::vad::VadEvent::SpeechStart => {
+                info!("VAD detected speech start");
+            }
+            crate::vad::VadEvent::SpeechEnd { audio } => {
+                info!("VAD detected speech end, segment size: {} bytes", audio.len());
+
+                // Extract segment data and reset current_chunk
+                let (segment_audio, model_size, sample_rate, channels, accumulated, session_id) = {
+                    let mut conns = connections.write().await;
+                    if let Some(conn) = conns.get_mut(conn_id) {
+                        if let Some(ref mut vad_state) = conn.qwen3_vad {
+                            let audio = std::mem::take(&mut vad_state.current_chunk);
+                            let ms = vad_state.model_size.clone();
+                            let sr = vad_state.sample_rate;
+                            let ch = vad_state.channels;
+                            let acc = vad_state.accumulated_text.clone();
+                            let sid = conn.current_session_id.clone().unwrap_or_default();
+                            (audio, ms, sr, ch, acc, sid)
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    }
+                };
+
+                // Use the VAD-detected segment audio (not current_chunk which is all audio)
+                let audio_to_recognize = if audio.is_empty() {
+                    segment_audio
+                } else {
+                    audio
+                };
+
+                let emitter_arc = event_emitter.clone();
+                let handle = tokio::spawn(async move {
+                    match recognize_chunk(
+                        &audio_to_recognize,
+                        sample_rate,
+                        channels,
+                        &model_size,
+                    ).await {
+                        Ok(text) if !text.trim().is_empty() => {
+                            info!("VAD segment recognized: {}", text);
+
+                            // Append to accumulated text
+                            let new_accumulated = {
+                                let mut acc = accumulated.lock().unwrap();
+                                if !acc.is_empty() {
+                                    acc.push_str(&text);
+                                } else {
+                                    *acc = text.clone();
+                                }
+                                acc.clone()
+                            };
+
+                            // Emit partial result with accumulated text
+                            let emitter = emitter_arc.lock().await;
+                            emitter.emit_partial_result(
+                                new_accumulated,
+                                "zh-CN".to_string(),
+                                session_id,
+                            );
+                        }
+                        Ok(_) => {
+                            info!("VAD segment: empty recognition result");
+                        }
+                        Err(e) => {
+                            warn!("VAD segment recognition failed: {}", e);
+                        }
+                    }
+                });
+
+                // Store the task handle
+                {
+                    let mut conns = connections.write().await;
+                    if let Some(conn) = conns.get_mut(conn_id) {
+                        if let Some(ref mut vad_state) = conn.qwen3_vad {
+                            vad_state.pending_tasks.push(handle);
+                        }
+                    }
+                }
+            }
         }
-        // Partial results are now handled by the background streaming task
-        // (qwen3_streaming_task in the Connection struct)
     }
 
     Ok(())
@@ -1415,7 +1489,7 @@ async fn handle_audio_end(
         .map_err(|e| format!("Invalid audioEnd payload: {}", e))?;
 
     // Extract audio buffer and device info
-    let (audio_data, sample_rate, channels, device_name, session_id, secret_key, ios_device_id, streaming_cloud_asr, qwen3_live_session, qwen3_streaming_task, qwen3_latest_partial) = {
+    let (audio_data, sample_rate, channels, device_name, session_id, secret_key, ios_device_id, streaming_cloud_asr, qwen3_vad_state, qwen3_vad_poll_task) = {
         let mut conns = connections.write().await;
         let conn = conns.get_mut(conn_id).ok_or("Connection not found")?;
         conn.state = ConnectionState::Paired;
@@ -1423,20 +1497,19 @@ async fn handle_audio_end(
         conn.current_session_id = None;
         conn.last_audio_activity = None;
         let streaming = conn.streaming_cloud_asr.take();
-        let qwen3 = conn.qwen3_live_session.take();
-        let streaming_task = conn.qwen3_streaming_task.take();
-        let latest_partial = conn.qwen3_latest_partial.take();
+        let vad = conn.qwen3_vad.take();
+        let poll_task = conn.qwen3_vad_poll_task.take();
         let buf = std::mem::take(&mut conn.audio_buffer);
         let sr = conn.audio_sample_rate;
         let ch = conn.audio_channels;
         let dn = conn.device_name.clone();
         let sk = conn.secret_key.clone();
         let did = conn.device_id.clone();
-        (buf, sr, ch, dn, sid, sk, did, streaming, qwen3, streaming_task, latest_partial)
+        (buf, sr, ch, dn, sid, sk, did, streaming, vad, poll_task)
     };
 
-    // Stop the Qwen3 streaming background task
-    if let Some(handle) = qwen3_streaming_task {
+    // Stop the VAD poll task if running
+    if let Some(handle) = qwen3_vad_poll_task {
         handle.abort();
     }
 
@@ -1501,40 +1574,57 @@ async fn handle_audio_end(
             }
         }
     } else if asr_engine == "qwen3_local" {
-        // Qwen3 local ASR — use preloaded live session if available
-        if let Some(qwen3_state) = qwen3_live_session {
-            let mut session = qwen3_state.session.lock().await;
-            let result = session.finish().await;
-            drop(session);
-            match &result {
-                Ok(text) if !text.trim().is_empty() => {
-                    info!("Qwen3 live session completed");
-                    result
-                }
-                _ => {
-                    // finish() returned empty or failed — try latest partial from streaming
-                    if let Some(ref partial_arc) = qwen3_latest_partial {
-                        if let Ok(latest) = partial_arc.lock() {
-                            if !latest.trim().is_empty() {
-                                info!("Qwen3 using latest streaming partial as result");
-                                Ok(latest.clone())
+        // Qwen3 local ASR — VAD segmented recognition
+        if let Some(mut vad_state) = qwen3_vad_state {
+            // Flush any remaining audio in the VAD
+            if let Some(crate::vad::VadEvent::SpeechEnd { audio }) = vad_state.vad.flush() {
+                if !audio.is_empty() {
+                    info!("VAD flush: final segment {} bytes", audio.len());
+                    // Take any remaining current_chunk too
+                    let remaining = std::mem::take(&mut vad_state.current_chunk);
+                    let audio_to_use = if audio.len() > remaining.len() { audio } else { remaining };
+
+                    let model_size = vad_state.model_size.clone();
+                    let sr = vad_state.sample_rate;
+                    let ch = vad_state.channels;
+                    let acc = vad_state.accumulated_text.clone();
+
+                    match recognize_chunk(&audio_to_use, sr, ch, &model_size).await {
+                        Ok(text) if !text.trim().is_empty() => {
+                            let mut acc_guard = acc.lock().unwrap();
+                            if !acc_guard.is_empty() {
+                                acc_guard.push_str(&text);
                             } else {
-                                warn!("Qwen3 live session failed, falling back to cold start");
-                                recognize_qwen3_local(&audio_data, sample_rate, channels, settings_store, event_emitter, &session_id).await
+                                *acc_guard = text;
                             }
-                        } else {
-                            warn!("Qwen3 live session failed, falling back to cold start");
-                            recognize_qwen3_local(&audio_data, sample_rate, channels, settings_store, event_emitter, &session_id).await
                         }
-                    } else {
-                        warn!("Qwen3 live session failed, falling back to cold start");
-                        recognize_qwen3_local(&audio_data, sample_rate, channels, settings_store, event_emitter, &session_id).await
+                        Ok(_) => {}
+                        Err(e) => warn!("VAD flush segment recognition failed: {}", e),
                     }
                 }
             }
+
+            // Wait for all pending recognition tasks to complete (30s timeout)
+            let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
+            for task in vad_state.pending_tasks.drain(..) {
+                if tokio::time::timeout_at(deadline, task).await.is_err() {
+                    warn!("Timeout waiting for VAD recognition task");
+                }
+            }
+
+            // Collect accumulated text from all segments
+            let accumulated = vad_state.accumulated_text.lock().unwrap().clone();
+            if !accumulated.trim().is_empty() {
+                info!("Qwen3 VAD segmented recognition completed: {}", accumulated);
+                Ok(accumulated)
+            } else {
+                // Fallback to full cold-start recognition
+                warn!("VAD segmented recognition empty, falling back to cold start");
+                recognize_qwen3_local(&audio_data, sample_rate, channels, settings_store, event_emitter, &session_id).await
+            }
         } else {
-            // Fallback: no preloaded session
-            warn!("Qwen3 live session not available, using cold start");
+            // No VAD state — fallback to cold start
+            warn!("Qwen3 VAD state not available, using cold start");
             recognize_qwen3_local(&audio_data, sample_rate, channels, settings_store, event_emitter, &session_id).await
         }
     } else {
@@ -1664,6 +1754,81 @@ if ($result -and $result.Text) {{ Write-Output $result.Text }} else {{ Write-Out
         return Err("No recognition result".to_string());
     }
     Ok(text)
+}
+
+/// Recognize a single audio segment from VAD using qwen_asr.exe.
+/// Writes a temp WAV, runs the binary with --stream --silent, and returns the text.
+async fn recognize_chunk(
+    audio: &[u8],
+    sample_rate: u32,
+    channels: u32,
+    model_size: &str,
+) -> Result<String, String> {
+    use tokio::io::AsyncBufReadExt;
+
+    let binary_path = crate::qwen_asr::check_binary_available()?;
+    let model_dir = crate::qwen_asr::get_model_dir(model_size);
+
+    if !crate::qwen_asr::get_model_info(model_size).downloaded {
+        return Err(format!("Qwen3 model {} not downloaded", model_size));
+    }
+
+    // Write temp WAV file
+    let wav_path = std::env::temp_dir().join(format!(
+        "qwen3_vad_{}.wav",
+        uuid::Uuid::new_v4()
+    ));
+    crate::qwen_asr::write_wav_file(&wav_path, audio, sample_rate, channels)?;
+
+    let model_dir_str = model_dir.to_string_lossy().to_string();
+    let wav_str = wav_path.to_string_lossy().to_string();
+
+    let mut cmd = crate::qwen_asr::prepare_command(&binary_path);
+    cmd.arg("-d").arg(&model_dir_str)
+        .arg("-i").arg(&wav_str)
+        .arg("--stream")
+        .arg("--silent")
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    let mut child = cmd.spawn()
+        .map_err(|e| format!("Failed to spawn qwen_asr: {}", e))?;
+
+    let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
+    let reader = tokio::io::BufReader::new(stdout);
+    let mut lines = reader.lines();
+
+    let mut final_text = String::new();
+
+    while let Some(line) = lines.next_line().await.map_err(|e| format!("Read error: {}", e))? {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        // Try JSON output
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            if let Some(text) = json.get("text").and_then(|t| t.as_str()) {
+                if !text.is_empty() {
+                    final_text = text.to_string();
+                }
+            }
+        } else {
+            // Plain text
+            if !trimmed.is_empty() {
+                final_text = trimmed.to_string();
+            }
+        }
+    }
+
+    let _ = child.wait().await;
+    let _ = std::fs::remove_file(&wav_path);
+
+    if final_text.trim().is_empty() {
+        Err("No recognition result for VAD segment".to_string())
+    } else {
+        Ok(final_text)
+    }
 }
 
 async fn recognize_qwen3_local(
@@ -1841,7 +2006,7 @@ async fn audio_stream_watchdog_loop(
             conn.state = ConnectionState::Paired;
             conn.last_audio_activity = None;
             conn.audio_buffer.clear();
-            if let Some(handle) = conn.qwen3_streaming_task.take() {
+            if let Some(handle) = conn.qwen3_vad_poll_task.take() {
                 handle.abort();
             }
             conn.current_session_id.take()

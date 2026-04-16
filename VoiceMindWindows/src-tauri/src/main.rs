@@ -11,6 +11,7 @@ mod pairing;
 mod qwen_asr;
 mod settings;
 mod speech;
+mod vad;
 
 use std::sync::Arc;
 use tokio::sync::Mutex;
