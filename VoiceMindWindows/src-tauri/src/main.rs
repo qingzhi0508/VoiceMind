@@ -20,7 +20,7 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -38,6 +38,90 @@ pub struct AppState {
     pub bonjour_service: Arc<Mutex<Option<bonjour::BonjourService>>>,
     pub asr_provider: Arc<Mutex<Option<asr::VolcengineProvider>>>,
     pub inbound_data_records: Arc<Mutex<std::collections::VecDeque<crate::commands::InboundDataRecord>>>,
+}
+
+/// Ensure Windows Firewall has an inbound rule allowing TCP connections to this app.
+/// This is critical for iOS devices to connect during pairing. Without it, the packaged
+/// release build silently fails because Windows blocks incoming connections to new binaries.
+#[cfg(windows)]
+fn ensure_firewall_rule(port: u16) {
+    use std::os::windows::process::CommandExt;
+    use std::process::Command;
+
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+    const RULE_NAME: &str = "VoiceMind";
+
+    // Step 1: Check if rule already exists
+    let check = Command::new("netsh")
+        .args(["advfirewall", "firewall", "show", "rule", &format!("name={}", RULE_NAME)])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output();
+
+    if let Ok(output) = check {
+        let stdout = String::from_utf8_lossy(&output.stdout).to_lowercase();
+        // "no rules" or empty output means rule doesn't exist
+        if stdout.contains("voicemind") && !stdout.contains("no rules") {
+            info!("Firewall rule '{}' already exists", RULE_NAME);
+            return;
+        }
+    }
+
+    info!("Firewall rule '{}' not found, adding...", RULE_NAME);
+
+    let exe_path = match std::env::current_exe() {
+        Ok(p) => p.to_string_lossy().to_string(),
+        Err(e) => {
+            warn!("Cannot determine exe path for firewall rule: {}", e);
+            return;
+        }
+    };
+
+    // Step 2: Try direct add (works if running as admin)
+    let result = Command::new("netsh")
+        .args([
+            "advfirewall", "firewall", "add", "rule",
+            &format!("name={}", RULE_NAME),
+            "dir=in",
+            "action=allow",
+            "enable=yes",
+            &format!("program={}", exe_path),
+            "protocol=tcp",
+            &format!("localport={}", port),
+        ])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output();
+
+    if let Ok(ref output) = result {
+        if output.status.success() {
+            info!("Firewall rule '{}' added successfully", RULE_NAME);
+            return;
+        }
+        // If direct add failed (likely access denied), try elevated
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        warn!("Direct firewall add failed: {}", stderr);
+    }
+
+    // Step 3: Elevated add via PowerShell (triggers UAC prompt once)
+    if let Ok(temp) = std::env::var("TEMP") {
+        let script_path = std::path::Path::new(&temp).join("voicemind_firewall.cmd");
+        let script = format!(
+            "@echo off\r\nnetsh advfirewall firewall add rule name=VoiceMind dir=in action=allow enable=yes program=\"{}\" protocol=tcp localport={}\r\ndel \"%~f0\"",
+            exe_path, port
+        );
+
+        if std::fs::write(&script_path, &script).is_ok() {
+            let script_str = script_path.to_string_lossy().to_string();
+            let ps_cmd = format!(
+                "Start-Process -FilePath '{}' -Verb RunAs -Wait",
+                script_str
+            );
+            let _ = Command::new("powershell")
+                .args(["-NoProfile", "-WindowStyle", "Hidden", "-Command", &ps_cmd])
+                .creation_flags(CREATE_NO_WINDOW)
+                .spawn();
+            info!("Elevated firewall rule add initiated (UAC prompt may appear)");
+        }
+    }
 }
 
 fn setup_logging() {
@@ -142,6 +226,8 @@ fn main() {
                 match conn_mgr_guard.start_server(server_port, pairing_mgr, history_store.clone(), asr_provider, settings_store).await {
                     Ok(_) => {
                         info!("WebSocket server started on port {}", server_port);
+                        // Ensure Windows Firewall allows incoming connections
+                        ensure_firewall_rule(server_port);
                     }
                     Err(e) => {
                         error!("Failed to start WebSocket server: {}", e);

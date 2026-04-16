@@ -43,6 +43,9 @@
       "webviewInstallMode": {
         "type": "offlineInstaller"
       },
+      "nsis": {
+        "installerHooks": "nsis/installer.nsh"
+      },
       "wix": {
         "language": "zh-CN"
       }
