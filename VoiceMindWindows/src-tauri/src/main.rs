@@ -328,6 +328,7 @@ fn main() {
             commands::download_qwen3_model,
             commands::delete_qwen3_model,
             commands::save_qwen3_asr_config,
+            commands::download_qwen3_binary,
         ])
         .run(tauri::generate_context!());
 

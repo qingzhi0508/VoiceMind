@@ -21,6 +21,7 @@ export const state = {
   pendingEngine: null,
   asrConfigExpanded: false,
   qwen3BinaryAvailable: false,
+  qwen3BinaryDownloading: false,
   qwen3Models: { "0.6b": { downloaded: false }, "1.7b": { downloaded: false } },
   qwen3Downloading: null,
   qwen3DownloadProgress: null,
