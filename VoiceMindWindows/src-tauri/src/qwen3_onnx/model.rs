@@ -58,10 +58,18 @@ pub async fn download_onnx_model(
     let client = reqwest::Client::new();
 
     for filename in REQUIRED_FILES {
-        let url = format!(
-            "https://huggingface.co/{}/resolve/main/onnx_models/{}",
-            HF_ONNX_REPO, filename
-        );
+        // tokenizer.json is at repo root, ONNX files are under onnx_models/
+        let url = if filename == "tokenizer.json" {
+            format!(
+                "https://huggingface.co/{}/resolve/main/{}",
+                HF_ONNX_REPO, filename
+            )
+        } else {
+            format!(
+                "https://huggingface.co/{}/resolve/main/onnx_models/{}",
+                HF_ONNX_REPO, filename
+            )
+        };
         let file_path = model_dir.join(filename);
         let display_name = filename.to_string();
 
