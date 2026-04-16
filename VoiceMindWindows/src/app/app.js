@@ -23,6 +23,7 @@ const engineRows = [...document.querySelectorAll(".engine-row")];
 const speechEngineHint = document.getElementById("speech-engine-hint");
 const cloudEngineStatus = document.getElementById("engine-status-cloud");
 const qwen3EngineStatus = document.getElementById("engine-status-qwen3");
+const btnDownloadQwen3Binary = document.getElementById("btn-download-qwen3-binary");
 const speechAsrModal = document.getElementById("speech-asr-modal");
 const qwen3ConfigModal = document.getElementById("qwen3-config-modal");
 const speechConfigCancel = document.getElementById("speech-config-cancel");
@@ -182,7 +183,7 @@ function updateSpeechEngineActions() {
     }
   } else if (focusEngine === "qwen3_local") {
     if (!state.qwen3BinaryAvailable) {
-      hintText = "Qwen3-ASR \u4e8c\u8fdb\u5236\u6587\u4ef6\u672a\u627e\u5230\uff0c\u8bf7\u5c06 qwen_asr.exe \u653e\u5165 bin/ \u76ee\u5f55\u3002";
+      hintText = "Qwen3-ASR 引擎未安装，请点击\"下载引擎\"按钮下载。";
     } else if (!state.qwen3Models["0.6b"].downloaded && !state.qwen3Models["1.7b"].downloaded) {
       hintText = "\u5c1a\u672a\u4e0b\u8f7d\u4efb\u4f55\u6a21\u578b\uff0c\u8bf7\u5148\u4e0b\u8f7d\u81f3\u5c11\u4e00\u4e2a\u6a21\u578b\u3002";
     } else {
@@ -200,7 +201,7 @@ function updateSpeechEngineActions() {
   if (qwen3EngineStatus) {
     const hasModel = state.qwen3Models["0.6b"].downloaded || state.qwen3Models["1.7b"].downloaded;
     if (!state.qwen3BinaryAvailable) {
-      qwen3EngineStatus.textContent = "\u672a\u5b89\u88c5";
+      qwen3EngineStatus.textContent = state.qwen3BinaryDownloading ? "下载中..." : "\u672a\u5b89\u88c5";
       qwen3EngineStatus.className = "engine-status error";
     } else if (hasModel) {
       qwen3EngineStatus.textContent = "\u53ef\u7528";
@@ -211,6 +212,20 @@ function updateSpeechEngineActions() {
     }
     qwen3EngineStatus.disabled = false;
     qwen3EngineStatus.title = "\u70b9\u51fb\u7ba1\u7406 Qwen3 \u6a21\u578b";
+  }
+  // Show/hide download binary button
+  if (btnDownloadQwen3Binary) {
+    if (!state.qwen3BinaryAvailable && !state.qwen3BinaryDownloading) {
+      btnDownloadQwen3Binary.hidden = false;
+      btnDownloadQwen3Binary.textContent = "下载引擎";
+      btnDownloadQwen3Binary.disabled = false;
+    } else if (state.qwen3BinaryDownloading) {
+      btnDownloadQwen3Binary.hidden = false;
+      btnDownloadQwen3Binary.textContent = "下载中...";
+      btnDownloadQwen3Binary.disabled = true;
+    } else {
+      btnDownloadQwen3Binary.hidden = true;
+    }
   }
   updateEngineHint(hintText);
 }
@@ -727,6 +742,23 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
       }
     });
 
+    // Download Qwen3 binary button
+    if (btnDownloadQwen3Binary) {
+      btnDownloadQwen3Binary.addEventListener("click", async event => {
+        event.stopPropagation();
+        if (state.qwen3BinaryDownloading) return;
+        state.qwen3BinaryDownloading = true;
+        updateSpeechEngineActions();
+        try {
+          await invoke("download_qwen3_binary");
+        } catch (e) {
+          toast(`下载引擎失败: ${e}`);
+          state.qwen3BinaryDownloading = false;
+          updateSpeechEngineActions();
+        }
+      });
+    }
+
     const saveQwen3ConfigBtn = document.getElementById("save-qwen3-config");
     if (saveQwen3ConfigBtn) {
       saveQwen3ConfigBtn.addEventListener("click", saveQwen3Config);
@@ -770,7 +802,8 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         if (engine === "qwen3_local") {
           if (!state.qwen3BinaryAvailable) {
             renderEngineSelection();
-            toast("Qwen3-ASR \u4e8c\u8fdb\u5236\u6587\u4ef6\u672a\u627e\u5230\uff0c\u8bf7\u5c06 qwen_asr.exe \u653e\u5165 bin/ \u76ee\u5f55");
+            // Show hint about downloading binary
+            updateEngineHint("Qwen3-ASR 引擎未安装，请点击"下载引擎"按钮下载。");
             return;
           }
           if (!isEngineSelectable("qwen3_local")) {
@@ -1158,6 +1191,26 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         } else if (p.status === "failed") {
           state.qwen3Downloading = null;
           renderQwen3ModelCards();
+        }
+      }));
+      unlisteners.push(await listen("qwen3-binary-download-progress", async event => {
+        const p = event.payload || {};
+        if (p.status === "completed") {
+          state.qwen3BinaryAvailable = true;
+          state.qwen3BinaryDownloading = false;
+          toast("Qwen3-ASR 引擎下载完成");
+          updateSpeechEngineActions();
+          renderEngineSelection();
+        } else if (p.status === "extracting") {
+          if (btnDownloadQwen3Binary) {
+            btnDownloadQwen3Binary.textContent = "正在解压...";
+          }
+        } else if (p.status === "downloading") {
+          state.qwen3BinaryDownloading = true;
+          if (btnDownloadQwen3Binary) {
+            const pct = Math.round((p.progress || 0) * 100);
+            btnDownloadQwen3Binary.textContent = `下载中 ${pct}%`;
+          }
         }
       }));
     }

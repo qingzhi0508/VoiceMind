@@ -989,3 +989,8 @@ pub async fn save_qwen3_asr_config(state: State<'_, AppState>, config: Qwen3AsrC
     tracing::info!("Qwen3 ASR config saved");
     Ok(())
 }
+
+#[tauri::command]
+pub async fn download_qwen3_binary(app: tauri::AppHandle) -> Result<(), String> {
+    crate::qwen_asr::download_qwen3_binary(app).await
+}

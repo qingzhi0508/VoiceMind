@@ -2,7 +2,7 @@ use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::{AppHandle, Emitter};
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::sync::mpsc;
 use tracing::{info, warn};
 
@@ -81,6 +81,121 @@ pub fn get_binary_path() -> Option<PathBuf> {
 /// Check if the qwen_asr binary is available
 pub fn check_binary_available() -> Result<PathBuf, String> {
     get_binary_path().ok_or_else(|| "qwen_asr.exe not found. Place it in bin/ directory.".to_string())
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct BinaryDownloadProgress {
+    pub status: String,
+    pub progress: f64,
+    pub message: String,
+}
+
+/// Download qwen_asr.exe + DLLs from GitHub Release
+pub async fn download_qwen3_binary(app_handle: AppHandle) -> Result<(), String> {
+    // Already available? Skip download.
+    if get_binary_path().is_some() {
+        return Ok(());
+    }
+
+    const DOWNLOAD_URL: &str = "https://github.com/qingzhi0508/VoiceMind/releases/download/v0.2.0/qwen_asr_bin_v0.2.zip";
+
+    let _ = app_handle.emit("qwen3-binary-download-progress", BinaryDownloadProgress {
+        status: "downloading".to_string(),
+        progress: 0.0,
+        message: "正在下载 Qwen3-ASR 引擎...".to_string(),
+    });
+
+    let client = reqwest::Client::new();
+    let response = client.get(DOWNLOAD_URL)
+        .send().await
+        .map_err(|e| format!("下载失败: {}", e))?;
+
+    if !response.status().is_success() {
+        return Err(format!("下载失败，HTTP 状态: {}", response.status()));
+    }
+
+    let total_size = response.content_length().unwrap_or(0);
+    let temp_dir = std::env::temp_dir();
+    let zip_path = temp_dir.join("qwen_asr_bin.zip");
+
+    // Download zip with progress
+    let mut file = tokio::fs::File::create(&zip_path).await
+        .map_err(|e| format!("创建临时文件失败: {}", e))?;
+
+    let mut downloaded: u64 = 0;
+    let mut stream = response.bytes_stream();
+
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| format!("下载出错: {}", e))?;
+        file.write_all(&chunk).await.map_err(|e| e.to_string())?;
+        downloaded += chunk.len() as u64;
+
+        let progress = if total_size > 0 {
+            downloaded as f64 / total_size as f64
+        } else {
+            0.0
+        };
+
+        let _ = app_handle.emit("qwen3-binary-download-progress", BinaryDownloadProgress {
+            status: "downloading".to_string(),
+            progress,
+            message: format!("下载中 {:.0}%", progress * 100.0),
+        });
+    }
+
+    file.flush().await.map_err(|e| e.to_string())?;
+    drop(file);
+
+    let _ = app_handle.emit("qwen3-binary-download-progress", BinaryDownloadProgress {
+        status: "extracting".to_string(),
+        progress: 1.0,
+        message: "正在解压...".to_string(),
+    });
+
+    // Determine target bin directory: next to the executable
+    let bin_dir = if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            dir.join("bin")
+        } else {
+            PathBuf::from("bin")
+        }
+    } else {
+        PathBuf::from("bin")
+    };
+
+    std::fs::create_dir_all(&bin_dir)
+        .map_err(|e| format!("创建 bin 目录失败: {}", e))?;
+
+    // Extract using PowerShell Expand-Archive
+    let zip_str = zip_path.to_string_lossy().to_string();
+    let bin_str = bin_dir.to_string_lossy().to_string();
+
+    let extract_output = tokio::process::Command::new("powershell")
+        .args([
+            "-NoProfile", "-NonInteractive", "-Command",
+            &format!("Expand-Archive -Path '{}' -DestinationPath '{}' -Force", zip_str, bin_str),
+        ])
+        .output()
+        .await
+        .map_err(|e| format!("解压失败: {}", e))?;
+
+    if !extract_output.status.success() {
+        let stderr = String::from_utf8_lossy(&extract_output.stderr);
+        return Err(format!("解压失败: {}", stderr));
+    }
+
+    // Clean up temp zip
+    let _ = std::fs::remove_file(&zip_path);
+
+    info!("Qwen3-ASR binary downloaded and extracted to {:?}", bin_dir);
+
+    let _ = app_handle.emit("qwen3-binary-download-progress", BinaryDownloadProgress {
+        status: "completed".to_string(),
+        progress: 1.0,
+        message: "下载完成".to_string(),
+    });
+
+    Ok(())
 }
 
 /// Prepare a command with DLL search paths set for Windows
