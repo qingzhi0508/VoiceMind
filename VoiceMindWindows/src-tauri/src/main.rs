@@ -9,6 +9,7 @@ mod network;
 mod overlay;
 mod pairing;
 mod qwen_asr;
+pub mod qwen3_onnx;
 mod settings;
 mod speech;
 mod vad;
