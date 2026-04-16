@@ -1363,14 +1363,45 @@ async fn handle_audio_start(
     // Start ONNX streaming recognition when using qwen3_onnx engine
     let qwen3_onnx_state = if asr_engine == "qwen3_onnx" {
         if let Some(engine_arc) = onnx_engine {
+            // Auto-load engine if not loaded but model is downloaded
+            {
+                let engine_guard = engine_arc.lock().await;
+                if engine_guard.is_none() {
+                    drop(engine_guard);
+                    if crate::qwen3_onnx::model::is_onnx_model_downloaded("0.6b") {
+                        let model_dir = crate::qwen3_onnx::model::get_onnx_model_dir("0.6b");
+                        info!("ONNX engine not loaded, auto-loading from {}...", model_dir.display());
+                        match tokio::task::spawn_blocking(move || {
+                            crate::qwen3_onnx::engine::Qwen3AsrEngine::new(&model_dir)
+                        }).await {
+                            Ok(Ok(engine)) => {
+                                let mut guard = engine_arc.lock().await;
+                                *guard = Some(engine);
+                                info!("ONNX engine auto-loaded successfully");
+                            }
+                            Ok(Err(e)) => {
+                                warn!("Auto-load ONNX engine failed: {}", e);
+                                let emitter = event_emitter.lock().await;
+                                emitter.emit_error("asr_onnx_load_failed".to_string(), format!("Failed to load ONNX engine: {}", e), true);
+                            }
+                            Err(e) => {
+                                warn!("Auto-load ONNX engine task error: {}", e);
+                                let emitter = event_emitter.lock().await;
+                                emitter.emit_error("asr_onnx_load_failed".to_string(), format!("Task error: {}", e), true);
+                            }
+                        }
+                    } else {
+                        let emitter = event_emitter.lock().await;
+                        emitter.emit_error("asr_onnx_not_loaded".to_string(), "ONNX model not downloaded. Please download in settings first.".to_string(), true);
+                    }
+                }
+            }
+
+            // Now check if engine is loaded (either was already or just auto-loaded)
             let engine_guard = engine_arc.lock().await;
             if engine_guard.is_none() {
-                drop(engine_guard);
-                let emitter = event_emitter.lock().await;
-                emitter.emit_error("asr_onnx_not_loaded".to_string(), "ONNX engine not loaded. Please load it in settings first.".to_string(), true);
                 None
             } else {
-                drop(engine_guard);
                 let audio_buffer = Arc::new(tokio::sync::Mutex::new(Vec::new()));
                 let cancel_token = tokio_util::sync::CancellationToken::new();
                 let last_partial = Arc::new(std::sync::Mutex::new(String::new()));
