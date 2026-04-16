@@ -183,7 +183,7 @@ function updateSpeechEngineActions() {
     }
   } else if (focusEngine === "qwen3_local") {
     if (!state.qwen3BinaryAvailable) {
-      hintText = "Qwen3-ASR 引擎未安装，请点击\"下载引擎\"按钮下载。";
+      hintText = "Qwen3-ASR 引擎未安装，请点击「下载引擎」按钮下载。";
     } else if (!state.qwen3Models["0.6b"].downloaded && !state.qwen3Models["1.7b"].downloaded) {
       hintText = "\u5c1a\u672a\u4e0b\u8f7d\u4efb\u4f55\u6a21\u578b\uff0c\u8bf7\u5148\u4e0b\u8f7d\u81f3\u5c11\u4e00\u4e2a\u6a21\u578b\u3002";
     } else {
@@ -803,7 +803,7 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
           if (!state.qwen3BinaryAvailable) {
             renderEngineSelection();
             // Show hint about downloading binary
-            updateEngineHint("Qwen3-ASR 引擎未安装，请点击"下载引擎"按钮下载。");
+            updateEngineHint("Qwen3-ASR 引擎未安装，请点击「下载引擎」按钮下载。");
             return;
           }
           if (!isEngineSelectable("qwen3_local")) {
