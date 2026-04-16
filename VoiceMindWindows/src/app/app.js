@@ -582,6 +582,12 @@ async function selectAsrEngine(engine, { silent = false } = {}) {
         // Load Qwen3 status
         await loadQwen3Status();
         await loadQwen3OnnxStatus();
+        // Auto-load ONNX engine if model is downloaded and engine is selected
+        if (state.qwen3OnnxModelDownloaded && (s.asr_engine === "qwen3_onnx")) {
+          try {
+            await invoke("load_qwen3_onnx_engine", { modelSize: "0.6b" });
+          } catch (e) { console.warn("Auto-load ONNX engine failed:", e); }
+        }
       } catch (e) { console.error("loadSettings", e); }
     }
 
