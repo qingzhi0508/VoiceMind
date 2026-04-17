@@ -178,7 +178,8 @@ fn build_mel_filterbank(n_fft: usize, n_mels: usize, sample_rate: f64, fmin: f64
 
     let mel_min = hz_to_mel(fmin);
     let mel_max = hz_to_mel(fmax);
-    let mel_points: Vec<f64> = (0..=n_mels)
+    // Need n_mels + 2 points for triangular filterbanks (left, center, right)
+    let mel_points: Vec<f64> = (0..=n_mels + 1)
         .map(|i| mel_to_hz(mel_min + (mel_max - mel_min) * i as f64 / n_mels as f64))
         .collect();
 
