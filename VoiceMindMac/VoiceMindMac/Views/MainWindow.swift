@@ -319,9 +319,9 @@ struct MainWindow: View {
                 sidebar
                 contentArea
             }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .preferredColorScheme(settings.themePreference.preferredColorScheme)
     }
 
@@ -437,15 +437,17 @@ struct MainWindow: View {
                 )
                 .shadow(color: Color.black.opacity(0.035), radius: 12, x: 0, y: 6)
 
-            ZStack {
-                ForEach(MainWindowPagePersistencePolicy.persistentSections) { section in
-                    pageContent(for: section)
-                        .modifier(PersistentPageVisibilityModifier(isVisible: selectedSection == section))
+            ScrollView([.vertical], showsIndicators: false) {
+                ZStack {
+                    ForEach(MainWindowPagePersistencePolicy.persistentSections) { section in
+                        pageContent(for: section)
+                            .modifier(PersistentPageVisibilityModifier(isVisible: selectedSection == section))
+                    }
                 }
             }
             .padding(34)
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(14)
     }
 

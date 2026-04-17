@@ -496,6 +496,11 @@ extension ConnectionManager: WebSocketServerDelegate {
             category: .voice
         )
 
+        // 立即通知 overlay 显示（不等语音识别启动）
+        if !payload.playThroughMacSpeaker {
+            NotificationCenter.default.post(name: .voiceMindAudioSessionDidStart, object: nil)
+        }
+
         do {
             try remoteMicrophoneMonitorController.startSession(
                 sessionId: payload.sessionId,
@@ -586,6 +591,7 @@ extension ConnectionManager: WebSocketServerDelegate {
             try speechManager.stopRecognition()
             currentSessionId = nil
             print("✅ 语音识别已停止")
+            NotificationCenter.default.post(name: .voiceMindAudioSessionDidEnd, object: nil)
         } catch {
             print("❌ 停止语音识别失败: \(error.localizedDescription)")
             sendError(code: "recognition_stop_failed", message: error.localizedDescription)
@@ -711,7 +717,10 @@ extension ConnectionManager: SpeechRecognitionEngineDelegate {
             hmac: hmac
         )
 
-        // 发送部分结果（可选，用于客户端实时显示）
+        // 发送部分结果给 iOS 客户端
         server.send(envelope)
+
+        // 同时转发给 delegate（MenuBarController）用于 overlay 显示
+        delegate?.connectionManager(self, didReceiveMessage: envelope)
     }
 }

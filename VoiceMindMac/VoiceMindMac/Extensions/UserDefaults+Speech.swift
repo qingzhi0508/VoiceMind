@@ -18,4 +18,30 @@ extension UserDefaults {
         get { object(forKey: "lastModelUpdateCheck") as? Date }
         set { set(newValue, forKey: "lastModelUpdateCheck") }
     }
+
+    // MARK: - Volcengine ASR Config
+
+    /// 火山引擎 App ID (X-Api-App-Key)
+    var volcengineAppId: String {
+        get { string(forKey: "volcengineAppId") ?? "" }
+        set { set(newValue, forKey: "volcengineAppId") }
+    }
+
+    /// 火山引擎 Access Key (X-Api-Access-Key)
+    var volcengineAccessKey: String {
+        get { string(forKey: "volcengineAccessKey") ?? "" }
+        set { set(newValue, forKey: "volcengineAccessKey") }
+    }
+
+    /// 火山引擎 Resource ID (X-Api-Resource-Id)
+    var volcengineResourceId: String {
+        get { string(forKey: "volcengineResourceId") ?? "volc.bigasr.sauc.duration" }
+        set { set(newValue, forKey: "volcengineResourceId") }
+    }
+
+    /// Qwen3-ASR 选择的模型大小
+    var selectedQwen3AsrModelSize: String {
+        get { string(forKey: "selectedQwen3AsrModelSize") ?? "0.6b" }
+        set { set(newValue, forKey: "selectedQwen3AsrModelSize") }
+    }
 }

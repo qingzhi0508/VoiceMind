@@ -58,6 +58,10 @@ class MenuBarController: NSObject, ObservableObject {
     var onboardingWindow: NSWindow?
     var usageGuideWindow: NSWindow?
 
+    // Overlay
+    let overlayViewModel = RecognitionOverlayViewModel()
+    private(set) var overlayPanel: RecognitionOverlayPanel?
+
     private var cancellables = Set<AnyCancellable>()
     private let voiceRecognitionHistoryStore: VoiceRecognitionHistoryStore
 
@@ -91,6 +95,7 @@ class MenuBarController: NSObject, ObservableObject {
         super.init()
 
         textInjectionService.delegate = self
+        overlayPanel = RecognitionOverlayPanel(viewModel: overlayViewModel)
 
         settings.$serverPort
             .dropFirst()
@@ -101,6 +106,7 @@ class MenuBarController: NSObject, ObservableObject {
 
         setupStatusItem()
         setupConnectionManager()
+        setupOverlayObserver()
         reloadVoiceRecognitionHistory()
         // Don't start services automatically
         // User will start them manually from the UI
@@ -141,6 +147,23 @@ class MenuBarController: NSObject, ObservableObject {
 
     func setupConnectionManager() {
         connectionManager.delegate = self
+    }
+
+    private func setupOverlayObserver() {
+        NotificationCenter.default.addObserver(
+            forName: .voiceMindAudioSessionDidStart,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.overlayViewModel.showListening()
+        }
+        NotificationCenter.default.addObserver(
+            forName: .voiceMindAudioSessionDidEnd,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.overlayViewModel.hide()
+        }
     }
 
     func startServices() {
@@ -598,6 +621,7 @@ extension MenuBarController {
     func stopLocalRecording() {
         guard isLocalRecording else { return }
 
+        overlayViewModel.hide()
         localAudioRecorder.stopStreaming()
         try? speechRecognitionManager.stopRecognition()
         connectionManager.setupSpeechRecognition()
@@ -622,6 +646,7 @@ extension MenuBarController {
 
     private func beginLocalRecording() {
         textInjectionService.captureTargetApplication()
+        overlayViewModel.showListening()
 
         do {
             let sessionId = UUID().uuidString
@@ -668,6 +693,7 @@ extension MenuBarController: SpeechRecognitionEngineDelegate {
     ) {
         DispatchQueue.main.async {
             self.noteText = text
+            self.overlayViewModel.showResult(text)
             self.appendVoiceRecognitionRecord(text, source: .localMac)
             self.textInjectionService.injectRecognizedText(text)
         }
@@ -679,6 +705,7 @@ extension MenuBarController: SpeechRecognitionEngineDelegate {
         sessionId: String
     ) {
         DispatchQueue.main.async {
+            self.overlayViewModel.showError(error.localizedDescription)
             self.isLocalRecording = false
             self.currentSessionId = nil
             self.localAudioRecorder.stopStreaming()
@@ -694,6 +721,7 @@ extension MenuBarController: SpeechRecognitionEngineDelegate {
     ) {
         DispatchQueue.main.async {
             self.noteText = text
+            self.overlayViewModel.updatePartialText(text)
         }
     }
 }

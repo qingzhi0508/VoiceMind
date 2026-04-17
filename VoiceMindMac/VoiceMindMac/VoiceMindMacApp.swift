@@ -74,6 +74,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             SpeechRecognitionManager.shared.registerEngine(sherpaOnnx)
         }
 
+        // 注册火山引擎 ASR
+        let volcengine = VolcengineEngine()
+        do {
+            try await volcengine.initialize()
+        } catch {
+            print("⚠️ 火山引擎 ASR 初始化失败: \(error.localizedDescription)")
+        }
+        SpeechRecognitionManager.shared.registerEngine(volcengine)
+        print("✅ 火山引擎 ASR 引擎已注册")
+
+        // 注册 Qwen3-ASR 引擎
+        let qwen3Asr = Qwen3AsrModelManager.shared.engine
+        do {
+            try await qwen3Asr.initialize()
+        } catch {
+            print("⚠️ Qwen3-ASR 引擎初始化失败: \(error.localizedDescription)")
+        }
+        SpeechRecognitionManager.shared.registerEngine(qwen3Asr)
+        print("✅ Qwen3-ASR 引擎已注册")
+
         restorePreferredSpeechEngine()
 
         // Setup speech recognition delegate
