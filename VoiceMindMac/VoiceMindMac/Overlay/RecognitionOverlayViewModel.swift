@@ -27,6 +27,7 @@ class RecognitionOverlayViewModel: ObservableObject {
         autoHideTask = nil
         suppressUpdates = false
         state = .listening
+        scheduleAutoHide(delay: 3.0)
     }
 
     func updatePartialText(_ text: String) {
@@ -37,6 +38,7 @@ class RecognitionOverlayViewModel: ObservableObject {
         if text.isEmpty {
             if state != .hidden {
                 state = .listening
+                scheduleAutoHide(delay: 3.0)
             }
         } else {
             state = .streaming(text)

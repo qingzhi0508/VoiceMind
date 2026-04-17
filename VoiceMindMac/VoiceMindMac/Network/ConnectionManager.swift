@@ -496,6 +496,11 @@ extension ConnectionManager: WebSocketServerDelegate {
             category: .voice
         )
 
+        // 立即通知 overlay 显示（不等语音识别启动）
+        if !payload.playThroughMacSpeaker {
+            NotificationCenter.default.post(name: .voiceMindAudioSessionDidStart, object: nil)
+        }
+
         do {
             try remoteMicrophoneMonitorController.startSession(
                 sessionId: payload.sessionId,
@@ -525,7 +530,6 @@ extension ConnectionManager: WebSocketServerDelegate {
             )
             currentSessionId = payload.sessionId
             print("✅ 语音识别已启动")
-            NotificationCenter.default.post(name: .voiceMindAudioSessionDidStart, object: nil)
         } catch {
             remoteMicrophoneMonitorController.stopSession(sessionId: payload.sessionId)
             print("❌ 启动语音识别失败: \(error.localizedDescription)")
