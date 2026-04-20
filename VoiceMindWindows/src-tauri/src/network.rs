@@ -758,6 +758,15 @@ async fn process_message(
         );
     }
 
+    // Any message from iOS proves the connection is alive.
+    // Update last_pong for non-audio messages (audio is too frequent to lock on every frame).
+    if message_type != MessageType::AudioData {
+        let mut conns = connections.write().await;
+        if let Some(conn) = conns.get_mut(conn_id) {
+            conn.last_pong = Instant::now();
+        }
+    }
+
     if message_type != MessageType::PairConfirm {
         hydrate_existing_paired_connection(
             conn_id,
