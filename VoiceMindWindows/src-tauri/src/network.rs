@@ -16,7 +16,6 @@ use tracing::{error, info, warn};
 use uuid::Uuid;
 
 const HEARTBEAT_INTERVAL_SECS: u64 = 30;
-const CONNECTION_TIMEOUT_SECS: u64 = 60;
 const AUDIO_STREAM_IDLE_TIMEOUT_SECS: u64 = 3;
 
 /// Offset in seconds between Unix epoch (1970-01-01) and Apple reference date (2001-01-01).
@@ -2319,7 +2318,7 @@ async fn handle_keyword(envelope: Envelope) -> Result<(), String> {
 async fn heartbeat_loop(
     conn_id: String,
     connections: Arc<RwLock<HashMap<String, Connection>>>,
-    event_emitter: Arc<Mutex<EventEmitter>>,
+    _event_emitter: Arc<Mutex<EventEmitter>>,
 ) {
     loop {
         tokio::time::sleep(Duration::from_secs(HEARTBEAT_INTERVAL_SECS)).await;
@@ -2329,15 +2328,12 @@ async fn heartbeat_loop(
             conns.get(&conn_id).map(|conn| {
                 (
                     conn.state.clone(),
-                    conn.last_pong,
                     conn.secret_key.clone(),
-                    conn.device_name.clone(),
-                    conn.device_id.clone(),
                 )
             })
         };
 
-        let Some((state, last_pong, secret_key, device_name, device_id)) = snapshot else {
+        let Some((state, secret_key)) = snapshot else {
             return;
         };
 
@@ -2345,22 +2341,11 @@ async fn heartbeat_loop(
             continue;
         }
 
-        if last_pong.elapsed() > Duration::from_secs(CONNECTION_TIMEOUT_SECS) {
-            warn!("Connection {} heartbeat timed out", conn_id);
-            let mut conns = connections.write().await;
-            let disconnected = conns.remove(&conn_id);
-            drop(conns);
-            let emitter = event_emitter.lock().await;
-            if let Some(conn) = disconnected.as_ref() {
-                if matches!(conn.state, ConnectionState::Listening) {
-                    if let Some(session_id) = conn.current_session_id.clone() {
-                        emitter.emit_listening_stopped(session_id);
-                    }
-                }
-            }
-            emitter.emit_connection_changed(false, device_name, device_id);
-            return;
-        }
+        // NOTE: We do NOT disconnect on heartbeat timeout here.
+        // read_loop is the authoritative detector of TCP disconnection —
+        // it will return an error when the connection breaks. iOS does not
+        // send periodic heartbeats in all scenarios (e.g. rehydrate), so
+        // a last_pong timeout would cause false disconnections.
 
         let Some(secret_key) = secret_key else {
             continue;
