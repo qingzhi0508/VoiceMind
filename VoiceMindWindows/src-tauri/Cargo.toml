@@ -1,6 +1,6 @@
 [package]
 name = "voice-mind-windows"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 description = "VoiceMind for Windows - iPhone as wireless microphone"
 authors = ["VoiceMind Team"]
