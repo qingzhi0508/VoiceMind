@@ -5,11 +5,7 @@ use std::net::UdpSocket;
 use tracing::info;
 
 #[cfg(windows)]
-use windows::Win32::{
-    Foundation::POINT,
-    Graphics::Gdi::ClientToScreen,
-    UI::WindowsAndMessaging::{GetCursorPos, GetGUIThreadInfo, GUITHREADINFO},
-};
+use windows::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_CXSCREEN, SM_CYSCREEN};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InboundDataRecord {
@@ -886,43 +882,18 @@ pub fn sync_overlay_window(app: tauri::AppHandle) -> Result<OverlayAnchor, Strin
 
 #[cfg(windows)]
 fn get_overlay_anchor() -> OverlayAnchor {
-    const OVERLAY_WIDTH: i32 = 560;
-    const HORIZONTAL_OFFSET: i32 = 28;
-    const VERTICAL_OFFSET: i32 = 16;
+    const OVERLAY_WIDTH: i32 = 500;
 
     unsafe {
-        let mut gui_info = GUITHREADINFO {
-            cbSize: std::mem::size_of::<GUITHREADINFO>() as u32,
-            ..Default::default()
+        let screen_w = GetSystemMetrics(SM_CXSCREEN);
+        let screen_h = GetSystemMetrics(SM_CYSCREEN);
+        let x = (screen_w - OVERLAY_WIDTH) / 2;
+        let y = screen_h - (screen_h as f64 * 0.20).round() as i32;
+        return OverlayAnchor {
+            x,
+            y,
+            source: "screen_center".to_string(),
         };
-        if GetGUIThreadInfo(0, &mut gui_info).is_ok() && !gui_info.hwndCaret.0.is_null() {
-            let mut caret_origin = POINT {
-                x: gui_info.rcCaret.left,
-                y: gui_info.rcCaret.bottom,
-            };
-            if ClientToScreen(gui_info.hwndCaret, &mut caret_origin as *mut POINT).as_bool() {
-                return OverlayAnchor {
-                    x: caret_origin.x - HORIZONTAL_OFFSET,
-                    y: caret_origin.y + VERTICAL_OFFSET,
-                    source: "caret".to_string(),
-                };
-            }
-        }
-
-        let mut cursor = POINT::default();
-        if GetCursorPos(&mut cursor).is_ok() {
-            return OverlayAnchor {
-                x: cursor.x - (OVERLAY_WIDTH / 2),
-                y: cursor.y + VERTICAL_OFFSET,
-                source: "cursor".to_string(),
-            };
-        }
-    }
-
-    OverlayAnchor {
-        x: 120,
-        y: 120,
-        source: "fallback".to_string(),
     }
 }
 
@@ -1022,16 +993,49 @@ pub async fn load_qwen3_onnx_engine(
     model_size: String,
     state: tauri::State<'_, crate::AppState>,
 ) -> Result<(), String> {
+    // Skip if engine already loaded
+    {
+        let guard = state.qwen3_onnx_engine.lock().unwrap();
+        if guard.is_some() {
+            tracing::info!("Qwen3 ONNX engine already loaded, skipping");
+            return Ok(());
+        }
+    }
+
+    // Prevent concurrent loading
+    if state.onnx_loading.compare_exchange(
+        false, true,
+        std::sync::atomic::Ordering::SeqCst,
+        std::sync::atomic::Ordering::SeqCst,
+    ).is_err() {
+        tracing::info!("Qwen3 ONNX engine already loading, skipping duplicate");
+        return Ok(());
+    }
+
     let model_dir = crate::qwen3_onnx::model::get_onnx_model_dir(&model_size);
-    let engine = tokio::task::spawn_blocking(move || {
+    let loading_flag = state.onnx_loading.clone();
+    let engine_arc = state.qwen3_onnx_engine.clone();
+
+    let result = tokio::task::spawn_blocking(move || {
         crate::qwen3_onnx::engine::Qwen3AsrEngine::new(&model_dir)
     })
     .await
-    .map_err(|e| format!("Task error: {}", e))??;
+    .map_err(|e| format!("Task error: {}", e))?;
 
-    let mut guard = state.qwen3_onnx_engine.lock().await;
-    *guard = Some(engine);
-    tracing::info!("Qwen3 ONNX engine loaded for model size {}", model_size);
+    match result {
+        Ok(engine) => {
+            let mut guard = engine_arc.lock().unwrap();
+            *guard = Some(engine);
+            tracing::info!("Qwen3 ONNX engine loaded for model size {}", model_size);
+        }
+        Err(e) => {
+            tracing::error!("Qwen3 ONNX engine load failed: {}", e);
+            loading_flag.store(false, std::sync::atomic::Ordering::SeqCst);
+            return Err(e);
+        }
+    }
+
+    loading_flag.store(false, std::sync::atomic::Ordering::SeqCst);
     Ok(())
 }
 
@@ -1039,7 +1043,7 @@ pub async fn load_qwen3_onnx_engine(
 pub async fn unload_qwen3_onnx_engine(
     state: tauri::State<'_, crate::AppState>,
 ) -> Result<(), String> {
-    let mut guard = state.qwen3_onnx_engine.lock().await;
+    let mut guard = state.qwen3_onnx_engine.lock().unwrap();
     *guard = None;
     tracing::info!("Qwen3 ONNX engine unloaded");
     Ok(())
@@ -1049,7 +1053,7 @@ pub async fn unload_qwen3_onnx_engine(
 pub async fn get_qwen3_onnx_status(
     state: tauri::State<'_, crate::AppState>,
 ) -> Result<Qwen3OnnxStatus, String> {
-    let guard = state.qwen3_onnx_engine.lock().await;
+    let guard = state.qwen3_onnx_engine.lock().unwrap();
     match guard.as_ref() {
         Some(_) => Ok(Qwen3OnnxStatus {
             loaded: true,

@@ -150,32 +150,7 @@ impl TextInjector {
     }
     
     fn detect_best_method(&self, window_info: &Option<(String, u32)>) -> InjectionMethod {
-        if let Some((ref title, _pid)) = window_info {
-            let title_lower = title.to_lowercase();
-            
-            if title_lower.contains("chrome")
-                || title_lower.contains("edge")
-                || title_lower.contains("firefox")
-                || title_lower.contains("browser")
-                || title_lower.contains("notepad++")
-                || title_lower.contains("vscode")
-                || title_lower.contains("code")
-                // Terminals: KEYEVENTF_UNICODE often garbles CJK text
-                || title_lower.contains("terminal")
-                || title_lower.contains("cmd")
-                || title_lower.contains("powershell")
-                || title_lower.contains("windowsterminal")
-                || title_lower.contains("git bash")
-                || title_lower.contains("mingw")
-                || title_lower.contains("console")
-            {
-                info!("Detected browser, editor or terminal, using clipboard method");
-                return InjectionMethod::Clipboard;
-            }
-        }
-        
-        info!("Using keyboard method as default");
-        InjectionMethod::Keyboard
+        InjectionMethod::Clipboard
     }
     
     fn inject_keyboard_with_retry(&self, text: &str) -> Result<(), String> {
@@ -289,24 +264,26 @@ impl TextInjector {
     
     fn inject_clipboard_impl(&self, text: &str) -> Result<(), String> {
         let previous = get_clipboard_text();
-        
+
         set_clipboard_text(text)?;
-        
-        std::thread::sleep(std::time::Duration::from_millis(50));
-        
+
+        std::thread::sleep(std::time::Duration::from_millis(100));
+
         #[cfg(windows)]
         self.send_ctrl_v();
-        
+
+        std::thread::sleep(std::time::Duration::from_millis(200));
+
         let prev = previous;
         std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_secs(1));
+            std::thread::sleep(std::time::Duration::from_secs(2));
             if let Some(text) = prev {
                 if let Err(e) = set_clipboard_text(&text) {
                     warn!("Failed to restore clipboard: {}", e);
                 }
             }
         });
-        
+
         Ok(())
     }
     

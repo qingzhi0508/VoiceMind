@@ -23,7 +23,7 @@ body {
 
 .overlay-shell {
   width: 100%;
-  height: 100%;
+  height: auto;
   padding: 0;
   opacity: 1;
   transform: translateY(0) scale(1);
@@ -33,12 +33,12 @@ body {
 .recognition-bar {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: auto;
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   justify-content: center;
-  min-height: 92px;
-  padding: 12px 18px;
+  min-height: 36px;
+  padding: 8px 14px;
   border-radius: var(--overlay-radius);
   overflow: hidden;
   background: linear-gradient(90deg, #ff6b6b, #ffa94d, #ffd43b, #69db7c, #4dabf7, #9775fa, #f06595, #ff6b6b);
@@ -79,16 +79,16 @@ body {
   z-index: 1;
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   min-width: 0;
 }
 
 .recognition-spinner {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   margin-top: 2px;
-  border: 2.5px solid rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -109,7 +109,7 @@ body {
   word-break: break-word;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
 }
 
 .state-processing .recognition-bar,

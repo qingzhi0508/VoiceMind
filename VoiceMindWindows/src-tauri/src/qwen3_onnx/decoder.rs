@@ -1,9 +1,11 @@
 use ndarray::{Array1, Array2, Array3};
+use ort::session::builder::GraphOptimizationLevel;
 use ort::session::Session;
 use ort::value::Tensor;
 use std::borrow::Cow;
 use std::path::Path;
 use std::sync::Mutex;
+use std::time::Instant;
 
 use super::tokenizer::Qwen3Tokenizer;
 
@@ -19,15 +21,23 @@ pub struct Decoder {
 
 impl Decoder {
     pub fn new(model_dir: &Path) -> Result<Self, String> {
+        let t = Instant::now();
         let session_init = Session::builder()
             .map_err(|e| format!("Session builder error: {}", e))?
+            .with_optimization_level(GraphOptimizationLevel::Disable)
+            .map_err(|e| format!("Set optimization level error: {}", e))?
             .commit_from_file(model_dir.join("decoder_init.int8.onnx"))
             .map_err(|e| format!("Failed to load decoder_init.int8.onnx: {}", e))?;
+        tracing::info!("[ONNX load] Decoder init session: {:.2}s", t.elapsed().as_secs_f64());
 
+        let t = Instant::now();
         let session_step = Session::builder()
             .map_err(|e| format!("Session builder error: {}", e))?
+            .with_optimization_level(GraphOptimizationLevel::Disable)
+            .map_err(|e| format!("Set optimization level error: {}", e))?
             .commit_from_file(model_dir.join("decoder_step.int8.onnx"))
             .map_err(|e| format!("Failed to load decoder_step.int8.onnx: {}", e))?;
+        tracing::info!("[ONNX load] Decoder step session: {:.2}s", t.elapsed().as_secs_f64());
 
         Ok(Self {
             session_init: Mutex::new(session_init),

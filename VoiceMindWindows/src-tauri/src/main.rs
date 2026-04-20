@@ -39,7 +39,8 @@ pub struct AppState {
     pub bonjour_service: Arc<Mutex<Option<bonjour::BonjourService>>>,
     pub asr_provider: Arc<Mutex<Option<asr::VolcengineProvider>>>,
     pub inbound_data_records: Arc<Mutex<std::collections::VecDeque<crate::commands::InboundDataRecord>>>,
-    pub qwen3_onnx_engine: Arc<Mutex<Option<qwen3_onnx::engine::Qwen3AsrEngine>>>,
+    pub qwen3_onnx_engine: Arc<std::sync::Mutex<Option<qwen3_onnx::engine::Qwen3AsrEngine>>>,
+    pub onnx_loading: Arc<std::sync::atomic::AtomicBool>,
 }
 
 /// Ensure Windows Firewall has an inbound rule allowing TCP connections to this app.
@@ -183,7 +184,8 @@ fn main() {
                 bonjour_service: Arc::new(Mutex::new(None)),
                 asr_provider: Arc::new(Mutex::new(None)),
                 inbound_data_records: Arc::new(Mutex::new(std::collections::VecDeque::new())),
-                qwen3_onnx_engine: Arc::new(Mutex::new(None)),
+                qwen3_onnx_engine: Arc::new(std::sync::Mutex::new(None)),
+                onnx_loading: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             };
 
             // Manage state first before accessing it
@@ -203,7 +205,7 @@ fn main() {
             .transparent(true)
             .shadow(false)
             .focused(false)
-            .inner_size(560.0, 104.0)
+            .inner_size(500.0, 130.0)
             .build()?;
             let _ = overlay_window.set_ignore_cursor_events(true);
             overlay::apply_native_overlay_style(&overlay_window);
@@ -215,6 +217,7 @@ fn main() {
             let asr_provider = app.state::<AppState>().asr_provider.clone();
             let settings_store = app.state::<AppState>().settings_store.clone();
             let onnx_engine = app.state::<AppState>().qwen3_onnx_engine.clone();
+            let onnx_loading = app.state::<AppState>().onnx_loading.clone();
             let app_handle = app.handle().clone();
             let server_port = init_settings.server_port;
             
@@ -229,6 +232,7 @@ fn main() {
                 {
                     let mut conn_mgr_guard = conn_mgr.lock().await;
                     conn_mgr_guard.set_onnx_engine(onnx_engine);
+                    conn_mgr_guard.set_onnx_loading(onnx_loading);
                 }
 
                 // Start WebSocket server

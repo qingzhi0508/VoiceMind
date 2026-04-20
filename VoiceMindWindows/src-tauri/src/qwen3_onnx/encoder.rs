@@ -1,8 +1,10 @@
 use ndarray::{Array1, Array2, Array3};
+use ort::session::builder::GraphOptimizationLevel;
 use ort::session::Session;
 use ort::value::Tensor;
 use std::path::Path;
 use std::sync::Mutex;
+use std::time::Instant;
 
 /// Two-stage ONNX encoder: Conv2D stem + Transformer.
 pub struct Encoder {
@@ -16,15 +18,23 @@ pub struct Encoder {
 
 impl Encoder {
     pub fn new(model_dir: &Path) -> Result<Self, String> {
+        let t = Instant::now();
         let session_conv = Session::builder()
             .map_err(|e| format!("Session builder error: {}", e))?
+            .with_optimization_level(GraphOptimizationLevel::Disable)
+            .map_err(|e| format!("Set optimization level error: {}", e))?
             .commit_from_file(model_dir.join("encoder_conv.onnx"))
             .map_err(|e| format!("Failed to load encoder_conv.onnx: {}", e))?;
+        tracing::info!("[ONNX load] Encoder conv session: {:.2}s", t.elapsed().as_secs_f64());
 
+        let t = Instant::now();
         let session_transformer = Session::builder()
             .map_err(|e| format!("Session builder error: {}", e))?
+            .with_optimization_level(GraphOptimizationLevel::Disable)
+            .map_err(|e| format!("Set optimization level error: {}", e))?
             .commit_from_file(model_dir.join("encoder_transformer.onnx"))
             .map_err(|e| format!("Failed to load encoder_transformer.onnx: {}", e))?;
+        tracing::info!("[ONNX load] Encoder transformer session: {:.2}s", t.elapsed().as_secs_f64());
 
         Ok(Self {
             session_conv: Mutex::new(session_conv),
