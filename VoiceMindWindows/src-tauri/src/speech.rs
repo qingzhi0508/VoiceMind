@@ -1,4 +1,4 @@
-use chrono::{DateTime, NaiveDateTime};
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -54,7 +54,7 @@ impl HistoryStore {
     }
 
     pub fn add(&mut self, text: String, source: String, session_id: Option<String>) {
-        let now = chrono::Utc::now();
+        let now = chrono::Local::now();
         let record = HistoryRecord {
             id: Uuid::new_v4().to_string(),
             text,
@@ -82,17 +82,15 @@ impl HistoryStore {
     }
 
     pub fn cleanup_expired_with_days(&mut self, days: u32) {
-        let expiry = chrono::Utc::now() - chrono::Duration::days(days as i64);
-        if let Ok(expiry_dt) = DateTime::parse_from_rfc3339(&expiry.to_rfc3339()) {
-            let expiry_naive = expiry_dt.naive_utc();
-            self.records.retain(|r| {
-                if let Ok(dt) = NaiveDateTime::parse_from_str(&r.timestamp, "%Y-%m-%d %H:%M:%S") {
-                    dt > expiry_naive
-                } else {
-                    true
-                }
-            });
-        }
+        let expiry = chrono::Local::now() - chrono::Duration::days(days as i64);
+        let expiry_naive = expiry.naive_local();
+        self.records.retain(|r| {
+            if let Ok(dt) = NaiveDateTime::parse_from_str(&r.timestamp, "%Y-%m-%d %H:%M:%S") {
+                dt > expiry_naive
+            } else {
+                true
+            }
+        });
     }
 
     pub fn delete(&mut self, id: &str) {
